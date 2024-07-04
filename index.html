@@ -3,42 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>경험치 계산기</title>
+    <title>프로세카 계산기</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            background: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 30px;
+            color: #333;
+        }
+        p {
+            font-size: 18px;
+            color: #555;
+            word-break: break-word;
+        }
+        #error-message {
+            color: red;
+            margin-top: 10px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .tab {
+            cursor: pointer;
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .tab.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
-    <h1>경험치 계산기</h1>
+    <div class="container">
+        <h1>프로세카 계산기</h1>
+        <div class="tabs">
+            <div class="tab active" id="internal-tab" onclick="showTab('internal')">내부치</div>
+            <div class="tab" id="kizuna-tab" onclick="showTab('kizuna')">키즈나</div>
+            <div class="tab" id="card-tab" onclick="showTab('card')">카드레벨</div>
+        </div>
+        <div id="internal-tab-content">
+            <label for="leader">리더:</label>
+            <input type="number" id="leader" min="0" oninput="calculateInternal()">
 
-    <label for="current-level">현재 레벨:</label>
-    <input type="number" id="current-level" min="1" max="60" oninput="calculate()"><br><br>
+            <label for="member2">멤버2:</label>
+            <input type="number" id="member2" min="0" oninput="calculateInternal()">
 
-    <label for="current-exp">레벨업까지의 경험치:</label>
-    <input type="number" id="current-exp" min="0" oninput="calculate()"><br><br>
+            <label for="member3">멤버3:</label>
+            <input type="number" id="member3" min="0" oninput="calculateInternal()">
 
-    <label for="target-level">목표 레벨:</label>
-    <input type="number" id="target-level" min="2" max="60" oninput="calculate()"><br><br>
+            <label for="member4">멤버4:</label>
+            <input type="number" id="member4" min="0" oninput="calculateInternal()">
 
-    <label for="rank">랭크:</label>
-    <select id="rank" onchange="calculate()">
-        <option value="600">C</option>
-        <option value="720">B</option>
-        <option value="840">A</option>
-        <option value="960">S</option>
-    </select><br><br>
+            <label for="member5">멤버5:</label>
+            <input type="number" id="member5" min="0" oninput="calculateInternal()">
+        </div>
+        <div id="kizuna-level-tab" style="display: none;">
+            <label for="kizuna-current-level">현재 랭크:</label>
+            <input type="number" id="kizuna-current-level" min="1" max="10" oninput="calculate('kizuna')">
 
-    <label for="fires">라이브보너스:</label>
-    <select id="fires" onchange="calculate()">
-        <option value="5">1</option>
-        <option value="10">2</option>
-        <option value="14">3</option>
-        <option value="17">4</option>
-        <option value="20">5</option>
-    </select><br><br>
+            <label for="kizuna-current-exp">랭크업까지의 경험치:</label>
+            <input type="number" id="kizuna-current-exp" min="0" oninput="calculate('kizuna')">
 
-    <h2>결과</h2>
-    <p id="needed-exp">필요 경험치: </p>
-    <p id="needed-rounds">필요 판수: </p>
-    <p id="exp-per-round">판 당 경험치 획득량: </p>
-    <p id="error-message" style="color:red;">에러: </p>
+            <label for="kizuna-target-level">목표 랭크:</label>
+            <input type="number" id="kizuna-target-level" min="2" max="10" oninput="calculate('kizuna')">
+
+            <label for="kizuna-rank">라이브 랭크:</label>
+            <select id="kizuna-rank" onchange="calculate('kizuna')">
+                <option value="150">S</option>
+                <option value="130">A</option>
+				<option value="110">B</option>
+				<option value="100">C</option>
+            </select>
+
+            <label for="kizuna-fires">라이브보너스:</label>
+            <select id="kizuna-fires" onchange="calculate('kizuna')">
+				<option value="1">0</option>
+				<option value="5">1</option>
+				<option value="10">2</option>
+				<option value="14">3</option>
+				<option value="17">4</option>
+				<option value="20">5</option>
+				<option value="21">6</option>
+				<option value="22">7</option>
+				<option value="23">8</option>
+				<option value="24">9</option>
+				<option value="25">10</option>
+            </select>
+        </div>
+        <div id="card-level-tab" style="display: none;">
+            <label for="current-level">현재 레벨:</label>
+            <input type="number" id="current-level" min="1" max="60" oninput="calculate('card')">
+
+            <label for="current-exp">레벨업까지의 경험치:</label>
+            <input type="number" id="current-exp" min="0" oninput="calculate('card')">
+
+            <label for="target-level">목표 레벨:</label>
+            <input type="number" id="target-level" min="2" max="60" oninput="calculate('card')">
+
+            <label for="rank">라이브 랭크:</label>
+            <select id="rank" onchange="calculate('card')">
+                <option value="960">S</option>
+                <option value="840">A</option>
+                <option value="720">B</option>
+                <option value="600">C</option>
+            </select>
+
+            <label for="fires">라이브보너스:</label>
+            <select id="fires" onchange="calculate('card')">
+				<option value="1">0</option>
+				<option value="5">1</option>
+				<option value="10">2</option>
+				<option value="14">3</option>
+				<option value="17">4</option>
+				<option value="20">5</option>
+				<option value="21">6</option>
+				<option value="22">7</option>
+				<option value="23">8</option>
+				<option value="24">9</option>
+				<option value="25">10</option>
+            </select>
+        </div>
+
+        <h2>결과</h2>
+        <p id="needed-exp">필요 경험치: </p>
+        <p id="needed-rounds">필요 판수: </p>
+        <p id="exp-per-round">판 당 경험치 획득량: </p>
+        <p id="internal-effective">실효치: </p>
+        <p id="internal-sum">내부합: </p>
+        <p id="error-message">에러: </p>
+        <p id="internal-calculation-text"></p>
+    </div>
 
     <script>
         const expData = [
@@ -104,51 +237,224 @@
             {LV: 60, 필요EXP: 27400, 누적EXP: 930400}
         ];
 
-        function calculate() {
-            // Clear previous error message
-            document.getElementById("error-message").innerText = '';
+        const kizunaData = [
+			{LV: 1, 필요EXP: 0, 누적EXP: 0},
+			{LV: 2, 필요EXP: 7224, 누적EXP: 7224},
+			{LV: 3, 필요EXP: 7224, 누적EXP: 14448},
+			{LV: 4, 필요EXP: 7224, 누적EXP: 21672},
+			{LV: 5, 필요EXP: 7224, 누적EXP: 28896},
+			{LV: 6, 필요EXP: 7224, 누적EXP: 36120},
+			{LV: 7, 필요EXP: 28094, 누적EXP: 64214},
+			{LV: 8, 필요EXP: 28094, 누적EXP: 92308},
+			{LV: 9, 필요EXP: 28094, 누적EXP: 120402},
+			{LV: 10, 필요EXP: 60200, 누적EXP: 180602},
+			{LV: 11, 필요EXP: 60200, 누적EXP: 240802},
+			{LV: 12, 필요EXP: 60200, 누적EXP: 301002},
+			{LV: 13, 필요EXP: 70234, 누적EXP: 371236},
+			{LV: 14, 필요EXP: 70234, 누적EXP: 441470},
+			{LV: 15, 필요EXP: 70234, 누적EXP: 511704},
+			{LV: 16, 필요EXP: 100332, 누적EXP: 612036},
+			{LV: 17, 필요EXP: 100332, 누적EXP: 712368},
+			{LV: 18, 필요EXP: 100332, 누적EXP: 812700},
+			{LV: 19, 필요EXP: 130432, 누적EXP: 943132},
+			{LV: 20, 필요EXP: 130432, 누적EXP: 1073564},
+			{LV: 21, 필요EXP: 130432, 누적EXP: 1203996},
+			{LV: 22, 필요EXP: 160534, 누적EXP: 1364530},
+			{LV: 23, 필요EXP: 160534, 누적EXP: 1525064},
+			{LV: 24, 필요EXP: 160534, 누적EXP: 1685598},
+			{LV: 25, 필요EXP: 210700, 누적EXP: 1896298},
+			{LV: 26, 필요EXP: 210700, 누적EXP: 2106998},
+			{LV: 27, 필요EXP: 210700, 누적EXP: 2317698},
+			{LV: 28, 필요EXP: 250834, 누적EXP: 2568532},
+			{LV: 29, 필요EXP: 250834, 누적EXP: 2819366},
+			{LV: 30, 필요EXP: 250834, 누적EXP: 3070200},
+			{LV: 31, 필요EXP: 280934, 누적EXP: 3351134},
+			{LV: 32, 필요EXP: 280934, 누적EXP: 3632068},
+			{LV: 33, 필요EXP: 280934, 누적EXP: 3913002},
+			{LV: 34, 필요EXP: 301000, 누적EXP: 4214002},
+			{LV: 35, 필요EXP: 301000, 누적EXP: 4515002},
+			{LV: 36, 필요EXP: 301000, 누적EXP: 4816002},
+			{LV: 37, 필요EXP: 301000, 누적EXP: 5117002},
+			{LV: 38, 필요EXP: 301000, 누적EXP: 5418002},
+			{LV: 39, 필요EXP: 301000, 누적EXP: 5719002},
+			{LV: 40, 필요EXP: 301000, 누적EXP: 6020002},
+			{LV: 41, 필요EXP: 301000, 누적EXP: 6321002},
+			{LV: 42, 필요EXP: 301000, 누적EXP: 6622002},
+			{LV: 43, 필요EXP: 301000, 누적EXP: 6923002},
+			{LV: 44, 필요EXP: 301000, 누적EXP: 7224002},
+			{LV: 45, 필요EXP: 301000, 누적EXP: 7525002},
+			{LV: 46, 필요EXP: 301000, 누적EXP: 7826002},
+			{LV: 47, 필요EXP: 301000, 누적EXP: 8127002},
+			{LV: 48, 필요EXP: 301000, 누적EXP: 8428002},
+			{LV: 49, 필요EXP: 301000, 누적EXP: 8729002},
+			{LV: 50, 필요EXP: 301000, 누적EXP: 9030002},
+			{LV: 51, 필요EXP: 301000, 누적EXP: 9331002},
+			{LV: 52, 필요EXP: 301000, 누적EXP: 9632002},
+			{LV: 53, 필요EXP: 301000, 누적EXP: 9933002},
+			{LV: 54, 필요EXP: 301000, 누적EXP: 10234002},
+			{LV: 55, 필요EXP: 301000, 누적EXP: 10535002},
+			{LV: 56, 필요EXP: 301000, 누적EXP: 10836002},
+			{LV: 57, 필요EXP: 301000, 누적EXP: 11137002},
+			{LV: 58, 필요EXP: 301000, 누적EXP: 11438002},
+			{LV: 59, 필요EXP: 301000, 누적EXP: 11739002},
+			{LV: 60, 필요EXP: 301000, 누적EXP: 12040002},
+			{LV: 61, 필요EXP: 301000, 누적EXP: 12341002},
+			{LV: 62, 필요EXP: 301000, 누적EXP: 12642002},
+			{LV: 63, 필요EXP: 301000, 누적EXP: 12943002},
+			{LV: 64, 필요EXP: 301000, 누적EXP: 13244002},
+			{LV: 65, 필요EXP: 301000, 누적EXP: 13545002},
+			{LV: 66, 필요EXP: 301000, 누적EXP: 13846002},
+			{LV: 67, 필요EXP: 301000, 누적EXP: 14147002},
+			{LV: 68, 필요EXP: 301000, 누적EXP: 14448002},
+			{LV: 69, 필요EXP: 301000, 누적EXP: 14749002},
+			{LV: 70, 필요EXP: 301000, 누적EXP: 15050002},
+			{LV: 71, 필요EXP: 301000, 누적EXP: 15351002},
+			{LV: 72, 필요EXP: 301000, 누적EXP: 15652002},
+			{LV: 73, 필요EXP: 301000, 누적EXP: 15953002},
+			{LV: 74, 필요EXP: 301000, 누적EXP: 16254002},
+			{LV: 75, 필요EXP: 301000, 누적EXP: 16555002}
+        ];
 
-            const currentLevel = parseInt(document.getElementById("current-level").value);
-            const currentExpToLevelUp = parseInt(document.getElementById("current-exp").value);
-            const targetLevel = parseInt(document.getElementById("target-level").value);
-            const rankExp = parseInt(document.getElementById("rank").value);
-            const fires = parseInt(document.getElementById("fires").value);
+        function showTab(tab) {
+            document.getElementById('internal-tab-content').style.display = 'none';
+            document.getElementById('kizuna-level-tab').style.display = 'none';
+            document.getElementById('card-level-tab').style.display = 'none';
+            document.getElementById('internal-tab').classList.remove('active');
+            document.getElementById('kizuna-tab').classList.remove('active');
+            document.getElementById('card-tab').classList.remove('active');
 
-            if (isNaN(currentLevel) || isNaN(currentExpToLevelUp) || isNaN(targetLevel) || isNaN(rankExp) || isNaN(fires)) {
-                document.getElementById("error-message").innerText = '에러: 모든 입력 값을 정확히 입력해 주세요.';
-                return;
+            if (tab === 'internal') {
+                document.getElementById('internal-tab-content').style.display = 'block';
+                document.getElementById('internal-tab').classList.add('active');
+            } else if (tab === 'kizuna') {
+                document.getElementById('kizuna-level-tab').style.display = 'block';
+                document.getElementById('kizuna-tab').classList.add('active');
+            } else {
+                document.getElementById('card-level-tab').style.display = 'block';
+                document.getElementById('card-tab').classList.add('active');
             }
-
-            if (currentLevel >= targetLevel) {
-                document.getElementById("error-message").innerText = '에러: 목표 레벨은 현재 레벨보다 높아야 합니다.';
-                return;
-            }
-
-            // Get current and target level's cumulative exp
-            const currentData = expData.find(data => data.LV === currentLevel);
-            const nextLevelData = expData.find(data => data.LV === currentLevel + 1);
-            const targetData = expData.find(data => data.LV === targetLevel);
-
-            if (!currentData || !nextLevelData || !targetData) {
-                document.getElementById("error-message").innerText = '에러: 레벨 데이터를 불러오는 데 실패했습니다.';
-                return;
-            }
-
-            const currentCumulativeExp = currentData.누적EXP + nextLevelData.필요EXP - currentExpToLevelUp;
-            const targetCumulativeExp = targetData.누적EXP;
-
-            // Calculate needed exp
-            const neededExp = targetCumulativeExp - currentCumulativeExp;
-
-            // Calculate needed rounds
-            const expPerRound = rankExp * fires;
-            const neededRounds = Math.ceil(neededExp / expPerRound);
-
-            // Display results
-            document.getElementById("needed-exp").innerText = `필요 경험치: ${neededExp}`;
-            document.getElementById("needed-rounds").innerText = `필요 판수: ${neededRounds}`;
-            document.getElementById("exp-per-round").innerText = `판 당 경험치 획득량: ${expPerRound}`;
+            calculate(tab);
         }
+
+		function calculate(type) {
+			// Clear previous error message
+			document.getElementById("error-message").innerText = '';
+
+			let currentLevel, currentExpToLevelUp, targetLevel, rankExp, fires;
+
+			if (type === 'card') {
+				currentLevel = parseInt(document.getElementById("current-level").value);
+				currentExpToLevelUp = parseInt(document.getElementById("current-exp").value);
+				targetLevel = parseInt(document.getElementById("target-level").value);
+				rankExp = parseInt(document.getElementById("rank").value);
+				fires = parseInt(document.getElementById("fires").value);
+
+				if (isNaN(currentLevel) || isNaN(currentExpToLevelUp) || isNaN(targetLevel) || isNaN(rankExp) || isNaN(fires)) {
+					document.getElementById("error-message").innerText = '에러: 모든 입력 값을 정확히 입력해 주세요.';
+					clearResults();
+					return;
+				}
+
+				if (currentLevel >= targetLevel) {
+					document.getElementById("error-message").innerText = '에러: 목표 레벨은 현재 레벨보다 높아야 합니다.';
+					clearResults();
+					return;
+				}
+
+				const data = expData;
+				const currentData = data.find(d => d.LV === currentLevel);
+				const nextLevelData = data.find(d => d.LV === currentLevel + 1);
+				const targetData = data.find(d => d.LV === targetLevel);
+
+				if (!currentData || !nextLevelData || !targetData) {
+					document.getElementById("error-message").innerText = '에러: 레벨 데이터를 불러오는 데 실패했습니다.';
+					clearResults();
+					return;
+				}
+
+				const currentCumulativeExp = currentData.누적EXP + nextLevelData.필요EXP - currentExpToLevelUp;
+				const targetCumulativeExp = targetData.누적EXP;
+
+				const neededExp = targetCumulativeExp - currentCumulativeExp;
+				const expPerRound = rankExp * fires;
+				const neededRounds = Math.ceil(neededExp / expPerRound);
+
+				document.getElementById("needed-exp").innerText = `필요 경험치: ${neededExp}`;
+				document.getElementById("needed-rounds").innerText = `필요 판수: ${neededRounds}`;
+				document.getElementById("exp-per-round").innerText = `판 당 경험치 획득량: ${expPerRound}`;
+			} else if (type === 'kizuna') {
+				currentLevel = parseInt(document.getElementById("kizuna-current-level").value);
+				currentExpToLevelUp = parseInt(document.getElementById("kizuna-current-exp").value);
+				targetLevel = parseInt(document.getElementById("kizuna-target-level").value);
+				rankExp = parseInt(document.getElementById("kizuna-rank").value);
+				fires = parseInt(document.getElementById("kizuna-fires").value);
+
+				if (isNaN(currentLevel) || isNaN(currentExpToLevelUp) || isNaN(targetLevel) || isNaN(rankExp) || isNaN(fires)) {
+					document.getElementById("error-message").innerText = '에러: 모든 입력 값을 정확히 입력해 주세요.';
+					clearResults();
+					return;
+				}
+
+				if (currentLevel >= targetLevel) {
+					document.getElementById("error-message").innerText = '에러: 목표 랭크는 현재 랭크보다 높아야 합니다.';
+					clearResults();
+					return;
+				}
+
+				const data = kizunaData;
+				const currentData = data.find(d => d.LV === currentLevel);
+				const nextLevelData = data.find(d => d.LV === currentLevel + 1);
+				const targetData = data.find(d => d.LV === targetLevel);
+
+				if (!currentData || !nextLevelData || !targetData) {
+					document.getElementById("error-message").innerText = '에러: 랭크 데이터를 불러오는 데 실패했습니다.';
+					clearResults();
+					return;
+				}
+
+				const currentCumulativeExp = currentData.누적EXP + nextLevelData.필요EXP - currentExpToLevelUp;
+				const targetCumulativeExp = targetData.누적EXP;
+
+				const neededExp = targetCumulativeExp - currentCumulativeExp;
+				const expPerRound = rankExp * fires;
+				const neededRounds = Math.ceil(neededExp / expPerRound);
+
+				document.getElementById("needed-exp").innerText = `필요 경험치: ${neededExp}`;
+				document.getElementById("needed-rounds").innerText = `필요 판수: ${neededRounds}`;
+				document.getElementById("exp-per-round").innerText = `판 당 경험치 획득량: ${expPerRound}`;
+			} else {
+				calculateInternal();
+			}
+		}
+
+		function calculateInternal() {
+			const leader = parseInt(document.getElementById("leader").value) || 0;
+			const member2 = parseInt(document.getElementById("member2").value) || 0;
+			const member3 = parseInt(document.getElementById("member3").value) || 0;
+			const member4 = parseInt(document.getElementById("member4").value) || 0;
+			const member5 = parseInt(document.getElementById("member5").value) || 0;
+
+			const internalSum = leader + member2 + member3 + member4 + member5;
+			const effectiveValue = leader + (member2 + member3 + member4 + member5) * 0.2;
+			const effectiveMultiplier = (effectiveValue / 100) + 1;
+
+			document.getElementById("internal-effective").innerText = `실효치: ${effectiveValue}% = ${effectiveMultiplier.toFixed(2)}배`;
+			document.getElementById("internal-sum").innerText = `내부합: ${internalSum}`;
+			document.getElementById("internal-calculation-text").innerText = "실효치 = 리더 + (나머지멤버) * 0.2";
+		}
+
+		function clearResults() {
+			document.getElementById("needed-exp").innerText = '';
+			document.getElementById("needed-rounds").innerText = '';
+			document.getElementById("exp-per-round").innerText = '';
+			document.getElementById("internal-effective").innerText = '';
+			document.getElementById("internal-sum").innerText = '';
+			document.getElementById("internal-calculation-text").innerText = '';
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			showTab('internal');
+		});
     </script>
 </body>
 </html>
