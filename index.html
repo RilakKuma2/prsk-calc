@@ -163,7 +163,7 @@
             </select>
         </div>
 
-        <h2>결과</h2>
+        <h2></h2>
         <p id="needed-exp">필요 경험치: </p>
         <p id="needed-rounds">필요 판수: </p>
         <p id="exp-per-round">판 당 경험치 획득량: </p>
@@ -324,12 +324,15 @@
             document.getElementById('card-tab').classList.remove('active');
 
             if (tab === 'internal') {
+				clearResults();
                 document.getElementById('internal-tab-content').style.display = 'block';
                 document.getElementById('internal-tab').classList.add('active');
             } else if (tab === 'kizuna') {
+				clearResults();
                 document.getElementById('kizuna-level-tab').style.display = 'block';
                 document.getElementById('kizuna-tab').classList.add('active');
             } else {
+				clearResults();
                 document.getElementById('card-level-tab').style.display = 'block';
                 document.getElementById('card-tab').classList.add('active');
             }
