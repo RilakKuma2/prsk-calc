@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경험치 계산기</title>
+</head>
+<body>
+    <h1>경험치 계산기</h1>
+
+    <label for="current-level">현재 레벨:</label>
+    <input type="number" id="current-level" min="1" max="60" oninput="calculate()"><br><br>
+
+    <label for="current-exp">레벨업까지의 경험치:</label>
+    <input type="number" id="current-exp" min="0" oninput="calculate()"><br><br>
+
+    <label for="target-level">목표 레벨:</label>
+    <input type="number" id="target-level" min="2" max="60" oninput="calculate()"><br><br>
+
+    <label for="rank">랭크:</label>
+    <select id="rank" onchange="calculate()">
+        <option value="600">C</option>
+        <option value="720">B</option>
+        <option value="840">A</option>
+        <option value="960">S</option>
+    </select><br><br>
+
+    <label for="fires">라이브보너스:</label>
+    <select id="fires" onchange="calculate()">
+        <option value="5">1</option>
+        <option value="10">2</option>
+        <option value="14">3</option>
+        <option value="17">4</option>
+        <option value="20">5</option>
+    </select><br><br>
+
+    <h2>결과</h2>
+    <p id="needed-exp">필요 경험치: </p>
+    <p id="needed-rounds">필요 판수: </p>
+    <p id="exp-per-round">판 당 경험치 획득량: </p>
+    <p id="error-message" style="color:red;">에러: </p>
+
+    <script>
+        const expData = [
+            {LV: 1, 필요EXP: 0, 누적EXP: 0},
+            {LV: 2, 필요EXP: 3000, 누적EXP: 3000},
+            {LV: 3, 필요EXP: 4000, 누적EXP: 7000},
+            {LV: 4, 필요EXP: 5000, 누적EXP: 12000},
+            {LV: 5, 필요EXP: 5400, 누적EXP: 17400},
+            {LV: 6, 필요EXP: 5800, 누적EXP: 23200},
+            {LV: 7, 필요EXP: 6200, 누적EXP: 29400},
+            {LV: 8, 필요EXP: 6600, 누적EXP: 36000},
+            {LV: 9, 필요EXP: 7000, 누적EXP: 43000},
+            {LV: 10, 필요EXP: 7400, 누적EXP: 50400},
+            {LV: 11, 필요EXP: 7800, 누적EXP: 58200},
+            {LV: 12, 필요EXP: 8200, 누적EXP: 66400},
+            {LV: 13, 필요EXP: 8600, 누적EXP: 75000},
+            {LV: 14, 필요EXP: 9000, 누적EXP: 84000},
+            {LV: 15, 필요EXP: 9400, 누적EXP: 93400},
+            {LV: 16, 필요EXP: 9800, 누적EXP: 103200},
+            {LV: 17, 필요EXP: 10200, 누적EXP: 113400},
+            {LV: 18, 필요EXP: 10600, 누적EXP: 124000},
+            {LV: 19, 필요EXP: 11000, 누적EXP: 135000},
+            {LV: 20, 필요EXP: 11400, 누적EXP: 146400},
+            {LV: 21, 필요EXP: 11800, 누적EXP: 158200},
+            {LV: 22, 필요EXP: 12200, 누적EXP: 170400},
+            {LV: 23, 필요EXP: 12600, 누적EXP: 183000},
+            {LV: 24, 필요EXP: 13000, 누적EXP: 196000},
+            {LV: 25, 필요EXP: 13400, 누적EXP: 209400},
+            {LV: 26, 필요EXP: 13800, 누적EXP: 223200},
+            {LV: 27, 필요EXP: 14200, 누적EXP: 237400},
+            {LV: 28, 필요EXP: 14600, 누적EXP: 252000},
+            {LV: 29, 필요EXP: 15000, 누적EXP: 267000},
+            {LV: 30, 필요EXP: 15400, 누적EXP: 282400},
+            {LV: 31, 필요EXP: 15800, 누적EXP: 298200},
+            {LV: 32, 필요EXP: 16200, 누적EXP: 314400},
+            {LV: 33, 필요EXP: 16600, 누적EXP: 331000},
+            {LV: 34, 필요EXP: 17000, 누적EXP: 348000},
+            {LV: 35, 필요EXP: 17400, 누적EXP: 365400},
+            {LV: 36, 필요EXP: 17800, 누적EXP: 383200},
+            {LV: 37, 필요EXP: 18200, 누적EXP: 401400},
+            {LV: 38, 필요EXP: 18600, 누적EXP: 420000},
+            {LV: 39, 필요EXP: 19000, 누적EXP: 439000},
+            {LV: 40, 필요EXP: 19400, 누적EXP: 458400},
+            {LV: 41, 필요EXP: 19800, 누적EXP: 478200},
+            {LV: 42, 필요EXP: 20200, 누적EXP: 498400},
+            {LV: 43, 필요EXP: 20600, 누적EXP: 519000},
+            {LV: 44, 필요EXP: 21000, 누적EXP: 540000},
+            {LV: 45, 필요EXP: 21400, 누적EXP: 561400},
+            {LV: 46, 필요EXP: 21800, 누적EXP: 583200},
+            {LV: 47, 필요EXP: 22200, 누적EXP: 605400},
+            {LV: 48, 필요EXP: 22600, 누적EXP: 628000},
+            {LV: 49, 필요EXP: 23000, 누적EXP: 651000},
+            {LV: 50, 필요EXP: 23400, 누적EXP: 674400},
+            {LV: 51, 필요EXP: 23800, 누적EXP: 698200},
+            {LV: 52, 필요EXP: 24200, 누적EXP: 722400},
+            {LV: 53, 필요EXP: 24600, 누적EXP: 747000},
+            {LV: 54, 필요EXP: 25000, 누적EXP: 772000},
+            {LV: 55, 필요EXP: 25400, 누적EXP: 797400},
+            {LV: 56, 필요EXP: 25800, 누적EXP: 823200},
+            {LV: 57, 필요EXP: 26200, 누적EXP: 849400},
+            {LV: 58, 필요EXP: 26600, 누적EXP: 876000},
+            {LV: 59, 필요EXP: 27000, 누적EXP: 903000},
+            {LV: 60, 필요EXP: 27400, 누적EXP: 930400}
+        ];
+
+        function calculate() {
+            // Clear previous error message
+            document.getElementById("error-message").innerText = '';
+
+            const currentLevel = parseInt(document.getElementById("current-level").value);
+            const currentExpToLevelUp = parseInt(document.getElementById("current-exp").value);
+            const targetLevel = parseInt(document.getElementById("target-level").value);
+            const rankExp = parseInt(document.getElementById("rank").value);
+            const fires = parseInt(document.getElementById("fires").value);
+
+            if (isNaN(currentLevel) || isNaN(currentExpToLevelUp) || isNaN(targetLevel) || isNaN(rankExp) || isNaN(fires)) {
+                document.getElementById("error-message").innerText = '에러: 모든 입력 값을 정확히 입력해 주세요.';
+                return;
+            }
+
+            if (currentLevel >= targetLevel) {
+                document.getElementById("error-message").innerText = '에러: 목표 레벨은 현재 레벨보다 높아야 합니다.';
+                return;
+            }
+
+            // Get current and target level's cumulative exp
+            const currentData = expData.find(data => data.LV === currentLevel);
+            const nextLevelData = expData.find(data => data.LV === currentLevel + 1);
+            const targetData = expData.find(data => data.LV === targetLevel);
+
+            if (!currentData || !nextLevelData || !targetData) {
+                document.getElementById("error-message").innerText = '에러: 레벨 데이터를 불러오는 데 실패했습니다.';
+                return;
+            }
+
+            const currentCumulativeExp = currentData.누적EXP + nextLevelData.필요EXP - currentExpToLevelUp;
+            const targetCumulativeExp = targetData.누적EXP;
+
+            // Calculate needed exp
+            const neededExp = targetCumulativeExp - currentCumulativeExp;
+
+            // Calculate needed rounds
+            const expPerRound = rankExp * fires;
+            const neededRounds = Math.ceil(neededExp / expPerRound);
+
+            // Display results
+            document.getElementById("needed-exp").innerText = `필요 경험치: ${neededExp}`;
+            document.getElementById("needed-rounds").innerText = `필요 판수: ${neededRounds}`;
+            document.getElementById("exp-per-round").innerText = `판 당 경험치 획득량: ${expPerRound}`;
+        }
+    </script>
+</body>
+</html>
