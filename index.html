@@ -20,7 +20,7 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             text-align: center;
-            max-width: 400px;
+            max-width: 450px;
             width: 100%;
         }
         h1 {
@@ -34,7 +34,7 @@
             color: #555;
         }
         input, select {
-            width: 50%;
+            width: 25%;
             padding: 10px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
@@ -70,6 +70,7 @@
             background-color: #007bff;
             color: #fff;
         }
+		
     </style>
 </head>
 <body>
@@ -79,22 +80,28 @@
             <div class="tab active" id="internal-tab" onclick="showTab('internal')">내부치</div>
             <div class="tab" id="kizuna-tab" onclick="showTab('kizuna')">키즈나</div>
             <div class="tab" id="card-tab" onclick="showTab('card')">카드레벨</div>
+            <div class="tab" id="power-tab" onclick="showTab('power')">종합력 효율</div>
         </div>
         <div id="internal-tab-content">
-            <label for="leader">리더:</label>
+            <label for="leader">리더 스킬:</label>
             <input type="number" id="leader" min="0" oninput="calculateInternal()">
+			<span id="leader-unit">%</span>
 
-            <label for="member2">멤버2:</label>
+            <label for="member2">멤버2 스킬:</label>
             <input type="number" id="member2" min="0" oninput="calculateInternal()">
+			<span id="member2-unit">%</span>
 
-            <label for="member3">멤버3:</label>
+            <label for="member3">멤버3 스킬:</label>
             <input type="number" id="member3" min="0" oninput="calculateInternal()">
+			<span id="member3-unit">%</span>
 
-            <label for="member4">멤버4:</label>
+            <label for="member4">멤버4 스킬:</label>
             <input type="number" id="member4" min="0" oninput="calculateInternal()">
+			<span id="member4-unit">%</span>
 
-            <label for="member5">멤버5:</label>
+            <label for="member5">멤버5 스킬:</label>
             <input type="number" id="member5" min="0" oninput="calculateInternal()">
+			<span id="member5-unit">%</span>
         </div>
         <div id="kizuna-level-tab" style="display: none;">
             <label for="kizuna-current-level">현재 랭크:</label>
@@ -162,15 +169,27 @@
 				<option value="25">10</option>
             </select>
         </div>
+		<div id="power-tab-content">
+			<label for="power">종합력:</label>
+			<input type="number" id="power" min="0" max="40" oninput="calculatepower()">
+			<span id="power-unit">만</span>
 
+			<label for="effi">배수:</label>
+			<input type="number" id="effi" min="0" max="1000" oninput="calculatepower()">
+			<span id="effi-unit">%</span>
+		</div>
         <h2></h2>
         <p id="needed-exp">필요 경험치: </p>
         <p id="needed-rounds">필요 판수: </p>
         <p id="exp-per-round">판 당 경험치 획득량: </p>
         <p id="internal-effective">실효치: </p>
         <p id="internal-sum">내부합: </p>
+        <p id="multi-eff">멀티효율: </p>
+        <p id="solo-eff">솔로효율: </p>
+        <p id="auto-eff">오토효율: </p>
         <p id="error-message">에러: </p>
         <p id="internal-calculation-text"></p>
+        <p id="power-calculation-text"></p>
     </div>
 
     <script>
@@ -319,9 +338,11 @@
             document.getElementById('internal-tab-content').style.display = 'none';
             document.getElementById('kizuna-level-tab').style.display = 'none';
             document.getElementById('card-level-tab').style.display = 'none';
+            document.getElementById('power-tab-content').style.display = 'none';
             document.getElementById('internal-tab').classList.remove('active');
             document.getElementById('kizuna-tab').classList.remove('active');
             document.getElementById('card-tab').classList.remove('active');
+            document.getElementById('power-tab').classList.remove('active');
 
             if (tab === 'internal') {
 				clearResults();
@@ -331,10 +352,14 @@
 				clearResults();
                 document.getElementById('kizuna-level-tab').style.display = 'block';
                 document.getElementById('kizuna-tab').classList.add('active');
-            } else {
+            } else if (tab === 'card') {
 				clearResults();
                 document.getElementById('card-level-tab').style.display = 'block';
                 document.getElementById('card-tab').classList.add('active');
+            } else {
+				clearResults();
+                document.getElementById('power-tab-content').style.display = 'block';
+                document.getElementById('power-tab').classList.add('active');
             }
             calculate(tab);
         }
@@ -382,9 +407,9 @@
 				const expPerRound = rankExp * fires;
 				const neededRounds = Math.ceil(neededExp / expPerRound);
 
-				document.getElementById("needed-exp").innerText = `필요 경험치: ${neededExp}`;
-				document.getElementById("needed-rounds").innerText = `필요 판수: ${neededRounds}`;
-				document.getElementById("exp-per-round").innerText = `판 당 경험치 획득량: ${expPerRound}`;
+				document.getElementById("needed-exp").innerHTML = `필요 경험치: <span style="font-weight: bold; color: blue;">${neededExp}</span>`;
+				document.getElementById("needed-rounds").innerHTML = `필요 판수: <span style="font-weight: bold; color: blue;">${neededRounds}</span>`;
+				document.getElementById("exp-per-round").innerHTML = `판 당 경험치 획득량: <span style="font-weight: bold; color: blue;">${expPerRound}</span>`;
 			} else if (type === 'kizuna') {
 				currentLevel = parseInt(document.getElementById("kizuna-current-level").value);
 				currentExpToLevelUp = parseInt(document.getElementById("kizuna-current-exp").value);
@@ -422,11 +447,13 @@
 				const expPerRound = rankExp * fires;
 				const neededRounds = Math.ceil(neededExp / expPerRound);
 
-				document.getElementById("needed-exp").innerText = `필요 경험치: ${neededExp}`;
-				document.getElementById("needed-rounds").innerText = `필요 판수: ${neededRounds}`;
-				document.getElementById("exp-per-round").innerText = `판 당 경험치 획득량: ${expPerRound}`;
-			} else {
+				document.getElementById("needed-exp").innerHTML = `필요 경험치: <span style="font-weight: bold; color: blue;">${neededExp}</span>`;
+				document.getElementById("needed-rounds").innerHTML = `필요 판수: <span style="font-weight: bold; color: blue;">${neededRounds}</span>`;
+				document.getElementById("exp-per-round").innerHTML = `판 당 경험치 획득량: <span style="font-weight: bold; color: blue;">${expPerRound}</span>`;
+			} else if (type === 'internal') {
 				calculateInternal();
+			} else {
+				calculatepower();
 			}
 		}
 
@@ -441,9 +468,26 @@
 			const effectiveValue = leader + (member2 + member3 + member4 + member5) * 0.2;
 			const effectiveMultiplier = (effectiveValue / 100) + 1;
 
-			document.getElementById("internal-effective").innerText = `실효치: ${effectiveValue}% = ${effectiveMultiplier.toFixed(2)}배`;
-			document.getElementById("internal-sum").innerText = `내부합: ${internalSum}`;
+			document.getElementById("internal-effective").innerHTML = `실효치: <span style="font-weight: bold; color: blue;">${effectiveValue}%</span> = <span style="font-weight: bold; color: blue;">${effectiveMultiplier.toFixed(2)}배</span>`;
+			document.getElementById("internal-sum").innerHTML = `내부합: <span style="font-weight: bold; color: blue;">${internalSum}</span>`;
 			document.getElementById("internal-calculation-text").innerText = "실효치 = 리더 + (나머지멤버) * 0.2";
+		}
+		
+		function calculatepower() {
+			const power = parseInt(document.getElementById("power").value) || 0;
+			const effi = parseInt(document.getElementById("effi").value) || 0;
+
+            const multiConstant = 4.877;
+            const soloConstant = 2.8;
+            const autoConstant = 1.84;
+			
+            const multiEfficiency = (((100 + ((power + 1) * multiConstant)) / (100 + (power * multiConstant))) - 1) * (100 + effi);
+            const soloEfficiency = (((100 + ((power + 1) * soloConstant)) / (100 + (power * soloConstant))) - 1) * (100 + effi);
+            const autoEfficiency = (((100 + ((power + 1) * autoConstant)) / (100 + (power * autoConstant))) - 1) * (100 + effi);
+			document.getElementById("multi-eff").innerHTML = `멀티효율: <span style="font-weight: bold; color: blue;">${multiEfficiency.toFixed(2)}%</span>`;
+			document.getElementById("solo-eff").innerHTML = `솔로효율: <span style="font-weight: bold; color: blue;">${soloEfficiency.toFixed(2)}%</span>`;
+			document.getElementById("auto-eff").innerHTML = `오토효율: <span style="font-weight: bold; color: blue;">${autoEfficiency.toFixed(2)}%</span>`;
+			document.getElementById("power-calculation-text").innerText = "대략적인 값으로 오차가 있을 수 있음";
 		}
 
 		function clearResults() {
@@ -453,6 +497,10 @@
 			document.getElementById("internal-effective").innerText = '';
 			document.getElementById("internal-sum").innerText = '';
 			document.getElementById("internal-calculation-text").innerText = '';
+			document.getElementById("multi-eff").innerText = '';
+			document.getElementById("solo-eff").innerText = '';
+			document.getElementById("auto-eff").innerText = '';
+			document.getElementById("power-calculation-text").innerText = '';
 		}
 
 		document.addEventListener('DOMContentLoaded', () => {
