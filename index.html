@@ -28,7 +28,7 @@
             margin-bottom: 20px;
         }
         label {
-            display: block;
+            display: inline;
             margin: 15px 0 5px;
             font-weight: bold;
             color: #555;
@@ -85,19 +85,19 @@
         <div id="internal-tab-content">
             <label for="leader">리더 스킬:</label>
             <input type="number" id="leader" min="0" oninput="calculateInternal()">
-			<span id="leader-unit">%</span>
+			<span id="leader-unit">%</span><br>
 
             <label for="member2">멤버2 스킬:</label>
             <input type="number" id="member2" min="0" oninput="calculateInternal()">
-			<span id="member2-unit">%</span>
+			<span id="member2-unit">%</span><br>
 
             <label for="member3">멤버3 스킬:</label>
             <input type="number" id="member3" min="0" oninput="calculateInternal()">
-			<span id="member3-unit">%</span>
+			<span id="member3-unit">%</span><br>
 
             <label for="member4">멤버4 스킬:</label>
             <input type="number" id="member4" min="0" oninput="calculateInternal()">
-			<span id="member4-unit">%</span>
+			<span id="member4-unit">%</span><br>
 
             <label for="member5">멤버5 스킬:</label>
             <input type="number" id="member5" min="0" oninput="calculateInternal()">
@@ -105,13 +105,13 @@
         </div>
         <div id="kizuna-level-tab" style="display: none;">
             <label for="kizuna-current-level">현재 랭크:</label>
-            <input type="number" id="kizuna-current-level" min="1" max="10" oninput="calculate('kizuna')">
+            <input type="number" id="kizuna-current-level" min="1" max="10" oninput="calculate('kizuna')"><br>
 
-            <label for="kizuna-current-exp">랭크업까지의 경험치:</label>
-            <input type="number" id="kizuna-current-exp" min="0" oninput="calculate('kizuna')">
+            <label for="kizuna-current-exp">남은 경험치:</label>
+            <input type="number" id="kizuna-current-exp" min="0" oninput="calculate('kizuna')"><br>
 
             <label for="kizuna-target-level">목표 랭크:</label>
-            <input type="number" id="kizuna-target-level" min="2" max="10" oninput="calculate('kizuna')">
+            <input type="number" id="kizuna-target-level" min="2" max="10" oninput="calculate('kizuna')"><br>
 
             <label for="kizuna-rank">라이브 랭크:</label>
             <select id="kizuna-rank" onchange="calculate('kizuna')">
@@ -119,7 +119,7 @@
                 <option value="130">A</option>
 				<option value="110">B</option>
 				<option value="100">C</option>
-            </select>
+            </select><br>
 
             <label for="kizuna-fires">라이브보너스:</label>
             <select id="kizuna-fires" onchange="calculate('kizuna')">
@@ -138,13 +138,13 @@
         </div>
         <div id="card-level-tab" style="display: none;">
             <label for="current-level">현재 레벨:</label>
-            <input type="number" id="current-level" min="1" max="60" oninput="calculate('card')">
+            <input type="number" id="current-level" min="1" max="60" oninput="calculate('card')"><br>
 
-            <label for="current-exp">레벨업까지의 경험치:</label>
-            <input type="number" id="current-exp" min="0" oninput="calculate('card')">
+            <label for="current-exp">남은 경험치:</label>
+            <input type="number" id="current-exp" min="0" oninput="calculate('card')"><br>
 
             <label for="target-level">목표 레벨:</label>
-            <input type="number" id="target-level" min="2" max="60" oninput="calculate('card')">
+            <input type="number" id="target-level" min="2" max="60" oninput="calculate('card')"><br>
 
             <label for="rank">라이브 랭크:</label>
             <select id="rank" onchange="calculate('card')">
@@ -152,7 +152,7 @@
                 <option value="840">A</option>
                 <option value="720">B</option>
                 <option value="600">C</option>
-            </select>
+            </select><br>
 
             <label for="fires">라이브보너스:</label>
             <select id="fires" onchange="calculate('card')">
@@ -172,7 +172,7 @@
 		<div id="power-tab-content">
 			<label for="power">종합력:</label>
 			<input type="number" id="power" min="0" max="40" oninput="calculatepower()">
-			<span id="power-unit">만</span>
+			<span id="power-unit">만</span><br>
 
 			<label for="effi">배수:</label>
 			<input type="number" id="effi" min="0" max="1000" oninput="calculatepower()">
