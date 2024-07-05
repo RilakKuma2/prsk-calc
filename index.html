@@ -129,13 +129,13 @@
         </div>
         <div id="kizuna-level-tab" style="display: none;">
             <label for="kizuna-current-level">현재 랭크:</label>
-            <input type="number" id="kizuna-current-level" min="1" max="10" oninput="calculate('kizuna')"><br>
+            <input type="number" id="kizuna-current-level" min="1" max="75" oninput="calculate('kizuna')"><br>
 
             <label for="kizuna-current-exp">남은 경험치:</label>
             <input type="number" id="kizuna-current-exp" min="0" oninput="calculate('kizuna')"><br>
 
             <label for="kizuna-target-level">목표 랭크:</label>
-            <input type="number" id="kizuna-target-level" min="2" max="10" oninput="calculate('kizuna')"><br>
+            <input type="number" id="kizuna-target-level" min="2" max="75" oninput="calculate('kizuna')"><br>
 
             <label for="kizuna-rank">라이브 랭크:</label>
             <select id="kizuna-rank" onchange="calculate('kizuna')">
@@ -535,7 +535,7 @@
 			document.getElementById("multi-eff").innerHTML = `멀티효율: <span style="font-weight: bold; color: blue;">${multiEfficiency.toFixed(2)}%</span>`;
 			document.getElementById("solo-eff").innerHTML = `솔로효율: <span style="font-weight: bold; color: blue;">${soloEfficiency.toFixed(2)}%</span>`;
 			document.getElementById("auto-eff").innerHTML = `오토효율: <span style="font-weight: bold; color: blue;">${autoEfficiency.toFixed(2)}%</span>`;
-			document.getElementById("power-calculation-text").innerText = "대략적인 값으로 곡이나 스킬에 따라 달라짐";
+			document.getElementById("power-calculation-text").innerHTML = "종합력 1만을 배수로 환산한 수치<br><br>대략적인 값으로 곡이나 스킬에 따라 달라짐";
 		}
 
 		function clearResults() {
