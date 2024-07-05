@@ -70,7 +70,27 @@
             background-color: #007bff;
             color: #fff;
         }
-		
+		.button-container {
+			display: flex;
+			justify-content: center;
+			margin-top: 20px;
+			/* flex-wrap: wrap; 이 속성은 필요하지 않음 */
+		}
+		.label {
+			white-space: nowrap; /* 추가된 부분 */
+		}
+        .action-button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        .action-button:hover {
+            background-color: #0056b3;
+        }	
     </style>
 </head>
 <body>
@@ -190,9 +210,17 @@
         <p id="error-message">에러: </p>
         <p id="internal-calculation-text"></p>
         <p id="power-calculation-text"></p>
+    <div class="button-container">
+        <button class="action-button" onclick="saveData()">저장</button>
+        <button class="action-button" onclick="loadData()">불러오기</button>
     </div>
-
+    <div class="button-container">
+        <label class="label">
+            <input type="checkbox" id="auto-load-checkbox" onchange="toggleAutoLoad()"> 자동 불러오기
+        </label>
+    </div>
     <script>
+		let currentTab = 'internal';
         const expData = [
             {LV: 1, 필요EXP: 0, 누적EXP: 0},
             {LV: 2, 필요EXP: 3000, 누적EXP: 3000},
@@ -333,7 +361,6 @@
 			{LV: 74, 필요EXP: 301000, 누적EXP: 16254002},
 			{LV: 75, 필요EXP: 301000, 누적EXP: 16555002}
         ];
-
         function showTab(tab) {
             document.getElementById('internal-tab-content').style.display = 'none';
             document.getElementById('kizuna-level-tab').style.display = 'none';
@@ -348,14 +375,17 @@
 				clearResults();
                 document.getElementById('internal-tab-content').style.display = 'block';
                 document.getElementById('internal-tab').classList.add('active');
+				setTab('internal');
             } else if (tab === 'kizuna') {
 				clearResults();
                 document.getElementById('kizuna-level-tab').style.display = 'block';
                 document.getElementById('kizuna-tab').classList.add('active');
+				setTab('kizuna');
             } else if (tab === 'card') {
 				clearResults();
                 document.getElementById('card-level-tab').style.display = 'block';
                 document.getElementById('card-tab').classList.add('active');
+				setTab('card');
             } else {
 				clearResults();
                 document.getElementById('power-tab-content').style.display = 'block';
@@ -363,7 +393,21 @@
             }
             calculate(tab);
         }
+        function toggleAutoLoad() {
+            let autoLoadCheckbox = document.getElementById('auto-load-checkbox');
+            localStorage.setItem('autoLoad', autoLoadCheckbox.checked);
+        }
 
+        window.onload = function() {
+            let autoLoad = JSON.parse(localStorage.getItem('autoLoad'));
+            let autoLoadCheckbox = document.getElementById('auto-load-checkbox');
+            if (autoLoad) {
+                autoLoadCheckbox.checked = true;
+                loadData();
+            } else {
+                autoLoadCheckbox.checked = false;
+            }
+        }
 		function calculate(type) {
 			// Clear previous error message
 			document.getElementById("error-message").innerText = '';
@@ -468,7 +512,7 @@
 			const effectiveValue = leader + (member2 + member3 + member4 + member5) * 0.2;
 			const effectiveMultiplier = (effectiveValue / 100) + 1;
 
-			document.getElementById("internal-effective").innerHTML = `실효치: <span style="font-weight: bold; color: blue;">${effectiveValue}%</span> = <span style="font-weight: bold; color: blue;">${effectiveMultiplier.toFixed(2)}배</span>`;
+			document.getElementById("internal-effective").innerHTML = `실효치: <span style="font-weight: bold; color: blue;">${effectiveValue.toFixed(0)}%</span> = <span style="font-weight: bold; color: blue;">${effectiveMultiplier.toFixed(2)}배</span>`;
 			document.getElementById("internal-sum").innerHTML = `내부합: <span style="font-weight: bold; color: blue;">${internalSum}</span>`;
 			document.getElementById("internal-calculation-text").innerText = "실효치 = 리더 + (나머지멤버) * 0.2";
 		}
@@ -487,7 +531,7 @@
 			document.getElementById("multi-eff").innerHTML = `멀티효율: <span style="font-weight: bold; color: blue;">${multiEfficiency.toFixed(2)}%</span>`;
 			document.getElementById("solo-eff").innerHTML = `솔로효율: <span style="font-weight: bold; color: blue;">${soloEfficiency.toFixed(2)}%</span>`;
 			document.getElementById("auto-eff").innerHTML = `오토효율: <span style="font-weight: bold; color: blue;">${autoEfficiency.toFixed(2)}%</span>`;
-			document.getElementById("power-calculation-text").innerText = "대략적인 값으로 곡이나 스킬에 따라 오차가 있음";
+			document.getElementById("power-calculation-text").innerText = "대략적인 값으로 곡이나 스킬에 따라 달라짐";
 		}
 
 		function clearResults() {
@@ -502,10 +546,51 @@
 			document.getElementById("auto-eff").innerText = '';
 			document.getElementById("power-calculation-text").innerText = '';
 		}
-
+		function setTab(tab) {
+			currentTab = tab;
+		}
 		document.addEventListener('DOMContentLoaded', () => {
 			showTab('internal');
 		});
+		function saveData() {
+			let surveyData = {};
+			document.querySelectorAll('#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effi').forEach(input => {
+				surveyData[input.id] = input.value;
+			});
+			localStorage.setItem('surveyData', JSON.stringify(surveyData));
+			alert('데이터가 저장되었습니다.');
+		}
+
+		function loadData() {
+			let surveyData = JSON.parse(localStorage.getItem('surveyData'));
+			if (surveyData) {
+				Object.keys(surveyData).forEach(key => {
+					let input = document.getElementById(key);
+					if (input) {
+						input.value = surveyData[key];
+					}
+				});
+			switch (currentTab) {
+				case 'internal':
+					calculateInternal();
+					break;
+				case 'kizuna':
+					calculate('kizuna');
+					break;
+				case 'card':
+					calculate('card');
+					break;
+				case 'power':
+					calculatepower();
+					break;
+				default:
+					calculateInternal();
+					break;
+			}
+			} else {
+				alert('저장된 데이터가 없습니다.');
+			}
+		}
     </script>
 </body>
 </html>
