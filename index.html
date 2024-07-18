@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-title" content="프로세카 계산기">
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="apple-touch-startup-image" href="startup.png">
-    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="icon" type="image/png" href="icon2.png">
     <title>프로세카 계산기</title>
     <style>
         body {
@@ -111,6 +111,7 @@
             <div class="tab" id="kizuna-tab" onclick="showTab('kizuna')">키즈나</div>
             <div class="tab" id="card-tab" onclick="showTab('card')">카드레벨</div>
             <div class="tab" id="power-tab" onclick="showTab('power')">종합력 효율</div>
+            <div class="tab" id="fire-tab" onclick="showTab('fire')">필요 불</div>
         </div>
         <div id="internal-tab-content">
             <label for="leader">리더 스킬:</label>
@@ -208,6 +209,53 @@
 			<input type="number" id="effi" min="0" max="1000" oninput="calculatepower()">
 			<span id="effi-unit">%</span>
 		</div>
+		<div id="fire-tab-content">
+			<label for="score1">현재점수:</label>
+			<input type="number" id="score1" min="0" max="50000" oninput="calculatefire()">
+			<span id="score1-unit">만</span><br>
+			
+			<label for="score2">목표점수:</label>
+			<input type="number" id="score2" min="0" max="50000" oninput="calculatefire()">
+			<span id="score2-unit">만</span><br>
+			
+			<label for="score3">판 당 점수:</label>
+			<input type="number" id="score3" min="0" max="50000" oninput="calculatefire()">
+			<span id="score3-unit">만</span><br>
+			
+			<label for="rounds1">간 당 판수:</label>
+			<input type="number" id="rounds1" min="0" max="50000" oninput="calculatefire()">
+			<span id="rounds1-unit">회</span><br>
+			
+            <label for="firea">현재 라이브보너스:</label>
+            <select id="firea" onchange="calculatefire()">
+				<option value="1">0</option>
+				<option value="5">1</option>
+				<option value="10">2</option>
+				<option value="15">3</option>
+				<option value="19">4</option>
+				<option value="23">5</option>
+				<option value="26">6</option>
+				<option value="29">7</option>
+				<option value="31">8</option>
+				<option value="33">9</option>
+				<option value="35">10</option>
+            </select><br>
+            <label for="fires2">라이브보너스 변경:</label>
+            <select id="fires2" onchange="calculatefire()">
+				<option value="none">변경없음</option>
+				<option value="1">0</option>
+				<option value="5">1</option>
+				<option value="10">2</option>
+				<option value="15">3</option>
+				<option value="19">4</option>
+				<option value="23">5</option>
+				<option value="26">6</option>
+				<option value="29">7</option>
+				<option value="31">8</option>
+				<option value="33">9</option>
+				<option value="35">10</option>
+            </select>
+		</div>
         <h2></h2>
         <p id="needed-exp">필요 경험치: </p>
         <p id="needed-rounds">필요 판수: </p>
@@ -217,9 +265,13 @@
         <p id="multi-eff">멀티효율: </p>
         <p id="solo-eff">솔로효율: </p>
         <p id="auto-eff">오토효율: </p>
+        <p id="neededRounds">필요 판수: </p>
+        <p id="neededFires">필요 불: </p>
+        <p id="neededTime">필요 시간: </p>
         <p id="error-message">에러: </p>
         <p id="internal-calculation-text"></p>
         <p id="power-calculation-text"></p>
+        <p id="fire-calculation-text"></p>
     <div class="button-container">
         <button class="action-button" onclick="saveData()">저장</button>
         <button class="action-button" onclick="loadData()">불러오기</button>
@@ -376,10 +428,12 @@
             document.getElementById('kizuna-level-tab').style.display = 'none';
             document.getElementById('card-level-tab').style.display = 'none';
             document.getElementById('power-tab-content').style.display = 'none';
+            document.getElementById('fire-tab-content').style.display = 'none';
             document.getElementById('internal-tab').classList.remove('active');
             document.getElementById('kizuna-tab').classList.remove('active');
             document.getElementById('card-tab').classList.remove('active');
             document.getElementById('power-tab').classList.remove('active');
+            document.getElementById('fire-tab').classList.remove('active');
 
             if (tab === 'internal') {
 				clearResults();
@@ -396,11 +450,16 @@
                 document.getElementById('card-level-tab').style.display = 'block';
                 document.getElementById('card-tab').classList.add('active');
 				setTab('card');
-            } else {
+            } else if (tab === 'power') {
 				clearResults();
                 document.getElementById('power-tab-content').style.display = 'block';
                 document.getElementById('power-tab').classList.add('active');
 				setTab('power');
+            } else {
+				clearResults();
+                document.getElementById('fire-tab-content').style.display = 'block';
+                document.getElementById('fire-tab').classList.add('active');
+				setTab('fire');
             }
             calculate(tab);
         }
@@ -419,6 +478,22 @@
                 autoLoadCheckbox.checked = false;
             }
         }
+		function getFireaValue(firea) {
+			const fireaTable = {
+				1: 0,
+				5: 1,
+				10: 2,
+				15: 3,
+				19: 4,
+				23: 5,
+				26: 6,
+				29: 7,
+				31: 8,
+				33: 9,
+				35: 10
+			};
+			return fireaTable[firea] || null; // returns null if firea is not in the table
+		}
 		function calculate(type) {
 			// Clear previous error message
 			document.getElementById("error-message").innerText = '';
@@ -507,8 +582,10 @@
 				document.getElementById("exp-per-round").innerHTML = `판 당 경험치 획득량: <span style="font-weight: bold; color: blue;">${expPerRound}</span>`;
 			} else if (type === 'internal') {
 				calculateInternal();
-			} else {
+			} else if (type === 'power') {
 				calculatepower();
+			} else {
+				calculatefire();
 			}
 		}
 
@@ -544,6 +621,47 @@
 			document.getElementById("auto-eff").innerHTML = `오토효율: <span style="font-weight: bold; color: blue;">${autoEfficiency.toFixed(2)}%</span>`;
 			document.getElementById("power-calculation-text").innerHTML = "종합력 1만과 같은 효율의 배수<br><br>대략적인 값으로 곡이나 스킬에 따라 달라짐";
 		}
+		
+        function calculatefire() {
+            // Get input values
+            let currentScore = parseFloat(document.getElementById('score1').value) || 0;
+            let targetScore = parseFloat(document.getElementById('score2').value) || 0;
+            let scorePerRound = parseFloat(document.getElementById('score3').value) || 0;
+            let roundsPerInterval = parseFloat(document.getElementById('rounds1').value) || 0;
+            let currentFireBonus = parseInt(document.getElementById('firea').value) || 0;
+            let changeFireBonus = document.getElementById('fires2').value;
+			let firenow = getFireaValue(currentFireBonus);
+
+
+            // Determine calculation score
+            let calculationScore;
+            if (changeFireBonus === "none") {
+                calculationScore = scorePerRound;
+            } else {
+                let newFireBonus = parseInt(changeFireBonus);
+                calculationScore = (scorePerRound / currentFireBonus) * newFireBonus;
+                currentFireBonus = newFireBonus;
+				firenow = getFireaValue(currentFireBonus);
+            }
+
+            // Calculate needed rounds
+            let neededRounds = (targetScore - currentScore) / calculationScore;
+            neededRounds = neededRounds > 0 ? neededRounds : 0; // Prevent negative rounds
+			neededRounds = Math.ceil(neededRounds)
+
+            // Calculate needed fires
+            let neededFires = neededRounds * firenow;
+
+            // Calculate needed time
+            let neededTime = neededRounds / roundsPerInterval;
+            neededTime = neededTime > 0 ? neededTime : 0; // Prevent negative time
+
+            // Display results
+            document.getElementById('neededRounds').innerHTML = `필요 판수: <span style="font-weight: bold; color: blue;">${Math.ceil(neededRounds)}</span> 판`;
+            document.getElementById('neededFires').innerHTML = `필요불: <span style="font-weight: bold; color: blue;">${Math.ceil(neededFires)}</span> 불`;
+            document.getElementById('neededTime').innerHTML = `필요시간: <span style="font-weight: bold; color: blue;">${neededTime.toFixed(1)}</span> 시간`;
+			document.getElementById("fire-calculation-text").innerHTML = '<span style="font-weight: bold">대략적인 간 당 판수</span><br>엔비:26~29  로앤파:16~18  치어풀:15~17';
+        }
 
 		function clearResults() {
 			document.getElementById("needed-exp").innerText = '';
@@ -556,6 +674,10 @@
 			document.getElementById("solo-eff").innerText = '';
 			document.getElementById("auto-eff").innerText = '';
 			document.getElementById("power-calculation-text").innerText = '';
+			document.getElementById("neededRounds").innerText = '';
+			document.getElementById("neededFires").innerText = '';
+			document.getElementById("neededTime").innerText = '';
+			document.getElementById("fire-calculation-text").innerText = '';
 		}
 		function setTab(tab) {
 			currentTab = tab;
@@ -565,7 +687,7 @@
 		});
 		function saveData() {
 			let surveyData = {};
-			document.querySelectorAll('#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effi').forEach(input => {
+			document.querySelectorAll('#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effiscore1, #score1, #score2, #score3, #rounds1, #firea, #fires2').forEach(input => {
 				surveyData[input.id] = input.value;
 			});
 			localStorage.setItem('surveyData', JSON.stringify(surveyData));
@@ -593,6 +715,9 @@
 					break;
 				case 'power':
 					calculatepower();
+					break;
+				case 'fire':
+					calculatefire();
 					break;
 				default:
 					calculateInternal();
