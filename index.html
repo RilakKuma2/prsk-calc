@@ -49,7 +49,7 @@
             text-align: center;
         }
         h2 {
-            margin-top: 30px;
+            margin-top: 20px;
             color: #333;
         }
         p {
@@ -81,7 +81,7 @@
 		.button-container {
 			display: flex;
 			justify-content: center;
-			margin-top: 20px;
+			margin-top: 0px;
 			flex-wrap: wrap;
 		}
 		.label {
@@ -100,7 +100,18 @@
         }
         .action-button:hover {
             background-color: #0056b3;
-        }	
+        }
+        .link-button {
+            background-color: #0EB4FC;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+			font-size: 14px;
+			font-weight: bold;
+        }		
     </style>
 </head>
 <body>
@@ -280,6 +291,10 @@
         <label class="label">
             <input type="checkbox" id="auto-load-checkbox" onchange="toggleAutoLoad()"> 자동 불러오기
         </label>
+    </div>
+	<div class="button-container">
+		<button class="link-button" onclick="window.open('https://rilakkuma2.github.io/pickup/', '_blank')">픽업 확률 계산기</button>
+	</div>
     </div>
     <script>
 		let currentTab = 'internal';
