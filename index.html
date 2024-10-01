@@ -612,7 +612,7 @@
 			const member5 = parseInt(document.getElementById("member5").value) || 0;
 
 			const internalSum = leader + member2 + member3 + member4 + member5;
-			const effectiveValue = leader + (member2 + member3 + member4 + member5) * 0.2;
+			const effectiveValue = Math.floor(leader + (member2 + member3 + member4 + member5) * 0.2);
 			const effectiveMultiplier = (effectiveValue / 100) + 1;
 
 			document.getElementById("internal-effective").innerHTML = `실효치: <span style="font-weight: bold; color: blue;">${effectiveValue.toFixed(0)}%</span> = <span style="font-weight: bold; color: blue;">${effectiveMultiplier.toFixed(2)}배</span>`;
