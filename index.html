@@ -287,8 +287,8 @@
 
             <label for="pass">컬패 여부:</label>
             <select id="pass" onchange="calculateChallenge()">
-				<option value="2">Y</option>
-				<option value="1">N</option>
+				<option value="1">Y</option>
+				<option value="2">N</option>
             </select>
         </div>
         <h2></h2>
@@ -690,7 +690,7 @@
 			const targetCumulative = challData[targetStage - 1].cumulative;
 
 			// 판당 점수 계산
-			const scorePerPlay = Math.floor(challengeScore * 24 / 10) + 400 + Math.floor(challengeScore / 20) * 2;
+			const scorePerPlay = (Math.floor(challengeScore * 24 / 10) + 400 + Math.floor(challengeScore / 20) * 2) / pass;
 			// 필요 점수 계산
 			const neededScore = targetCumulative - currentCumulative + remainingScore;
 			// 필요 판수 계산
