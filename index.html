@@ -111,7 +111,10 @@
             margin: 0 10px;
 			font-size: 14px;
 			font-weight: bold;
-        }		
+        }	
+        .checkbox-container {
+            display: inline-block;
+            margin-left: 10px;		
     </style>
 </head>
 <body>
@@ -123,6 +126,7 @@
             <div class="tab" id="card-tab" onclick="showTab('card')">카드레벨</div>
             <div class="tab" id="power-tab" onclick="showTab('power')">종합력 효율</div>
             <div class="tab" id="fire-tab" onclick="showTab('fire')">이벤런</div>
+            <div class="tab" id="challenge-tab" onclick="showTab('challenge')">챌라</div>
         </div>
         <div id="internal-tab-content">
             <label for="leader">리더 스킬:</label>
@@ -267,6 +271,26 @@
 				<option value="35">10</option>
             </select>
 		</div>
+        <div id="challenge-tab-content" style="display: none;">
+            <label for="current-stage">현재 스테이지:</label>
+            <input type="number" id="current-stage" min="1" oninput="calculateChallenge()"><br>
+			
+		<label for="remaining-score">남은 점수:</label>
+		<input type="number" id="remaining-score" min="0" oninput="calculateChallenge()"><br>
+
+            <label for="target-stage">목표 스테이지:</label>
+            <input type="text" id="target-stage" min="1" oninput="calculateChallenge()"><br>
+
+			<label for="challenge-score">챌라 점수:</label>
+			<input type="number" id="challenge-score" min="0" max="300" oninput="calculateChallenge()">
+			<span id="challenge-score-unit">만</span><br>
+
+            <label for="pass">컬패 여부:</label>
+            <select id="pass" onchange="calculateChallenge()">
+				<option value="2">Y</option>
+				<option value="1">N</option>
+            </select>
+        </div>
         <h2></h2>
         <p id="needed-exp">필요 경험치: </p>
         <p id="needed-rounds">필요 판수: </p>
@@ -283,6 +307,7 @@
         <p id="internal-calculation-text"></p>
         <p id="power-calculation-text"></p>
         <p id="fire-calculation-text"></p>
+        <p id="challenge-calculation-text"></p>
     <div class="button-container">
         <button class="action-button" onclick="saveData()">저장</button>
         <button class="action-button" onclick="loadData()">불러오기</button>
@@ -438,6 +463,160 @@
 			{LV: 74, 필요EXP: 301000, 누적EXP: 16254002},
 			{LV: 75, 필요EXP: 301000, 누적EXP: 16555002}
         ];
+		
+		const challData = [
+		  {stage: 1, required: 0, cumulative: 0},
+		  {stage: 2, required: 50, cumulative: 50},
+		  {stage: 3, required: 100, cumulative: 150},
+		  {stage: 4, required: 150, cumulative: 300},
+		  {stage: 5, required: 200, cumulative: 500},
+		  {stage: 6, required: 250, cumulative: 750},
+		  {stage: 7, required: 300, cumulative: 1050},
+		  {stage: 8, required: 350, cumulative: 1400},
+		  {stage: 9, required: 400, cumulative: 1800},
+		  {stage: 10, required: 500, cumulative: 2300},
+		  {stage: 11, required: 600, cumulative: 2900},
+		  {stage: 12, required: 700, cumulative: 3600},
+		  {stage: 13, required: 800, cumulative: 4400},
+		  {stage: 14, required: 900, cumulative: 5300},
+		  {stage: 15, required: 1000, cumulative: 6300},
+		  {stage: 16, required: 1100, cumulative: 7400},
+		  {stage: 17, required: 1200, cumulative: 8600},
+		  {stage: 18, required: 1350, cumulative: 9950},
+		  {stage: 19, required: 1500, cumulative: 11450},
+		  {stage: 20, required: 1650, cumulative: 13100},
+		  {stage: 21, required: 1800, cumulative: 14900},
+		  {stage: 22, required: 1950, cumulative: 16850},
+		  {stage: 23, required: 2150, cumulative: 19000},
+		  {stage: 24, required: 2350, cumulative: 21350},
+		  {stage: 25, required: 2550, cumulative: 23900},
+		  {stage: 26, required: 2750, cumulative: 26650},
+		  {stage: 27, required: 2950, cumulative: 29600},
+		  {stage: 28, required: 3200, cumulative: 32800},
+		  {stage: 29, required: 3450, cumulative: 36250},
+		  {stage: 30, required: 3700, cumulative: 39950},
+		  {stage: 31, required: 3950, cumulative: 43900},
+		  {stage: 32, required: 4200, cumulative: 48100},
+		  {stage: 33, required: 4500, cumulative: 52600},
+		  {stage: 34, required: 4800, cumulative: 57400},
+		  {stage: 35, required: 5100, cumulative: 62500},
+		  {stage: 36, required: 5400, cumulative: 67900},
+		  {stage: 37, required: 5750, cumulative: 73650},
+		  {stage: 38, required: 6100, cumulative: 79750},
+		  {stage: 39, required: 6450, cumulative: 86200},
+		  {stage: 40, required: 6800, cumulative: 93000},
+		  {stage: 41, required: 7150, cumulative: 100150},
+		  {stage: 42, required: 7550, cumulative: 107700},
+		  {stage: 43, required: 7950, cumulative: 115650},
+		  {stage: 44, required: 8400, cumulative: 124050},
+		  {stage: 45, required: 8850, cumulative: 132900},
+		  {stage: 46, required: 9300, cumulative: 142200},
+		  {stage: 47, required: 9300, cumulative: 151500},
+		  {stage: 48, required: 9300, cumulative: 160800},
+		  {stage: 49, required: 9300, cumulative: 170100},
+		  {stage: 50, required: 9300, cumulative: 179400},
+		  {stage: 51, required: 9300, cumulative: 188700},
+		  {stage: 52, required: 9300, cumulative: 198000},
+		  {stage: 53, required: 9300, cumulative: 207300},
+		  {stage: 54, required: 9300, cumulative: 216600},
+		  {stage: 55, required: 9300, cumulative: 225900},
+		  {stage: 56, required: 9300, cumulative: 235200},
+		  {stage: 57, required: 9300, cumulative: 244500},
+		  {stage: 58, required: 9300, cumulative: 253800},
+		  {stage: 59, required: 9300, cumulative: 263100},
+		  {stage: 60, required: 9300, cumulative: 272400},
+		  {stage: 61, required: 9300, cumulative: 281700},
+		  {stage: 62, required: 9300, cumulative: 291000},
+		  {stage: 63, required: 9300, cumulative: 300300},
+		  {stage: 64, required: 9300, cumulative: 309600},
+		  {stage: 65, required: 9300, cumulative: 318900},
+		  {stage: 66, required: 9300, cumulative: 328200},
+		  {stage: 67, required: 9300, cumulative: 337500},
+		  {stage: 68, required: 9300, cumulative: 346800},
+		  {stage: 69, required: 9300, cumulative: 356100},
+		  {stage: 70, required: 9300, cumulative: 365400},
+		  {stage: 71, required: 9300, cumulative: 374700},
+		  {stage: 72, required: 9300, cumulative: 384000},
+		  {stage: 73, required: 9300, cumulative: 393300},
+		  {stage: 74, required: 9300, cumulative: 402600},
+		  {stage: 75, required: 9300, cumulative: 411900},
+		  {stage: 76, required: 9300, cumulative: 421200},
+		  {stage: 77, required: 9300, cumulative: 430500},
+		  {stage: 78, required: 9300, cumulative: 439800},
+		  {stage: 79, required: 9300, cumulative: 449100},
+		  {stage: 80, required: 9300, cumulative: 458400},
+		  {stage: 81, required: 9300, cumulative: 467700},
+		  {stage: 82, required: 9300, cumulative: 477000},
+		  {stage: 83, required: 9300, cumulative: 486300},
+		  {stage: 84, required: 9300, cumulative: 495600},
+		  {stage: 85, required: 9300, cumulative: 504900},
+		  {stage: 86, required: 9300, cumulative: 514200},
+		  {stage: 87, required: 9300, cumulative: 523500},
+		  {stage: 88, required: 9300, cumulative: 532800},
+		  {stage: 89, required: 9300, cumulative: 542100},
+		  {stage: 90, required: 9300, cumulative: 551400},
+		  {stage: 91, required: 9300, cumulative: 560700},
+		  {stage: 92, required: 9300, cumulative: 570000},
+		  {stage: 93, required: 9300, cumulative: 579300},
+		  {stage: 94, required: 9300, cumulative: 588600},
+		  {stage: 95, required: 9300, cumulative: 597900},
+		  {stage: 96, required: 9300, cumulative: 607200},
+		  {stage: 97, required: 9300, cumulative: 616500},
+		  {stage: 98, required: 9300, cumulative: 625800},
+		  {stage: 99, required: 9300, cumulative: 635100},
+		  {stage: 100, required: 9300, cumulative: 644400},
+		  {stage: 101, required: 9300, cumulative: 653700},
+		  {stage: 102, required: 9300, cumulative: 663000},
+		  {stage: 103, required: 9300, cumulative: 672300},
+		  {stage: 104, required: 9300, cumulative: 681600},
+		  {stage: 105, required: 9300, cumulative: 690900},
+		  {stage: 106, required: 9300, cumulative: 700200},
+		  {stage: 107, required: 9300, cumulative: 709500},
+		  {stage: 108, required: 9300, cumulative: 718800},
+		  {stage: 109, required: 9300, cumulative: 728100},
+		  {stage: 110, required: 9300, cumulative: 737400},
+		  {stage: 111, required: 9300, cumulative: 746700},
+		  {stage: 112, required: 9300, cumulative: 756000},
+		  {stage: 113, required: 9300, cumulative: 765300},
+		  {stage: 114, required: 9300, cumulative: 774600},
+		  {stage: 115, required: 9300, cumulative: 783900},
+		  {stage: 116, required: 9300, cumulative: 793200},
+		  {stage: 117, required: 9300, cumulative: 802500},
+		  {stage: 118, required: 9300, cumulative: 811800},
+		  {stage: 119, required: 9300, cumulative: 821100},
+		  {stage: 120, required: 9300, cumulative: 830400},
+		  {stage: 121, required: 9300, cumulative: 839700},
+		  {stage: 122, required: 9300, cumulative: 849000},
+		  {stage: 123, required: 9300, cumulative: 858300},
+		  {stage: 124, required: 9300, cumulative: 867600},
+		  {stage: 125, required: 9300, cumulative: 876900},
+		  {stage: 126, required: 9300, cumulative: 886200},
+		  {stage: 127, required: 9300, cumulative: 895500},
+		  {stage: 128, required: 9300, cumulative: 904800},
+		  {stage: 129, required: 9300, cumulative: 914100},
+		  {stage: 130, required: 9300, cumulative: 923400},
+		  {stage: 131, required: 9300, cumulative: 932700},
+		  {stage: 132, required: 9300, cumulative: 942000},
+		  {stage: 133, required: 9300, cumulative: 951300},
+		  {stage: 134, required: 9300, cumulative: 960600},
+		  {stage: 135, required: 9300, cumulative: 969900},
+		  {stage: 136, required: 9300, cumulative: 979200},
+		  {stage: 137, required: 9300, cumulative: 988500},
+		  {stage: 138, required: 9300, cumulative: 997800},
+		  {stage: 139, required: 9300, cumulative: 1007100},
+		  {stage: 140, required: 9300, cumulative: 1016400},
+		  {stage: 141, required: 9300, cumulative: 1025700},
+		  {stage: 142, required: 9300, cumulative: 1035000},
+		  {stage: 143, required: 9300, cumulative: 1044300},
+		  {stage: 144, required: 9300, cumulative: 1053600},
+		  {stage: 145, required: 9300, cumulative: 1062900},
+		  {stage: 146, required: 9300, cumulative: 1072200},
+		  {stage: 147, required: 9300, cumulative: 1081500},
+		  {stage: 148, required: 9300, cumulative: 1090800},
+		  {stage: 149, required: 9300, cumulative: 1100100},
+		  {stage: 150, required: 9300, cumulative: 1109400},
+		  {stage: "EX", required: 9300, cumulative: 1118700}
+		];
         function showTab(tab) {
             document.getElementById('internal-tab-content').style.display = 'none';
             document.getElementById('kizuna-level-tab').style.display = 'none';
@@ -449,6 +628,8 @@
             document.getElementById('card-tab').classList.remove('active');
             document.getElementById('power-tab').classList.remove('active');
             document.getElementById('fire-tab').classList.remove('active');
+            document.getElementById('challenge-tab-content').style.display = 'none';
+            document.getElementById('challenge-tab').classList.remove('active');
 
             if (tab === 'internal') {
 				clearResults();
@@ -470,6 +651,11 @@
                 document.getElementById('power-tab-content').style.display = 'block';
                 document.getElementById('power-tab').classList.add('active');
 				setTab('power');
+            } else if (tab === 'challenge') {
+                clearResults();
+                document.getElementById('challenge-tab-content').style.display = 'block';
+                document.getElementById('challenge-tab').classList.add('active');
+                setTab('challenge');
             } else {
 				clearResults();
                 document.getElementById('fire-tab-content').style.display = 'block';
@@ -478,6 +664,50 @@
             }
             calculate(tab);
         }
+		
+		function calculateChallenge() {
+			const currentStage = parseInt(document.getElementById("current-stage").value) || 0;
+			let targetStage = document.getElementById("target-stage").value;
+			const challengeScore = parseInt(document.getElementById("challenge-score").value) || 0;
+			const remainingScore = parseInt(document.getElementById("remaining-score").value) || 0;
+			const pass = document.getElementById("pass").value;
+
+			// Check if targetStage is a number and greater than 150
+			if (!isNaN(targetStage) && parseInt(targetStage) > 150) {
+				document.getElementById('target-stage').value = 'EX';
+				targetStage = 'EX';
+			}
+
+			// Convert targetStage to number if it's not 'EX'
+			targetStage = targetStage === 'EX' ? 151 : parseInt(targetStage) || 0;
+
+			if (currentStage < 1 || targetStage < 1 || currentStage >= targetStage) {
+				document.getElementById("challenge-calculation-text").innerHTML = '<span style="font-weight: bold; color: red;">올바른 스테이지 값을 입력해주세요.</span>';
+				return;
+			}
+
+			const currentCumulative = challData[currentStage].cumulative;
+			const targetCumulative = challData[targetStage - 1].cumulative;
+
+			// 판당 점수 계산
+			const scorePerPlay = Math.floor(challengeScore * 24 / 10) + 400 + Math.floor(challengeScore / 20) * 2;
+			// 필요 점수 계산
+			const neededScore = targetCumulative - currentCumulative + remainingScore;
+			// 필요 판수 계산
+			const neededPlays = Math.ceil(neededScore / scorePerPlay);
+
+			let result = `
+				판당 점수: <span style="font-weight: bold; color: blue;">${scorePerPlay}</span><br><br>
+				필요 점수: <span style="font-weight: bold; color: blue;">${neededScore}</span><br><br>
+				필요 판수: <span style="font-weight: bold; color: blue;">${neededPlays}</span><br><br>
+				<span style="font-weight: bold"><a target="_blank" href="https://3-3.dev/sekai/top-deck">챌라 이론덱</a></span><br>
+				<span style="font-weight: bold"><a target="_blank" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br><br>
+				목표 스테이지 151 이상 입력시 EX로 자동변환
+			`;
+			document.getElementById("challenge-calculation-text").innerHTML = result;
+		}
+		
+		
         function toggleAutoLoad() {
             let autoLoadCheckbox = document.getElementById('auto-load-checkbox');
             localStorage.setItem('autoLoad', autoLoadCheckbox.checked);
@@ -599,6 +829,8 @@
 				calculateInternal();
 			} else if (type === 'power') {
 				calculatepower();
+			} else if (type === 'challenge') {
+				calculateChallenge();
 			} else {
 				calculatefire();
 			}
@@ -695,31 +927,36 @@
 			document.getElementById("neededFires").innerText = '';
 			document.getElementById("neededTime").innerText = '';
 			document.getElementById("fire-calculation-text").innerText = '';
+			document.getElementById("challenge-calculation-text").innerText = '';
 		}
 		function setTab(tab) {
 			currentTab = tab;
 		}
-		document.addEventListener('DOMContentLoaded', () => {
-			showTab('internal');
-		});
-		function saveData() {
-			let surveyData = {};
-			document.querySelectorAll('#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effiscore1, #score1, #score2, #score3, #rounds1, #firea, #fires2').forEach(input => {
-				surveyData[input.id] = input.value;
-			});
-			localStorage.setItem('surveyData', JSON.stringify(surveyData));
-			alert('데이터가 저장되었습니다.');
-		}
+        document.addEventListener('DOMContentLoaded', () => {
+            showTab('internal');
+        });
+        function saveData() {
+            let surveyData = {};
+            document.querySelectorAll('#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effiscore1, #score1, #score2, #score3, #rounds1, #firea, #fires2, #current-stage, #target-stage, #challenge-score, #full-combo').forEach(input => {
+                surveyData[input.id] = input.type === 'checkbox' ? input.checked : input.value;
+            });
+            localStorage.setItem('surveyData', JSON.stringify(surveyData));
+            alert('데이터가 저장되었습니다.');
+        }
 
-		function loadData() {
-			let surveyData = JSON.parse(localStorage.getItem('surveyData'));
-			if (surveyData) {
-				Object.keys(surveyData).forEach(key => {
-					let input = document.getElementById(key);
-					if (input) {
-						input.value = surveyData[key];
-					}
-				});
+        function loadData() {
+            let surveyData = JSON.parse(localStorage.getItem('surveyData'));
+            if (surveyData) {
+                Object.keys(surveyData).forEach(key => {
+                    let input = document.getElementById(key);
+                    if (input) {
+                        if (input.type === 'checkbox') {
+                            input.checked = surveyData[key];
+                        } else {
+                            input.value = surveyData[key];
+                        }
+                    }
+                });
 			switch (currentTab) {
 				case 'internal':
 					calculateInternal();
@@ -740,10 +977,10 @@
 					calculateInternal();
 					break;
 			}
-			} else {
-				alert('저장된 데이터가 없습니다.');
-			}
-		}
+            } else {
+                alert('저장된 데이터가 없습니다.');
+            }
+        }
     </script>
 </body>
 </html>
