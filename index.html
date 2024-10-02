@@ -937,7 +937,7 @@
         });
         function saveData() {
             let surveyData = {};
-            document.querySelectorAll('#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effiscore1, #score1, #score2, #score3, #rounds1, #firea, #fires2, #current-stage, #target-stage, #challenge-score, #full-combo').forEach(input => {
+            document.querySelectorAll('#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effiscore1, #score1, #score2, #score3, #rounds1, #firea, #fires2, #current-stage, #target-stage, #challenge-score, #remaining-score').forEach(input => {
                 surveyData[input.id] = input.type === 'checkbox' ? input.checked : input.value;
             });
             localStorage.setItem('surveyData', JSON.stringify(surveyData));
@@ -972,6 +972,9 @@
 					break;
 				case 'fire':
 					calculatefire();
+					break;
+				case 'challenge':
+					calculateChallenge();
 					break;
 				default:
 					calculateInternal();
