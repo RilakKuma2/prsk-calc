@@ -334,12 +334,13 @@
                     oninput="calculatepower()"
                 />
                 <span id="effi-unit">%</span><br />
+
                 <button
                     class="action-button"
                     style="margin-top: 10px; margin-bottom: 10px"
                     onclick="toggleMySekaiTable()"
                 >
-                    마이세카이 점수표
+                    마이세카이 테이블
                 </button>
                 <div
                     id="my-sekai-table-container"
@@ -667,6 +668,7 @@
             <p id="multi-eff">멀티효율:</p>
             <p id="solo-eff">솔로효율:</p>
             <p id="auto-eff">오토효율:</p>
+            <p id="my-sekai-score-display">마이세카이 점수:</p>
             <p id="neededRounds">필요 판수:</p>
             <p id="neededFires">필요 불:</p>
             <p id="neededTime">필요 시간:</p>
@@ -1385,12 +1387,12 @@
             }
 
             function calculatepower() {
-                const powerInput = // 단위: 만 (예: 25.5)
+                const powerInput =
                     parseFloat(document.getElementById("power").value) || 0;
-                const effiInput = // 단위: % (예: 280)
+                const effiInput =
                     parseInt(document.getElementById("effi").value) || 0;
 
-                // --- 기존 효율 계산 로직 (변경 없음) ---
+                // --- 효율 계산 로직 ---
                 const multiConstant = 4.877;
                 const soloConstant = 2.8;
                 const autoConstant = 1.84;
@@ -1410,17 +1412,8 @@
                         (100 + powerInput * autoConstant) -
                         1) *
                     (100 + effiInput);
-
-                document.getElementById("multi-eff").innerHTML =
-                    `멀티효율: <span style="font-weight: bold; color: blue;">${multiEfficiency.toFixed(2)}%</span>`;
-                document.getElementById("solo-eff").innerHTML =
-                    `솔로효율: <span style="font-weight: bold; color: blue;">${soloEfficiency.toFixed(2)}%</span>`;
-                document.getElementById("auto-eff").innerHTML =
-                    `오토효율: <span style="font-weight: bold; color: blue;">${autoEfficiency.toFixed(2)}%</span>`;
-                // --- 마이세카이 점수 계산 로직 (수정됨) ---
-                let highestPossibleScore = "N/A"; // 기본값, 얻을 수 있는 가장 높은 점수
-
-                // 1. 입력된 종합력(powerInput)으로 테이블의 컬럼 인덱스 찾기
+                // --- 마이세카이 점수 계산 로직 ---
+                let highestPossibleScore = "N/A";
                 let columnIndex = -1;
                 if (powerInput >= 0) {
                     for (
@@ -1435,46 +1428,31 @@
                     }
                 }
 
-                // 2. 컬럼이 유효한 경우, 해당 컬럼에서 현재 배수율(effiInput)로 얻을 수 있는 점수 찾기
                 if (columnIndex !== -1) {
-                    // scoreRowKeys는 점수(행 키)의 오름차순. 높은 점수부터 확인
                     for (let i = scoreRowKeys.length - 1; i >= 0; i--) {
-                        const currentScoreRow = scoreRowKeys[i]; // 현재 확인 중인 점수 행
+                        const currentScoreRow = scoreRowKeys[i];
                         const requiredEffiForThisScore =
                             mySekaiTableData[currentScoreRow][columnIndex];
-
                         if (
                             requiredEffiForThisScore !== null &&
                             effiInput >= requiredEffiForThisScore
                         ) {
-                            // 현재 점수 행을 얻기 위한 필요 배수율이 있고, 사용자의 배수율이 그 이상이면
-                            highestPossibleScore = currentScoreRow; // 이 점수를 얻을 수 있음
-                            break; // 가장 높은 점수를 찾았으므로 반복 중단
+                            highestPossibleScore = currentScoreRow;
+                            break;
                         }
                     }
                 }
 
-                // 마이세카이 점수 표시 업데이트
-                const scoreDisplayElement = document.getElementById(
-                    "my-sekai-score-display",
-                );
-                if (scoreDisplayElement) {
-                    scoreDisplayElement.innerHTML = `마이세카이 점수: <span style="font-weight: bold; color: green;">${highestPossibleScore}</span>`;
-                } else {
-                    const powerCalcTextElement = document.getElementById(
-                        "power-calculation-text",
-                    );
-                    if (powerCalcTextElement) {
-                        let currentText = powerCalcTextElement.innerHTML;
-                        currentText = currentText.replace(
-                            /<br>마이세카이 점수:.*?<\/span>/g,
-                            "",
-                        );
-                        powerCalcTextElement.innerHTML =
-                            currentText +
-                            `마이세카이 점수: <span style="font-weight: bold; color: green;">${highestPossibleScore}</span>`;
-                    }
-                }
+                document.getElementById("multi-eff").innerHTML =
+                    `멀티효율: <span style="font-weight: bold; color: blue;">${multiEfficiency.toFixed(2)}%</span>`;
+                document.getElementById("solo-eff").innerHTML =
+                    `솔로효율: <span style="font-weight: bold; color: blue;">${soloEfficiency.toFixed(2)}%</span>`;
+                document.getElementById("auto-eff").innerHTML =
+                    `오토효율: <span style="font-weight: bold; color: blue;">${autoEfficiency.toFixed(2)}%</span>`;
+                document.getElementById("my-sekai-score-display").innerHTML =
+                    `마이세카이 점수: <span style="font-weight: bold; color: green;">${highestPossibleScore}</span>`;
+                document.getElementById("power-calculation-text").innerHTML =
+                    "<br>종합력 1만과 같은 효율의 배수<br><br>대략적인 값으로 곡이나 스킬에 따라 달라짐";
             }
 
             function calculatefire() {
@@ -1541,6 +1519,8 @@
                 document.getElementById("multi-eff").innerText = "";
                 document.getElementById("solo-eff").innerText = "";
                 document.getElementById("auto-eff").innerText = "";
+                document.getElementById("my-sekai-score-display").innerText =
+                    "";
                 document.getElementById("power-calculation-text").innerText =
                     "";
                 document.getElementById("neededRounds").innerText = "";
