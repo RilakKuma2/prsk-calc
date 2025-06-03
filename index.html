@@ -11,130 +11,125 @@
         <link rel="icon" type="image/png" href="icon2.png" />
         <title>프로세카 계산기</title>
         <style>
-            body {
-                font-family: "Arial", sans-serif;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh; /* Changed to min-height for long content */
-                margin: 0;
-                background-color: #f0f2f5;
-                padding: 10px 0; /* Added padding for scrollable content */
-            }
-            .container {
-                background: #fff;
-                padding: 20px 15px; /* Adjusted padding */
-                border-radius: 15px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                text-align: center;
-                max-width: 500px;
-                width: 95%; /* Adjusted width for responsiveness */
-            }
-            h1 {
-                color: #333;
-                margin-bottom: 20px;
-            }
-            label {
-                display: inline;
-                margin: 15px 0 5px;
-                font-weight: bold;
-                color: #555;
-            }
-            input,
-            select {
-                width: 25%;
-                padding: 10px;
-                margin-bottom: 10px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                font-size: 16px;
-                text-align: center;
-            }
-            h2 {
-                margin-top: 20px;
-                color: #333;
-            }
-            p {
-                font-size: 18px;
-                color: #555;
-                word-break: break-word;
-            }
-            #error-message {
-                color: red;
-                margin-top: 10px;
-            }
-            .tabs {
-                display: flex;
-                justify-content: space-evenly;
-                margin-bottom: 20px;
-                flex-wrap: wrap; /* Allow tabs to wrap */
-            }
-            .tab {
-                cursor: pointer;
-                padding: 10px 10px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                font-size: 15px;
-                font-weight: bold;
-                margin: 5px; /* Added margin for wrapped tabs */
-            }
-            .tab.active {
-                background-color: #007bff;
-                color: #fff;
-            }
+                      body {
+                          font-family: 'Arial', sans-serif;
+                          display: flex;
+                          justify-content: center;
+                          align-items: center;
+                          height: 100vh;
+                          margin: 0;
+                          background-color: #f0f2f5;
+                      }
+                      .container {
+                          background: #fff;
+                          padding: 2px 1px;
+                          border-radius: 15px;
+                          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                          text-align: center;
+                          max-width: 500px;
+                          width: 100%;
+                      }
+                      h1 {
+                          color: #333;
+                          margin-bottom: 20px;
+                      }
+                      label {
+                          display: inline;
+                          margin: 15px 0 5px;
+                          font-weight: bold;
+                          color: #555;
+                      }
+                      input, select {
+                          width: 25%;
+                          padding: 10px;
+                          margin-bottom: 10px;
+                          border: 1px solid #ccc;
+                          border-radius: 4px;
+                          font-size: 16px;
+                          text-align: center;
+                      }
+                      h2 {
+                          margin-top: 20px;
+                          color: #333;
+                      }
+                      p {
+                          font-size: 18px;
+                          color: #555;
+                          word-break: break-word;
+                      }
+                      #error-message {
+                          color: red;
+                          margin-top: 10px;
+                      }
+                      .tabs {
+                          display: flex;
+                          justify-content: space-evenly;
+                          margin-bottom: 20px;
+                      }
+                      .tab {
+                          cursor: pointer;
+                          padding: 10px 10px;
+                          border: 1px solid #ccc;
+                          border-radius: 4px;
+            	font-size: 15px;
+            	font-weight: bold;
+                      }
+                      .tab.active {
+                          background-color: #007bff;
+                          color: #fff;
+                      }
             .button-container {
-                display: flex;
-                justify-content: center;
-                margin-top: 10px; /* Adjusted margin */
-                flex-wrap: wrap;
+            	display: flex;
+            	justify-content: center;
+            	margin-top: 0px;
+            	flex-wrap: wrap;
             }
             .label {
-                white-space: nowrap;
+            	white-space: nowrap;
             }
-            .action-button {
-                background-color: #007bff;
-                color: white;
-                padding: 10px 20px;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                margin: 5px 10px; /* Adjusted margin for wrapping */
-                font-size: 14px;
-                font-weight: bold;
-            }
-            .action-button:hover {
-                background-color: #0056b3;
-            }
-            .link-button {
-                background-color: #ffffff;
-                color: black;
-                padding: 10px 20px;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                cursor: pointer;
-                margin: 5px 10px; /* Adjusted margin for wrapping */
-                font-size: 14px;
-                font-weight: bold;
-            }
-            .checkbox-container {
-                display: inline-block;
-                margin-left: 10px;
-            }
-            /* Style for the My Sekai table */
-            #my-sekai-table-container table {
-                width: 100%;
-                border-collapse: collapse;
-                text-align: center;
-                font-size: 12px; /* Adjusted for better fit */
-            }
-            #my-sekai-table-container th,
-            #my-sekai-table-container td {
-                border: 1px solid #ccc;
-                padding: 4px; /* Adjusted padding */
-            }
-            #my-sekai-table-container th {
-                background-color: #f2f2f2;
-            }
+                      .action-button {
+                          background-color: #007BFF;
+                          color: white;
+                          padding: 10px 20px;
+                          border: none;
+                          border-radius: 5px;
+                          cursor: pointer;
+                          margin: 0 10px;
+            	font-size: 14px;
+            	font-weight: bold;
+                      }
+                      .action-button:hover {
+                          background-color: #0056b3;
+                      }
+                      .link-button {
+                          background-color: #FFFFFF;
+                          color: black;
+                          padding: 10px 20px;
+                          border: 1px solid #ccc;
+                          border-radius: 5px;
+                          cursor: pointer;
+                          margin: 0 10px;
+            	font-size: 14px;
+            	font-weight: bold;
+                      }
+                      .checkbox-container {
+                          display: inline-block;
+                          margin-left: 10px;
+                      /* Style for the My Sekai table */
+                      #my-sekai-table-container table {
+                          width: 100%;
+                          border-collapse: collapse;
+                          text-align: center;
+                          font-size: 12px; /* Adjusted for better fit */
+                      }
+                      #my-sekai-table-container th,
+                      #my-sekai-table-container td {
+                          border: 1px solid #ccc;
+                          padding: 4px; /* Adjusted padding */
+                      }
+                      #my-sekai-table-container th {
+                          background-color: #f2f2f2;
+                      }
         </style>
     </head>
     <body>
