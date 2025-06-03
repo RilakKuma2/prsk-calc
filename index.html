@@ -1,709 +1,1164 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="프로세카 계산기">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="apple-touch-startup-image" href="startup.png">
-    <link rel="icon" type="image/png" href="icon2.png">
-    <title>프로세카 계산기</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-        }
-        .container {
-            background: #fff;
-            padding: 2px 1px;
-            border-radius: 15px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 500px;
-            width: 100%;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-        label {
-            display: inline;
-            margin: 15px 0 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        input, select {
-            width: 25%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-            text-align: center;
-        }
-        h2 {
-            margin-top: 20px;
-            color: #333;
-        }
-        p {
-            font-size: 18px;
-            color: #555;
-            word-break: break-word;
-        }
-        #error-message {
-            color: red;
-            margin-top: 10px;
-        }
-        .tabs {
-            display: flex;
-            justify-content: space-evenly;
-            margin-bottom: 20px;
-        }
-        .tab {
-            cursor: pointer;
-            padding: 10px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-			font-size: 15px;
-			font-weight: bold;
-        }
-        .tab.active {
-            background-color: #007bff;
-            color: #fff;
-        }
-		.button-container {
-			display: flex;
-			justify-content: center;
-			margin-top: 0px;
-			flex-wrap: wrap;
-		}
-		.label {
-			white-space: nowrap;
-		}
-        .action-button {
-            background-color: #007BFF;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 0 10px;
-			font-size: 14px;
-			font-weight: bold;
-        }
-        .action-button:hover {
-            background-color: #0056b3;
-        }
-        .link-button {
-            background-color: #FFFFFF;
-            color: black;
-            padding: 10px 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 0 10px;
-			font-size: 14px;
-			font-weight: bold;
-        }	
-        .checkbox-container {
-            display: inline-block;
-            margin-left: 10px;		
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>프로세카 계산기</h1>
-        <div class="tabs">
-            <div class="tab active" id="internal-tab" onclick="showTab('internal')">내부치</div>
-            <div class="tab" id="kizuna-tab" onclick="showTab('kizuna')">키즈나</div>
-            <div class="tab" id="card-tab" onclick="showTab('card')">카드렙</div>
-            <div class="tab" id="power-tab" onclick="showTab('power')">종합력</div>
-            <div class="tab" id="fire-tab" onclick="showTab('fire')">이벤런</div>
-            <div class="tab" id="challenge-tab" onclick="showTab('challenge')">챌라</div>
-        </div>
-        <div id="internal-tab-content">
-            <label for="leader">리더 스킬:</label>
-            <input type="number" id="leader" min="0" oninput="calculateInternal()">
-			<span id="leader-unit">%</span><br>
-
-            <label for="member2">멤버2 스킬:</label>
-            <input type="number" id="member2" min="0" oninput="calculateInternal()">
-			<span id="member2-unit">%</span><br>
-
-            <label for="member3">멤버3 스킬:</label>
-            <input type="number" id="member3" min="0" oninput="calculateInternal()">
-			<span id="member3-unit">%</span><br>
-
-            <label for="member4">멤버4 스킬:</label>
-            <input type="number" id="member4" min="0" oninput="calculateInternal()">
-			<span id="member4-unit">%</span><br>
-
-            <label for="member5">멤버5 스킬:</label>
-            <input type="number" id="member5" min="0" oninput="calculateInternal()">
-			<span id="member5-unit">%</span>
-        </div>
-        <div id="kizuna-level-tab" style="display: none;">
-            <label for="kizuna-current-level">현재 랭크:</label>
-            <input type="number" id="kizuna-current-level" min="1" max="75" oninput="calculate('kizuna')"><br>
-
-            <label for="kizuna-current-exp">남은 경험치:</label>
-            <input type="number" id="kizuna-current-exp" min="0" oninput="calculate('kizuna')"><br>
-
-            <label for="kizuna-target-level">목표 랭크:</label>
-            <input type="number" id="kizuna-target-level" min="2" max="75" oninput="calculate('kizuna')"><br>
-
-            <label for="kizuna-rank">라이브 랭크:</label>
-            <select id="kizuna-rank" onchange="calculate('kizuna')">
-                <option value="150">S</option>
-                <option value="130">A</option>
-				<option value="110">B</option>
-				<option value="100">C</option>
-            </select><br>
-
-            <label for="kizuna-fires">라이브보너스:</label>
-            <select id="kizuna-fires" onchange="calculate('kizuna')">
-				<option value="1">0</option>
-				<option value="5">1</option>
-				<option value="10">2</option>
-				<option value="15">3</option>
-				<option value="20">4</option>
-				<option value="25">5</option>
-				<option value="26">6</option>
-				<option value="27">7</option>
-				<option value="28">8</option>
-				<option value="29">9</option>
-				<option value="30">10</option>
-            </select>
-        </div>
-        <div id="card-level-tab" style="display: none;">
-            <label for="current-level">현재 레벨:</label>
-            <input type="number" id="current-level" min="1" max="60" oninput="calculate('card')"><br>
-
-            <label for="current-exp">남은 경험치:</label>
-            <input type="number" id="current-exp" min="0" oninput="calculate('card')"><br>
-
-            <label for="target-level">목표 레벨:</label>
-            <input type="number" id="target-level" min="2" max="60" oninput="calculate('card')"><br>
-
-            <label for="rank">라이브 랭크:</label>
-            <select id="rank" onchange="calculate('card')">
-                <option value="960">S</option>
-                <option value="840">A</option>
-                <option value="720">B</option>
-                <option value="600">C</option>
-            </select><br>
-
-            <label for="fires">라이브보너스:</label>
-            <select id="fires" onchange="calculate('card')">
-				<option value="1">0</option>
-				<option value="5">1</option>
-				<option value="10">2</option>
-				<option value="15">3</option>
-				<option value="20">4</option>
-				<option value="25">5</option>
-				<option value="26">6</option>
-				<option value="27">7</option>
-				<option value="28">8</option>
-				<option value="29">9</option>
-				<option value="30">10</option>
-            </select>
-        </div>
-		<div id="power-tab-content">
-			<label for="power">종합력:</label>
-			<input type="number" id="power" min="0" max="40" oninput="calculatepower()">
-			<span id="power-unit">만</span><br>
-
-			<label for="effi">배수:</label>
-			<input type="number" id="effi" min="0" max="1000" oninput="calculatepower()">
-			<span id="effi-unit">%</span>
-		</div>
-		<div id="fire-tab-content">
-			<label for="score1">현재점수:</label>
-			<input type="number" id="score1" min="0" max="50000" oninput="calculatefire()">
-			<span id="score1-unit">만</span><br>
-			
-			<label for="score2">목표점수:</label>
-			<input type="number" id="score2" min="0" max="50000" oninput="calculatefire()">
-			<span id="score2-unit">만</span><br>
-			
-			<label for="score3">판 당 점수:</label>
-			<input type="number" id="score3" min="0" max="50000" oninput="calculatefire()">
-			<span id="score3-unit">만</span><br>
-			
-			<label for="rounds1">간 당 판수:</label>
-			<input type="number" id="rounds1" min="0" max="50000" oninput="calculatefire()">
-			<span id="rounds1-unit">회</span><br>
-			
-            <label for="firea">현재 라이브보너스:</label>
-            <select id="firea" onchange="calculatefire()">
-				<option value="1">0</option>
-				<option value="5">1</option>
-				<option value="10">2</option>
-				<option value="15">3</option>
-				<option value="20">4</option>
-				<option value="25">5</option>
-				<option value="27">6</option>
-				<option value="29">7</option>
-				<option value="31">8</option>
-				<option value="33">9</option>
-				<option value="35">10</option>
-            </select><br>
-            <label for="fires2">라이브보너스 변경:</label>
-            <select id="fires2" onchange="calculatefire()">
-				<option value="none">변경없음</option>
-				<option value="1">0</option>
-				<option value="5">1</option>
-				<option value="10">2</option>
-				<option value="15">3</option>
-				<option value="20">4</option>
-				<option value="25">5</option>
-				<option value="27">6</option>
-				<option value="29">7</option>
-				<option value="31">8</option>
-				<option value="33">9</option>
-				<option value="35">10</option>
-            </select>
-		</div>
-        <div id="challenge-tab-content" style="display: none;">
-            <label for="current-stage">현재 스테이지:</label>
-            <input type="number" id="current-stage" min="1" oninput="calculateChallenge()"><br>
-			
-		<label for="remaining-score">남은 점수:</label>
-		<input type="number" id="remaining-score" min="0" oninput="calculateChallenge()"><br>
-
-            <label for="target-stage">목표 스테이지:</label>
-            <input type="text" id="target-stage" min="1" oninput="calculateChallenge()"><br>
-
-			<label for="challenge-score">챌라 점수:</label>
-			<input type="number" id="challenge-score" min="0" max="300" oninput="calculateChallenge()">
-			<span id="challenge-score-unit">만</span><br>
-
-            <label for="pass">컬패 여부:</label>
-            <select id="pass" onchange="calculateChallenge()">
-				<option value="1">Y</option>
-				<option value="2">N</option>
-            </select>
-        </div>
-        <h2></h2>
-        <p id="needed-exp">필요 경험치: </p>
-        <p id="needed-rounds">필요 판수: </p>
-        <p id="exp-per-round">판 당 경험치 획득량: </p>
-        <p id="internal-effective">실효치: </p>
-        <p id="internal-sum">내부합: </p>
-        <p id="multi-eff">멀티효율: </p>
-        <p id="solo-eff">솔로효율: </p>
-        <p id="auto-eff">오토효율: </p>
-        <p id="neededRounds">필요 판수: </p>
-        <p id="neededFires">필요 불: </p>
-        <p id="neededTime">필요 시간: </p>
-        <p id="error-message">에러: </p>
-        <p id="internal-calculation-text"></p>
-        <p id="power-calculation-text"></p>
-        <p id="fire-calculation-text"></p>
-        <p id="challenge-calculation-text"></p>
-    <div class="button-container">
-        <button class="action-button" onclick="saveData()">저장</button>
-        <button class="action-button" onclick="loadData()">불러오기</button>
-    </div>
-    <div class="button-container">
-        <label class="label">
-            <input type="checkbox" id="auto-load-checkbox" onchange="toggleAutoLoad()"> 자동 불러오기
-        </label>
-    </div>
-	<div class="button-container">
-		<button class="link-button" onclick="window.open('https://rilakkuma2.github.io/pickup/', '_blank')">픽업 확률 계산기</button>
-	</div>
-    </div>
-    <script>
-		let currentTab = 'internal';
-        const expData = [
-            {LV: 1, 필요EXP: 0, 누적EXP: 0},
-            {LV: 2, 필요EXP: 3000, 누적EXP: 3000},
-            {LV: 3, 필요EXP: 4000, 누적EXP: 7000},
-            {LV: 4, 필요EXP: 5000, 누적EXP: 12000},
-            {LV: 5, 필요EXP: 5400, 누적EXP: 17400},
-            {LV: 6, 필요EXP: 5800, 누적EXP: 23200},
-            {LV: 7, 필요EXP: 6200, 누적EXP: 29400},
-            {LV: 8, 필요EXP: 6600, 누적EXP: 36000},
-            {LV: 9, 필요EXP: 7000, 누적EXP: 43000},
-            {LV: 10, 필요EXP: 7400, 누적EXP: 50400},
-            {LV: 11, 필요EXP: 7800, 누적EXP: 58200},
-            {LV: 12, 필요EXP: 8200, 누적EXP: 66400},
-            {LV: 13, 필요EXP: 8600, 누적EXP: 75000},
-            {LV: 14, 필요EXP: 9000, 누적EXP: 84000},
-            {LV: 15, 필요EXP: 9400, 누적EXP: 93400},
-            {LV: 16, 필요EXP: 9800, 누적EXP: 103200},
-            {LV: 17, 필요EXP: 10200, 누적EXP: 113400},
-            {LV: 18, 필요EXP: 10600, 누적EXP: 124000},
-            {LV: 19, 필요EXP: 11000, 누적EXP: 135000},
-            {LV: 20, 필요EXP: 11400, 누적EXP: 146400},
-            {LV: 21, 필요EXP: 11800, 누적EXP: 158200},
-            {LV: 22, 필요EXP: 12200, 누적EXP: 170400},
-            {LV: 23, 필요EXP: 12600, 누적EXP: 183000},
-            {LV: 24, 필요EXP: 13000, 누적EXP: 196000},
-            {LV: 25, 필요EXP: 13400, 누적EXP: 209400},
-            {LV: 26, 필요EXP: 13800, 누적EXP: 223200},
-            {LV: 27, 필요EXP: 14200, 누적EXP: 237400},
-            {LV: 28, 필요EXP: 14600, 누적EXP: 252000},
-            {LV: 29, 필요EXP: 15000, 누적EXP: 267000},
-            {LV: 30, 필요EXP: 15400, 누적EXP: 282400},
-            {LV: 31, 필요EXP: 15800, 누적EXP: 298200},
-            {LV: 32, 필요EXP: 16200, 누적EXP: 314400},
-            {LV: 33, 필요EXP: 16600, 누적EXP: 331000},
-            {LV: 34, 필요EXP: 17000, 누적EXP: 348000},
-            {LV: 35, 필요EXP: 17400, 누적EXP: 365400},
-            {LV: 36, 필요EXP: 17800, 누적EXP: 383200},
-            {LV: 37, 필요EXP: 18200, 누적EXP: 401400},
-            {LV: 38, 필요EXP: 18600, 누적EXP: 420000},
-            {LV: 39, 필요EXP: 19000, 누적EXP: 439000},
-            {LV: 40, 필요EXP: 19400, 누적EXP: 458400},
-            {LV: 41, 필요EXP: 19800, 누적EXP: 478200},
-            {LV: 42, 필요EXP: 20200, 누적EXP: 498400},
-            {LV: 43, 필요EXP: 20600, 누적EXP: 519000},
-            {LV: 44, 필요EXP: 21000, 누적EXP: 540000},
-            {LV: 45, 필요EXP: 21400, 누적EXP: 561400},
-            {LV: 46, 필요EXP: 21800, 누적EXP: 583200},
-            {LV: 47, 필요EXP: 22200, 누적EXP: 605400},
-            {LV: 48, 필요EXP: 22600, 누적EXP: 628000},
-            {LV: 49, 필요EXP: 23000, 누적EXP: 651000},
-            {LV: 50, 필요EXP: 23400, 누적EXP: 674400},
-            {LV: 51, 필요EXP: 23800, 누적EXP: 698200},
-            {LV: 52, 필요EXP: 24200, 누적EXP: 722400},
-            {LV: 53, 필요EXP: 24600, 누적EXP: 747000},
-            {LV: 54, 필요EXP: 25000, 누적EXP: 772000},
-            {LV: 55, 필요EXP: 25400, 누적EXP: 797400},
-            {LV: 56, 필요EXP: 25800, 누적EXP: 823200},
-            {LV: 57, 필요EXP: 26200, 누적EXP: 849400},
-            {LV: 58, 필요EXP: 26600, 누적EXP: 876000},
-            {LV: 59, 필요EXP: 27000, 누적EXP: 903000},
-            {LV: 60, 필요EXP: 27400, 누적EXP: 930400}
-        ];
-
-        const kizunaData = [
-			{LV: 1, 필요EXP: 0, 누적EXP: 0},
-			{LV: 2, 필요EXP: 7224, 누적EXP: 7224},
-			{LV: 3, 필요EXP: 7224, 누적EXP: 14448},
-			{LV: 4, 필요EXP: 7224, 누적EXP: 21672},
-			{LV: 5, 필요EXP: 7224, 누적EXP: 28896},
-			{LV: 6, 필요EXP: 7224, 누적EXP: 36120},
-			{LV: 7, 필요EXP: 28094, 누적EXP: 64214},
-			{LV: 8, 필요EXP: 28094, 누적EXP: 92308},
-			{LV: 9, 필요EXP: 28094, 누적EXP: 120402},
-			{LV: 10, 필요EXP: 60200, 누적EXP: 180602},
-			{LV: 11, 필요EXP: 60200, 누적EXP: 240802},
-			{LV: 12, 필요EXP: 60200, 누적EXP: 301002},
-			{LV: 13, 필요EXP: 70234, 누적EXP: 371236},
-			{LV: 14, 필요EXP: 70234, 누적EXP: 441470},
-			{LV: 15, 필요EXP: 70234, 누적EXP: 511704},
-			{LV: 16, 필요EXP: 100332, 누적EXP: 612036},
-			{LV: 17, 필요EXP: 100332, 누적EXP: 712368},
-			{LV: 18, 필요EXP: 100332, 누적EXP: 812700},
-			{LV: 19, 필요EXP: 130432, 누적EXP: 943132},
-			{LV: 20, 필요EXP: 130432, 누적EXP: 1073564},
-			{LV: 21, 필요EXP: 130432, 누적EXP: 1203996},
-			{LV: 22, 필요EXP: 160534, 누적EXP: 1364530},
-			{LV: 23, 필요EXP: 160534, 누적EXP: 1525064},
-			{LV: 24, 필요EXP: 160534, 누적EXP: 1685598},
-			{LV: 25, 필요EXP: 210700, 누적EXP: 1896298},
-			{LV: 26, 필요EXP: 210700, 누적EXP: 2106998},
-			{LV: 27, 필요EXP: 210700, 누적EXP: 2317698},
-			{LV: 28, 필요EXP: 250834, 누적EXP: 2568532},
-			{LV: 29, 필요EXP: 250834, 누적EXP: 2819366},
-			{LV: 30, 필요EXP: 250834, 누적EXP: 3070200},
-			{LV: 31, 필요EXP: 280934, 누적EXP: 3351134},
-			{LV: 32, 필요EXP: 280934, 누적EXP: 3632068},
-			{LV: 33, 필요EXP: 280934, 누적EXP: 3913002},
-			{LV: 34, 필요EXP: 301000, 누적EXP: 4214002},
-			{LV: 35, 필요EXP: 301000, 누적EXP: 4515002},
-			{LV: 36, 필요EXP: 301000, 누적EXP: 4816002},
-			{LV: 37, 필요EXP: 301000, 누적EXP: 5117002},
-			{LV: 38, 필요EXP: 301000, 누적EXP: 5418002},
-			{LV: 39, 필요EXP: 301000, 누적EXP: 5719002},
-			{LV: 40, 필요EXP: 301000, 누적EXP: 6020002},
-			{LV: 41, 필요EXP: 301000, 누적EXP: 6321002},
-			{LV: 42, 필요EXP: 301000, 누적EXP: 6622002},
-			{LV: 43, 필요EXP: 301000, 누적EXP: 6923002},
-			{LV: 44, 필요EXP: 301000, 누적EXP: 7224002},
-			{LV: 45, 필요EXP: 301000, 누적EXP: 7525002},
-			{LV: 46, 필요EXP: 301000, 누적EXP: 7826002},
-			{LV: 47, 필요EXP: 301000, 누적EXP: 8127002},
-			{LV: 48, 필요EXP: 301000, 누적EXP: 8428002},
-			{LV: 49, 필요EXP: 301000, 누적EXP: 8729002},
-			{LV: 50, 필요EXP: 301000, 누적EXP: 9030002},
-			{LV: 51, 필요EXP: 301000, 누적EXP: 9331002},
-			{LV: 52, 필요EXP: 301000, 누적EXP: 9632002},
-			{LV: 53, 필요EXP: 301000, 누적EXP: 9933002},
-			{LV: 54, 필요EXP: 301000, 누적EXP: 10234002},
-			{LV: 55, 필요EXP: 301000, 누적EXP: 10535002},
-			{LV: 56, 필요EXP: 301000, 누적EXP: 10836002},
-			{LV: 57, 필요EXP: 301000, 누적EXP: 11137002},
-			{LV: 58, 필요EXP: 301000, 누적EXP: 11438002},
-			{LV: 59, 필요EXP: 301000, 누적EXP: 11739002},
-			{LV: 60, 필요EXP: 301000, 누적EXP: 12040002},
-			{LV: 61, 필요EXP: 301000, 누적EXP: 12341002},
-			{LV: 62, 필요EXP: 301000, 누적EXP: 12642002},
-			{LV: 63, 필요EXP: 301000, 누적EXP: 12943002},
-			{LV: 64, 필요EXP: 301000, 누적EXP: 13244002},
-			{LV: 65, 필요EXP: 301000, 누적EXP: 13545002},
-			{LV: 66, 필요EXP: 301000, 누적EXP: 13846002},
-			{LV: 67, 필요EXP: 301000, 누적EXP: 14147002},
-			{LV: 68, 필요EXP: 301000, 누적EXP: 14448002},
-			{LV: 69, 필요EXP: 301000, 누적EXP: 14749002},
-			{LV: 70, 필요EXP: 301000, 누적EXP: 15050002},
-			{LV: 71, 필요EXP: 301000, 누적EXP: 15351002},
-			{LV: 72, 필요EXP: 301000, 누적EXP: 15652002},
-			{LV: 73, 필요EXP: 301000, 누적EXP: 15953002},
-			{LV: 74, 필요EXP: 301000, 누적EXP: 16254002},
-			{LV: 75, 필요EXP: 301000, 누적EXP: 16555002}
-        ];
-		
-		const challData = [
-		  {stage: 1, required: 0, cumulative: 0},
-		  {stage: 2, required: 50, cumulative: 50},
-		  {stage: 3, required: 100, cumulative: 150},
-		  {stage: 4, required: 150, cumulative: 300},
-		  {stage: 5, required: 200, cumulative: 500},
-		  {stage: 6, required: 250, cumulative: 750},
-		  {stage: 7, required: 300, cumulative: 1050},
-		  {stage: 8, required: 350, cumulative: 1400},
-		  {stage: 9, required: 400, cumulative: 1800},
-		  {stage: 10, required: 500, cumulative: 2300},
-		  {stage: 11, required: 600, cumulative: 2900},
-		  {stage: 12, required: 700, cumulative: 3600},
-		  {stage: 13, required: 800, cumulative: 4400},
-		  {stage: 14, required: 900, cumulative: 5300},
-		  {stage: 15, required: 1000, cumulative: 6300},
-		  {stage: 16, required: 1100, cumulative: 7400},
-		  {stage: 17, required: 1200, cumulative: 8600},
-		  {stage: 18, required: 1350, cumulative: 9950},
-		  {stage: 19, required: 1500, cumulative: 11450},
-		  {stage: 20, required: 1650, cumulative: 13100},
-		  {stage: 21, required: 1800, cumulative: 14900},
-		  {stage: 22, required: 1950, cumulative: 16850},
-		  {stage: 23, required: 2150, cumulative: 19000},
-		  {stage: 24, required: 2350, cumulative: 21350},
-		  {stage: 25, required: 2550, cumulative: 23900},
-		  {stage: 26, required: 2750, cumulative: 26650},
-		  {stage: 27, required: 2950, cumulative: 29600},
-		  {stage: 28, required: 3200, cumulative: 32800},
-		  {stage: 29, required: 3450, cumulative: 36250},
-		  {stage: 30, required: 3700, cumulative: 39950},
-		  {stage: 31, required: 3950, cumulative: 43900},
-		  {stage: 32, required: 4200, cumulative: 48100},
-		  {stage: 33, required: 4500, cumulative: 52600},
-		  {stage: 34, required: 4800, cumulative: 57400},
-		  {stage: 35, required: 5100, cumulative: 62500},
-		  {stage: 36, required: 5400, cumulative: 67900},
-		  {stage: 37, required: 5750, cumulative: 73650},
-		  {stage: 38, required: 6100, cumulative: 79750},
-		  {stage: 39, required: 6450, cumulative: 86200},
-		  {stage: 40, required: 6800, cumulative: 93000},
-		  {stage: 41, required: 7150, cumulative: 100150},
-		  {stage: 42, required: 7550, cumulative: 107700},
-		  {stage: 43, required: 7950, cumulative: 115650},
-		  {stage: 44, required: 8400, cumulative: 124050},
-		  {stage: 45, required: 8850, cumulative: 132900},
-		  {stage: 46, required: 9300, cumulative: 142200},
-		  {stage: 47, required: 9300, cumulative: 151500},
-		  {stage: 48, required: 9300, cumulative: 160800},
-		  {stage: 49, required: 9300, cumulative: 170100},
-		  {stage: 50, required: 9300, cumulative: 179400},
-		  {stage: 51, required: 9300, cumulative: 188700},
-		  {stage: 52, required: 9300, cumulative: 198000},
-		  {stage: 53, required: 9300, cumulative: 207300},
-		  {stage: 54, required: 9300, cumulative: 216600},
-		  {stage: 55, required: 9300, cumulative: 225900},
-		  {stage: 56, required: 9300, cumulative: 235200},
-		  {stage: 57, required: 9300, cumulative: 244500},
-		  {stage: 58, required: 9300, cumulative: 253800},
-		  {stage: 59, required: 9300, cumulative: 263100},
-		  {stage: 60, required: 9300, cumulative: 272400},
-		  {stage: 61, required: 9300, cumulative: 281700},
-		  {stage: 62, required: 9300, cumulative: 291000},
-		  {stage: 63, required: 9300, cumulative: 300300},
-		  {stage: 64, required: 9300, cumulative: 309600},
-		  {stage: 65, required: 9300, cumulative: 318900},
-		  {stage: 66, required: 9300, cumulative: 328200},
-		  {stage: 67, required: 9300, cumulative: 337500},
-		  {stage: 68, required: 9300, cumulative: 346800},
-		  {stage: 69, required: 9300, cumulative: 356100},
-		  {stage: 70, required: 9300, cumulative: 365400},
-		  {stage: 71, required: 9300, cumulative: 374700},
-		  {stage: 72, required: 9300, cumulative: 384000},
-		  {stage: 73, required: 9300, cumulative: 393300},
-		  {stage: 74, required: 9300, cumulative: 402600},
-		  {stage: 75, required: 9300, cumulative: 411900},
-		  {stage: 76, required: 9300, cumulative: 421200},
-		  {stage: 77, required: 9300, cumulative: 430500},
-		  {stage: 78, required: 9300, cumulative: 439800},
-		  {stage: 79, required: 9300, cumulative: 449100},
-		  {stage: 80, required: 9300, cumulative: 458400},
-		  {stage: 81, required: 9300, cumulative: 467700},
-		  {stage: 82, required: 9300, cumulative: 477000},
-		  {stage: 83, required: 9300, cumulative: 486300},
-		  {stage: 84, required: 9300, cumulative: 495600},
-		  {stage: 85, required: 9300, cumulative: 504900},
-		  {stage: 86, required: 9300, cumulative: 514200},
-		  {stage: 87, required: 9300, cumulative: 523500},
-		  {stage: 88, required: 9300, cumulative: 532800},
-		  {stage: 89, required: 9300, cumulative: 542100},
-		  {stage: 90, required: 9300, cumulative: 551400},
-		  {stage: 91, required: 9300, cumulative: 560700},
-		  {stage: 92, required: 9300, cumulative: 570000},
-		  {stage: 93, required: 9300, cumulative: 579300},
-		  {stage: 94, required: 9300, cumulative: 588600},
-		  {stage: 95, required: 9300, cumulative: 597900},
-		  {stage: 96, required: 9300, cumulative: 607200},
-		  {stage: 97, required: 9300, cumulative: 616500},
-		  {stage: 98, required: 9300, cumulative: 625800},
-		  {stage: 99, required: 9300, cumulative: 635100},
-		  {stage: 100, required: 9300, cumulative: 644400},
-		  {stage: 101, required: 9300, cumulative: 653700},
-		  {stage: 102, required: 9300, cumulative: 663000},
-		  {stage: 103, required: 9300, cumulative: 672300},
-		  {stage: 104, required: 9300, cumulative: 681600},
-		  {stage: 105, required: 9300, cumulative: 690900},
-		  {stage: 106, required: 9300, cumulative: 700200},
-		  {stage: 107, required: 9300, cumulative: 709500},
-		  {stage: 108, required: 9300, cumulative: 718800},
-		  {stage: 109, required: 9300, cumulative: 728100},
-		  {stage: 110, required: 9300, cumulative: 737400},
-		  {stage: 111, required: 9300, cumulative: 746700},
-		  {stage: 112, required: 9300, cumulative: 756000},
-		  {stage: 113, required: 9300, cumulative: 765300},
-		  {stage: 114, required: 9300, cumulative: 774600},
-		  {stage: 115, required: 9300, cumulative: 783900},
-		  {stage: 116, required: 9300, cumulative: 793200},
-		  {stage: 117, required: 9300, cumulative: 802500},
-		  {stage: 118, required: 9300, cumulative: 811800},
-		  {stage: 119, required: 9300, cumulative: 821100},
-		  {stage: 120, required: 9300, cumulative: 830400},
-		  {stage: 121, required: 9300, cumulative: 839700},
-		  {stage: 122, required: 9300, cumulative: 849000},
-		  {stage: 123, required: 9300, cumulative: 858300},
-		  {stage: 124, required: 9300, cumulative: 867600},
-		  {stage: 125, required: 9300, cumulative: 876900},
-		  {stage: 126, required: 9300, cumulative: 886200},
-		  {stage: 127, required: 9300, cumulative: 895500},
-		  {stage: 128, required: 9300, cumulative: 904800},
-		  {stage: 129, required: 9300, cumulative: 914100},
-		  {stage: 130, required: 9300, cumulative: 923400},
-		  {stage: 131, required: 9300, cumulative: 932700},
-		  {stage: 132, required: 9300, cumulative: 942000},
-		  {stage: 133, required: 9300, cumulative: 951300},
-		  {stage: 134, required: 9300, cumulative: 960600},
-		  {stage: 135, required: 9300, cumulative: 969900},
-		  {stage: 136, required: 9300, cumulative: 979200},
-		  {stage: 137, required: 9300, cumulative: 988500},
-		  {stage: 138, required: 9300, cumulative: 997800},
-		  {stage: 139, required: 9300, cumulative: 1007100},
-		  {stage: 140, required: 9300, cumulative: 1016400},
-		  {stage: 141, required: 9300, cumulative: 1025700},
-		  {stage: 142, required: 9300, cumulative: 1035000},
-		  {stage: 143, required: 9300, cumulative: 1044300},
-		  {stage: 144, required: 9300, cumulative: 1053600},
-		  {stage: 145, required: 9300, cumulative: 1062900},
-		  {stage: 146, required: 9300, cumulative: 1072200},
-		  {stage: 147, required: 9300, cumulative: 1081500},
-		  {stage: 148, required: 9300, cumulative: 1090800},
-		  {stage: 149, required: 9300, cumulative: 1100100},
-		  {stage: 150, required: 9300, cumulative: 1109400},
-		  {stage: "EX", required: 9300, cumulative: 1118700}
-		];
-        function showTab(tab) {
-            document.getElementById('internal-tab-content').style.display = 'none';
-            document.getElementById('kizuna-level-tab').style.display = 'none';
-            document.getElementById('card-level-tab').style.display = 'none';
-            document.getElementById('power-tab-content').style.display = 'none';
-            document.getElementById('fire-tab-content').style.display = 'none';
-            document.getElementById('internal-tab').classList.remove('active');
-            document.getElementById('kizuna-tab').classList.remove('active');
-            document.getElementById('card-tab').classList.remove('active');
-            document.getElementById('power-tab').classList.remove('active');
-            document.getElementById('fire-tab').classList.remove('active');
-            document.getElementById('challenge-tab-content').style.display = 'none';
-            document.getElementById('challenge-tab').classList.remove('active');
-
-            if (tab === 'internal') {
-				clearResults();
-                document.getElementById('internal-tab-content').style.display = 'block';
-                document.getElementById('internal-tab').classList.add('active');
-				setTab('internal');
-            } else if (tab === 'kizuna') {
-				clearResults();
-                document.getElementById('kizuna-level-tab').style.display = 'block';
-                document.getElementById('kizuna-tab').classList.add('active');
-				setTab('kizuna');
-            } else if (tab === 'card') {
-				clearResults();
-                document.getElementById('card-level-tab').style.display = 'block';
-                document.getElementById('card-tab').classList.add('active');
-				setTab('card');
-            } else if (tab === 'power') {
-				clearResults();
-                document.getElementById('power-tab-content').style.display = 'block';
-                document.getElementById('power-tab').classList.add('active');
-				setTab('power');
-            } else if (tab === 'challenge') {
-                clearResults();
-                document.getElementById('challenge-tab-content').style.display = 'block';
-                document.getElementById('challenge-tab').classList.add('active');
-                setTab('challenge');
-            } else {
-				clearResults();
-                document.getElementById('fire-tab-content').style.display = 'block';
-                document.getElementById('fire-tab').classList.add('active');
-				setTab('fire');
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <meta name="apple-mobile-web-app-title" content="프로세카 계산기" />
+        <link rel="apple-touch-icon" href="icon.png" />
+        <link rel="apple-touch-startup-image" href="startup.png" />
+        <link rel="icon" type="image/png" href="icon2.png" />
+        <title>프로세카 계산기</title>
+        <style>
+            body {
+                font-family: "Arial", sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh; /* Changed to min-height for long content */
+                margin: 0;
+                background-color: #f0f2f5;
+                padding: 10px 0; /* Added padding for scrollable content */
             }
-            calculate(tab);
-        }
-		
-		function calculateChallenge() {
-			const currentStage = parseInt(document.getElementById("current-stage").value) || 0;
-			let targetStage = document.getElementById("target-stage").value;
-			const challengeScore = parseInt(document.getElementById("challenge-score").value) || 0;
-			const remainingScore = parseInt(document.getElementById("remaining-score").value) || 0;
-			const pass = document.getElementById("pass").value;
+            .container {
+                background: #fff;
+                padding: 20px 15px; /* Adjusted padding */
+                border-radius: 15px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                max-width: 500px;
+                width: 95%; /* Adjusted width for responsiveness */
+            }
+            h1 {
+                color: #333;
+                margin-bottom: 20px;
+            }
+            label {
+                display: inline;
+                margin: 15px 0 5px;
+                font-weight: bold;
+                color: #555;
+            }
+            input,
+            select {
+                width: 25%;
+                padding: 10px;
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 16px;
+                text-align: center;
+            }
+            h2 {
+                margin-top: 20px;
+                color: #333;
+            }
+            p {
+                font-size: 18px;
+                color: #555;
+                word-break: break-word;
+            }
+            #error-message {
+                color: red;
+                margin-top: 10px;
+            }
+            .tabs {
+                display: flex;
+                justify-content: space-evenly;
+                margin-bottom: 20px;
+                flex-wrap: wrap; /* Allow tabs to wrap */
+            }
+            .tab {
+                cursor: pointer;
+                padding: 10px 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 15px;
+                font-weight: bold;
+                margin: 5px; /* Added margin for wrapped tabs */
+            }
+            .tab.active {
+                background-color: #007bff;
+                color: #fff;
+            }
+            .button-container {
+                display: flex;
+                justify-content: center;
+                margin-top: 10px; /* Adjusted margin */
+                flex-wrap: wrap;
+            }
+            .label {
+                white-space: nowrap;
+            }
+            .action-button {
+                background-color: #007bff;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin: 5px 10px; /* Adjusted margin for wrapping */
+                font-size: 14px;
+                font-weight: bold;
+            }
+            .action-button:hover {
+                background-color: #0056b3;
+            }
+            .link-button {
+                background-color: #ffffff;
+                color: black;
+                padding: 10px 20px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                cursor: pointer;
+                margin: 5px 10px; /* Adjusted margin for wrapping */
+                font-size: 14px;
+                font-weight: bold;
+            }
+            .checkbox-container {
+                display: inline-block;
+                margin-left: 10px;
+            }
+            /* Style for the My Sekai table */
+            #my-sekai-table-container table {
+                width: 100%;
+                border-collapse: collapse;
+                text-align: center;
+                font-size: 12px; /* Adjusted for better fit */
+            }
+            #my-sekai-table-container th,
+            #my-sekai-table-container td {
+                border: 1px solid #ccc;
+                padding: 4px; /* Adjusted padding */
+            }
+            #my-sekai-table-container th {
+                background-color: #f2f2f2;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>프로세카 계산기</h1>
+            <div class="tabs">
+                <div
+                    class="tab active"
+                    id="internal-tab"
+                    onclick="showTab('internal')"
+                >
+                    내부치
+                </div>
+                <div class="tab" id="kizuna-tab" onclick="showTab('kizuna')">
+                    키즈나
+                </div>
+                <div class="tab" id="card-tab" onclick="showTab('card')">
+                    카드렙
+                </div>
+                <div class="tab" id="power-tab" onclick="showTab('power')">
+                    종합력
+                </div>
+                <div class="tab" id="fire-tab" onclick="showTab('fire')">
+                    이벤런
+                </div>
+                <div
+                    class="tab"
+                    id="challenge-tab"
+                    onclick="showTab('challenge')"
+                >
+                    챌라
+                </div>
+            </div>
+            <div id="internal-tab-content">
+                <label for="leader">리더 스킬:</label>
+                <input
+                    type="number"
+                    id="leader"
+                    min="0"
+                    oninput="calculateInternal()"
+                />
+                <span id="leader-unit">%</span><br />
 
-			// Check if targetStage is a number and greater than 150
-			if (!isNaN(targetStage) && parseInt(targetStage) > 150) {
-				document.getElementById('target-stage').value = 'EX';
-				targetStage = 'EX';
-			}
+                <label for="member2">멤버2 스킬:</label>
+                <input
+                    type="number"
+                    id="member2"
+                    min="0"
+                    oninput="calculateInternal()"
+                />
+                <span id="member2-unit">%</span><br />
 
-			// Convert targetStage to number if it's not 'EX'
-			targetStage = targetStage === 'EX' ? 151 : parseInt(targetStage) || 0;
+                <label for="member3">멤버3 스킬:</label>
+                <input
+                    type="number"
+                    id="member3"
+                    min="0"
+                    oninput="calculateInternal()"
+                />
+                <span id="member3-unit">%</span><br />
 
-			if (currentStage < 1 || targetStage < 1 || currentStage >= targetStage) {
-			
-			let result = `
+                <label for="member4">멤버4 스킬:</label>
+                <input
+                    type="number"
+                    id="member4"
+                    min="0"
+                    oninput="calculateInternal()"
+                />
+                <span id="member4-unit">%</span><br />
+
+                <label for="member5">멤버5 스킬:</label>
+                <input
+                    type="number"
+                    id="member5"
+                    min="0"
+                    oninput="calculateInternal()"
+                />
+                <span id="member5-unit">%</span>
+            </div>
+            <div id="kizuna-level-tab" style="display: none">
+                <label for="kizuna-current-level">현재 랭크:</label>
+                <input
+                    type="number"
+                    id="kizuna-current-level"
+                    min="1"
+                    max="75"
+                    oninput="calculate('kizuna')"
+                /><br />
+
+                <label for="kizuna-current-exp">남은 경험치:</label>
+                <input
+                    type="number"
+                    id="kizuna-current-exp"
+                    min="0"
+                    oninput="calculate('kizuna')"
+                /><br />
+
+                <label for="kizuna-target-level">목표 랭크:</label>
+                <input
+                    type="number"
+                    id="kizuna-target-level"
+                    min="2"
+                    max="75"
+                    oninput="calculate('kizuna')"
+                /><br />
+
+                <label for="kizuna-rank">라이브 랭크:</label>
+                <select id="kizuna-rank" onchange="calculate('kizuna')">
+                    <option value="150">S</option>
+                    <option value="130">A</option>
+                    <option value="110">B</option>
+                    <option value="100">C</option></select
+                ><br />
+
+                <label for="kizuna-fires">라이브보너스:</label>
+                <select id="kizuna-fires" onchange="calculate('kizuna')">
+                    <option value="1">0</option>
+                    <option value="5">1</option>
+                    <option value="10">2</option>
+                    <option value="15">3</option>
+                    <option value="20">4</option>
+                    <option value="25">5</option>
+                    <option value="26">6</option>
+                    <option value="27">7</option>
+                    <option value="28">8</option>
+                    <option value="29">9</option>
+                    <option value="30">10</option>
+                </select>
+            </div>
+            <div id="card-level-tab" style="display: none">
+                <label for="current-level">현재 레벨:</label>
+                <input
+                    type="number"
+                    id="current-level"
+                    min="1"
+                    max="60"
+                    oninput="calculate('card')"
+                /><br />
+
+                <label for="current-exp">남은 경험치:</label>
+                <input
+                    type="number"
+                    id="current-exp"
+                    min="0"
+                    oninput="calculate('card')"
+                /><br />
+
+                <label for="target-level">목표 레벨:</label>
+                <input
+                    type="number"
+                    id="target-level"
+                    min="2"
+                    max="60"
+                    oninput="calculate('card')"
+                /><br />
+
+                <label for="rank">라이브 랭크:</label>
+                <select id="rank" onchange="calculate('card')">
+                    <option value="960">S</option>
+                    <option value="840">A</option>
+                    <option value="720">B</option>
+                    <option value="600">C</option></select
+                ><br />
+
+                <label for="fires">라이브보너스:</label>
+                <select id="fires" onchange="calculate('card')">
+                    <option value="1">0</option>
+                    <option value="5">1</option>
+                    <option value="10">2</option>
+                    <option value="15">3</option>
+                    <option value="20">4</option>
+                    <option value="25">5</option>
+                    <option value="26">6</option>
+                    <option value="27">7</option>
+                    <option value="28">8</option>
+                    <option value="29">9</option>
+                    <option value="30">10</option>
+                </select>
+            </div>
+            <div id="power-tab-content" style="display: none">
+                <label for="power">종합력:</label>
+                <input
+                    type="number"
+                    id="power"
+                    min="0"
+                    max="40"
+                    oninput="calculatepower()"
+                />
+                <span id="power-unit">만</span><br />
+
+                <label for="effi">배수:</label>
+                <input
+                    type="number"
+                    id="effi"
+                    min="0"
+                    max="1000"
+                    oninput="calculatepower()"
+                />
+                <span id="effi-unit">%</span><br />
+                <button
+                    class="action-button"
+                    style="margin-top: 10px; margin-bottom: 10px"
+                    onclick="toggleMySekaiTable()"
+                >
+                    마이세카이 테이블
+                </button>
+                <div
+                    id="my-sekai-table-container"
+                    style="display: none; margin-top: 10px; overflow-x: auto"
+                >
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>0~</th>
+                                <th>4.5~</th>
+                                <th>9.0~</th>
+                                <th>13.5~</th>
+                                <th>18.0~</th>
+                                <th>22.5~</th>
+                                <th>27.0~</th>
+                                <th>31.5~</th>
+                                <th>36.0~</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>1000</b></td>
+                                <td>100</td>
+                                <td>82</td>
+                                <td>67</td>
+                                <td>54</td>
+                                <td>43</td>
+                                <td>34</td>
+                                <td>25</td>
+                                <td>18</td>
+                                <td>12</td>
+                            </tr>
+                            <tr>
+                                <td><b>1500</b></td>
+                                <td>200</td>
+                                <td>173</td>
+                                <td>150</td>
+                                <td>131</td>
+                                <td>115</td>
+                                <td>100</td>
+                                <td>88</td>
+                                <td>77</td>
+                                <td>67</td>
+                            </tr>
+                            <tr>
+                                <td><b>2000</b></td>
+                                <td>300</td>
+                                <td>264</td>
+                                <td>234</td>
+                                <td>208</td>
+                                <td>186</td>
+                                <td>167</td>
+                                <td>150</td>
+                                <td>136</td>
+                                <td>123</td>
+                            </tr>
+                            <tr>
+                                <td><b>2500</b></td>
+                                <td>400</td>
+                                <td>355</td>
+                                <td>317</td>
+                                <td>285</td>
+                                <td>258</td>
+                                <td>234</td>
+                                <td>213</td>
+                                <td>195</td>
+                                <td>178</td>
+                            </tr>
+                            <tr>
+                                <td><b>3000</b></td>
+                                <td>500</td>
+                                <td>446</td>
+                                <td>400</td>
+                                <td>362</td>
+                                <td>329</td>
+                                <td>300</td>
+                                <td>275</td>
+                                <td>253</td>
+                                <td>234</td>
+                            </tr>
+                            <tr>
+                                <td><b>3500</b></td>
+                                <td>600</td>
+                                <td>537</td>
+                                <td>484</td>
+                                <td>439</td>
+                                <td>400</td>
+                                <td>367</td>
+                                <td>338</td>
+                                <td>312</td>
+                                <td>289</td>
+                            </tr>
+                            <tr>
+                                <td><b>4000</b></td>
+                                <td>700</td>
+                                <td>628</td>
+                                <td>567</td>
+                                <td>516</td>
+                                <td>472</td>
+                                <td>434</td>
+                                <td>400</td>
+                                <td>371</td>
+                                <td>345</td>
+                            </tr>
+                            <tr>
+                                <td><b>4500</b></td>
+                                <td>800</td>
+                                <td>719</td>
+                                <td>650</td>
+                                <td>593</td>
+                                <td>543</td>
+                                <td>500</td>
+                                <td>463</td>
+                                <td>430</td>
+                                <td>400</td>
+                            </tr>
+                            <tr>
+                                <td><b>5000</b></td>
+                                <td></td>
+                                <td></td>
+                                <td>734</td>
+                                <td>670</td>
+                                <td>615</td>
+                                <td>567</td>
+                                <td>525</td>
+                                <td>489</td>
+                                <td>456</td>
+                            </tr>
+                            <tr>
+                                <td><b>5500</b></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>747</td>
+                                <td>686</td>
+                                <td>634</td>
+                                <td>588</td>
+                                <td>548</td>
+                                <td>512</td>
+                            </tr>
+                            <tr>
+                                <td><b>6000</b></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>758</td>
+                                <td>700</td>
+                                <td>650</td>
+                                <td>606</td>
+                                <td>567</td>
+                            </tr>
+                            <tr>
+                                <td><b>6500</b></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>767</td>
+                                <td>713</td>
+                                <td>665</td>
+                                <td>623</td>
+                            </tr>
+                            <tr>
+                                <td><b>7000</b></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>775</td>
+                                <td>724</td>
+                                <td>678</td>
+                            </tr>
+                            <tr>
+                                <td><b>7500</b></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>783</td>
+                                <td>734</td>
+                            </tr>
+                            <tr>
+                                <td><b>8000</b></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>789</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="fire-tab-content">
+                <label for="score1">현재점수:</label>
+                <input
+                    type="number"
+                    id="score1"
+                    min="0"
+                    max="50000"
+                    oninput="calculatefire()"
+                />
+                <span id="score1-unit">만</span><br />
+
+                <label for="score2">목표점수:</label>
+                <input
+                    type="number"
+                    id="score2"
+                    min="0"
+                    max="50000"
+                    oninput="calculatefire()"
+                />
+                <span id="score2-unit">만</span><br />
+
+                <label for="score3">판 당 점수:</label>
+                <input
+                    type="number"
+                    id="score3"
+                    min="0"
+                    max="50000"
+                    oninput="calculatefire()"
+                />
+                <span id="score3-unit">만</span><br />
+
+                <label for="rounds1">간 당 판수:</label>
+                <input
+                    type="number"
+                    id="rounds1"
+                    min="0"
+                    max="50000"
+                    oninput="calculatefire()"
+                />
+                <span id="rounds1-unit">회</span><br />
+
+                <label for="firea">현재 라이브보너스:</label>
+                <select id="firea" onchange="calculatefire()">
+                    <option value="1">0</option>
+                    <option value="5">1</option>
+                    <option value="10">2</option>
+                    <option value="15">3</option>
+                    <option value="20">4</option>
+                    <option value="25">5</option>
+                    <option value="27">6</option>
+                    <option value="29">7</option>
+                    <option value="31">8</option>
+                    <option value="33">9</option>
+                    <option value="35">10</option></select
+                ><br />
+                <label for="fires2">라이브보너스 변경:</label>
+                <select id="fires2" onchange="calculatefire()">
+                    <option value="none">변경없음</option>
+                    <option value="1">0</option>
+                    <option value="5">1</option>
+                    <option value="10">2</option>
+                    <option value="15">3</option>
+                    <option value="20">4</option>
+                    <option value="25">5</option>
+                    <option value="27">6</option>
+                    <option value="29">7</option>
+                    <option value="31">8</option>
+                    <option value="33">9</option>
+                    <option value="35">10</option>
+                </select>
+            </div>
+            <div id="challenge-tab-content" style="display: none">
+                <label for="current-stage">현재 스테이지:</label>
+                <input
+                    type="number"
+                    id="current-stage"
+                    min="1"
+                    oninput="calculateChallenge()"
+                /><br />
+
+                <label for="remaining-score">남은 점수:</label>
+                <input
+                    type="number"
+                    id="remaining-score"
+                    min="0"
+                    oninput="calculateChallenge()"
+                /><br />
+
+                <label for="target-stage">목표 스테이지:</label>
+                <input
+                    type="text"
+                    id="target-stage"
+                    min="1"
+                    oninput="calculateChallenge()"
+                /><br />
+
+                <label for="challenge-score">챌라 점수:</label>
+                <input
+                    type="number"
+                    id="challenge-score"
+                    min="0"
+                    max="300"
+                    oninput="calculateChallenge()"
+                />
+                <span id="challenge-score-unit">만</span><br />
+
+                <label for="pass">컬패 여부:</label>
+                <select id="pass" onchange="calculateChallenge()">
+                    <option value="1">Y</option>
+                    <option value="2">N</option>
+                </select>
+            </div>
+            <h2></h2>
+            <p id="needed-exp">필요 경험치:</p>
+            <p id="needed-rounds">필요 판수:</p>
+            <p id="exp-per-round">판 당 경험치 획득량:</p>
+            <p id="internal-effective">실효치:</p>
+            <p id="internal-sum">내부합:</p>
+            <p id="multi-eff">멀티효율:</p>
+            <p id="solo-eff">솔로효율:</p>
+            <p id="auto-eff">오토효율:</p>
+            <p id="neededRounds">필요 판수:</p>
+            <p id="neededFires">필요 불:</p>
+            <p id="neededTime">필요 시간:</p>
+            <p id="error-message">에러:</p>
+            <p id="internal-calculation-text"></p>
+            <p id="power-calculation-text"></p>
+            <p id="fire-calculation-text"></p>
+            <p id="challenge-calculation-text"></p>
+            <div class="button-container">
+                <button class="action-button" onclick="saveData()">저장</button>
+                <button class="action-button" onclick="loadData()">
+                    불러오기
+                </button>
+            </div>
+            <div class="button-container">
+                <label class="label">
+                    <input
+                        type="checkbox"
+                        id="auto-load-checkbox"
+                        onchange="toggleAutoLoad()"
+                    />
+                    자동 불러오기
+                </label>
+            </div>
+            <div class="button-container">
+                <button
+                    class="link-button"
+                    onclick="window.open('https://rilakkuma2.github.io/pickup/', '_blank')"
+                >
+                    픽업 확률 계산기
+                </button>
+            </div>
+        </div>
+        <script>
+            let currentTab = "internal";
+            const expData = [
+                { LV: 1, 필요EXP: 0, 누적EXP: 0 },
+                { LV: 2, 필요EXP: 3000, 누적EXP: 3000 },
+                { LV: 3, 필요EXP: 4000, 누적EXP: 7000 },
+                { LV: 4, 필요EXP: 5000, 누적EXP: 12000 },
+                { LV: 5, 필요EXP: 5400, 누적EXP: 17400 },
+                { LV: 6, 필요EXP: 5800, 누적EXP: 23200 },
+                { LV: 7, 필요EXP: 6200, 누적EXP: 29400 },
+                { LV: 8, 필요EXP: 6600, 누적EXP: 36000 },
+                { LV: 9, 필요EXP: 7000, 누적EXP: 43000 },
+                { LV: 10, 필요EXP: 7400, 누적EXP: 50400 },
+                { LV: 11, 필요EXP: 7800, 누적EXP: 58200 },
+                { LV: 12, 필요EXP: 8200, 누적EXP: 66400 },
+                { LV: 13, 필요EXP: 8600, 누적EXP: 75000 },
+                { LV: 14, 필요EXP: 9000, 누적EXP: 84000 },
+                { LV: 15, 필요EXP: 9400, 누적EXP: 93400 },
+                { LV: 16, 필요EXP: 9800, 누적EXP: 103200 },
+                { LV: 17, 필요EXP: 10200, 누적EXP: 113400 },
+                { LV: 18, 필요EXP: 10600, 누적EXP: 124000 },
+                { LV: 19, 필요EXP: 11000, 누적EXP: 135000 },
+                { LV: 20, 필요EXP: 11400, 누적EXP: 146400 },
+                { LV: 21, 필요EXP: 11800, 누적EXP: 158200 },
+                { LV: 22, 필요EXP: 12200, 누적EXP: 170400 },
+                { LV: 23, 필요EXP: 12600, 누적EXP: 183000 },
+                { LV: 24, 필요EXP: 13000, 누적EXP: 196000 },
+                { LV: 25, 필요EXP: 13400, 누적EXP: 209400 },
+                { LV: 26, 필요EXP: 13800, 누적EXP: 223200 },
+                { LV: 27, 필요EXP: 14200, 누적EXP: 237400 },
+                { LV: 28, 필요EXP: 14600, 누적EXP: 252000 },
+                { LV: 29, 필요EXP: 15000, 누적EXP: 267000 },
+                { LV: 30, 필요EXP: 15400, 누적EXP: 282400 },
+                { LV: 31, 필요EXP: 15800, 누적EXP: 298200 },
+                { LV: 32, 필요EXP: 16200, 누적EXP: 314400 },
+                { LV: 33, 필요EXP: 16600, 누적EXP: 331000 },
+                { LV: 34, 필요EXP: 17000, 누적EXP: 348000 },
+                { LV: 35, 필요EXP: 17400, 누적EXP: 365400 },
+                { LV: 36, 필요EXP: 17800, 누적EXP: 383200 },
+                { LV: 37, 필요EXP: 18200, 누적EXP: 401400 },
+                { LV: 38, 필요EXP: 18600, 누적EXP: 420000 },
+                { LV: 39, 필요EXP: 19000, 누적EXP: 439000 },
+                { LV: 40, 필요EXP: 19400, 누적EXP: 458400 },
+                { LV: 41, 필요EXP: 19800, 누적EXP: 478200 },
+                { LV: 42, 필요EXP: 20200, 누적EXP: 498400 },
+                { LV: 43, 필요EXP: 20600, 누적EXP: 519000 },
+                { LV: 44, 필요EXP: 21000, 누적EXP: 540000 },
+                { LV: 45, 필요EXP: 21400, 누적EXP: 561400 },
+                { LV: 46, 필요EXP: 21800, 누적EXP: 583200 },
+                { LV: 47, 필요EXP: 22200, 누적EXP: 605400 },
+                { LV: 48, 필요EXP: 22600, 누적EXP: 628000 },
+                { LV: 49, 필요EXP: 23000, 누적EXP: 651000 },
+                { LV: 50, 필요EXP: 23400, 누적EXP: 674400 },
+                { LV: 51, 필요EXP: 23800, 누적EXP: 698200 },
+                { LV: 52, 필요EXP: 24200, 누적EXP: 722400 },
+                { LV: 53, 필요EXP: 24600, 누적EXP: 747000 },
+                { LV: 54, 필요EXP: 25000, 누적EXP: 772000 },
+                { LV: 55, 필요EXP: 25400, 누적EXP: 797400 },
+                { LV: 56, 필요EXP: 25800, 누적EXP: 823200 },
+                { LV: 57, 필요EXP: 26200, 누적EXP: 849400 },
+                { LV: 58, 필요EXP: 26600, 누적EXP: 876000 },
+                { LV: 59, 필요EXP: 27000, 누적EXP: 903000 },
+                { LV: 60, 필요EXP: 27400, 누적EXP: 930400 },
+            ];
+
+            const kizunaData = [
+                { LV: 1, 필요EXP: 0, 누적EXP: 0 },
+                { LV: 2, 필요EXP: 7224, 누적EXP: 7224 },
+                { LV: 3, 필요EXP: 7224, 누적EXP: 14448 },
+                { LV: 4, 필요EXP: 7224, 누적EXP: 21672 },
+                { LV: 5, 필요EXP: 7224, 누적EXP: 28896 },
+                { LV: 6, 필요EXP: 7224, 누적EXP: 36120 },
+                { LV: 7, 필요EXP: 28094, 누적EXP: 64214 },
+                { LV: 8, 필요EXP: 28094, 누적EXP: 92308 },
+                { LV: 9, 필요EXP: 28094, 누적EXP: 120402 },
+                { LV: 10, 필요EXP: 60200, 누적EXP: 180602 },
+                { LV: 11, 필요EXP: 60200, 누적EXP: 240802 },
+                { LV: 12, 필요EXP: 60200, 누적EXP: 301002 },
+                { LV: 13, 필요EXP: 70234, 누적EXP: 371236 },
+                { LV: 14, 필요EXP: 70234, 누적EXP: 441470 },
+                { LV: 15, 필요EXP: 70234, 누적EXP: 511704 },
+                { LV: 16, 필요EXP: 100332, 누적EXP: 612036 },
+                { LV: 17, 필요EXP: 100332, 누적EXP: 712368 },
+                { LV: 18, 필요EXP: 100332, 누적EXP: 812700 },
+                { LV: 19, 필요EXP: 130432, 누적EXP: 943132 },
+                { LV: 20, 필요EXP: 130432, 누적EXP: 1073564 },
+                { LV: 21, 필요EXP: 130432, 누적EXP: 1203996 },
+                { LV: 22, 필요EXP: 160534, 누적EXP: 1364530 },
+                { LV: 23, 필요EXP: 160534, 누적EXP: 1525064 },
+                { LV: 24, 필요EXP: 160534, 누적EXP: 1685598 },
+                { LV: 25, 필요EXP: 210700, 누적EXP: 1896298 },
+                { LV: 26, 필요EXP: 210700, 누적EXP: 2106998 },
+                { LV: 27, 필요EXP: 210700, 누적EXP: 2317698 },
+                { LV: 28, 필요EXP: 250834, 누적EXP: 2568532 },
+                { LV: 29, 필요EXP: 250834, 누적EXP: 2819366 },
+                { LV: 30, 필요EXP: 250834, 누적EXP: 3070200 },
+                { LV: 31, 필요EXP: 280934, 누적EXP: 3351134 },
+                { LV: 32, 필요EXP: 280934, 누적EXP: 3632068 },
+                { LV: 33, 필요EXP: 280934, 누적EXP: 3913002 },
+                { LV: 34, 필요EXP: 301000, 누적EXP: 4214002 },
+                { LV: 35, 필요EXP: 301000, 누적EXP: 4515002 },
+                { LV: 36, 필요EXP: 301000, 누적EXP: 4816002 },
+                { LV: 37, 필요EXP: 301000, 누적EXP: 5117002 },
+                { LV: 38, 필요EXP: 301000, 누적EXP: 5418002 },
+                { LV: 39, 필요EXP: 301000, 누적EXP: 5719002 },
+                { LV: 40, 필요EXP: 301000, 누적EXP: 6020002 },
+                { LV: 41, 필요EXP: 301000, 누적EXP: 6321002 },
+                { LV: 42, 필요EXP: 301000, 누적EXP: 6622002 },
+                { LV: 43, 필요EXP: 301000, 누적EXP: 6923002 },
+                { LV: 44, 필요EXP: 301000, 누적EXP: 7224002 },
+                { LV: 45, 필요EXP: 301000, 누적EXP: 7525002 },
+                { LV: 46, 필요EXP: 301000, 누적EXP: 7826002 },
+                { LV: 47, 필요EXP: 301000, 누적EXP: 8127002 },
+                { LV: 48, 필요EXP: 301000, 누적EXP: 8428002 },
+                { LV: 49, 필요EXP: 301000, 누적EXP: 8729002 },
+                { LV: 50, 필요EXP: 301000, 누적EXP: 9030002 },
+                { LV: 51, 필요EXP: 301000, 누적EXP: 9331002 },
+                { LV: 52, 필요EXP: 301000, 누적EXP: 9632002 },
+                { LV: 53, 필요EXP: 301000, 누적EXP: 9933002 },
+                { LV: 54, 필요EXP: 301000, 누적EXP: 10234002 },
+                { LV: 55, 필요EXP: 301000, 누적EXP: 10535002 },
+                { LV: 56, 필요EXP: 301000, 누적EXP: 10836002 },
+                { LV: 57, 필요EXP: 301000, 누적EXP: 11137002 },
+                { LV: 58, 필요EXP: 301000, 누적EXP: 11438002 },
+                { LV: 59, 필요EXP: 301000, 누적EXP: 11739002 },
+                { LV: 60, 필요EXP: 301000, 누적EXP: 12040002 },
+                { LV: 61, 필요EXP: 301000, 누적EXP: 12341002 },
+                { LV: 62, 필요EXP: 301000, 누적EXP: 12642002 },
+                { LV: 63, 필요EXP: 301000, 누적EXP: 12943002 },
+                { LV: 64, 필요EXP: 301000, 누적EXP: 13244002 },
+                { LV: 65, 필요EXP: 301000, 누적EXP: 13545002 },
+                { LV: 66, 필요EXP: 301000, 누적EXP: 13846002 },
+                { LV: 67, 필요EXP: 301000, 누적EXP: 14147002 },
+                { LV: 68, 필요EXP: 301000, 누적EXP: 14448002 },
+                { LV: 69, 필요EXP: 301000, 누적EXP: 14749002 },
+                { LV: 70, 필요EXP: 301000, 누적EXP: 15050002 },
+                { LV: 71, 필요EXP: 301000, 누적EXP: 15351002 },
+                { LV: 72, 필요EXP: 301000, 누적EXP: 15652002 },
+                { LV: 73, 필요EXP: 301000, 누적EXP: 15953002 },
+                { LV: 74, 필요EXP: 301000, 누적EXP: 16254002 },
+                { LV: 75, 필요EXP: 301000, 누적EXP: 16555002 },
+            ];
+
+            const challData = [
+                { stage: 1, required: 0, cumulative: 0 },
+                { stage: 2, required: 50, cumulative: 50 },
+                { stage: 3, required: 100, cumulative: 150 },
+                { stage: 4, required: 150, cumulative: 300 },
+                { stage: 5, required: 200, cumulative: 500 },
+                { stage: 6, required: 250, cumulative: 750 },
+                { stage: 7, required: 300, cumulative: 1050 },
+                { stage: 8, required: 350, cumulative: 1400 },
+                { stage: 9, required: 400, cumulative: 1800 },
+                { stage: 10, required: 500, cumulative: 2300 },
+                { stage: 11, required: 600, cumulative: 2900 },
+                { stage: 12, required: 700, cumulative: 3600 },
+                { stage: 13, required: 800, cumulative: 4400 },
+                { stage: 14, required: 900, cumulative: 5300 },
+                { stage: 15, required: 1000, cumulative: 6300 },
+                { stage: 16, required: 1100, cumulative: 7400 },
+                { stage: 17, required: 1200, cumulative: 8600 },
+                { stage: 18, required: 1350, cumulative: 9950 },
+                { stage: 19, required: 1500, cumulative: 11450 },
+                { stage: 20, required: 1650, cumulative: 13100 },
+                { stage: 21, required: 1800, cumulative: 14900 },
+                { stage: 22, required: 1950, cumulative: 16850 },
+                { stage: 23, required: 2150, cumulative: 19000 },
+                { stage: 24, required: 2350, cumulative: 21350 },
+                { stage: 25, required: 2550, cumulative: 23900 },
+                { stage: 26, required: 2750, cumulative: 26650 },
+                { stage: 27, required: 2950, cumulative: 29600 },
+                { stage: 28, required: 3200, cumulative: 32800 },
+                { stage: 29, required: 3450, cumulative: 36250 },
+                { stage: 30, required: 3700, cumulative: 39950 },
+                { stage: 31, required: 3950, cumulative: 43900 },
+                { stage: 32, required: 4200, cumulative: 48100 },
+                { stage: 33, required: 4500, cumulative: 52600 },
+                { stage: 34, required: 4800, cumulative: 57400 },
+                { stage: 35, required: 5100, cumulative: 62500 },
+                { stage: 36, required: 5400, cumulative: 67900 },
+                { stage: 37, required: 5750, cumulative: 73650 },
+                { stage: 38, required: 6100, cumulative: 79750 },
+                { stage: 39, required: 6450, cumulative: 86200 },
+                { stage: 40, required: 6800, cumulative: 93000 },
+                { stage: 41, required: 7150, cumulative: 100150 },
+                { stage: 42, required: 7550, cumulative: 107700 },
+                { stage: 43, required: 7950, cumulative: 115650 },
+                { stage: 44, required: 8400, cumulative: 124050 },
+                { stage: 45, required: 8850, cumulative: 132900 },
+                { stage: 46, required: 9300, cumulative: 142200 },
+                { stage: 47, required: 9300, cumulative: 151500 },
+                { stage: 48, required: 9300, cumulative: 160800 },
+                { stage: 49, required: 9300, cumulative: 170100 },
+                { stage: 50, required: 9300, cumulative: 179400 },
+                { stage: 51, required: 9300, cumulative: 188700 },
+                { stage: 52, required: 9300, cumulative: 198000 },
+                { stage: 53, required: 9300, cumulative: 207300 },
+                { stage: 54, required: 9300, cumulative: 216600 },
+                { stage: 55, required: 9300, cumulative: 225900 },
+                { stage: 56, required: 9300, cumulative: 235200 },
+                { stage: 57, required: 9300, cumulative: 244500 },
+                { stage: 58, required: 9300, cumulative: 253800 },
+                { stage: 59, required: 9300, cumulative: 263100 },
+                { stage: 60, required: 9300, cumulative: 272400 },
+                { stage: 61, required: 9300, cumulative: 281700 },
+                { stage: 62, required: 9300, cumulative: 291000 },
+                { stage: 63, required: 9300, cumulative: 300300 },
+                { stage: 64, required: 9300, cumulative: 309600 },
+                { stage: 65, required: 9300, cumulative: 318900 },
+                { stage: 66, required: 9300, cumulative: 328200 },
+                { stage: 67, required: 9300, cumulative: 337500 },
+                { stage: 68, required: 9300, cumulative: 346800 },
+                { stage: 69, required: 9300, cumulative: 356100 },
+                { stage: 70, required: 9300, cumulative: 365400 },
+                { stage: 71, required: 9300, cumulative: 374700 },
+                { stage: 72, required: 9300, cumulative: 384000 },
+                { stage: 73, required: 9300, cumulative: 393300 },
+                { stage: 74, required: 9300, cumulative: 402600 },
+                { stage: 75, required: 9300, cumulative: 411900 },
+                { stage: 76, required: 9300, cumulative: 421200 },
+                { stage: 77, required: 9300, cumulative: 430500 },
+                { stage: 78, required: 9300, cumulative: 439800 },
+                { stage: 79, required: 9300, cumulative: 449100 },
+                { stage: 80, required: 9300, cumulative: 458400 },
+                { stage: 81, required: 9300, cumulative: 467700 },
+                { stage: 82, required: 9300, cumulative: 477000 },
+                { stage: 83, required: 9300, cumulative: 486300 },
+                { stage: 84, required: 9300, cumulative: 495600 },
+                { stage: 85, required: 9300, cumulative: 504900 },
+                { stage: 86, required: 9300, cumulative: 514200 },
+                { stage: 87, required: 9300, cumulative: 523500 },
+                { stage: 88, required: 9300, cumulative: 532800 },
+                { stage: 89, required: 9300, cumulative: 542100 },
+                { stage: 90, required: 9300, cumulative: 551400 },
+                { stage: 91, required: 9300, cumulative: 560700 },
+                { stage: 92, required: 9300, cumulative: 570000 },
+                { stage: 93, required: 9300, cumulative: 579300 },
+                { stage: 94, required: 9300, cumulative: 588600 },
+                { stage: 95, required: 9300, cumulative: 597900 },
+                { stage: 96, required: 9300, cumulative: 607200 },
+                { stage: 97, required: 9300, cumulative: 616500 },
+                { stage: 98, required: 9300, cumulative: 625800 },
+                { stage: 99, required: 9300, cumulative: 635100 },
+                { stage: 100, required: 9300, cumulative: 644400 },
+                { stage: 101, required: 9300, cumulative: 653700 },
+                { stage: 102, required: 9300, cumulative: 663000 },
+                { stage: 103, required: 9300, cumulative: 672300 },
+                { stage: 104, required: 9300, cumulative: 681600 },
+                { stage: 105, required: 9300, cumulative: 690900 },
+                { stage: 106, required: 9300, cumulative: 700200 },
+                { stage: 107, required: 9300, cumulative: 709500 },
+                { stage: 108, required: 9300, cumulative: 718800 },
+                { stage: 109, required: 9300, cumulative: 728100 },
+                { stage: 110, required: 9300, cumulative: 737400 },
+                { stage: 111, required: 9300, cumulative: 746700 },
+                { stage: 112, required: 9300, cumulative: 756000 },
+                { stage: 113, required: 9300, cumulative: 765300 },
+                { stage: 114, required: 9300, cumulative: 774600 },
+                { stage: 115, required: 9300, cumulative: 783900 },
+                { stage: 116, required: 9300, cumulative: 793200 },
+                { stage: 117, required: 9300, cumulative: 802500 },
+                { stage: 118, required: 9300, cumulative: 811800 },
+                { stage: 119, required: 9300, cumulative: 821100 },
+                { stage: 120, required: 9300, cumulative: 830400 },
+                { stage: 121, required: 9300, cumulative: 839700 },
+                { stage: 122, required: 9300, cumulative: 849000 },
+                { stage: 123, required: 9300, cumulative: 858300 },
+                { stage: 124, required: 9300, cumulative: 867600 },
+                { stage: 125, required: 9300, cumulative: 876900 },
+                { stage: 126, required: 9300, cumulative: 886200 },
+                { stage: 127, required: 9300, cumulative: 895500 },
+                { stage: 128, required: 9300, cumulative: 904800 },
+                { stage: 129, required: 9300, cumulative: 914100 },
+                { stage: 130, required: 9300, cumulative: 923400 },
+                { stage: 131, required: 9300, cumulative: 932700 },
+                { stage: 132, required: 9300, cumulative: 942000 },
+                { stage: 133, required: 9300, cumulative: 951300 },
+                { stage: 134, required: 9300, cumulative: 960600 },
+                { stage: 135, required: 9300, cumulative: 969900 },
+                { stage: 136, required: 9300, cumulative: 979200 },
+                { stage: 137, required: 9300, cumulative: 988500 },
+                { stage: 138, required: 9300, cumulative: 997800 },
+                { stage: 139, required: 9300, cumulative: 1007100 },
+                { stage: 140, required: 9300, cumulative: 1016400 },
+                { stage: 141, required: 9300, cumulative: 1025700 },
+                { stage: 142, required: 9300, cumulative: 1035000 },
+                { stage: 143, required: 9300, cumulative: 1044300 },
+                { stage: 144, required: 9300, cumulative: 1053600 },
+                { stage: 145, required: 9300, cumulative: 1062900 },
+                { stage: 146, required: 9300, cumulative: 1072200 },
+                { stage: 147, required: 9300, cumulative: 1081500 },
+                { stage: 148, required: 9300, cumulative: 1090800 },
+                { stage: 149, required: 9300, cumulative: 1100100 },
+                { stage: 150, required: 9300, cumulative: 1109400 },
+                { stage: "EX", required: 9300, cumulative: 1118700 },
+            ];
+            // 마이세카이 점수 테이블 데이터 (이전과 동일)
+            const mySekaiTableData = {
+                1000: [100, 82, 67, 54, 43, 34, 25, 18, 12],
+                1500: [200, 173, 150, 131, 115, 100, 88, 77, 67],
+                2000: [300, 264, 234, 208, 186, 167, 150, 136, 123],
+                2500: [400, 355, 317, 285, 258, 234, 213, 195, 178],
+                3000: [500, 446, 400, 362, 329, 300, 275, 253, 234],
+                3500: [600, 537, 484, 439, 400, 367, 338, 312, 289],
+                4000: [700, 628, 567, 516, 472, 434, 400, 371, 345],
+                4500: [800, 719, 650, 593, 543, 500, 463, 430, 400],
+                5000: [null, null, 734, 670, 615, 567, 525, 489, 456],
+                5500: [null, null, null, 747, 686, 634, 588, 548, 512],
+                6000: [null, null, null, null, 758, 700, 650, 606, 567],
+                6500: [null, null, null, null, null, 767, 713, 665, 623],
+                7000: [null, null, null, null, null, null, 775, 724, 678],
+                7500: [null, null, null, null, null, null, null, 783, 734],
+                8000: [null, null, null, null, null, null, null, null, 789],
+            };
+
+            // 테이블의 '컬럼' 헤더: 종합력(만) 구간의 하한값
+            const powerColumnThresholds = [
+                0, 4.5, 9.0, 13.5, 18.0, 22.5, 27.0, 31.5, 36.0,
+            ];
+
+            // 테이블의 '행' 키: 배수(%) 값 (획득 점수와 동일)
+            const scoreRowKeys = Object.keys(mySekaiTableData)
+                .map(Number)
+                .sort((a, b) => a - b);
+
+            function showTab(tab) {
+                document.getElementById("internal-tab-content").style.display =
+                    "none";
+                document.getElementById("kizuna-level-tab").style.display =
+                    "none";
+                document.getElementById("card-level-tab").style.display =
+                    "none";
+                document.getElementById("power-tab-content").style.display =
+                    "none";
+                document.getElementById("fire-tab-content").style.display =
+                    "none";
+                document
+                    .getElementById("internal-tab")
+                    .classList.remove("active");
+                document
+                    .getElementById("kizuna-tab")
+                    .classList.remove("active");
+                document.getElementById("card-tab").classList.remove("active");
+                document.getElementById("power-tab").classList.remove("active");
+                document.getElementById("fire-tab").classList.remove("active");
+                document.getElementById("challenge-tab-content").style.display =
+                    "none";
+                document
+                    .getElementById("challenge-tab")
+                    .classList.remove("active");
+
+                if (tab === "internal") {
+                    clearResults();
+                    document.getElementById(
+                        "internal-tab-content",
+                    ).style.display = "block";
+                    document
+                        .getElementById("internal-tab")
+                        .classList.add("active");
+                    setTab("internal");
+                } else if (tab === "kizuna") {
+                    clearResults();
+                    document.getElementById("kizuna-level-tab").style.display =
+                        "block";
+                    document
+                        .getElementById("kizuna-tab")
+                        .classList.add("active");
+                    setTab("kizuna");
+                } else if (tab === "card") {
+                    clearResults();
+                    document.getElementById("card-level-tab").style.display =
+                        "block";
+                    document.getElementById("card-tab").classList.add("active");
+                    setTab("card");
+                } else if (tab === "power") {
+                    clearResults();
+                    document.getElementById("power-tab-content").style.display =
+                        "block";
+                    document
+                        .getElementById("power-tab")
+                        .classList.add("active");
+                    setTab("power");
+                } else if (tab === "challenge") {
+                    clearResults();
+                    document.getElementById(
+                        "challenge-tab-content",
+                    ).style.display = "block";
+                    document
+                        .getElementById("challenge-tab")
+                        .classList.add("active");
+                    setTab("challenge");
+                } else {
+                    clearResults();
+                    document.getElementById("fire-tab-content").style.display =
+                        "block";
+                    document.getElementById("fire-tab").classList.add("active");
+                    setTab("fire");
+                }
+                calculate(tab);
+            }
+
+            function calculateChallenge() {
+                const currentStage =
+                    parseInt(document.getElementById("current-stage").value) ||
+                    0;
+                let targetStage = document.getElementById("target-stage").value;
+                const challengeScore =
+                    parseInt(
+                        document.getElementById("challenge-score").value,
+                    ) || 0;
+                const remainingScore =
+                    parseInt(
+                        document.getElementById("remaining-score").value,
+                    ) || 0;
+                const pass = document.getElementById("pass").value;
+
+                // Check if targetStage is a number and greater than 150
+                if (!isNaN(targetStage) && parseInt(targetStage) > 150) {
+                    document.getElementById("target-stage").value = "EX";
+                    targetStage = "EX";
+                }
+
+                // Convert targetStage to number if it's not 'EX'
+                targetStage =
+                    targetStage === "EX" ? 151 : parseInt(targetStage) || 0;
+
+                if (
+                    currentStage < 1 ||
+                    targetStage < 1 ||
+                    currentStage >= targetStage
+                ) {
+                    let result = `
 				<span style="font-weight: bold; color: red;">올바른 스테이지 값을 입력해주세요.</span><br><br>
 				<span style="font-weight: bold"><a target="_blank" href="https://3-3.dev/sekai/top-deck">챌라 이론덱</a></span><br>
 				<span style="font-weight: bold"><a target="_blank" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br><br>
 				목표 스테이지 151 이상 입력 시 EX로 자동변환
 			`;
-				document.getElementById("challenge-calculation-text").innerHTML = result;
-				return;
-			}
+                    document.getElementById(
+                        "challenge-calculation-text",
+                    ).innerHTML = result;
+                    return;
+                }
 
-			const currentCumulative = challData[currentStage].cumulative;
-			const targetCumulative = challData[targetStage - 1].cumulative;
+                const currentCumulative = challData[currentStage].cumulative;
+                const targetCumulative = challData[targetStage - 1].cumulative;
 
-			// 판당 점수 계산
-			const scorePerPlay = (Math.floor(challengeScore * 24 / 10) + 400 + Math.floor(challengeScore / 20) * 2) / pass;
-			// 필요 점수 계산
-			const neededScore = targetCumulative - currentCumulative + remainingScore;
-			// 필요 판수 계산
-			const neededPlays = Math.ceil(neededScore / scorePerPlay);
+                // 판당 점수 계산
+                const scorePerPlay =
+                    (Math.floor((challengeScore * 24) / 10) +
+                        400 +
+                        Math.floor(challengeScore / 20) * 2) /
+                    pass;
+                // 필요 점수 계산
+                const neededScore =
+                    targetCumulative - currentCumulative + remainingScore;
+                // 필요 판수 계산
+                const neededPlays = Math.ceil(neededScore / scorePerPlay);
 
-			let result = `
+                let result = `
 				판당 점수: <span style="font-weight: bold; color: blue;">${scorePerPlay}</span><br><br>
 				필요 점수: <span style="font-weight: bold; color: blue;">${neededScore}</span><br><br>
 				남은 일수: <span style="font-weight: bold; color: blue;">${neededPlays}</span><br><br>
@@ -711,287 +1166,467 @@
 				<span style="font-weight: bold"><a target="_blank" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br><br>
 				목표 스테이지 151 이상 입력 시 EX로 자동변환
 			`;
-			document.getElementById("challenge-calculation-text").innerHTML = result;
-		}
-		
-		
-        function toggleAutoLoad() {
-            let autoLoadCheckbox = document.getElementById('auto-load-checkbox');
-            localStorage.setItem('autoLoad', autoLoadCheckbox.checked);
-        }
-
-        window.onload = function() {
-            let autoLoad = JSON.parse(localStorage.getItem('autoLoad'));
-            let autoLoadCheckbox = document.getElementById('auto-load-checkbox');
-            if (autoLoad) {
-                autoLoadCheckbox.checked = true;
-                loadData();
-            } else {
-                autoLoadCheckbox.checked = false;
-            }
-        }
-		function getFireaValue(firea) {
-			const fireaTable = {
-				1: 0,
-				5: 1,
-				10: 2,
-				15: 3,
-				20: 4,
-				25: 5,
-				27: 6,
-				29: 7,
-				31: 8,
-				33: 9,
-				35: 10
-			};
-			return fireaTable[firea] || null; // returns null if firea is not in the table
-		}
-		function calculate(type) {
-			// Clear previous error message
-			document.getElementById("error-message").innerText = '';
-
-			let currentLevel, currentExpToLevelUp, targetLevel, rankExp, fires;
-
-			if (type === 'card') {
-				currentLevel = parseInt(document.getElementById("current-level").value);
-				currentExpToLevelUp = parseInt(document.getElementById("current-exp").value);
-				targetLevel = parseInt(document.getElementById("target-level").value);
-				rankExp = parseInt(document.getElementById("rank").value);
-				fires = parseInt(document.getElementById("fires").value);
-
-				if (isNaN(currentLevel) || isNaN(currentExpToLevelUp) || isNaN(targetLevel) || isNaN(rankExp) || isNaN(fires)) {
-					document.getElementById("error-message").innerText = '에러: 모든 입력 값을 정확히 입력해 주세요.';
-					clearResults();
-					return;
-				}
-
-				if (currentLevel >= targetLevel) {
-					document.getElementById("error-message").innerText = '에러: 목표 레벨은 현재 레벨보다 높아야 합니다.';
-					clearResults();
-					return;
-				}
-
-				const data = expData;
-				const currentData = data.find(d => d.LV === currentLevel);
-				const nextLevelData = data.find(d => d.LV === currentLevel + 1);
-				const targetData = data.find(d => d.LV === targetLevel);
-
-				if (!currentData || !nextLevelData || !targetData) {
-					document.getElementById("error-message").innerText = '에러: 레벨 데이터를 불러오는 데 실패했습니다.';
-					clearResults();
-					return;
-				}
-
-				const currentCumulativeExp = currentData.누적EXP + nextLevelData.필요EXP - currentExpToLevelUp;
-				const targetCumulativeExp = targetData.누적EXP;
-
-				const neededExp = targetCumulativeExp - currentCumulativeExp;
-				const expPerRound = rankExp * fires;
-				const neededRounds = Math.ceil(neededExp / expPerRound);
-
-				document.getElementById("needed-exp").innerHTML = `필요 경험치: <span style="font-weight: bold; color: blue;">${neededExp}</span>`;
-				document.getElementById("needed-rounds").innerHTML = `필요 판수: <span style="font-weight: bold; color: blue;">${neededRounds}</span>`;
-				document.getElementById("exp-per-round").innerHTML = `판 당 경험치 획득량: <span style="font-weight: bold; color: blue;">${expPerRound}</span>`;
-			} else if (type === 'kizuna') {
-				currentLevel = parseInt(document.getElementById("kizuna-current-level").value);
-				currentExpToLevelUp = parseInt(document.getElementById("kizuna-current-exp").value);
-				targetLevel = parseInt(document.getElementById("kizuna-target-level").value);
-				rankExp = parseInt(document.getElementById("kizuna-rank").value);
-				fires = parseInt(document.getElementById("kizuna-fires").value);
-
-				if (isNaN(currentLevel) || isNaN(currentExpToLevelUp) || isNaN(targetLevel) || isNaN(rankExp) || isNaN(fires)) {
-					document.getElementById("error-message").innerText = '에러: 모든 입력 값을 정확히 입력해 주세요.';
-					clearResults();
-					return;
-				}
-
-				if (currentLevel >= targetLevel) {
-					document.getElementById("error-message").innerText = '에러: 목표 랭크는 현재 랭크보다 높아야 합니다.';
-					clearResults();
-					return;
-				}
-
-				const data = kizunaData;
-				const currentData = data.find(d => d.LV === currentLevel);
-				const nextLevelData = data.find(d => d.LV === currentLevel + 1);
-				const targetData = data.find(d => d.LV === targetLevel);
-
-				if (!currentData || !nextLevelData || !targetData) {
-					document.getElementById("error-message").innerText = '에러: 랭크 데이터를 불러오는 데 실패했습니다.';
-					clearResults();
-					return;
-				}
-
-				const currentCumulativeExp = currentData.누적EXP + nextLevelData.필요EXP - currentExpToLevelUp;
-				const targetCumulativeExp = targetData.누적EXP;
-
-				const neededExp = targetCumulativeExp - currentCumulativeExp;
-				const expPerRound = rankExp * fires;
-				const neededRounds = Math.ceil(neededExp / expPerRound);
-
-				document.getElementById("needed-exp").innerHTML = `필요 경험치: <span style="font-weight: bold; color: blue;">${neededExp}</span>`;
-				document.getElementById("needed-rounds").innerHTML = `필요 판수: <span style="font-weight: bold; color: blue;">${neededRounds}</span>`;
-				document.getElementById("exp-per-round").innerHTML = `판 당 경험치 획득량: <span style="font-weight: bold; color: blue;">${expPerRound}</span>`;
-			} else if (type === 'internal') {
-				calculateInternal();
-			} else if (type === 'power') {
-				calculatepower();
-			} else if (type === 'challenge') {
-				calculateChallenge();
-			} else {
-				calculatefire();
-			}
-		}
-
-		function calculateInternal() {
-			const leader = parseInt(document.getElementById("leader").value) || 0;
-			const member2 = parseInt(document.getElementById("member2").value) || 0;
-			const member3 = parseInt(document.getElementById("member3").value) || 0;
-			const member4 = parseInt(document.getElementById("member4").value) || 0;
-			const member5 = parseInt(document.getElementById("member5").value) || 0;
-
-			const internalSum = leader + member2 + member3 + member4 + member5;
-			const effectiveValue = Math.floor(leader + (member2 + member3 + member4 + member5) * 0.2);
-			const effectiveMultiplier = (effectiveValue / 100) + 1;
-
-			document.getElementById("internal-effective").innerHTML = `실효치: <span style="font-weight: bold; color: blue;">${effectiveValue.toFixed(0)}%</span> = <span style="font-weight: bold; color: blue;">${effectiveMultiplier.toFixed(2)}배</span>`;
-			document.getElementById("internal-sum").innerHTML = `내부합: <span style="font-weight: bold; color: blue;">${internalSum}</span>`;
-			document.getElementById("internal-calculation-text").innerText = "실효치 = 리더 + (나머지멤버) * 0.2";
-		}
-		
-		function calculatepower() {
-			const power = parseInt(document.getElementById("power").value) || 0;
-			const effi = parseInt(document.getElementById("effi").value) || 0;
-
-            const multiConstant = 4.877;
-            const soloConstant = 2.8;
-            const autoConstant = 1.84;
-			
-            const multiEfficiency = (((100 + ((power + 1) * multiConstant)) / (100 + (power * multiConstant))) - 1) * (100 + effi);
-            const soloEfficiency = (((100 + ((power + 1) * soloConstant)) / (100 + (power * soloConstant))) - 1) * (100 + effi);
-            const autoEfficiency = (((100 + ((power + 1) * autoConstant)) / (100 + (power * autoConstant))) - 1) * (100 + effi);
-			document.getElementById("multi-eff").innerHTML = `멀티효율: <span style="font-weight: bold; color: blue;">${multiEfficiency.toFixed(2)}%</span>`;
-			document.getElementById("solo-eff").innerHTML = `솔로효율: <span style="font-weight: bold; color: blue;">${soloEfficiency.toFixed(2)}%</span>`;
-			document.getElementById("auto-eff").innerHTML = `오토효율: <span style="font-weight: bold; color: blue;">${autoEfficiency.toFixed(2)}%</span>`;
-			document.getElementById("power-calculation-text").innerHTML = "종합력 1만과 같은 효율의 배수<br><br>대략적인 값으로 곡이나 스킬에 따라 달라짐";
-		}
-		
-        function calculatefire() {
-            // Get input values
-            let currentScore = parseFloat(document.getElementById('score1').value) || 0;
-            let targetScore = parseFloat(document.getElementById('score2').value) || 0;
-            let scorePerRound = parseFloat(document.getElementById('score3').value) || 0;
-            let roundsPerInterval = parseFloat(document.getElementById('rounds1').value) || 0;
-            let currentFireBonus = parseInt(document.getElementById('firea').value) || 0;
-            let changeFireBonus = document.getElementById('fires2').value;
-			let firenow = getFireaValue(currentFireBonus);
-
-
-            // Determine calculation score
-            let calculationScore;
-            if (changeFireBonus === "none") {
-                calculationScore = scorePerRound;
-            } else {
-                let newFireBonus = parseInt(changeFireBonus);
-                calculationScore = (scorePerRound / currentFireBonus) * newFireBonus;
-                currentFireBonus = newFireBonus;
-				firenow = getFireaValue(currentFireBonus);
+                document.getElementById(
+                    "challenge-calculation-text",
+                ).innerHTML = result;
             }
 
-            // Calculate needed rounds
-            let neededRounds = (targetScore - currentScore) / calculationScore;
-            neededRounds = neededRounds > 0 ? neededRounds : 0; // Prevent negative rounds
-			neededRounds = Math.ceil(neededRounds)
+            function toggleAutoLoad() {
+                let autoLoadCheckbox =
+                    document.getElementById("auto-load-checkbox");
+                localStorage.setItem("autoLoad", autoLoadCheckbox.checked);
+            }
 
-            // Calculate needed fires
-            let neededFires = neededRounds * firenow;
+            window.onload = function () {
+                let autoLoad = JSON.parse(localStorage.getItem("autoLoad"));
+                let autoLoadCheckbox =
+                    document.getElementById("auto-load-checkbox");
+                if (autoLoad) {
+                    autoLoadCheckbox.checked = true;
+                    loadData();
+                } else {
+                    autoLoadCheckbox.checked = false;
+                }
+            };
+            function getFireaValue(firea) {
+                const fireaTable = {
+                    1: 0,
+                    5: 1,
+                    10: 2,
+                    15: 3,
+                    20: 4,
+                    25: 5,
+                    27: 6,
+                    29: 7,
+                    31: 8,
+                    33: 9,
+                    35: 10,
+                };
+                return fireaTable[firea] || null; // returns null if firea is not in the table
+            }
+            function calculate(type) {
+                // Clear previous error message
+                document.getElementById("error-message").innerText = "";
 
-            // Calculate needed time
-            let neededTime = neededRounds / roundsPerInterval;
-            neededTime = neededTime > 0 ? neededTime : 0; // Prevent negative time
-			
-            let neededcan = neededFires / 10;
+                let currentLevel,
+                    currentExpToLevelUp,
+                    targetLevel,
+                    rankExp,
+                    fires;
 
-            // Display results
-            document.getElementById('neededRounds').innerHTML = `필요 판수: <span style="font-weight: bold; color: blue;">${Math.ceil(neededRounds)}</span> 판`;
-            document.getElementById('neededFires').innerHTML = `필요 불: <span style="font-weight: bold; color: blue;">${Math.ceil(neededFires)}</span> 불 = <span style="font-weight: bold; color: blue;">${Math.ceil(neededcan)}</span> 뚱캔`;
-            document.getElementById('neededTime').innerHTML = `필요 시간: <span style="font-weight: bold; color: blue;">${neededTime.toFixed(1)}</span> 시간`;
-			document.getElementById("fire-calculation-text").innerHTML = '<span style="font-weight: bold">대략적인 간 당 판수</span><br>엔비:26~29  로앤파:17~19  치어풀:15~17<br><br><span style="font-weight: bold"><a target="_blank" href="https://71ar.github.io/index/">덱파워 예측 계산기</a></span>';
-        }
+                if (type === "card") {
+                    currentLevel = parseInt(
+                        document.getElementById("current-level").value,
+                    );
+                    currentExpToLevelUp = parseInt(
+                        document.getElementById("current-exp").value,
+                    );
+                    targetLevel = parseInt(
+                        document.getElementById("target-level").value,
+                    );
+                    rankExp = parseInt(document.getElementById("rank").value);
+                    fires = parseInt(document.getElementById("fires").value);
 
-		function clearResults() {
-			document.getElementById("needed-exp").innerText = '';
-			document.getElementById("needed-rounds").innerText = '';
-			document.getElementById("exp-per-round").innerText = '';
-			document.getElementById("internal-effective").innerText = '';
-			document.getElementById("internal-sum").innerText = '';
-			document.getElementById("internal-calculation-text").innerText = '';
-			document.getElementById("multi-eff").innerText = '';
-			document.getElementById("solo-eff").innerText = '';
-			document.getElementById("auto-eff").innerText = '';
-			document.getElementById("power-calculation-text").innerText = '';
-			document.getElementById("neededRounds").innerText = '';
-			document.getElementById("neededFires").innerText = '';
-			document.getElementById("neededTime").innerText = '';
-			document.getElementById("fire-calculation-text").innerText = '';
-			document.getElementById("challenge-calculation-text").innerText = '';
-		}
-		function setTab(tab) {
-			currentTab = tab;
-		}
-        document.addEventListener('DOMContentLoaded', () => {
-            showTab('internal');
-        });
-        function saveData() {
-            let surveyData = {};
-            document.querySelectorAll('#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effiscore1, #score1, #score2, #score3, #rounds1, #firea, #fires2, #current-stage, #target-stage, #challenge-score, #remaining-score').forEach(input => {
-                surveyData[input.id] = input.type === 'checkbox' ? input.checked : input.value;
-            });
-            localStorage.setItem('surveyData', JSON.stringify(surveyData));
-            alert('데이터가 저장되었습니다.');
-        }
+                    if (
+                        isNaN(currentLevel) ||
+                        isNaN(currentExpToLevelUp) ||
+                        isNaN(targetLevel) ||
+                        isNaN(rankExp) ||
+                        isNaN(fires)
+                    ) {
+                        document.getElementById("error-message").innerText =
+                            "에러: 모든 입력 값을 정확히 입력해 주세요.";
+                        clearResults();
+                        return;
+                    }
 
-        function loadData() {
-            let surveyData = JSON.parse(localStorage.getItem('surveyData'));
-            if (surveyData) {
-                Object.keys(surveyData).forEach(key => {
-                    let input = document.getElementById(key);
-                    if (input) {
-                        if (input.type === 'checkbox') {
-                            input.checked = surveyData[key];
-                        } else {
-                            input.value = surveyData[key];
+                    if (currentLevel >= targetLevel) {
+                        document.getElementById("error-message").innerText =
+                            "에러: 목표 레벨은 현재 레벨보다 높아야 합니다.";
+                        clearResults();
+                        return;
+                    }
+
+                    const data = expData;
+                    const currentData = data.find((d) => d.LV === currentLevel);
+                    const nextLevelData = data.find(
+                        (d) => d.LV === currentLevel + 1,
+                    );
+                    const targetData = data.find((d) => d.LV === targetLevel);
+
+                    if (!currentData || !nextLevelData || !targetData) {
+                        document.getElementById("error-message").innerText =
+                            "에러: 레벨 데이터를 불러오는 데 실패했습니다.";
+                        clearResults();
+                        return;
+                    }
+
+                    const currentCumulativeExp =
+                        currentData.누적EXP +
+                        nextLevelData.필요EXP -
+                        currentExpToLevelUp;
+                    const targetCumulativeExp = targetData.누적EXP;
+
+                    const neededExp =
+                        targetCumulativeExp - currentCumulativeExp;
+                    const expPerRound = rankExp * fires;
+                    const neededRounds = Math.ceil(neededExp / expPerRound);
+
+                    document.getElementById("needed-exp").innerHTML =
+                        `필요 경험치: <span style="font-weight: bold; color: blue;">${neededExp}</span>`;
+                    document.getElementById("needed-rounds").innerHTML =
+                        `필요 판수: <span style="font-weight: bold; color: blue;">${neededRounds}</span>`;
+                    document.getElementById("exp-per-round").innerHTML =
+                        `판 당 경험치 획득량: <span style="font-weight: bold; color: blue;">${expPerRound}</span>`;
+                } else if (type === "kizuna") {
+                    currentLevel = parseInt(
+                        document.getElementById("kizuna-current-level").value,
+                    );
+                    currentExpToLevelUp = parseInt(
+                        document.getElementById("kizuna-current-exp").value,
+                    );
+                    targetLevel = parseInt(
+                        document.getElementById("kizuna-target-level").value,
+                    );
+                    rankExp = parseInt(
+                        document.getElementById("kizuna-rank").value,
+                    );
+                    fires = parseInt(
+                        document.getElementById("kizuna-fires").value,
+                    );
+
+                    if (
+                        isNaN(currentLevel) ||
+                        isNaN(currentExpToLevelUp) ||
+                        isNaN(targetLevel) ||
+                        isNaN(rankExp) ||
+                        isNaN(fires)
+                    ) {
+                        document.getElementById("error-message").innerText =
+                            "에러: 모든 입력 값을 정확히 입력해 주세요.";
+                        clearResults();
+                        return;
+                    }
+
+                    if (currentLevel >= targetLevel) {
+                        document.getElementById("error-message").innerText =
+                            "에러: 목표 랭크는 현재 랭크보다 높아야 합니다.";
+                        clearResults();
+                        return;
+                    }
+
+                    const data = kizunaData;
+                    const currentData = data.find((d) => d.LV === currentLevel);
+                    const nextLevelData = data.find(
+                        (d) => d.LV === currentLevel + 1,
+                    );
+                    const targetData = data.find((d) => d.LV === targetLevel);
+
+                    if (!currentData || !nextLevelData || !targetData) {
+                        document.getElementById("error-message").innerText =
+                            "에러: 랭크 데이터를 불러오는 데 실패했습니다.";
+                        clearResults();
+                        return;
+                    }
+
+                    const currentCumulativeExp =
+                        currentData.누적EXP +
+                        nextLevelData.필요EXP -
+                        currentExpToLevelUp;
+                    const targetCumulativeExp = targetData.누적EXP;
+
+                    const neededExp =
+                        targetCumulativeExp - currentCumulativeExp;
+                    const expPerRound = rankExp * fires;
+                    const neededRounds = Math.ceil(neededExp / expPerRound);
+
+                    document.getElementById("needed-exp").innerHTML =
+                        `필요 경험치: <span style="font-weight: bold; color: blue;">${neededExp}</span>`;
+                    document.getElementById("needed-rounds").innerHTML =
+                        `필요 판수: <span style="font-weight: bold; color: blue;">${neededRounds}</span>`;
+                    document.getElementById("exp-per-round").innerHTML =
+                        `판 당 경험치 획득량: <span style="font-weight: bold; color: blue;">${expPerRound}</span>`;
+                } else if (type === "internal") {
+                    calculateInternal();
+                } else if (type === "power") {
+                    calculatepower();
+                } else if (type === "challenge") {
+                    calculateChallenge();
+                } else {
+                    calculatefire();
+                }
+            }
+
+            function calculateInternal() {
+                const leader =
+                    parseInt(document.getElementById("leader").value) || 0;
+                const member2 =
+                    parseInt(document.getElementById("member2").value) || 0;
+                const member3 =
+                    parseInt(document.getElementById("member3").value) || 0;
+                const member4 =
+                    parseInt(document.getElementById("member4").value) || 0;
+                const member5 =
+                    parseInt(document.getElementById("member5").value) || 0;
+
+                const internalSum =
+                    leader + member2 + member3 + member4 + member5;
+                const effectiveValue = Math.floor(
+                    leader + (member2 + member3 + member4 + member5) * 0.2,
+                );
+                const effectiveMultiplier = effectiveValue / 100 + 1;
+
+                document.getElementById("internal-effective").innerHTML =
+                    `실효치: <span style="font-weight: bold; color: blue;">${effectiveValue.toFixed(0)}%</span> = <span style="font-weight: bold; color: blue;">${effectiveMultiplier.toFixed(2)}배</span>`;
+                document.getElementById("internal-sum").innerHTML =
+                    `내부합: <span style="font-weight: bold; color: blue;">${internalSum}</span>`;
+                document.getElementById("internal-calculation-text").innerText =
+                    "실효치 = 리더 + (나머지멤버) * 0.2";
+            }
+
+            function calculatepower() {
+                const powerInput = // 단위: 만 (예: 25.5)
+                    parseFloat(document.getElementById("power").value) || 0;
+                const effiInput = // 단위: % (예: 280)
+                    parseInt(document.getElementById("effi").value) || 0;
+
+                // --- 기존 효율 계산 로직 (변경 없음) ---
+                const multiConstant = 4.877;
+                const soloConstant = 2.8;
+                const autoConstant = 1.84;
+
+                const multiEfficiency =
+                    ((100 + (powerInput + 1) * multiConstant) /
+                        (100 + powerInput * multiConstant) -
+                        1) *
+                    (100 + effiInput);
+                const soloEfficiency =
+                    ((100 + (powerInput + 1) * soloConstant) /
+                        (100 + powerInput * soloConstant) -
+                        1) *
+                    (100 + effiInput);
+                const autoEfficiency =
+                    ((100 + (powerInput + 1) * autoConstant) /
+                        (100 + powerInput * autoConstant) -
+                        1) *
+                    (100 + effiInput);
+
+                document.getElementById("multi-eff").innerHTML =
+                    `멀티효율: <span style="font-weight: bold; color: blue;">${multiEfficiency.toFixed(2)}%</span>`;
+                document.getElementById("solo-eff").innerHTML =
+                    `솔로효율: <span style="font-weight: bold; color: blue;">${soloEfficiency.toFixed(2)}%</span>`;
+                document.getElementById("auto-eff").innerHTML =
+                    `오토효율: <span style="font-weight: bold; color: blue;">${autoEfficiency.toFixed(2)}%</span>`;
+                // --- 마이세카이 점수 계산 로직 (수정됨) ---
+                let highestPossibleScore = "N/A"; // 기본값, 얻을 수 있는 가장 높은 점수
+
+                // 1. 입력된 종합력(powerInput)으로 테이블의 컬럼 인덱스 찾기
+                let columnIndex = -1;
+                if (powerInput >= 0) {
+                    for (
+                        let j = powerColumnThresholds.length - 1;
+                        j >= 0;
+                        j--
+                    ) {
+                        if (powerColumnThresholds[j] <= powerInput) {
+                            columnIndex = j;
+                            break;
                         }
                     }
-                });
-			switch (currentTab) {
-				case 'internal':
-					calculateInternal();
-					break;
-				case 'kizuna':
-					calculate('kizuna');
-					break;
-				case 'card':
-					calculate('card');
-					break;
-				case 'power':
-					calculatepower();
-					break;
-				case 'fire':
-					calculatefire();
-					break;
-				case 'challenge':
-					clearResults();
-					calculateChallenge();
-					break;
-				default:
-					calculateInternal();
-					break;
-			}
-            } else {
-                alert('저장된 데이터가 없습니다.');
+                }
+
+                // 2. 컬럼이 유효한 경우, 해당 컬럼에서 현재 배수율(effiInput)로 얻을 수 있는 점수 찾기
+                if (columnIndex !== -1) {
+                    // scoreRowKeys는 점수(행 키)의 오름차순. 높은 점수부터 확인
+                    for (let i = scoreRowKeys.length - 1; i >= 0; i--) {
+                        const currentScoreRow = scoreRowKeys[i]; // 현재 확인 중인 점수 행
+                        const requiredEffiForThisScore =
+                            mySekaiTableData[currentScoreRow][columnIndex];
+
+                        if (
+                            requiredEffiForThisScore !== null &&
+                            effiInput >= requiredEffiForThisScore
+                        ) {
+                            // 현재 점수 행을 얻기 위한 필요 배수율이 있고, 사용자의 배수율이 그 이상이면
+                            highestPossibleScore = currentScoreRow; // 이 점수를 얻을 수 있음
+                            break; // 가장 높은 점수를 찾았으므로 반복 중단
+                        }
+                    }
+                }
+
+                // 마이세카이 점수 표시 업데이트
+                const scoreDisplayElement = document.getElementById(
+                    "my-sekai-score-display",
+                );
+                if (scoreDisplayElement) {
+                    scoreDisplayElement.innerHTML = `마이세카이 점수: <span style="font-weight: bold; color: green;">${highestPossibleScore}</span>`;
+                } else {
+                    const powerCalcTextElement = document.getElementById(
+                        "power-calculation-text",
+                    );
+                    if (powerCalcTextElement) {
+                        let currentText = powerCalcTextElement.innerHTML;
+                        currentText = currentText.replace(
+                            /<br>마이세카이 점수:.*?<\/span>/g,
+                            "",
+                        );
+                        powerCalcTextElement.innerHTML =
+                            currentText +
+                            `마이세카이 점수: <span style="font-weight: bold; color: green;">${highestPossibleScore}</span><br><br><br>종합력 1만과 같은 효율의 배수<br><br>대략적인 값으로 곡이나 스킬에 따라 달라짐`;
+                    }
+                }
             }
-        }
-    </script>
-</body>
+
+            function calculatefire() {
+                // Get input values
+                let currentScore =
+                    parseFloat(document.getElementById("score1").value) || 0;
+                let targetScore =
+                    parseFloat(document.getElementById("score2").value) || 0;
+                let scorePerRound =
+                    parseFloat(document.getElementById("score3").value) || 0;
+                let roundsPerInterval =
+                    parseFloat(document.getElementById("rounds1").value) || 0;
+                let currentFireBonus =
+                    parseInt(document.getElementById("firea").value) || 0;
+                let changeFireBonus = document.getElementById("fires2").value;
+                let firenow = getFireaValue(currentFireBonus);
+
+                // Determine calculation score
+                let calculationScore;
+                if (changeFireBonus === "none") {
+                    calculationScore = scorePerRound;
+                } else {
+                    let newFireBonus = parseInt(changeFireBonus);
+                    calculationScore =
+                        (scorePerRound / currentFireBonus) * newFireBonus;
+                    currentFireBonus = newFireBonus;
+                    firenow = getFireaValue(currentFireBonus);
+                }
+
+                // Calculate needed rounds
+                let neededRounds =
+                    (targetScore - currentScore) / calculationScore;
+                neededRounds = neededRounds > 0 ? neededRounds : 0; // Prevent negative rounds
+                neededRounds = Math.ceil(neededRounds);
+
+                // Calculate needed fires
+                let neededFires = neededRounds * firenow;
+
+                // Calculate needed time
+                let neededTime = neededRounds / roundsPerInterval;
+                neededTime = neededTime > 0 ? neededTime : 0; // Prevent negative time
+
+                let neededcan = neededFires / 10;
+
+                // Display results
+                document.getElementById("neededRounds").innerHTML =
+                    `필요 판수: <span style="font-weight: bold; color: blue;">${Math.ceil(neededRounds)}</span> 판`;
+                document.getElementById("neededFires").innerHTML =
+                    `필요 불: <span style="font-weight: bold; color: blue;">${Math.ceil(neededFires)}</span> 불 = <span style="font-weight: bold; color: blue;">${Math.ceil(neededcan)}</span> 뚱캔`;
+                document.getElementById("neededTime").innerHTML =
+                    `필요 시간: <span style="font-weight: bold; color: blue;">${neededTime.toFixed(1)}</span> 시간`;
+                document.getElementById("fire-calculation-text").innerHTML =
+                    '<span style="font-weight: bold">대략적인 간 당 판수</span><br>엔비:26~29  로앤파:17~19  치어풀:15~17<br><br><span style="font-weight: bold"><a target="_blank" href="https://71ar.github.io/index/">덱파워 예측 계산기</a></span>';
+            }
+
+            function clearResults() {
+                document.getElementById("needed-exp").innerText = "";
+                document.getElementById("needed-rounds").innerText = "";
+                document.getElementById("exp-per-round").innerText = "";
+                document.getElementById("internal-effective").innerText = "";
+                document.getElementById("internal-sum").innerText = "";
+                document.getElementById("internal-calculation-text").innerText =
+                    "";
+                document.getElementById("multi-eff").innerText = "";
+                document.getElementById("solo-eff").innerText = "";
+                document.getElementById("auto-eff").innerText = "";
+                document.getElementById("power-calculation-text").innerText =
+                    "";
+                document.getElementById("neededRounds").innerText = "";
+                document.getElementById("neededFires").innerText = "";
+                document.getElementById("neededTime").innerText = "";
+                document.getElementById("fire-calculation-text").innerText = "";
+                document.getElementById(
+                    "challenge-calculation-text",
+                ).innerText = "";
+            }
+            function setTab(tab) {
+                currentTab = tab;
+            }
+            document.addEventListener("DOMContentLoaded", () => {
+                showTab("internal");
+            });
+            function saveData() {
+                let surveyData = {};
+                document
+                    .querySelectorAll(
+                        "#leader, #member2, #member3, #member3, #member4, #member5, #kizuna-current-level, #kizuna-current-exp, #kizuna-target-level, #kizuna-rank, #kizuna-fires, #current-level, #current-exp, #target-level, #rank, #fires, #power, #effiscore1, #score1, #score2, #score3, #rounds1, #firea, #fires2, #current-stage, #target-stage, #challenge-score, #remaining-score",
+                    )
+                    .forEach((input) => {
+                        surveyData[input.id] =
+                            input.type === "checkbox"
+                                ? input.checked
+                                : input.value;
+                    });
+                localStorage.setItem("surveyData", JSON.stringify(surveyData));
+                alert("데이터가 저장되었습니다.");
+            }
+
+            function loadData() {
+                let surveyData = JSON.parse(localStorage.getItem("surveyData"));
+                if (surveyData) {
+                    Object.keys(surveyData).forEach((key) => {
+                        let input = document.getElementById(key);
+                        if (input) {
+                            if (input.type === "checkbox") {
+                                input.checked = surveyData[key];
+                            } else {
+                                input.value = surveyData[key];
+                            }
+                        }
+                    });
+                    switch (currentTab) {
+                        case "internal":
+                            calculateInternal();
+                            break;
+                        case "kizuna":
+                            calculate("kizuna");
+                            break;
+                        case "card":
+                            calculate("card");
+                            break;
+                        case "power":
+                            calculatepower();
+                            break;
+                        case "fire":
+                            calculatefire();
+                            break;
+                        case "challenge":
+                            clearResults();
+                            calculateChallenge();
+                            break;
+                        default:
+                            calculateInternal();
+                            break;
+                    }
+                } else {
+                    alert("저장된 데이터가 없습니다.");
+                }
+            }
+            function toggleMySekaiTable() {
+                const tableContainer = document.getElementById(
+                    "my-sekai-table-container",
+                );
+                if (
+                    tableContainer.style.display === "none" ||
+                    tableContainer.style.display === ""
+                ) {
+                    tableContainer.style.display = "block";
+                } else {
+                    tableContainer.style.display = "none";
+                }
+            }
+        </script>
+    </body>
 </html>
