@@ -122,12 +122,12 @@
                 width: 100%;
                 border-collapse: collapse;
                 text-align: center;
-                font-size: 10px; /* Adjusted for better fit */
+                font-size: clamp(8px, 1vw, 12px); /* Adjusted for better fit */
             }
             #my-sekai-table-container th,
             #my-sekai-table-container td {
                 border: 1px solid #ccc;
-                padding: 4px; /* Adjusted padding */
+                padding: 2px; /* Adjusted padding */
             }
             #my-sekai-table-container th {
                 background-color: #f2f2f2;
@@ -351,15 +351,15 @@
                         <thead>
                             <tr>
                                 <th></th>
-                                <th>0만~</th>
-                                <th>4.5만~</th>
-                                <th>9.0만~</th>
-                                <th>13.5만~</th>
-                                <th>18.0만~</th>
-                                <th>22.5만~</th>
-                                <th>27.0만~</th>
-                                <th>31.5만~</th>
-                                <th>36.0만~</th>
+                                <th>0만</th>
+                                <th>4.5만</th>
+                                <th>9.0만</th>
+                                <th>13.5만</th>
+                                <th>18.0만</th>
+                                <th>22.5만</th>
+                                <th>27.0만</th>
+                                <th>31.5만</th>
+                                <th>36.0만</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1619,6 +1619,7 @@
         </script>
     </body>
 </html>
+
 
 
 
