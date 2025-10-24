@@ -18,7 +18,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run clean && npm run build",
-    "deploy": "gh-pages -d build",
+    "deploy": "cd build && git init && git add -A && git commit -m \"Deploy to GitHub Pages\" && git push -f https://github.com/RilakKuma2/prsk-calc.git main:gh-pages",
     "clean": "rm -rf build"
   },
   "eslintConfig": {

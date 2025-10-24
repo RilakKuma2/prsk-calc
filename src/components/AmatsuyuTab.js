@@ -52,7 +52,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
     { level: 340, rewards: { '전용 카게라': 50 } },
     { level: 360, rewards: { '카게라': 50 } },
     { level: 380, rewards: { '전용 카게라': 50 } },
-    { level: 400, rewards: { '생일 칭호': '꽃별 3', '작캔': 10, '중급 스코어': 10, '미션 가챠 티켓': 3 } },
+    { level: 400, rewards: { '생일 칭호': '별꽃 3', '작캔': 10, '중급 스코어': 10, '미션 가챠 티켓': 3 } },
   ];
 
   const [birthdayCardBonus, setBirthdayCardBonus] = useState(0);
