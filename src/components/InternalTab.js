@@ -51,7 +51,7 @@ const InternalTab = ({ surveyData, setSurveyData }) => {
       <input type="number" id="member5" min="0" value={member5} onChange={e => setMember5(e.target.value)} />
       <span>%</span>
 
-      <h2></h2>
+
       <p id="internal-effective">실효치: <span style={{fontWeight: "bold", color: "blue"}}>{effectiveValue.toFixed(0)}%</span> = <span style={{fontWeight: "bold", color: "blue"}}>{(effectiveValue / 100 + 1).toFixed(2)}배</span></p>
       <p id="internal-sum">내부합: <span style={{fontWeight: "bold", color: "blue"}}>{internalSum}</span></p>
       <p id="internal-calculation-text">실효치 = 리더 + (나머지멤버) * 0.2</p>

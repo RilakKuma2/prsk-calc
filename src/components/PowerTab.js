@@ -93,7 +93,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       </button>
       {showMySekaiTable && <MySekaiTable />}
 
-      <h2></h2>
+
       <p id="multi-eff">멀티효율: <span style={{fontWeight: "bold", color: "blue"}}>{multiEff.toFixed(2)}%</span></p>
       <p id="solo-eff">솔로효율: <span style={{fontWeight: "bold", color: "blue"}}>{soloEff.toFixed(2)}%</span></p>
       <p id="auto-eff">오토효율: <span style={{fontWeight: "bold", color: "blue"}}>{autoEff.toFixed(2)}%</span></p>

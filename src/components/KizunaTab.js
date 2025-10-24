@@ -103,7 +103,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
         <option value="30">10</option>
       </select>
 
-      <h2></h2>
+
       <p id="error-message">{errorMessage}</p>
       <p id="needed-exp">필요 경험치: <span style={{fontWeight: "bold", color: "blue"}}>{neededExp}</span></p>
       <p id="needed-rounds">필요 판수: <span style={{fontWeight: "bold", color: "blue"}}>{neededRounds}</span></p>

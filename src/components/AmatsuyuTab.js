@@ -163,7 +163,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
       <label htmlFor="amatsuyuTargetLevel">목표 레벨:</label>
       <input type="number" id="amatsuyuTargetLevel" min="0" max="400" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} /><br />
 
-      <h2></h2>
+
       <p>생카 배율: <span style={{fontWeight: "bold", color: "blue"}}>{birthdayCardBonus}%</span></p>
       <p>아마츠유 개 당 포인트: <span style={{fontWeight: "bold", color: "blue"}}>{Math.floor(amatsuyuPointsPerItem)}</span></p>
       <p>필요 아마츠유: <span style={{fontWeight: "bold", color: "blue"}}>{neededAmatsuyu}</span>개</p>

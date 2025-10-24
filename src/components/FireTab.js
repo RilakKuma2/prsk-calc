@@ -115,7 +115,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         <option value="35">10</option>
       </select>
 
-      <h2></h2>
+
       <p id="neededRounds">필요 판수: <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededRounds)}</span> 판</p>
       <p id="neededFires">필요 불: <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededFires)}</span> 불 = <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededFires / 10)}</span> 뚱캔</p>
       <p id="neededTime">필요 시간: <span style={{fontWeight: "bold", color: "blue"}}>{neededTime.toFixed(1)}</span> 시간</p>

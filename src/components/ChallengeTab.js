@@ -88,7 +88,7 @@ const ChallengeTab = ({ surveyData, setSurveyData }) => {
         <option value="2">N</option>
       </select>
 
-      <h2></h2>
+
       <div id="challenge-calculation-text" dangerouslySetInnerHTML={{ __html: result }}></div>
     </div>
   );
