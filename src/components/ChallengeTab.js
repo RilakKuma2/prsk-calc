@@ -36,7 +36,8 @@ const ChallengeTab = ({ surveyData, setSurveyData }) => {
         setResult(`
 <span style="font-weight: bold; color: red;">올바른 스테이지 값을 입력해주세요.</span><br><br>
 <span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://3-3.dev/sekai/top-deck">챌라 이론덱</a></span><br>
-<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br><br>
+<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br>
+<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/2262136">군청찬가 초고점 뽑기</a></span><br><br>
 목표 스테이지 151 이상 입력 시 EX로 자동변환
 `);
         return;
@@ -60,7 +61,8 @@ const ChallengeTab = ({ surveyData, setSurveyData }) => {
 필요 점수: <span style="font-weight: bold; color: blue;">${neededScore}</span><br><br>
 남은 일수: <span style="font-weight: bold; color: blue;">${neededPlays}</span><br><br>
 <span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://3-3.dev/sekai/top-deck">챌라 이론덱</a></span><br>
-<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br><br>
+<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br>
+<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/2262136">군청찬가 초고점 뽑기</a></span><br><br>
 목표 스테이지 151 이상 입력 시 EX로 자동변환
 `);
 
