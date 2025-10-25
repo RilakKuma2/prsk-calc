@@ -11,6 +11,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
   const [neededExp, setNeededExp] = useState(0);
   const [neededRounds, setNeededRounds] = useState(0);
   const [expPerRound, setExpPerRound] = useState(0);
+  const [naturalFiresDays, setNaturalFiresDays] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
@@ -64,6 +65,14 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
     setNeededExp(needed);
     setExpPerRound(perRound);
     setNeededRounds(rounds);
+
+    // Calculate Natural Fires Days
+    let naturalFiresDaysCalc = 0;
+    if (rankVal > 0) {
+      naturalFiresDaysCalc = Math.ceil(needed / rankVal / 5 / 58);
+    }
+    setNaturalFiresDays(naturalFiresDaysCalc);
+
     setErrorMessage('');
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,6 +117,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
       <p id="needed-exp">필요 경험치: <span style={{fontWeight: "bold", color: "blue"}}>{neededExp}</span></p>
       <p id="needed-rounds">필요 판수: <span style={{fontWeight: "bold", color: "blue"}}>{neededRounds}</span></p>
       <p id="exp-per-round">판 당 경험치 획득량: <span style={{fontWeight: "bold", color: "blue"}}>{expPerRound}</span></p>
+      <p id="natural-fires-days">자연불 : <span style={{fontWeight: "bold", color: "blue"}}>{naturalFiresDays}</span>일</p>
     </div>
   );
 };
