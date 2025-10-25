@@ -188,21 +188,21 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
         <tbody style={{ border: '1px solid #ccc' }}>
           <tr>
             <td style={{ border: '1px solid #eee', padding: '2px', fontWeight: 'bold' }}>기본</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>2</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>10</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>25</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>2 레벨</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>10 레벨</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>25 레벨</td>
           </tr>
           <tr>
             <td style={{ border: '1px solid #eee', padding: '2px', fontWeight: 'bold' }}>날개</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>45</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>70</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>115</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>45 레벨</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>70 레벨</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>115 레벨</td>
           </tr>
           <tr>
             <td style={{ border: '1px solid #eee', padding: '2px', fontWeight: 'bold' }}>꽃</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>165</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>225</td>
-            <td style={{ border: '1px solid #eee', padding: '2px' }}>300</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>165 레벨</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>225 레벨</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>300 레벨</td>
           </tr>
           <tr>
             <td style={{ border: '1px solid #eee', padding: '2px', fontWeight: 'bold' }}>별꽃</td>
