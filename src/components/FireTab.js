@@ -116,9 +116,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       </select>
 
 
-      <p id="neededRounds">필요 판수: <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededRounds)}</span> 판</p>
-      <p id="neededFires">필요 불: <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededFires)}</span> 불 = <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededFires / 10)}</span> 뚱캔</p>
-      <p id="neededTime">필요 시간: <span style={{fontWeight: "bold", color: "blue"}}>{neededTime.toFixed(1)}</span> 시간</p>
+      <p id="neededRounds" style={{margin: '4px 0'}}>필요 판수: <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededRounds)}</span> 판</p>
+      <p id="neededFires" style={{margin: '4px 0'}}>필요 불: <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededFires)}</span> 불 = <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededFires / 10)}</span> 뚱캔</p>
+      <p id="neededTime" style={{margin: '4px 0'}}>필요 시간: <span style={{fontWeight: "bold", color: "blue"}}>{neededTime.toFixed(1)}</span> 시간</p>
       <p id="fire-calculation-text"><span style={{fontWeight: "bold"}}>대략적인 간 당 판수</span><br/>엔비:26~29  로앤파:17~19  치어풀:15~17<br/><br/><span style={{fontWeight: "bold"}}><a target="_blank" rel="noopener noreferrer" href="https://71ar.github.io/index/">덱파워 예측 계산기</a></span></p>
     </div>
   );

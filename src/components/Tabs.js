@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
 
 const Tabs = ({ currentTab, setCurrentTab }) => {
   const tabInfo = [
@@ -10,8 +10,56 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     { id: 'amatsuyu', name: '아마츠유' },
   ];
 
+  const tabsRef = useRef(null);
+  const [gliderStyle, setGliderStyle] = useState({});
+
+  const updateGlider = useCallback(() => {
+    if (tabsRef.current) {
+      const activeTabElement = tabsRef.current.querySelector('.tab.active');
+      if (activeTabElement) {
+        setGliderStyle({
+          left: activeTabElement.offsetLeft,
+          width: activeTabElement.offsetWidth,
+        });
+      }
+    }
+  }, []);
+
+  // Update glider on tab change
+  useLayoutEffect(() => {
+    updateGlider();
+  }, [currentTab, updateGlider]);
+
+  // Update glider on window resize
+  useEffect(() => {
+    const debounce = (func, wait) => {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    };
+
+    const debouncedUpdateGlider = debounce(updateGlider, 100);
+
+    window.addEventListener('resize', debouncedUpdateGlider);
+    
+    // Initial call to set position correctly
+    updateGlider();
+
+    // Cleanup listener on component unmount
+    return () => {
+      window.removeEventListener('resize', debouncedUpdateGlider);
+    };
+  }, [updateGlider]);
+
   return (
-    <div className="tabs">
+    <div className="tabs" ref={tabsRef}>
+      <div className="glider" style={gliderStyle}></div>
       {tabInfo.map(tab => (
         <div
           key={tab.id}

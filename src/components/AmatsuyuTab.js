@@ -164,17 +164,17 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
       <input type="number" id="amatsuyuTargetLevel" min="0" max="400" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} /><br />
 
 
-      <p>생카 배율: <span style={{fontWeight: "bold", color: "blue"}}>{birthdayCardBonus}%</span></p>
-      <p>아마츠유 개 당 포인트: <span style={{fontWeight: "bold", color: "blue"}}>{Math.floor(amatsuyuPointsPerItem)}</span></p>
-      <p>필요 아마츠유: <span style={{fontWeight: "bold", color: "blue"}}>{neededAmatsuyu}</span>개</p>
+      <p style={{margin: '4px 0'}}>생카 배율: <span style={{fontWeight: "bold", color: "blue"}}>{birthdayCardBonus}%</span></p>
+      <p style={{margin: '4px 0'}}>아마츠유 개 당 포인트: <span style={{fontWeight: "bold", color: "blue"}}>{Math.floor(amatsuyuPointsPerItem)}</span></p>
+      <p style={{margin: '4px 0'}}>필요 아마츠유: <span style={{fontWeight: "bold", color: "blue"}}>{neededAmatsuyu}</span>개</p>
 
-      <h3>마이세카이(생일 꽃)</h3>
+      <h3 style={{ marginBottom: '5px' }}>마이세카이(생일 꽃)</h3>
 
-      <p><span style={{fontWeight: "bold", color: "blue"}}>{mySekaiStones}</span>불 / <span style={{fontWeight: "bold", color: "blue"}}>{mySekaiLaps}</span>바퀴</p>
+      <p style={{ marginTop: '0' }}><span style={{fontWeight: "bold", color: "blue"}}>{mySekaiStones}</span>불 / <span style={{fontWeight: "bold", color: "blue"}}>{mySekaiLaps}</span>바퀴</p>
 
-      <h3>5불런/생카가챠</h3>
+      <h3 style={{ marginBottom: '5px' }}>5불런/생카가챠</h3>
 
-      <p><span style={{fontWeight: "bold", color: "blue"}}>{fiveFireStones}</span>불 / 엔비 <span style={{fontWeight: "bold", color: "blue"}}>{fiveFireHours}</span>시간</p>
+      <p style={{ marginTop: '0' }}><span style={{fontWeight: "bold", color: "blue"}}>{fiveFireStones}</span>불 / 엔비 <span style={{fontWeight: "bold", color: "blue"}}>{fiveFireHours}</span>시간</p>
 
       {highestBirthdayTitle && <p style={{ textAlign: 'center', fontWeight: 'bold', color: 'green' }}>생일 칭호: {highestBirthdayTitle}</p>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px', maxWidth: '300px', margin: '0 auto' }}>
@@ -183,29 +183,32 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
         ))}
       </div>
       <p>마셐:2.5불 당 42개 /5불런:5불 당 25개</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', maxWidth: '400px', margin: '10px auto', border: '1px solid #ccc', padding: '5px' }}>
-        {(() => {
-          const birthdayTitles = rewardTable.filter(item => item.rewards['생일 칭호']);
-          const half = Math.ceil(birthdayTitles.length / 2);
-          const firstHalf = birthdayTitles.slice(0, half);
-          const secondHalf = birthdayTitles.slice(half);
-
-          return firstHalf.map((item, index) => (
-            <React.Fragment key={item.level}>
-              <div style={{ border: '1px solid #eee', padding: '5px', textAlign: 'center' }}>{item.level}</div>
-              <div style={{ border: '1px solid #eee', padding: '5px', textAlign: 'center' }}>{item.rewards['생일 칭호']}</div>
-              {secondHalf[index] ? (
-                <>
-                  <div style={{ border: '1px solid #eee', padding: '5px', textAlign: 'center' }}>{secondHalf[index].level}</div>
-                  <div style={{ border: '1px solid #eee', padding: '5px', textAlign: 'center' }}>{secondHalf[index].rewards['생일 칭호']}</div>
-                </>
-              ) : (
-                <><div /><div /></> // Fill empty columns if second half is shorter
-              )}
-            </React.Fragment>
-          ));
-        })()}
-      </div>
+      <table style={{ width: '100%', maxWidth: '400px', margin: '20px auto', borderCollapse: 'collapse', textAlign: 'center' }}>
+        <tbody style={{ border: '1px solid #ccc' }}>
+          <tr>
+            <td style={{ border: '1px solid #eee', padding: '2px', fontWeight: 'bold' }}>기본</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>2</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>10</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>25</td>
+          </tr>
+          <tr>
+            <td style={{ border: '1px solid #eee', padding: '2px', fontWeight: 'bold' }}>날개</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>45</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>70</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>115</td>
+          </tr>
+          <tr>
+            <td style={{ border: '1px solid #eee', padding: '2px', fontWeight: 'bold' }}>꽃</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>165</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>225</td>
+            <td style={{ border: '1px solid #eee', padding: '2px' }}>300</td>
+          </tr>
+          <tr>
+            <td style={{ border: '1px solid #eee', padding: '2px', fontWeight: 'bold' }}>별꽃</td>
+            <td colSpan="3" style={{ border: '1px solid #eee', padding: '8px' }}>400</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 };

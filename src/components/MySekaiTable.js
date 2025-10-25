@@ -2,25 +2,28 @@ import React from 'react';
 
 const MySekaiTable = () => {
   return (
-    <div id="my-sekai-table-container" style={{ marginTop: '10px', overflowX: 'auto' }}>
+    <div id="my-sekai-table-container" style={{ marginTop: '10px', width: '100%', overflowX: 'auto' }}>
       <table>
         <thead>
           <tr>
-            <th></th>
-            <th>0만</th>
-            <th>4.5만</th>
-            <th>9.0만</th>
-            <th>13.5만</th>
-            <th>18.0만</th>
-            <th>22.5만</th>
-            <th>27.0만</th>
-            <th>31.5만</th>
-            <th>36.0만</th>
+            <th className="diagonal-header">
+              <span className="header-row-text">이벤포</span>
+              <span className="header-col-text">종합력</span>
+            </th>
+            <th>0</th>
+            <th>4.5</th>
+            <th>9.0</th>
+            <th>13.5</th>
+            <th>18.0</th>
+            <th>22.5</th>
+            <th>27.0</th>
+            <th>31.5</th>
+            <th>36.0</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><b>1000pt</b></td>
+            <td><b>1000</b></td>
             <td>100</td>
             <td>82</td>
             <td>67</td>
@@ -32,7 +35,7 @@ const MySekaiTable = () => {
             <td>12</td>
           </tr>
           <tr>
-            <td><b>1500pt</b></td>
+            <td><b>1500</b></td>
             <td>200</td>
             <td>173</td>
             <td>150</td>
@@ -44,7 +47,7 @@ const MySekaiTable = () => {
             <td>67</td>
           </tr>
           <tr>
-            <td><b>2000pt</b></td>
+            <td><b>2000</b></td>
             <td>300</td>
             <td>264</td>
             <td>234</td>
@@ -56,7 +59,7 @@ const MySekaiTable = () => {
             <td>123</td>
           </tr>
           <tr>
-            <td><b>2500pt</b></td>
+            <td><b>2500</b></td>
             <td>400</td>
             <td>355</td>
             <td>317</td>
@@ -68,7 +71,7 @@ const MySekaiTable = () => {
             <td>178</td>
           </tr>
           <tr>
-            <td><b>3000pt</b></td>
+            <td><b>3000</b></td>
             <td>500</td>
             <td>446</td>
             <td>400</td>
@@ -80,7 +83,7 @@ const MySekaiTable = () => {
             <td>234</td>
           </tr>
           <tr>
-            <td><b>3500pt</b></td>
+            <td><b>3500</b></td>
             <td>600</td>
             <td>537</td>
             <td>484</td>
@@ -92,7 +95,7 @@ const MySekaiTable = () => {
             <td>289</td>
           </tr>
           <tr>
-            <td><b>4000pt</b></td>
+            <td><b>4000</b></td>
             <td>700</td>
             <td>628</td>
             <td>567</td>
@@ -104,7 +107,7 @@ const MySekaiTable = () => {
             <td>345</td>
           </tr>
           <tr>
-            <td><b>4500pt</b></td>
+            <td><b>4500</b></td>
             <td>800</td>
             <td>719</td>
             <td>650</td>
@@ -116,7 +119,7 @@ const MySekaiTable = () => {
             <td>400</td>
           </tr>
           <tr>
-            <td><b>5000pt</b></td>
+            <td><b>5000</b></td>
             <td></td>
             <td></td>
             <td>734</td>
@@ -128,7 +131,7 @@ const MySekaiTable = () => {
             <td>456</td>
           </tr>
           <tr>
-            <td><b>5500pt</b></td>
+            <td><b>5500</b></td>
             <td></td>
             <td></td>
             <td></td>
@@ -140,7 +143,7 @@ const MySekaiTable = () => {
             <td>512</td>
           </tr>
           <tr>
-            <td><b>6000pt</b></td>
+            <td><b>6000</b></td>
             <td></td>
             <td></td>
             <td></td>
@@ -152,7 +155,7 @@ const MySekaiTable = () => {
             <td>567</td>
           </tr>
           <tr>
-            <td><b>6500pt</b></td>
+            <td><b>6500</b></td>
             <td></td>
             <td></td>
             <td></td>
@@ -164,7 +167,7 @@ const MySekaiTable = () => {
             <td>623</td>
           </tr>
           <tr>
-            <td><b>7000pt</b></td>
+            <td><b>7000</b></td>
             <td></td>
             <td></td>
             <td></td>
@@ -176,7 +179,7 @@ const MySekaiTable = () => {
             <td>678</td>
           </tr>
           <tr>
-            <td><b>7500pt</b></td>
+            <td><b>7500</b></td>
             <td></td>
             <td></td>
             <td></td>
@@ -188,15 +191,10 @@ const MySekaiTable = () => {
             <td>734</td>
           </tr>
           <tr>
-            <td><b>8000pt</b></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td><b>8000</b></td>
+            <td colSpan="8" style={{ textAlign: 'left', padding: '8px', fontSize: '10px' }}>
+              ※ 목표 이벤포를 얻기 위한 최소 종합력 및 배수
+            </td>
             <td>789</td>
           </tr>
         </tbody>

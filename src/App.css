@@ -1,136 +1,382 @@
+
 .container {
-    background: #fff;
-    padding: 2px 5px;
-    border-radius: 15px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    padding: 25px 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
     text-align: center;
-    max-width: 500px;
+    max-width: 550px;
     width: 100%;
+    margin: 40px auto;
+    transition: all 0.3s ease;
 }
-            h1 {
-                color: #333;
-                margin-bottom: 20px;
-            }
-            label {
-                display: inline;
-                margin: 15px 0 5px;
-                font-weight: bold;
-                color: #555;
-            }
-            input,
-            select {
-                width: 25%;
-                padding: 10px;
-                margin-bottom: 10px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                font-size: 16px;
-                text-align: center;
-            }
-            h2 {
-                margin-top: 20px;
-                color: #333;
-            }
-            p {
-                font-size: 18px;
-                color: #555;
-                word-break: break-word;
-            }
-            #error-message {
-                color: red;
-                margin-top: 10px;
-            }
-            .tabs {
-                display: flex;
-                justify-content: space-evenly;
-                margin-bottom: 20px;
-            }
-            .tab {
-                cursor: pointer;
-                padding: 10px 10px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                font-size: 15px;
-                font-weight: bold;
-            }
-            .tab.active {
-                background-color: #007bff;
-                color: #fff;
-            }
-            .button-container {
-                display: flex;
-                justify-content: center;
-                margin-top: 0px;
-                flex-wrap: wrap;
-            }
-            .label {
-                white-space: nowrap;
-            }
-            .action-button {
-                background-color: #007bff;
-                color: white;
-                padding: 10px 20px;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                margin: 0 10px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            .action-button:hover {
-                background-color: #0056b3;
-            }
-            .link-button {
-                background-color: #ffffff;
-                color: black;
-                padding: 10px 20px;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                cursor: pointer;
-                margin: 5px 10px; /* Adjusted margin for wrapping */
-                font-size: 14px;
-                font-weight: bold;
-            }
-            .checkbox-container {
-                display: inline-block;
-                margin-left: 10px;
-            }
-            .mini-tabs {
-                display: flex;
-                justify-content: center;
-                margin-bottom: 15px;
-            }
-            .mini-tab {
-                cursor: pointer;
-                padding: 8px 12px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: bold;
-                margin: 0 5px;
-                background-color: #f8f9fa;
-                color: #333;
-            }
-            .mini-tab.active {
-                background-color: #007bff;
-                color: #fff;
-            }
-            /* Style for the My Sekai table */
-            #my-sekai-table-container table {
-                width: 100%;
-                border-collapse: collapse;
-                text-align: center;
-                font-size: clamp(10px, 1vw, 12px); /* Adjusted for better fit */
-            }
-            #my-sekai-table-container th,
-            #my-sekai-table-container td {
-                border: 1px solid #ccc;
-                padding: 4px; /* Adjusted padding */
-            }
-            #my-sekai-table-container th {
-                background-color: #f2f2f2;
-            }
-/* Style for the My Sekai table */
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+label {
+    display: inline-block;
+    width: auto; /* Auto width */
+    margin: 0 10px 15px 0;
+    font-weight: 500;
+    color: #34495e;
+    font-size: 16px;
+    vertical-align: middle;
+}
+
+input,
+select {
+    width: 25%; /* Harmonized width */
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #dfe6e9;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+[id$="-tab-content"] {
+    padding: 10px 0;
+    text-align: center; /* Center form lines */
+}
+
+h2 {
+    margin-top: 25px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+p {
+    font-size: 17px;
+    color: #576574;
+    word-break: break-word;
+    line-height: 1.6;
+}
+
+#error-message {
+    color: #e74c3c;
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px;
+    background-color: #f0f2f5;
+    border-radius: 12px;
+    padding: 5px;
+    position: relative; /* Needed for the glider */
+}
+
+.glider {
+    position: absolute;
+    top: 5px;
+    height: calc(100% - 10px);
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease-in-out;
+}
+
+.tab {
+    cursor: pointer;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #576574;
+    transition: all 0.3s ease;
+    flex-grow: 1;
+    position: relative; /* Ensure text is above the glider */
+    z-index: 2;
+}
+
+.tab.active {
+    /* The background is now handled by the glider */
+    color: #3498db;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.label {
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+.action-button {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.link-button {
+    background-color: #ffffff;
+    color: #2c3e50;
+    padding: 12px 25px;
+    border: 1px solid #dfe6e9;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.link-button:hover {
+    transform: translateY(-2px);
+    border-color: #bdc3c7;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+}
+
+input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+    accent-color: #3498db;
+}
+
+.mini-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.mini-tab {
+    cursor: pointer;
+    padding: 8px 15px;
+    border: 1px solid #dfe6e9;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    background-color: #f8f9fa;
+    color: #576574;
+    transition: all 0.3s ease;
+}
+
+.mini-tab.active {
+    background-color: #3498db;
+    color: #fff;
+    border-color: #3498db;
+}
+
+@media (max-width: 768px) {
+    .container {
+        margin: 0;
+        border-radius: 0;
+        max-width: 100%;
+        padding: 20px 0; /* Remove horizontal padding */
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .tabs {
+        gap: 1px;
+    }
+
+    .tab {
+        font-size: 12px;
+        font-weight: 500;
+        padding: 8px 2px;
+        white-space: nowrap;
+    }
+
+    [id$="-tab-content"] {
+        text-align: center;
+        padding: 10px 5px;
+    }
+
+    label {
+        width: auto;
+        margin: 0 10px 15px 0;
+        font-size: 15px;
+    }
+
+    input,
+    select {
+        width: 35%;
+        font-size: 14px;
+    }
+
+    .header-row-text,
+    .header-col-text {
+        font-size: 8px; /* Smaller font for mobile header text */
+    }
+}
+
+#my-sekai-table-container {
+    width: 100%;
+    overflow-x: auto; /* Keep for safety on small screens */
+}
+
+#my-sekai-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: clamp(10px, 1vw, 12px); /* User's preferred responsive font size */
+    font-family: sans-serif; /* Explicitly set sans-serif font */
+}
+
+#my-sekai-table-container th,
+#my-sekai-table-container td {
+    border: 1px solid #ccc;
+    padding: 4px;
+}
+
+#my-sekai-table-container th {
+    background-color: #f2f2f2;
+}
+
+.diagonal-header {
+    position: relative;
+    overflow: hidden;
+}
+
+.diagonal-header::after {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 1px;
+    background-color: #ccc; /* Match border color */
+    left: -50%;
+    top: 50%;
+    transform: rotate(25deg);
+}
+
+.header-row-text,
+.header-col-text {
+    position: absolute;
+    font-weight: bold;
+    font-size: 7.5px; /* Smaller font size */
+}
+
+.header-row-text {
+    bottom: 1px;
+    left: 1px;
+}
+
+.header-col-text {
+    top: 1px;
+    right: 1px;
+}
+
+#my-sekai-table-container th {
+    background-color: #f7f9fc;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
 #my-sekai-table-container td:not(:first-child):not(:empty)::after {
     content: "%";
+    color: #000000;
+    font-size: 0.9em;
+    margin-left: 0px;
 }
+
+#my-sekai-table-container td:first-child {
+    font-weight: bold;
+}
+
+/* --- Responsive Styles --- */
+
+@media (max-width: 768px) {
+    .container {
+        margin: 0;
+        max-width: 100%;
+        border-radius: 0;
+        padding: 10px 5px;
+    }
+
+    h1 {
+        font-size: 30px;
+        font-weight: bold;
+    }
+
+    .tabs {
+        gap: 1px;
+    }
+
+    .tab {
+        font-size: 16px;
+        font-weight: bold;
+        padding: 8px 1px;
+        white-space: nowrap;
+    }
+
+    [id$="-tab-content"] {
+        padding: 10px 0px;
+    }
+
+    label {
+        margin: 0 10px 15px 0;
+        font-size: 16px;
+    }
+
+    input,
+    select {
+        width: 30%;
+        font-size: 14px;
+    }
+}
+
+/* Fallback to 3 columns on very small screens */
+@media (max-width: 380px) {
+    .tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    .tab {
+        flex-basis: calc(33.333% - 10px);
+    }
+
+    /* Disable glider animation and revert to static background for active tab */
+    .glider {
+        display: none;
+    }
+    .tab.active {
+        background-color: #ffffff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+}
+
