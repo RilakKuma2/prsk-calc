@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/prsk-calc/static/css/main.2a2d346e.css",
+    "main.js": "/prsk-calc/static/js/main.8c4b37a9.js",
+    "static/js/453.b6b8bb66.chunk.js": "/prsk-calc/static/js/453.b6b8bb66.chunk.js",
+    "index.html": "/prsk-calc/index.html",
+    "main.2a2d346e.css.map": "/prsk-calc/static/css/main.2a2d346e.css.map",
+    "main.8c4b37a9.js.map": "/prsk-calc/static/js/main.8c4b37a9.js.map",
+    "453.b6b8bb66.chunk.js.map": "/prsk-calc/static/js/453.b6b8bb66.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.2a2d346e.css",
+    "static/js/main.8c4b37a9.js"
+  ]
+}
