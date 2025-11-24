@@ -7,6 +7,7 @@ import PowerTab from './components/PowerTab';
 import FireTab from './components/FireTab';
 import ChallengeTab from './components/ChallengeTab';
 import AmatsuyuTab from './components/AmatsuyuTab';
+import AutoTab from './components/AutoTab';
 
 function App() {
   const [currentTab, setCurrentTab] = useState('internal');
@@ -19,6 +20,7 @@ function App() {
     fire: <FireTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     challenge: <ChallengeTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     amatsuyu: <AmatsuyuTab surveyData={surveyData} setSurveyData={setSurveyData} />,
+    auto: <AutoTab />,
   };
 
   const saveData = () => {

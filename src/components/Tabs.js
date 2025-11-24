@@ -8,6 +8,7 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     { id: 'fire', name: '이벤런' },
     { id: 'challenge', name: '챌라' },
     { id: 'amatsuyu', name: '아마츠유' },
+    { id: 'auto', name: '오토' },
   ];
 
   const tabsRef = useRef(null);
@@ -47,7 +48,7 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     const debouncedUpdateGlider = debounce(updateGlider, 100);
 
     window.addEventListener('resize', debouncedUpdateGlider);
-    
+
     // Cleanup listener on component unmount
     return () => {
       window.removeEventListener('resize', debouncedUpdateGlider);
@@ -79,7 +80,7 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     const debouncedUpdateGlider = debounce(updateGlider, 100);
 
     window.addEventListener('resize', debouncedUpdateGlider);
-    
+
     // Cleanup listener on component unmount
     return () => {
       window.removeEventListener('resize', debouncedUpdateGlider);
