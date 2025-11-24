@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { calculateScoreRange } from '../utils/calculator';
 import { SONG_OPTIONS } from '../utils/songs';
+import musicMetas from '../data/music_metas.json';
+import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
+
+const ENERGY_MULTIPLIERS = {
+    0: 1,
+    1: 5,
+    2: 10,
+    3: 15,
+    4: 19,
+    5: 23,
+    6: 26,
+    7: 29,
+    8: 31,
+    9: 33,
+    10: 35
+};
 
 // Fixed configuration for batch calculation with levels
 const TARGET_SONGS = [
@@ -47,7 +63,7 @@ function AutoTab({ surveyData, setSurveyData }) {
         }));
     };
 
-    const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5 } = deck;
+    const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus = 0, energyUsed = 1 } = deck;
 
     const [batchResults, setBatchResults] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'min', direction: 'asc' });
@@ -92,13 +108,39 @@ function AutoTab({ surveyData, setSurveyData }) {
                 const res = calculateScoreRange(input);
                 if (res) {
                     const minRank = calculateRank(res.min, target.level);
+
+                    // Event Point Calculation
+                    const musicMeta = musicMetas.find(m => m.music_id === target.id && m.difficulty === target.difficulty);
+                    const eventRate = musicMeta ? musicMeta.event_rate : 100;
+                    const boostRate = ENERGY_MULTIPLIERS[energyUsed] || 1;
+
+                    const minEventPoint = EventCalculator.getEventPoint(
+                        LiveType.AUTO,
+                        EventType.MARATHON,
+                        res.min,
+                        eventRate,
+                        eventBonus,
+                        boostRate
+                    );
+
+                    const maxEventPoint = EventCalculator.getEventPoint(
+                        LiveType.AUTO,
+                        EventType.MARATHON,
+                        res.max,
+                        eventRate,
+                        eventBonus,
+                        boostRate
+                    );
+
                     results.push({
                         ...res,
                         songName: song.name,
                         songId: song.id,
                         difficulty: target.difficulty,
                         level: target.level,
-                        minRank
+                        minRank,
+                        minEventPoint,
+                        maxEventPoint
                     });
                 }
             } catch (e) {
@@ -107,7 +149,7 @@ function AutoTab({ surveyData, setSurveyData }) {
         });
 
         setBatchResults(results);
-    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5]);
+    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, energyUsed]);
 
     const handleSort = (key) => {
         let direction = 'asc';
@@ -138,6 +180,9 @@ function AutoTab({ surveyData, setSurveyData }) {
                 const rankOrder = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
                 aValue = rankOrder[a.minRank] || 0;
                 bValue = rankOrder[b.minRank] || 0;
+            } else if (sortConfig.key === 'eventPoint') {
+                aValue = a.minEventPoint;
+                bValue = b.minEventPoint;
             }
 
             if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -182,6 +227,26 @@ function AutoTab({ surveyData, setSurveyData }) {
                     <br />
                 </React.Fragment>
             ))}
+
+            <h3 style={{ marginTop: '20px', marginBottom: '10px' }}>이벤트 설정</h3>
+            <label>이벤트 배율 (%):</label>
+            <input
+                type="number"
+                value={eventBonus}
+                onChange={(e) => updateDeck('eventBonus', Number(e.target.value))}
+            />
+            <br />
+            <label>소비 불 (라이브 보너스):</label>
+            <select
+                value={energyUsed}
+                onChange={(e) => updateDeck('energyUsed', Number(e.target.value))}
+                style={{ marginLeft: '10px', padding: '5px' }}
+            >
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                    <option key={n} value={n}>{n}</option>
+                ))}
+            </select>
+            <br />
 
             <div className="flex items-center justify-center mb-4 mt-8">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
@@ -257,14 +322,24 @@ function AutoTab({ surveyData, setSurveyData }) {
                                             </span>
                                         </td>
                                         <td className="p-4 text-center">
-                                            <span className="font-mono text-blue-500 text-lg font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
-                                                {res.min.toLocaleString()}
-                                            </span>
+                                            <div className="flex flex-col items-center">
+                                                <span className="font-mono text-blue-500 text-lg font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
+                                                    {res.min.toLocaleString()}
+                                                </span>
+                                                <span className="text-xs text-green-600 font-bold mt-1">
+                                                    EP {res.minEventPoint.toLocaleString()}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="p-4 text-center">
-                                            <span className="font-mono text-pink-500 text-lg font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
-                                                {res.max.toLocaleString()}
-                                            </span>
+                                            <div className="flex flex-col items-center">
+                                                <span className="font-mono text-pink-500 text-lg font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
+                                                    {res.max.toLocaleString()}
+                                                </span>
+                                                <span className="text-xs text-green-600 font-bold mt-1">
+                                                    EP {res.maxEventPoint.toLocaleString()}
+                                                </span>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
