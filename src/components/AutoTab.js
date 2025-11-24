@@ -2,16 +2,29 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { calculateScoreRange } from '../utils/calculator';
 import { SONG_OPTIONS } from '../utils/songs';
 
-// Fixed configuration for batch calculation
+// Fixed configuration for batch calculation with levels
 const TARGET_SONGS = [
-    { id: 11, difficulty: 'master' },   // 비바
-    { id: 104, difficulty: 'master' },  // 샹드
-    { id: 74, difficulty: 'master' },   // 엔비
-    { id: 448, difficulty: 'master' },  // 사게
-    { id: 488, difficulty: 'append' },  // 메모리아
-    { id: 48, difficulty: 'master' },   // 월이마
-    { id: 186, difficulty: 'master' },  // 개벽
+    { id: 11, difficulty: 'master', level: 24 },   // 비바
+    { id: 104, difficulty: 'master', level: 25 },  // 샹드
+    { id: 74, difficulty: 'master', level: 22 },   // 엔비
+    { id: 448, difficulty: 'master', level: 29 },  // 사게 (Sage)
+    { id: 488, difficulty: 'append', level: 31 },  // 메모리아
+    { id: 48, difficulty: 'master', level: 24 },   // 월이마
+    { id: 186, difficulty: 'master', level: 28 },  // 개벽 (Creation Myth)
 ];
+
+const calculateRank = (score, level) => {
+    const sRank = 1040000 + 5200 * (level - 5);
+    const aRank = 840000 + 4200 * (level - 5);
+    const bRank = 400000 + 2000 * (level - 5);
+    const cRank = 20000 + 100 * (level - 5);
+
+    if (score >= sRank) return 'S';
+    if (score >= aRank) return 'A';
+    if (score >= bRank) return 'B';
+    if (score >= cRank) return 'C';
+    return 'D';
+};
 
 function AutoTab({ surveyData, setSurveyData }) {
     // Initialize or read from surveyData
@@ -78,11 +91,14 @@ function AutoTab({ surveyData, setSurveyData }) {
             try {
                 const res = calculateScoreRange(input);
                 if (res) {
+                    const minRank = calculateRank(res.min, target.level);
                     results.push({
                         ...res,
                         songName: song.name,
                         songId: song.id,
-                        difficulty: target.difficulty
+                        difficulty: target.difficulty,
+                        level: target.level,
+                        minRank
                     });
                 }
             } catch (e) {
@@ -117,6 +133,11 @@ function AutoTab({ surveyData, setSurveyData }) {
             } else if (sortConfig.key === 'max') {
                 aValue = a.max;
                 bValue = b.max;
+            } else if (sortConfig.key === 'rank') {
+                // Sort ranks: S > A > B > C > D
+                const rankOrder = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+                aValue = rankOrder[a.minRank] || 0;
+                bValue = rankOrder[b.minRank] || 0;
             }
 
             if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -186,6 +207,14 @@ function AutoTab({ surveyData, setSurveyData }) {
                                     <th className="p-4 font-bold text-center select-none">
                                         난이도
                                     </th>
+                                    <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('rank')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            랭크
+                                            <span className={`transition-opacity duration-200 ${sortConfig.key === 'rank' ? 'opacity-100 text-purple-500' : 'opacity-0 group-hover:opacity-50'}`}>
+                                                {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                            </span>
+                                        </div>
+                                    </th>
                                     <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
                                         <div className="flex items-center justify-center gap-2">
                                             최저 점수
@@ -216,6 +245,15 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                     'bg-gray-100 text-gray-600 border border-gray-200'
                                                 }`}>
                                                 {res.difficulty}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <span className={`text-lg font-black ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
+                                                res.minRank === 'A' ? 'text-pink-500' :
+                                                    res.minRank === 'B' ? 'text-blue-500' :
+                                                        'text-gray-500'
+                                                }`}>
+                                                {res.minRank}
                                             </span>
                                         </td>
                                         <td className="p-4 text-center">
