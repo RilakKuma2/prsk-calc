@@ -63,10 +63,11 @@ function AutoTab({ surveyData, setSurveyData }) {
         }));
     };
 
-    const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus = 0, energyUsed = 1 } = deck;
+    const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus = 0 } = deck;
+    const energyUsed = 1; // Fixed to 1 as per request
 
     const [batchResults, setBatchResults] = useState(null);
-    const [sortConfig, setSortConfig] = useState({ key: 'min', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({ key: 'eventPoint', direction: 'desc' });
 
     // Ensure default data exists
     useEffect(() => {
@@ -149,7 +150,7 @@ function AutoTab({ surveyData, setSurveyData }) {
         });
 
         setBatchResults(results);
-    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, energyUsed]);
+    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus]);
 
     const handleSort = (key) => {
         let direction = 'asc';
@@ -201,7 +202,7 @@ function AutoTab({ surveyData, setSurveyData }) {
             />
             <br />
 
-            <h3 style={{ marginTop: '20px', marginBottom: '10px' }}>멤버 스킬</h3>
+            <h3 style={{ marginTop: '5px', marginBottom: '10px' }}>멤버 스킬</h3>
 
             <label>리더:</label>
             <input
@@ -228,24 +229,13 @@ function AutoTab({ surveyData, setSurveyData }) {
                 </React.Fragment>
             ))}
 
-            <h3 style={{ marginTop: '20px', marginBottom: '10px' }}>이벤트 설정</h3>
-            <label>이벤트 배율 (%):</label>
+            <h3 style={{ marginTop: '10px', marginBottom: '10px' }}></h3>
+            <label>이벤트 배율:</label>
             <input
                 type="number"
                 value={eventBonus}
                 onChange={(e) => updateDeck('eventBonus', Number(e.target.value))}
             />
-            <br />
-            <label>소비 불 (라이브 보너스):</label>
-            <select
-                value={energyUsed}
-                onChange={(e) => updateDeck('energyUsed', Number(e.target.value))}
-                style={{ marginLeft: '10px', padding: '5px' }}
-            >
-                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                    <option key={n} value={n}>{n}</option>
-                ))}
-            </select>
             <br />
 
             <div className="flex items-center justify-center mb-4 mt-8">
@@ -268,9 +258,6 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
                                         </div>
-                                    </th>
-                                    <th className="p-4 font-bold text-center select-none">
-                                        난이도
                                     </th>
                                     <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('rank')}>
                                         <div className="flex items-center justify-center gap-2">
@@ -302,15 +289,15 @@ function AutoTab({ surveyData, setSurveyData }) {
                                 {sortedBatchResults.map((res, idx) => (
                                     <tr key={`${res.songId}-${res.difficulty}-${idx}`} className="hover:bg-gray-50 transition-colors duration-200 group/row">
                                         <td className="p-4 font-bold text-gray-800 group-hover/row:text-pink-600 transition-colors text-base text-center">
-                                            {res.songName}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide shadow-sm ${res.difficulty === 'master' ? 'bg-purple-100 text-purple-600 border border-purple-200' :
-                                                res.difficulty === 'append' ? 'bg-pink-100 text-pink-600 border border-pink-200' :
-                                                    'bg-gray-100 text-gray-600 border border-gray-200'
-                                                }`}>
-                                                {res.difficulty}
-                                            </span>
+                                            <div className="flex items-center justify-center gap-2">
+                                                {res.songName}
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide shadow-sm ${res.difficulty === 'master' ? 'bg-purple-100 text-purple-600 border border-purple-200' :
+                                                    res.difficulty === 'append' ? 'bg-pink-100 text-pink-600 border border-pink-200' :
+                                                        'bg-gray-100 text-gray-600 border border-gray-200'
+                                                    }`}>
+                                                    {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="p-4 text-center">
                                             <span className={`text-lg font-black ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
@@ -323,21 +310,21 @@ function AutoTab({ surveyData, setSurveyData }) {
                                         </td>
                                         <td className="p-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className="font-mono text-blue-500 text-lg font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
+                                                <span className="font-mono text-blue-500 text-base font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
                                                     {res.min.toLocaleString()}
                                                 </span>
-                                                <span className="text-xs text-green-600 font-bold mt-1">
-                                                    EP {res.minEventPoint.toLocaleString()}
+                                                <span className="font-mono text-green-600 text-base font-bold tracking-tight mt-0.5">
+                                                    {res.minEventPoint.toLocaleString()}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="p-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className="font-mono text-pink-500 text-lg font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
+                                                <span className="font-mono text-pink-500 text-base font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
                                                     {res.max.toLocaleString()}
                                                 </span>
-                                                <span className="text-xs text-green-600 font-bold mt-1">
-                                                    EP {res.maxEventPoint.toLocaleString()}
+                                                <span className="font-mono text-green-600 text-base font-bold tracking-tight mt-0.5">
+                                                    {res.maxEventPoint.toLocaleString()}
                                                 </span>
                                             </div>
                                         </td>
