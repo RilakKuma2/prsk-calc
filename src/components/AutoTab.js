@@ -80,7 +80,8 @@ function AutoTab({ surveyData, setSurveyData }) {
                     skillMember2: 100,
                     skillMember3: 100,
                     skillMember4: 100,
-                    skillMember5: 100
+                    skillMember5: 100,
+                    eventBonus: 250
                 }
             }));
         }
