@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import MySekaiTable from './MySekaiTable';
+import AutoTab from './AutoTab';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 
 const PowerTab = ({ surveyData, setSurveyData }) => {
+  const [activeSubTab, setActiveSubTab] = useState('power');
   const [power, setPower] = useState(surveyData.power || '');
   const [effi, setEffi] = useState(surveyData.effi || '');
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
@@ -71,34 +73,57 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     }
     setMySekaiScore(highestPossibleScore);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [power, effi]);
 
   return (
-    <div id="power-tab-content">
-      <label htmlFor="power">종합력:</label>
-      <input type="number" id="power" min="0" max="40" value={power} onChange={e => setPower(e.target.value)} />
-      <span>만</span><br />
+    <div>
+      <div className="mini-tabs">
+        <button
+          className={`mini-tab ${activeSubTab === 'power' ? 'active' : ''}`}
+          onClick={() => setActiveSubTab('power')}
+        >
+          종합력
+        </button>
+        <button
+          className={`mini-tab ${activeSubTab === 'auto' ? 'active' : ''}`}
+          onClick={() => setActiveSubTab('auto')}
+        >
+          오토
+        </button>
+      </div>
 
-      <label htmlFor="effi">배수:</label>
-      <input type="number" id="effi" min="0" max="1000" value={effi} onChange={e => setEffi(e.target.value)} />
-      <span>%</span><br />
+      {activeSubTab === 'power' && (
+        <div id="power-tab-content">
+          <label htmlFor="power">종합력:</label>
+          <input type="number" id="power" min="0" max="40" value={power} onChange={e => setPower(e.target.value)} />
+          <span>만</span><br />
 
-      <button
-        className="action-button"
-        style={{ marginTop: '10px', marginBottom: '10px' }}
-        onClick={() => setShowMySekaiTable(!showMySekaiTable)}
-      >
-        마이세카이 테이블
-      </button>
-      {showMySekaiTable && <MySekaiTable />}
+          <label htmlFor="effi">배수:</label>
+          <input type="number" id="effi" min="0" max="1000" value={effi} onChange={e => setEffi(e.target.value)} />
+          <span>%</span><br />
+
+          <button
+            className="action-button"
+            style={{ marginTop: '10px', marginBottom: '10px' }}
+            onClick={() => setShowMySekaiTable(!showMySekaiTable)}
+          >
+            마이세카이 테이블
+          </button>
+          {showMySekaiTable && <MySekaiTable />}
 
 
-      <p id="multi-eff">멀티효율: <span style={{fontWeight: "bold", color: "blue"}}>{multiEff.toFixed(2)}%</span></p>
-      <p id="solo-eff">솔로효율: <span style={{fontWeight: "bold", color: "blue"}}>{soloEff.toFixed(2)}%</span></p>
-      <p id="auto-eff">오토효율: <span style={{fontWeight: "bold", color: "blue"}}>{autoEff.toFixed(2)}%</span></p>
-      <p id="my-sekai-score-display">마이세카이 불 당 이벤포: <span style={{fontWeight: "bold", color: "green"}}>{mySekaiScore}</span></p>
-      <p id="power-calculation-text"><br/>종합력 1만과 같은 효율의 배수<br/><br/>대략적인 값으로 곡이나 스킬에 따라 달라짐</p>
+          <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{multiEff.toFixed(2)}%</span></p>
+          <p id="solo-eff">솔로효율: <span style={{ fontWeight: "bold", color: "blue" }}>{soloEff.toFixed(2)}%</span></p>
+          <p id="auto-eff">오토효율: <span style={{ fontWeight: "bold", color: "blue" }}>{autoEff.toFixed(2)}%</span></p>
+          <p id="my-sekai-score-display">마이세카이 불 당 이벤포: <span style={{ fontWeight: "bold", color: "green" }}>{mySekaiScore}</span></p>
+          <p id="power-calculation-text"><br />종합력 1만과 같은 효율의 배수<br /><br />대략적인 값으로 곡이나 스킬에 따라 달라짐</p>
+        </div>
+      )}
+
+      {activeSubTab === 'auto' && (
+        <AutoTab surveyData={surveyData} setSurveyData={setSurveyData} />
+      )}
     </div>
   );
 };

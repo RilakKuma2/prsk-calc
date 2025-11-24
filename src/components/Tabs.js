@@ -8,7 +8,6 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     { id: 'fire', name: '이벤런' },
     { id: 'challenge', name: '챌라' },
     { id: 'amatsuyu', name: '아마츠유' },
-    { id: 'auto', name: '오토' },
   ];
 
   const tabsRef = useRef(null);

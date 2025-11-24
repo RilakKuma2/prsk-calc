@@ -133,8 +133,6 @@ function AutoTab({ surveyData, setSurveyData }) {
                 <div className="bg-gray-900/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-800 overflow-hidden">
                     <div className="bg-gradient-to-r from-pink-600 to-purple-700 p-8 text-center relative overflow-hidden">
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-white relative z-10 tracking-tight">오토 라이브 점수 계산기</h1>
-                        <p className="text-pink-100 mt-2 relative z-10 font-medium opacity-90">덱 정보를 입력하면 자동으로 계산됩니다</p>
                     </div>
 
                     <div className="p-6 md:p-8 space-y-8">
@@ -142,7 +140,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         <div className="space-y-4 bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
                             <div className="flex flex-col md:flex-row justify-between items-end gap-4">
                                 <div className="flex-1 w-full">
-                                    <label className="block text-sm font-semibold text-gray-400 mb-2">종합력 (Total Deck Power)</label>
+                                    <label className="block text-sm font-semibold text-gray-400 mb-2">종합력</label>
                                     <input
                                         type="number"
                                         value={totalPower}
@@ -157,13 +155,11 @@ function AutoTab({ surveyData, setSurveyData }) {
                         <div className="space-y-6">
                             <div className="flex items-center gap-4">
                                 <h3 className="text-lg font-bold text-gray-200">멤버 스킬</h3>
-                                <div className="h-px flex-1 bg-gray-700"></div>
-                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Score Up %</span>
                             </div>
 
                             <div className="grid grid-cols-1 gap-6">
                                 <div className="bg-yellow-500/10 p-4 rounded-xl border border-yellow-500/30">
-                                    <label className="block text-sm font-bold text-yellow-400 mb-2">리더 (고정)</label>
+                                    <label className="block text-sm font-bold text-yellow-400 mb-2">리더</label>
                                     <input
                                         type="number"
                                         value={skillLeader}
@@ -194,6 +190,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         </div>
                     </div>
                 </div>
+                <p className="text-pink-100 mt-2 relative z-10 font-medium opacity-90">덱 정보를 입력하면 자동으로 계산됩니다</p>
 
                 {/* Batch Calculation Results */}
                 {sortedBatchResults && (
@@ -231,8 +228,8 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                 </td>
                                                 <td className="p-4 text-center">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wide shadow-sm ${res.difficulty === 'master' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-purple-500/10' :
-                                                            res.difficulty === 'append' ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20 shadow-pink-500/10' :
-                                                                'bg-gray-700 text-gray-300 border border-gray-600'
+                                                        res.difficulty === 'append' ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20 shadow-pink-500/10' :
+                                                            'bg-gray-700 text-gray-300 border border-gray-600'
                                                         }`}>
                                                         {res.difficulty}
                                                     </span>
