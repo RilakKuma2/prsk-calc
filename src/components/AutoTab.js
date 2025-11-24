@@ -190,7 +190,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         </div>
                     </div>
                 </div>
-                <p className="text-pink-100 mt-2 relative z-10 font-medium opacity-90">덱 정보를 입력하면 자동으로 계산됩니다</p>
+                <h3 className="text-lg font-bold text-gray-200">오토 라이브 스코어</h3>
 
                 {/* Batch Calculation Results */}
                 {sortedBatchResults && (
