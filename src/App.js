@@ -23,17 +23,27 @@ function App() {
     auto: <AutoTab surveyData={surveyData} setSurveyData={setSurveyData} />,
   };
 
+  const [toast, setToast] = useState({ show: false, message: '' });
+
+  const showToastMessage = (message) => {
+    setToast({ show: true, message });
+    setTimeout(() => {
+      setToast({ show: false, message: '' });
+    }, 3000);
+  };
+
   const saveData = () => {
     localStorage.setItem('surveyData', JSON.stringify(surveyData));
-    alert('데이터가 저장되었습니다.');
+    showToastMessage('데이터가 저장되었습니다.');
   };
 
   const loadData = useCallback(() => {
     const savedData = JSON.parse(localStorage.getItem('surveyData'));
     if (savedData) {
       setSurveyData(savedData);
+      showToastMessage('데이터를 불러왔습니다.');
     } else {
-      alert('저장된 데이터가 없습니다.');
+      showToastMessage('저장된 데이터가 없습니다.');
     }
   }, []);
 
@@ -49,7 +59,7 @@ function App() {
   }, [loadData]);
 
   return (
-    <div className="container">
+    <div className="container relative min-h-screen">
       <h1>프로세카 계산기</h1>
       <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
@@ -88,6 +98,14 @@ function App() {
           픽업 확률 계산기
         </button>
       </div>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 animate-fade-in-up z-50 flex items-center gap-2">
+          <span className="text-green-400">✓</span>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

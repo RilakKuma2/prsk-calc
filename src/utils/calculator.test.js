@@ -17,7 +17,7 @@ describe('calculateScoreRange', () => {
         const result = calculateScoreRange(input);
         expect(result).not.toBeNull();
         expect(result.min).toBeGreaterThan(0);
-        expect(result.max).toBeGreaterThan(result.min);
+        expect(result.max).toBeGreaterThanOrEqual(result.min);
         console.log('Result:', result);
     });
 

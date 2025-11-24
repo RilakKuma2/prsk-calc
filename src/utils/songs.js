@@ -1,6 +1,5 @@
 export const SONG_OPTIONS = [
     { id: 74, name: '엔비' },
-    { id: 72, name: '블유블' },
     { id: 104, name: '샹드' },
     { id: 11, name: '비바' },
     { id: 448, name: '사게' },

@@ -47,12 +47,23 @@ const createDeckDetail = (totalPower, skills) => {
         return createDummyCard(skill, power);
     });
 
+    const deckPower = {
+        base: totalPower,
+        areaItemBonus: 0,
+        characterBonus: 0,
+        honorBonus: 0,
+        fixtureBonus: 0,
+        gateBonus: 0,
+        total: totalPower
+    };
+
     return {
         deckId: 1,
         deckName: 'Auto Calc Deck',
         cards: cards,
         leader: cards[0],
-        subLeader: cards[1], // Not used for score logic directly in this simplified view but required by type
+        subLeader: cards[1],
+        power: deckPower, // Required by sekai-calculator
     };
 };
 
