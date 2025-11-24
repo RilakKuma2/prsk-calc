@@ -4,82 +4,59 @@ import { SONG_OPTIONS } from '../utils/songs';
 
 const DIFFICULTIES = ['easy', 'normal', 'hard', 'expert', 'master', 'append'];
 
-function AutoTab() {
-    // Default values
-    const [songId, setSongId] = useState(74);
-    const [difficulty, setDifficulty] = useState('master');
-    const [totalPower, setTotalPower] = useState(200000);
-    const [skillLeader, setSkillLeader] = useState(100);
-    const [skillMember2, setSkillMember2] = useState(100);
-    const [skillMember3, setSkillMember3] = useState(100);
-    const [skillMember4, setSkillMember4] = useState(100);
-    const [skillMember5, setSkillMember5] = useState(100);
+function AutoTab({ surveyData, setSurveyData }) {
+    // Initialize or read from surveyData
+    const deck = surveyData.autoDeck || {
+        songId: 74,
+        difficulty: 'master',
+        totalPower: 200000,
+        skillLeader: 100,
+        skillMember2: 100,
+        skillMember3: 100,
+        skillMember4: 100,
+        skillMember5: 100
+    };
+
+    const updateDeck = (key, value) => {
+        setSurveyData(prev => ({
+            ...prev,
+            autoDeck: {
+                ...prev.autoDeck,
+                [key]: value
+            }
+        }));
+    };
+
+    const { songId, difficulty, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5 } = deck;
 
     const [result, setResult] = useState(null);
     const [batchResults, setBatchResults] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'max', direction: 'desc' });
-    const [message, setMessage] = useState(null);
-
-    // Clear message after 3 seconds
+    // Auto-save is handled by App.js via surveyData
+    // We just need to ensure default data exists if not present
     useEffect(() => {
-        if (message) {
-            const timer = setTimeout(() => setMessage(null), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [message]);
-
-    const handleManualSave = () => {
-        const deckState = { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5 };
-        localStorage.setItem('sekai-score-manual-save', JSON.stringify(deckState));
-        setMessage('덱 정보가 저장되었습니다!');
-    };
-
-    const handleManualLoad = () => {
-        const saved = localStorage.getItem('sekai-score-manual-save');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                if (parsed.totalPower) setTotalPower(parsed.totalPower);
-                if (parsed.skillLeader) setSkillLeader(parsed.skillLeader);
-                if (parsed.skillMember2) setSkillMember2(parsed.skillMember2);
-                if (parsed.skillMember3) setSkillMember3(parsed.skillMember3);
-                if (parsed.skillMember4) setSkillMember4(parsed.skillMember4);
-                if (parsed.skillMember5) setSkillMember5(parsed.skillMember5);
-                setMessage('덱 정보를 불러왔습니다!');
-            } catch (e) {
-                console.error("Failed to load saved state", e);
-                setMessage('저장된 정보를 불러오는데 실패했습니다.');
-            }
-        } else {
-            setMessage('저장된 덱 정보가 없습니다.');
-        }
-    };
-
-    // Load from localStorage on mount (Auto-save)
-    useEffect(() => {
-        const saved = localStorage.getItem('sekai-score-deck');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                if (parsed.totalPower) setTotalPower(parsed.totalPower);
-                if (parsed.skillLeader) setSkillLeader(parsed.skillLeader);
-                if (parsed.skillMember2) setSkillMember2(parsed.skillMember2);
-                if (parsed.skillMember3) setSkillMember3(parsed.skillMember3);
-                if (parsed.skillMember4) setSkillMember4(parsed.skillMember4);
-                if (parsed.skillMember5) setSkillMember5(parsed.skillMember5);
-            } catch (e) {
-                console.error("Failed to load saved state", e);
-            }
+        if (!surveyData.autoDeck) {
+            setSurveyData(prev => ({
+                ...prev,
+                autoDeck: {
+                    songId: 74,
+                    difficulty: 'master',
+                    totalPower: 200000,
+                    skillLeader: 100,
+                    skillMember2: 100,
+                    skillMember3: 100,
+                    skillMember4: 100,
+                    skillMember5: 100
+                }
+            }));
         }
     }, []);
 
-    // Save to localStorage and Auto-calculate
+    // Auto-calculate
     useEffect(() => {
-        // Save state
-        const deckState = { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5 };
-        localStorage.setItem('sekai-score-deck', JSON.stringify(deckState));
+        // Removed early return to allow calculation with default values
+        // if (!surveyData.autoDeck) return;
 
-        // Auto-calculate
         const input = {
             songId,
             difficulty,
@@ -91,15 +68,19 @@ function AutoTab() {
             skillMember5,
         };
 
+        console.log('AutoTab: Calculating with input:', input);
+
         try {
             const res = calculateScoreRange(input);
             if (res) {
+                console.log('AutoTab: Calculation success:', res);
                 setResult(res);
             } else {
+                console.warn('AutoTab: Calculation returned null');
                 setResult(null);
             }
         } catch (e) {
-            console.error(e);
+            console.error('AutoTab: Calculation error:', e);
         }
     }, [songId, difficulty, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5]);
 
@@ -208,16 +189,13 @@ function AutoTab() {
                                 <div className="relative">
                                     <select
                                         value={songId}
-                                        onChange={(e) => setSongId(Number(e.target.value))}
-                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none transition-shadow"
+                                        onChange={(e) => updateDeck('songId', Number(e.target.value))}
+                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-shadow"
                                     >
                                         {SONG_OPTIONS.map(song => (
                                             <option key={song.id} value={song.id}>{song.name}</option>
                                         ))}
                                     </select>
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -225,8 +203,8 @@ function AutoTab() {
                                 <div className="relative">
                                     <select
                                         value={difficulty}
-                                        onChange={(e) => setDifficulty(e.target.value)}
-                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none transition-shadow"
+                                        onChange={(e) => updateDeck('difficulty', e.target.value)}
+                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-shadow"
                                     >
                                         <option value="easy">Easy</option>
                                         <option value="normal">Normal</option>
@@ -235,9 +213,6 @@ function AutoTab() {
                                         <option value="master">Master</option>
                                         <option value="append">Append</option>
                                     </select>
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -250,43 +225,11 @@ function AutoTab() {
                                     <input
                                         type="number"
                                         value={totalPower}
-                                        onChange={(e) => setTotalPower(Number(e.target.value))}
+                                        onChange={(e) => updateDeck('totalPower', Number(e.target.value))}
                                         className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-shadow font-mono"
                                     />
                                 </div>
-                                <div className="flex gap-3 w-full md:w-auto">
-                                    <button
-                                        onClick={handleManualSave}
-                                        className="flex-1 md:flex-none bg-gray-700 hover:bg-green-600 text-white font-medium py-3 px-5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 border border-gray-600 hover:border-green-500 group"
-                                        title="현재 덱 정보 저장"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6a1 1 0 10-2 0v5.586l-1.293-1.293z" />
-                                            <path d="M5 18a2 2 0 002 2h6a2 2 0 002-2V8a2 2 0 00-2-2H7a2 2 0 00-2 2v10z" />
-                                        </svg>
-                                        <span className="whitespace-nowrap">저장</span>
-                                    </button>
-                                    <button
-                                        onClick={handleManualLoad}
-                                        className="flex-1 md:flex-none bg-gray-700 hover:bg-blue-600 text-white font-medium py-3 px-5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 border border-gray-600 hover:border-blue-500 group"
-                                        title="저장된 덱 정보 불러오기"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                        </svg>
-                                        <span className="whitespace-nowrap">불러오기</span>
-                                    </button>
-                                </div>
                             </div>
-
-                            {message && (
-                                <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 px-4 py-3 rounded-lg text-center text-sm font-medium animate-fade-in flex items-center justify-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    {message}
-                                </div>
-                            )}
                         </div>
 
                         {/* Skills */}
@@ -303,7 +246,7 @@ function AutoTab() {
                                     <input
                                         type="number"
                                         value={skillLeader}
-                                        onChange={(e) => setSkillLeader(Number(e.target.value))}
+                                        onChange={(e) => updateDeck('skillLeader', Number(e.target.value))}
                                         className="w-full bg-gray-900 border border-yellow-500/50 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 font-mono text-lg"
                                     />
                                 </div>
@@ -311,17 +254,17 @@ function AutoTab() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 {[
-                                    { label: '멤버 2', val: skillMember2, set: setSkillMember2 },
-                                    { label: '멤버 3', val: skillMember3, set: setSkillMember3 },
-                                    { label: '멤버 4', val: skillMember4, set: setSkillMember4 },
-                                    { label: '멤버 5', val: skillMember5, set: setSkillMember5 },
+                                    { label: '멤버 2', val: skillMember2, key: 'skillMember2' },
+                                    { label: '멤버 3', val: skillMember3, key: 'skillMember3' },
+                                    { label: '멤버 4', val: skillMember4, key: 'skillMember4' },
+                                    { label: '멤버 5', val: skillMember5, key: 'skillMember5' },
                                 ].map((m, i) => (
                                     <div key={i} className="bg-gray-800 p-4 rounded-xl border border-gray-700">
                                         <label className="block text-sm font-medium text-gray-400 mb-2">{m.label}</label>
                                         <input
                                             type="number"
                                             value={m.val}
-                                            onChange={(e) => m.set(Number(e.target.value))}
+                                            onChange={(e) => updateDeck(m.key, Number(e.target.value))}
                                             className="w-full bg-gray-900 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 font-mono"
                                         />
                                     </div>
@@ -410,9 +353,9 @@ function AutoTab() {
                                                 <td className="p-4 font-medium text-white group-hover:text-pink-400 transition-colors">{res.songName}</td>
                                                 <td className="p-4 capitalize text-gray-400">
                                                     <span className={`px-2 py-1 rounded text-xs font-bold ${res.difficulty === 'master' ? 'bg-purple-500/20 text-purple-300' :
-                                                            res.difficulty === 'expert' ? 'bg-red-500/20 text-red-300' :
-                                                                res.difficulty === 'append' ? 'bg-pink-500/20 text-pink-300' :
-                                                                    'bg-gray-700 text-gray-300'
+                                                        res.difficulty === 'expert' ? 'bg-red-500/20 text-red-300' :
+                                                            res.difficulty === 'append' ? 'bg-pink-500/20 text-pink-300' :
+                                                                'bg-gray-700 text-gray-300'
                                                         }`}>
                                                         {res.difficulty}
                                                     </span>

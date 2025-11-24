@@ -20,7 +20,7 @@ function App() {
     fire: <FireTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     challenge: <ChallengeTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     amatsuyu: <AmatsuyuTab surveyData={surveyData} setSurveyData={setSurveyData} />,
-    auto: <AutoTab />,
+    auto: <AutoTab surveyData={surveyData} setSurveyData={setSurveyData} />,
   };
 
   const saveData = () => {

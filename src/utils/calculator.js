@@ -32,6 +32,7 @@ const createDummyCard = (skillScoreUp, power) => {
         characterId: 1,
         unitId: 1,
         attribute: 'cute',
+        scoreUp: skillScoreUp, // Required by sekai-calculator for explicit skill details
     };
 };
 
@@ -82,10 +83,10 @@ export const calculateScoreRange = (input) => {
         skillMember5,
     } = input;
 
-    const musicMeta = musicMetas.find(m => m.music_id === songId && m.music_difficulty === difficulty);
+    const musicMeta = musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
 
     if (!musicMeta) {
-        console.error('Music meta not found');
+        console.error(`Calculator: Music meta not found for ID: ${songId}, Difficulty: ${difficulty}`);
         return null;
     }
 
@@ -141,14 +142,55 @@ export const calculateScoreRange = (input) => {
         ];
 
         // Use LiveType.AUTO to simulate Auto Live scoring
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(
-            deckDetail,
-            musicMeta,
-            LiveType.AUTO, // Use AUTO to match user intent
-            skillDetails // Explicitly pass skill order to bypass internal sorting
-        );
+        let score = 0;
+        try {
+            const liveDetail = LiveCalculator.getLiveDetailByDeck(
+                deckDetail,
+                musicMeta,
+                LiveType.AUTO, // Use AUTO to match user intent
+                skillDetails // Explicitly pass skill order to bypass internal sorting
+            );
+            score = liveDetail.score;
+        } catch (e) {
+            // Fallback calculation if sekai-calculator fails (e.g. missing note_counts)
+            // Formula: TotalPower * 3 * (BaseScoreAuto + Sum(Skill% * SkillScoreAuto[i]))
 
-        const score = liveDetail.score;
+            if (musicMeta.base_score_auto && musicMeta.skill_score_auto) {
+                const baseScore = musicMeta.base_score_auto;
+                const skillScores = musicMeta.skill_score_auto;
+
+                // Activation Order: M2, M3, M4, M5, Leader, Leader
+                // currentSkills is [Leader, M2, M3, M4, M5]
+                // M2 = currentSkills[1]
+                // M3 = currentSkills[2]
+                // M4 = currentSkills[3]
+                // M5 = currentSkills[4]
+                // Leader = currentSkills[0]
+
+                const skillMultipliers = [
+                    currentSkills[1], // M2
+                    currentSkills[2], // M3
+                    currentSkills[3], // M4
+                    currentSkills[4], // M5
+                    currentSkills[0], // Leader
+                    currentSkills[0]  // Leader
+                ];
+
+                let skillContribution = 0;
+                for (let i = 0; i < 6; i++) {
+                    // Skill value is percentage (e.g. 100). We assume coefficient is for 100%? 
+                    // Or maybe coefficient is per 1.0?
+                    // Usually skill 100% means 1.0 multiplier.
+                    // If input is 100, we divide by 100.
+                    skillContribution += (skillMultipliers[i] / 100) * skillScores[i];
+                }
+
+                score = Math.floor(totalPower * 3 * (baseScore + skillContribution));
+            } else {
+                console.error('Fallback failed: missing base_score_auto or skill_score_auto');
+                continue; // Skip this permutation
+            }
+        }
 
         if (score < minScore) {
             minScore = score;
