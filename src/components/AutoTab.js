@@ -126,63 +126,58 @@ function AutoTab({ surveyData, setSurveyData }) {
     }, [batchResults, sortConfig]);
 
     return (
-        <div className="min-h-screen bg-gray-950 text-gray-100 p-4 md:p-8 font-sans selection:bg-pink-500/30">
-            <div className="max-w-4xl mx-auto space-y-8">
+        <div className="min-h-screen bg-white text-gray-900 p-4 md:p-8 selection:bg-pink-500/30">
+            <div className="max-w-4xl mx-auto space-y-4">
 
                 {/* Main Calculator Card */}
-                <div className="bg-gray-900/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-800 overflow-hidden">
-                    <div className="bg-gradient-to-r from-pink-600 to-purple-700 p-8 text-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                    </div>
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
 
-                    <div className="p-6 md:p-8 space-y-8">
+                    <div className="p-4 md:p-6 space-y-4">
                         {/* Deck Power & Management */}
-                        <div className="space-y-4 bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
-                            <div className="flex flex-col md:flex-row justify-between items-end gap-4">
-                                <div className="flex-1 w-full">
-                                    <label className="block text-sm font-semibold text-gray-400 mb-2">종합력</label>
-                                    <input
-                                        type="number"
-                                        value={totalPower}
-                                        onChange={(e) => updateDeck('totalPower', Number(e.target.value))}
-                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-shadow font-mono text-lg"
-                                    />
-                                </div>
+                        <div className="bg-white p-4 rounded-2xl border-2 border-gray-100">
+                            <div className="flex items-center justify-between gap-4">
+                                <label className="text-lg font-bold text-gray-700 whitespace-nowrap">종합력</label>
+                                <input
+                                    type="number"
+                                    value={totalPower}
+                                    onChange={(e) => updateDeck('totalPower', Number(e.target.value))}
+                                    className="w-48 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all text-lg"
+                                />
                             </div>
                         </div>
 
                         {/* Skills */}
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-4">
-                                <h3 className="text-lg font-bold text-gray-200">멤버 스킬</h3>
+                        <div className="bg-white p-4 rounded-2xl border-2 border-gray-100 space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <h3 className="text-lg font-bold text-gray-800">멤버 스킬</h3>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-6">
-                                <div className="bg-yellow-500/10 p-4 rounded-xl border border-yellow-500/30">
-                                    <label className="block text-sm font-bold text-yellow-400 mb-2">리더</label>
+                            <div className="space-y-4">
+                                {/* Leader */}
+                                <div className="flex items-center justify-between gap-4">
+                                    <label className="text-base font-bold text-gray-700">리더</label>
                                     <input
                                         type="number"
                                         value={skillLeader}
                                         onChange={(e) => updateDeck('skillLeader', Number(e.target.value))}
-                                        className="w-full bg-gray-900 border border-yellow-500/50 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 font-mono text-lg"
+                                        className="w-48 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all text-lg"
                                     />
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                                {/* Members */}
                                 {[
                                     { label: '멤버 2', val: skillMember2, key: 'skillMember2' },
                                     { label: '멤버 3', val: skillMember3, key: 'skillMember3' },
                                     { label: '멤버 4', val: skillMember4, key: 'skillMember4' },
                                     { label: '멤버 5', val: skillMember5, key: 'skillMember5' },
                                 ].map((m, i) => (
-                                    <div key={i} className="bg-gray-800 p-4 rounded-xl border border-gray-700">
-                                        <label className="block text-sm font-medium text-gray-400 mb-2">{m.label}</label>
+                                    <div key={i} className="flex items-center justify-between gap-4">
+                                        <label className="text-base font-medium text-gray-600">{m.label}</label>
                                         <input
                                             type="number"
                                             value={m.val}
                                             onChange={(e) => updateDeck(m.key, Number(e.target.value))}
-                                            className="w-full bg-gray-900 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 font-mono"
+                                            className="w-48 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all text-lg"
                                         />
                                     </div>
                                 ))}
@@ -190,57 +185,71 @@ function AutoTab({ surveyData, setSurveyData }) {
                         </div>
                     </div>
                 </div>
-                <h3 className="text-lg font-bold text-gray-200">오토 라이브 스코어</h3>
+
+                <div className="flex items-center justify-center mb-4 mt-8">
+                    <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
+                        오토 라이브 스코어
+                    </h3>
+                </div>
 
                 {/* Batch Calculation Results */}
                 {sortedBatchResults && (
-                    <div className="max-w-3xl mx-auto">
-                        <div className="bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
+                    <div className="w-full">
+                        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="bg-gray-800/50 text-gray-300 text-xs uppercase tracking-wider border-b border-gray-700">
-                                            <th className="p-4 font-bold cursor-pointer hover:text-white transition-colors text-center select-none" onClick={() => handleSort('songName')}>
-                                                <div className="flex items-center justify-center gap-1">
-                                                    곡명 {sortConfig.key === 'songName' && <span className="text-pink-500">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>}
+                                        <tr className="bg-white text-gray-600 text-xs uppercase tracking-wider border-b border-gray-200">
+                                            <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('songName')}>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    곡명
+                                                    <span className={`transition-opacity duration-200 ${sortConfig.key === 'songName' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
+                                                        {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                    </span>
                                                 </div>
                                             </th>
                                             <th className="p-4 font-bold text-center select-none">
                                                 난이도
                                             </th>
-                                            <th className="p-4 font-bold cursor-pointer hover:text-white transition-colors text-center select-none" onClick={() => handleSort('min')}>
-                                                <div className="flex items-center justify-center gap-1">
-                                                    최저 점수 {sortConfig.key === 'min' && <span className="text-blue-400">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>}
+                                            <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    최저 점수
+                                                    <span className={`transition-opacity duration-200 ${sortConfig.key === 'min' ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-50'}`}>
+                                                        {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                    </span>
                                                 </div>
                                             </th>
-                                            <th className="p-4 font-bold cursor-pointer hover:text-white transition-colors text-center select-none" onClick={() => handleSort('max')}>
-                                                <div className="flex items-center justify-center gap-1">
-                                                    최고 점수 {sortConfig.key === 'max' && <span className="text-pink-400">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>}
+                                            <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('max')}>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    최고 점수
+                                                    <span className={`transition-opacity duration-200 ${sortConfig.key === 'max' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
+                                                        {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                    </span>
                                                 </div>
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-800">
+                                    <tbody className="divide-y divide-gray-100">
                                         {sortedBatchResults.map((res, idx) => (
-                                            <tr key={`${res.songId}-${res.difficulty}-${idx}`} className="hover:bg-white/5 transition-colors duration-200 group/row">
-                                                <td className="p-4 font-bold text-white group-hover/row:text-pink-400 transition-colors text-base text-center">
+                                            <tr key={`${res.songId}-${res.difficulty}-${idx}`} className="hover:bg-gray-50 transition-colors duration-200 group/row">
+                                                <td className="p-4 font-bold text-gray-800 group-hover/row:text-pink-600 transition-colors text-base text-center">
                                                     {res.songName}
                                                 </td>
                                                 <td className="p-4 text-center">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wide shadow-sm ${res.difficulty === 'master' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-purple-500/10' :
-                                                        res.difficulty === 'append' ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20 shadow-pink-500/10' :
-                                                            'bg-gray-700 text-gray-300 border border-gray-600'
+                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide shadow-sm ${res.difficulty === 'master' ? 'bg-purple-100 text-purple-600 border border-purple-200' :
+                                                        res.difficulty === 'append' ? 'bg-pink-100 text-pink-600 border border-pink-200' :
+                                                            'bg-gray-100 text-gray-600 border border-gray-200'
                                                         }`}>
                                                         {res.difficulty}
                                                     </span>
                                                 </td>
                                                 <td className="p-4 text-center">
-                                                    <span className="font-mono text-blue-400 text-lg font-bold tracking-tight group-hover/row:text-blue-300 transition-colors">
+                                                    <span className="font-mono text-blue-500 text-lg font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
                                                         {res.min.toLocaleString()}
                                                     </span>
                                                 </td>
                                                 <td className="p-4 text-center">
-                                                    <span className="font-mono text-pink-500 text-lg font-black tracking-tight group-hover/row:text-pink-400 transition-colors drop-shadow-[0_0_8px_rgba(236,72,153,0.3)]">
+                                                    <span className="font-mono text-pink-500 text-lg font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
                                                         {res.max.toLocaleString()}
                                                     </span>
                                                 </td>

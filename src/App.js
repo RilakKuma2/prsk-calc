@@ -58,7 +58,7 @@ function App() {
 
   return (
     <div className="container relative min-h-screen">
-      <h1>프로세카 계산기</h1>
+      <h1 className="text-3xl font-extrabold my-6">프로세카 계산기</h1>
       <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
       <div className="tab-content">
