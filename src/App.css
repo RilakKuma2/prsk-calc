@@ -20,9 +20,9 @@ label {
     display: inline-block;
     width: auto;
     /* Auto width */
-    margin: 0 10px 15px 0;
-    font-weight: 500;
-    color: #34495e;
+    margin: 0 10px 12px 0;
+    font-weight: 600;
+    color: #475569;
     font-size: 16px;
     vertical-align: middle;
 }
@@ -31,14 +31,16 @@ input,
 select {
     width: 25%;
     /* Harmonized width */
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #dfe6e9;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border: 1px solid #cbd5e1;
+    background-color: #f8fafc;
     border-radius: 8px;
     font-size: 14px;
     text-align: center;
     font-family: 'Poppins', sans-serif;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    color: #334155;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     vertical-align: middle;
     display: inline-block;
 }
@@ -46,8 +48,9 @@ select {
 input:focus,
 select:focus {
     outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    background-color: #ffffff;
 }
 
 [id$="-tab-content"] {
