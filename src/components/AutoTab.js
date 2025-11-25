@@ -98,12 +98,12 @@ function AutoTab({ surveyData, setSurveyData }) {
             const input = {
                 songId: target.id,
                 difficulty: target.difficulty,
-                totalPower,
-                skillLeader,
-                skillMember2,
-                skillMember3,
-                skillMember4,
-                skillMember5,
+                totalPower: Number(totalPower) || 0,
+                skillLeader: Number(skillLeader) || 0,
+                skillMember2: Number(skillMember2) || 0,
+                skillMember3: Number(skillMember3) || 0,
+                skillMember4: Number(skillMember4) || 0,
+                skillMember5: Number(skillMember5) || 0,
             };
 
             try {
@@ -121,7 +121,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         EventType.MARATHON,
                         res.min,
                         eventRate,
-                        eventBonus,
+                        Number(eventBonus) || 0,
                         boostRate
                     );
 
@@ -130,7 +130,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         EventType.MARATHON,
                         res.max,
                         eventRate,
-                        eventBonus,
+                        Number(eventBonus) || 0,
                         boostRate
                     );
 
@@ -199,7 +199,10 @@ function AutoTab({ surveyData, setSurveyData }) {
             <input
                 type="number"
                 value={totalPower}
-                onChange={(e) => updateDeck('totalPower', Number(e.target.value))}
+                onChange={(e) => {
+                    const val = e.target.value;
+                    updateDeck('totalPower', val === '' ? '' : Number(val));
+                }}
             />
             <br />
 
@@ -209,7 +212,10 @@ function AutoTab({ surveyData, setSurveyData }) {
             <input
                 type="number"
                 value={skillLeader}
-                onChange={(e) => updateDeck('skillLeader', Number(e.target.value))}
+                onChange={(e) => {
+                    const val = e.target.value;
+                    updateDeck('skillLeader', val === '' ? '' : Number(val));
+                }}
             />
             <br />
 
@@ -224,7 +230,10 @@ function AutoTab({ surveyData, setSurveyData }) {
                     <input
                         type="number"
                         value={m.val}
-                        onChange={(e) => updateDeck(m.key, Number(e.target.value))}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            updateDeck(m.key, val === '' ? '' : Number(val));
+                        }}
                     />
                     <br />
                 </React.Fragment>
@@ -235,7 +244,10 @@ function AutoTab({ surveyData, setSurveyData }) {
             <input
                 type="number"
                 value={eventBonus}
-                onChange={(e) => updateDeck('eventBonus', Number(e.target.value))}
+                onChange={(e) => {
+                    const val = e.target.value;
+                    updateDeck('eventBonus', val === '' ? '' : Number(val));
+                }}
             />
             <br />
 
@@ -251,33 +263,33 @@ function AutoTab({ surveyData, setSurveyData }) {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-white text-gray-600 text-xs uppercase tracking-wider border-b border-gray-200">
-                                    <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('songName')}>
-                                        <div className="flex items-center justify-center gap-2">
+                                <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
+                                    <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('songName')}>
+                                        <div className="flex items-center justify-center gap-1 md:gap-2">
                                             곡명
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'songName' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
                                         </div>
                                     </th>
-                                    <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('rank')}>
-                                        <div className="flex items-center justify-center gap-2">
+                                    <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('rank')}>
+                                        <div className="flex items-center justify-center gap-1 md:gap-2">
                                             랭크
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'rank' ? 'opacity-100 text-purple-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
                                         </div>
                                     </th>
-                                    <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
-                                        <div className="flex items-center justify-center gap-2">
+                                    <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
+                                        <div className="flex items-center justify-center gap-1 md:gap-2">
                                             최저 점수
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'min' ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
                                         </div>
                                     </th>
-                                    <th className="p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('max')}>
-                                        <div className="flex items-center justify-center gap-2">
+                                    <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('max')}>
+                                        <div className="flex items-center justify-center gap-1 md:gap-2">
                                             최고 점수
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'max' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
@@ -289,19 +301,28 @@ function AutoTab({ surveyData, setSurveyData }) {
                             <tbody className="divide-y divide-gray-100">
                                 {sortedBatchResults.map((res, idx) => (
                                     <tr key={`${res.songId}-${res.difficulty}-${idx}`} className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                                        <td className="p-4 font-bold text-gray-800 group-hover/row:text-pink-600 transition-colors text-base text-center">
-                                            <div className="flex items-center justify-center gap-2">
+                                        <td className="px-1 py-2 md:p-4 font-bold text-gray-800 group-hover/row:text-pink-600 transition-colors text-xs md:text-base text-center">
+                                            <div className="flex items-center justify-center gap-1 md:gap-2">
                                                 {res.songName}
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide shadow-sm ${res.difficulty === 'master' ? 'bg-purple-100 text-purple-600 border border-purple-200' :
-                                                    res.difficulty === 'append' ? 'bg-pink-100 text-pink-600 border border-pink-200' :
-                                                        'bg-gray-100 text-gray-600 border border-gray-200'
-                                                    }`}>
+                                                <span
+                                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${res.difficulty === 'master' || res.difficulty === 'append' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
+                                                        }`}
+                                                    style={
+                                                        res.difficulty === 'master' ? {
+                                                            backgroundColor: '#cc33ff',
+                                                            color: '#FFFFFF',
+                                                        } : res.difficulty === 'append' ? {
+                                                            background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)',
+                                                            color: '#FFFFFF',
+                                                        } : {}
+                                                    }
+                                                >
                                                     {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="p-4 text-center">
-                                            <span className={`text-lg font-black ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
+                                        <td className="px-1 py-2 md:p-4 text-center">
+                                            <span className={`text-sm md:text-lg font-black ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
                                                 res.minRank === 'A' ? 'text-pink-500' :
                                                     res.minRank === 'B' ? 'text-blue-500' :
                                                         'text-gray-500'
@@ -309,22 +330,22 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                 {res.minRank}
                                             </span>
                                         </td>
-                                        <td className="p-4 text-center">
+                                        <td className="px-1 py-2 md:p-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className="font-mono text-blue-500 text-base font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
+                                                <span className="font-mono text-blue-500 text-sm md:text-base font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
                                                     {res.min.toLocaleString()}
                                                 </span>
-                                                <span className="font-mono text-green-600 text-base font-bold tracking-tight mt-0.5">
+                                                <span className="font-mono text-green-600 text-xs md:text-base font-bold tracking-tight mt-0.5">
                                                     {res.minEventPoint.toLocaleString()}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="p-4 text-center">
+                                        <td className="px-1 py-2 md:p-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className="font-mono text-pink-500 text-base font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
+                                                <span className="font-mono text-pink-500 text-sm md:text-base font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
                                                     {res.max.toLocaleString()}
                                                 </span>
-                                                <span className="font-mono text-green-600 text-base font-bold tracking-tight mt-0.5">
+                                                <span className="font-mono text-green-600 text-xs md:text-base font-bold tracking-tight mt-0.5">
                                                     {res.maxEventPoint.toLocaleString()}
                                                 </span>
                                             </div>
