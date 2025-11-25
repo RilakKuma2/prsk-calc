@@ -287,7 +287,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         <p id="omakase-score">5불 오마카세 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof omakaseScore === 'number' ? omakaseScore.toLocaleString() : omakaseScore}</span></p>
         <p id="envy-score">5불 엔비 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof envyScore === 'number' ? envyScore.toLocaleString() : envyScore}</span></p>
         <p id="creation-myth-score">1불 개벽 오토 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof creationMythScore === 'number' ? creationMythScore.toLocaleString() : creationMythScore}</span></p>
-        <p id="my-sekai-score-display">마이세카이 1불 이벤포: <span style={{ fontWeight: "bold", color: "green" }}>{mySekaiScore}</span></p>
+        <p id="my-sekai-score-display">마이세카이 1불 이벤포: <span style={{ fontWeight: "bold", color: "green" }}>{typeof mySekaiScore === 'number' ? mySekaiScore.toLocaleString() : mySekaiScore}</span></p>
         <br></br>
         <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}</span></p>
         <p id="solo-eff">솔로효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof soloEff === 'number' ? soloEff.toFixed(2) + '%' : soloEff}</span></p>
