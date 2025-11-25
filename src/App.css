@@ -1,4 +1,3 @@
-
 .container {
     background: #ffffff;
     padding: 25px 30px;
@@ -19,7 +18,8 @@ h1 {
 
 label {
     display: inline-block;
-    width: auto; /* Auto width */
+    width: auto;
+    /* Auto width */
     margin: 0 10px 15px 0;
     font-weight: 500;
     color: #34495e;
@@ -29,7 +29,8 @@ label {
 
 input,
 select {
-    width: 25%; /* Harmonized width */
+    width: 25%;
+    /* Harmonized width */
     padding: 10px;
     margin-bottom: 15px;
     border: 1px solid #dfe6e9;
@@ -51,7 +52,8 @@ select:focus {
 
 [id$="-tab-content"] {
     padding: 10px 0;
-    text-align: center; /* Center form lines */
+    text-align: center;
+    /* Center form lines */
 }
 
 h2 {
@@ -80,7 +82,8 @@ p {
     background-color: #f0f2f5;
     border-radius: 12px;
     padding: 5px;
-    position: relative; /* Needed for the glider */
+    position: relative;
+    /* Needed for the glider */
 }
 
 .glider {
@@ -103,7 +106,8 @@ p {
     color: #576574;
     transition: all 0.3s ease;
     flex-grow: 1;
-    position: relative; /* Ensure text is above the glider */
+    position: relative;
+    /* Ensure text is above the glider */
     z-index: 2;
 }
 
@@ -204,7 +208,7 @@ input[type="checkbox"] {
         margin: 0;
         border-radius: 0;
         max-width: 100%;
-        padding: 20px 0; /* Remove horizontal padding */
+        padding: 20px 0;
     }
 
     h1 {
@@ -212,14 +216,39 @@ input[type="checkbox"] {
     }
 
     .tabs {
-        gap: 1px;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 5px;
+        margin-left: 10px;
+        margin-right: 10px;
     }
 
     .tab {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 500;
-        padding: 8px 2px;
+        padding: 8px 1px;
         white-space: nowrap;
+        flex-grow: 1;
+    }
+
+    /* First 3 tabs on the first row */
+    .tab:nth-child(-n+3) {
+        flex-basis: calc(33.333% - 5px);
+    }
+
+    /* Remaining tabs (4th onwards) on the second row */
+    .tab:nth-child(n+4) {
+        flex-basis: calc(25% - 5px);
+    }
+
+    /* Disable glider animation and revert to static background for active tab */
+    .glider {
+        display: none;
+    }
+
+    .tab.active {
+        background-color: #ffffff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     }
 
     [id$="-tab-content"] {
@@ -241,21 +270,24 @@ input[type="checkbox"] {
 
     .header-row-text,
     .header-col-text {
-        font-size: 8px; /* Smaller font for mobile header text */
+        font-size: 8px;
     }
 }
 
 #my-sekai-table-container {
     width: 100%;
-    overflow-x: auto; /* Keep for safety on small screens */
+    overflow-x: auto;
+    /* Keep for safety on small screens */
 }
 
 #my-sekai-table-container table {
     width: 100%;
     border-collapse: collapse;
     text-align: center;
-    font-size: clamp(10px, 1vw, 12px); /* User's preferred responsive font size */
-    font-family: sans-serif; /* Explicitly set sans-serif font */
+    font-size: clamp(10px, 1vw, 12px);
+    /* User's preferred responsive font size */
+    font-family: sans-serif;
+    /* Explicitly set sans-serif font */
 }
 
 #my-sekai-table-container th,
@@ -278,7 +310,8 @@ input[type="checkbox"] {
     position: absolute;
     width: 200%;
     height: 1px;
-    background-color: #ccc; /* Match border color */
+    background-color: #ccc;
+    /* Match border color */
     left: -50%;
     top: 50%;
     transform: rotate(25deg);
@@ -288,7 +321,8 @@ input[type="checkbox"] {
 .header-col-text {
     position: absolute;
     font-weight: bold;
-    font-size: 7.5px; /* Smaller font size */
+    font-size: 7.5px;
+    /* Smaller font size */
 }
 
 .header-row-text {
@@ -338,7 +372,7 @@ input[type="checkbox"] {
     }
 
     .tab {
-        font-size: 16px;
+        font-size: 14px;
         font-weight: bold;
         padding: 8px 1px;
         white-space: nowrap;
@@ -360,24 +394,3 @@ input[type="checkbox"] {
         font-size: 14px;
     }
 }
-
-/* Fallback to 3 columns on very small screens */
-@media (max-width: 380px) {
-    .tabs {
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-    .tab {
-        flex-basis: calc(33.333% - 10px);
-    }
-
-    /* Disable glider animation and revert to static background for active tab */
-    .glider {
-        display: none;
-    }
-    .tab.active {
-        background-color: #ffffff;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
-}
-

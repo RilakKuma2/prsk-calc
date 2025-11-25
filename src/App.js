@@ -7,6 +7,7 @@ import PowerTab from './components/PowerTab';
 import FireTab from './components/FireTab';
 import ChallengeTab from './components/ChallengeTab';
 import AmatsuyuTab from './components/AmatsuyuTab';
+import AutoTab from './components/AutoTab';
 
 function App() {
   const [currentTab, setCurrentTab] = useState('internal');
@@ -16,6 +17,7 @@ function App() {
     internal: <InternalTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     level: <LevelTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     power: <PowerTab surveyData={surveyData} setSurveyData={setSurveyData} />,
+    auto: <AutoTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     fire: <FireTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     challenge: <ChallengeTab surveyData={surveyData} setSurveyData={setSurveyData} />,
     amatsuyu: <AmatsuyuTab surveyData={surveyData} setSurveyData={setSurveyData} />,
