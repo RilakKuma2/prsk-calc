@@ -10,7 +10,7 @@ const dataProvider = {
 };
 
 // Helper to create a dummy card
-const createDummyCard = (skillScoreUp, power) => {
+export const createDummyCard = (skillScoreUp, power) => {
     return {
         cardId: 1,
         level: 50,
@@ -35,7 +35,7 @@ const createDummyCard = (skillScoreUp, power) => {
 };
 
 // Helper to create DeckDetail
-const createDeckDetail = (totalPower, skills) => {
+export const createDeckDetail = (totalPower, skills) => {
     const avgPower = Math.floor(totalPower / 5);
     // Distribute remainder to first cards to match total exactly
     const remainder = totalPower % 5;
