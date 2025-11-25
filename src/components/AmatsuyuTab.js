@@ -137,7 +137,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
     setCumulativeRewards(rewards);
     setHighestBirthdayTitle(currentHighestTitle);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasCurrentYearCard, pastCardsOwned, currentLevel, targetLevel]);
 
   return (
@@ -158,32 +158,32 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
       </select><br />
 
       <label htmlFor="amatsuyuCurrentLevel">현재 레벨:</label>
-      <input type="number" id="amatsuyuCurrentLevel" min="0" value={currentLevel} onChange={e => setCurrentLevel(e.target.value)} /><br />
+      <input type="number" id="amatsuyuCurrentLevel" min="0" value={currentLevel} onChange={e => setCurrentLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
       <label htmlFor="amatsuyuTargetLevel">목표 레벨:</label>
-      <input type="number" id="amatsuyuTargetLevel" min="0" max="400" value={targetLevel} onChange={e => { const value = parseInt(e.target.value); setTargetLevel(isNaN(value) ? 0 : Math.min(400, Math.max(0, value))); }} /><br />
+      <input type="number" id="amatsuyuTargetLevel" min="0" max="400" value={targetLevel} onChange={e => { const value = parseInt(e.target.value); setTargetLevel(isNaN(value) ? 0 : Math.min(400, Math.max(0, value))); }} onFocus={(e) => e.target.select()} /><br />
 
 
-      <p style={{margin: '4px 0'}}>생카 배율: <span style={{fontWeight: "bold", color: "blue"}}>{birthdayCardBonus}%</span></p>
-      <p style={{margin: '4px 0'}}>아마츠유 개 당 포인트: <span style={{fontWeight: "bold", color: "blue"}}>{Math.floor(amatsuyuPointsPerItem)}</span></p>
-      <p style={{margin: '4px 0'}}>필요 아마츠유: <span style={{fontWeight: "bold", color: "blue"}}>{neededAmatsuyu}</span>개</p>
+      <p style={{ margin: '4px 0' }}>생카 배율: <span style={{ fontWeight: "bold", color: "blue" }}>{birthdayCardBonus}%</span></p>
+      <p style={{ margin: '4px 0' }}>아마츠유 개 당 포인트: <span style={{ fontWeight: "bold", color: "blue" }}>{Math.floor(amatsuyuPointsPerItem)}</span></p>
+      <p style={{ margin: '4px 0' }}>필요 아마츠유: <span style={{ fontWeight: "bold", color: "blue" }}>{neededAmatsuyu}</span>개</p>
 
       <h3 style={{ marginBottom: '5px' }}>마이세카이(생일 꽃)</h3>
 
-      <p style={{ marginTop: '0' }}><span style={{fontWeight: "bold", color: "blue"}}>{mySekaiStones}</span>불 / <span style={{fontWeight: "bold", color: "blue"}}>{mySekaiLaps}</span>바퀴</p>
+      <p style={{ marginTop: '0' }}><span style={{ fontWeight: "bold", color: "blue" }}>{mySekaiStones}</span>불 / <span style={{ fontWeight: "bold", color: "blue" }}>{mySekaiLaps}</span>바퀴</p>
 
       <h3 style={{ marginBottom: '5px' }}>5불런/생카가챠</h3>
 
-      <p style={{ marginTop: '0' }}><span style={{fontWeight: "bold", color: "blue"}}>{fiveFireStones}</span>불 / 엔비 <span style={{fontWeight: "bold", color: "blue"}}>{fiveFireHours}</span>시간</p>
+      <p style={{ marginTop: '0' }}><span style={{ fontWeight: "bold", color: "blue" }}>{fiveFireStones}</span>불 / 엔비 <span style={{ fontWeight: "bold", color: "blue" }}>{fiveFireHours}</span>시간</p>
 
       {highestBirthdayTitle && <p style={{ textAlign: 'center', fontWeight: 'bold', color: 'green', fontSize: '1.2em' }}>생일 칭호: {highestBirthdayTitle}</p>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px', maxWidth: '300px', margin: '0 auto' }}>
         {Object.entries(cumulativeRewards).map(([key, value]) => (
-          <div key={key} style={{ textAlign: 'left' }}>{key}: <span style={{fontWeight: "bold", color: "green"}}>{value}</span></div>
+          <div key={key} style={{ textAlign: 'left' }}>{key}: <span style={{ fontWeight: "bold", color: "green" }}>{value}</span></div>
         ))}
       </div>
       <p>마셐:2.5불 당 42개 / 5불런:5불 당 25개<br />
-      <a href="https://m.dcinside.com/board/pjsekai/2278357" target="_blank" rel="noopener noreferrer"><strong>아마츠유 정리</strong></a></p>
+        <a href="https://m.dcinside.com/board/pjsekai/2278357" target="_blank" rel="noopener noreferrer"><strong>아마츠유 정리</strong></a></p>
       <table style={{ width: '100%', maxWidth: '400px', margin: '10px auto', borderCollapse: 'collapse', textAlign: 'center' }}>
         <tbody style={{ border: '1px solid #ccc' }}>
           <tr>

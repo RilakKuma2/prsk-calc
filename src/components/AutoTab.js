@@ -203,6 +203,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                     const val = e.target.value;
                     updateDeck('totalPower', val === '' ? '' : Number(val));
                 }}
+                onFocus={(e) => e.target.select()}
             />
             <br />
 
@@ -216,6 +217,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                     const val = e.target.value;
                     updateDeck('skillLeader', val === '' ? '' : Number(val));
                 }}
+                onFocus={(e) => e.target.select()}
             />
             <br />
 
@@ -234,6 +236,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                             const val = e.target.value;
                             updateDeck(m.key, val === '' ? '' : Number(val));
                         }}
+                        onFocus={(e) => e.target.select()}
                     />
                     <br />
                 </React.Fragment>
@@ -248,6 +251,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                     const val = e.target.value;
                     updateDeck('eventBonus', val === '' ? '' : Number(val));
                 }}
+                onFocus={(e) => e.target.select()}
             />
             <br />
 

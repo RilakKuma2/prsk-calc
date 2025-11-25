@@ -262,15 +262,15 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     <div>
       <div id="power-tab-content">
         <label htmlFor="power">종합력:</label>
-        <input type="number" id="power" min="0" max="40" value={power} onChange={e => setPower(e.target.value)} />
+        <input type="number" id="power" min="0" max="40" value={power} onChange={e => setPower(e.target.value)} onFocus={(e) => e.target.select()} />
         <span>만</span><br />
 
         <label htmlFor="effi">배수:</label>
-        <input type="number" id="effi" min="0" max="1000" value={effi} onChange={e => setEffi(e.target.value)} />
+        <input type="number" id="effi" min="0" max="1000" value={effi} onChange={e => setEffi(e.target.value)} onFocus={(e) => e.target.select()} />
         <span>%</span><br />
 
         <label htmlFor="internalValue">내부치:</label>
-        <input type="number" id="internalValue" min="0" max="2000" value={internalValue} onChange={e => setInternalValue(e.target.value)} />
+        <input type="number" id="internalValue" min="0" max="2000" value={internalValue} onChange={e => setInternalValue(e.target.value)} onFocus={(e) => e.target.select()} />
         <span>%</span><br />
         <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>5명이 모두 같은 내부치라 가정 후 점수 계산</p>
 

@@ -44,17 +44,17 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
     const targetData = expData.find((d) => d.LV === targetLevelVal);
 
     if (!currentData || !nextLevelData || !targetData) {
-        setErrorMessage('에러: 레벨 데이터를 불러오는 데 실패했습니다.');
-        setNeededExp(0);
-        setNeededRounds(0);
-        setExpPerRound(0);
-        return;
+      setErrorMessage('에러: 레벨 데이터를 불러오는 데 실패했습니다.');
+      setNeededExp(0);
+      setNeededRounds(0);
+      setExpPerRound(0);
+      return;
     }
 
     const currentCumulativeExp =
-        currentData.누적EXP +
-        nextLevelData.필요EXP -
-        currentExpVal;
+      currentData.누적EXP +
+      nextLevelData.필요EXP -
+      currentExpVal;
     const targetCumulativeExp = targetData.누적EXP;
 
     const needed = targetCumulativeExp - currentCumulativeExp;
@@ -66,19 +66,19 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
     setNeededRounds(rounds);
     setErrorMessage('');
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLevel, currentExp, targetLevel, rank, fires]);
 
   return (
     <div id="card-level-tab">
       <label htmlFor="current-level">현재 레벨:</label>
-      <input type="number" id="current-level" min="1" max="60" value={currentLevel} onChange={e => setCurrentLevel(e.target.value)} /><br />
+      <input type="number" id="current-level" min="1" max="60" value={currentLevel} onChange={e => setCurrentLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
       <label htmlFor="current-exp">남은 경험치:</label>
-      <input type="number" id="current-exp" min="0" value={currentExp} onChange={e => setCurrentExp(e.target.value)} /><br />
+      <input type="number" id="current-exp" min="0" value={currentExp} onChange={e => setCurrentExp(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
       <label htmlFor="target-level">목표 레벨:</label>
-      <input type="number" id="target-level" min="2" max="60" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} /><br />
+      <input type="number" id="target-level" min="2" max="60" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
       <label htmlFor="rank">라이브 랭크:</label>
       <select id="rank" value={rank} onChange={e => setRank(e.target.value)}>
@@ -105,9 +105,9 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
 
 
       <p id="error-message">{errorMessage}</p>
-      <p id="needed-exp">필요 경험치: <span style={{fontWeight: "bold", color: "blue"}}>{neededExp}</span></p>
-      <p id="needed-rounds">필요 판수: <span style={{fontWeight: "bold", color: "blue"}}>{neededRounds}</span></p>
-      <p id="exp-per-round">판 당 경험치 획득량: <span style={{fontWeight: "bold", color: "blue"}}>{expPerRound}</span></p>
+      <p id="needed-exp">필요 경험치: <span style={{ fontWeight: "bold", color: "blue" }}>{neededExp}</span></p>
+      <p id="needed-rounds">필요 판수: <span style={{ fontWeight: "bold", color: "blue" }}>{neededRounds}</span></p>
+      <p id="exp-per-round">판 당 경험치 획득량: <span style={{ fontWeight: "bold", color: "blue" }}>{expPerRound}</span></p>
     </div>
   );
 };

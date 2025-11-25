@@ -14,17 +14,17 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
   const getFireaValue = (firea) => {
     const fireaTable = {
-        1: 0,
-        5: 1,
-        10: 2,
-        15: 3,
-        20: 4,
-        25: 5,
-        27: 6,
-        29: 7,
-        31: 8,
-        33: 9,
-        35: 10,
+      1: 0,
+      5: 1,
+      10: 2,
+      15: 3,
+      20: 4,
+      25: 5,
+      27: 6,
+      29: 7,
+      31: 8,
+      33: 9,
+      35: 10,
     };
     return fireaTable[firea] || null;
   }
@@ -43,13 +43,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     let calculationScore;
     if (changeFireBonus === "none") {
-        calculationScore = scorePerRound;
+      calculationScore = scorePerRound;
     } else {
-        let newFireBonus = parseInt(changeFireBonus);
-        calculationScore =
-            (scorePerRound / currentFireBonus) * newFireBonus;
-        currentFireBonus = newFireBonus;
-        firenow = getFireaValue(currentFireBonus);
+      let newFireBonus = parseInt(changeFireBonus);
+      calculationScore =
+        (scorePerRound / currentFireBonus) * newFireBonus;
+      currentFireBonus = newFireBonus;
+      firenow = getFireaValue(currentFireBonus);
     }
 
     let rounds = (targetScore - currentScore) / calculationScore;
@@ -64,25 +64,25 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     time = time > 0 ? time : 0;
     setNeededTime(time);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [score1, score2, score3, rounds1, firea, fires2]);
 
   return (
     <div id="fire-tab-content">
       <label htmlFor="score1">현재점수:</label>
-      <input type="number" id="score1" min="0" max="50000" value={score1} onChange={e => setScore1(e.target.value)} />
+      <input type="number" id="score1" min="0" max="50000" value={score1} onChange={e => setScore1(e.target.value)} onFocus={(e) => e.target.select()} />
       <span>만</span><br />
 
       <label htmlFor="score2">목표점수:</label>
-      <input type="number" id="score2" min="0" max="50000" value={score2} onChange={e => setScore2(e.target.value)} />
+      <input type="number" id="score2" min="0" max="50000" value={score2} onChange={e => setScore2(e.target.value)} onFocus={(e) => e.target.select()} />
       <span>만</span><br />
 
       <label htmlFor="score3">판 당 점수:</label>
-      <input type="number" id="score3" min="0" max="50000" value={score3} onChange={e => setScore3(e.target.value)} />
+      <input type="number" id="score3" min="0" max="50000" value={score3} onChange={e => setScore3(e.target.value)} onFocus={(e) => e.target.select()} />
       <span>만</span><br />
 
       <label htmlFor="rounds1">간 당 판수:</label>
-      <input type="number" id="rounds1" min="0" max="50000" value={rounds1} onChange={e => setRounds1(e.target.value)} />
+      <input type="number" id="rounds1" min="0" max="50000" value={rounds1} onChange={e => setRounds1(e.target.value)} onFocus={(e) => e.target.select()} />
       <span>회</span><br />
 
       <label htmlFor="firea">현재 라이브보너스:</label>
@@ -116,10 +116,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       </select>
 
 
-      <p id="neededRounds" style={{margin: '4px 0'}}>필요 판수: <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededRounds)}</span> 판</p>
-      <p id="neededFires" style={{margin: '4px 0'}}>필요 불: <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededFires)}</span> 불 = <span style={{fontWeight: "bold", color: "blue"}}>{Math.ceil(neededFires / 10)}</span> 뚱캔</p>
-      <p id="neededTime" style={{margin: '4px 0'}}>필요 시간: <span style={{fontWeight: "bold", color: "blue"}}>{neededTime.toFixed(1)}</span> 시간</p>
-      <p id="fire-calculation-text"><span style={{fontWeight: "bold"}}>대략적인 간 당 판수</span><br/>엔비:26~29  로앤파:17~19  치어풀:15~17<br/><br/><span style={{fontWeight: "bold"}}><a target="_blank" rel="noopener noreferrer" href="https://71ar.github.io/index/">덱파워 예측 계산기</a></span></p>
+      <p id="neededRounds" style={{ margin: '4px 0' }}>필요 판수: <span style={{ fontWeight: "bold", color: "blue" }}>{Math.ceil(neededRounds)}</span> 판</p>
+      <p id="neededFires" style={{ margin: '4px 0' }}>필요 불: <span style={{ fontWeight: "bold", color: "blue" }}>{Math.ceil(neededFires)}</span> 불 = <span style={{ fontWeight: "bold", color: "blue" }}>{Math.ceil(neededFires / 10)}</span> 뚱캔</p>
+      <p id="neededTime" style={{ margin: '4px 0' }}>필요 시간: <span style={{ fontWeight: "bold", color: "blue" }}>{neededTime.toFixed(1)}</span> 시간</p>
+      <p id="fire-calculation-text"><span style={{ fontWeight: "bold" }}>대략적인 간 당 판수</span><br />엔비:26~29  로앤파:17~19  치어풀:15~17<br /><br /><span style={{ fontWeight: "bold" }}><a target="_blank" rel="noopener noreferrer" href="https://71ar.github.io/index/">덱파워 예측 계산기</a></span></p>
     </div>
   );
 };

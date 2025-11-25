@@ -26,31 +26,31 @@ const ChallengeTab = ({ surveyData, setSurveyData }) => {
     }
 
     targetStageVal =
-        targetStageVal === "EX" ? 151 : parseInt(targetStageVal) || 0;
+      targetStageVal === "EX" ? 151 : parseInt(targetStageVal) || 0;
 
     if (
-        currentStageVal < 1 ||
-        targetStageVal < 1 ||
-        currentStageVal >= targetStageVal
+      currentStageVal < 1 ||
+      targetStageVal < 1 ||
+      currentStageVal >= targetStageVal
     ) {
-        setResult(`
+      setResult(`
 <span style="font-weight: bold; color: red;">올바른 스테이지 값을 입력해주세요.</span><br><br>
 <span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://3-3.dev/sekai/top-deck">챌라 이론덱</a></span><br>
 <span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br>
 <span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/2262136">군청찬가 초고점 뽑기</a></span><br><br>
 목표 스테이지 151 이상 입력 시 EX로 자동변환
 `);
-        return;
+      return;
     }
 
     const currentCumulative = challData[currentStageVal].cumulative;
     const targetCumulative = challData[targetStageVal - 1].cumulative;
 
     const scorePerPlay =
-        (Math.floor((challengeScoreVal * 24) / 10) +
-            400 +
-            Math.floor(challengeScoreVal / 20) * 2) /
-        passVal;
+      (Math.floor((challengeScoreVal * 24) / 10) +
+        400 +
+        Math.floor(challengeScoreVal / 20) * 2) /
+      passVal;
 
     const neededScore = targetCumulative - currentCumulative + remainingScoreVal;
 
@@ -66,22 +66,22 @@ const ChallengeTab = ({ surveyData, setSurveyData }) => {
 목표 스테이지 151 이상 입력 시 EX로 자동변환
 `);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStage, remainingScore, targetStage, challengeScore, pass]);
 
   return (
     <div id="challenge-tab-content">
       <label htmlFor="current-stage">현재 스테이지:</label>
-      <input type="number" id="current-stage" min="1" value={currentStage} onChange={e => setCurrentStage(e.target.value)} /><br />
+      <input type="number" id="current-stage" min="1" value={currentStage} onChange={e => setCurrentStage(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
       <label htmlFor="remaining-score">남은 점수:</label>
-      <input type="number" id="remaining-score" min="0" value={remainingScore} onChange={e => setRemainingScore(e.target.value)} /><br />
+      <input type="number" id="remaining-score" min="0" value={remainingScore} onChange={e => setRemainingScore(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
       <label htmlFor="target-stage">목표 스테이지:</label>
-      <input type="text" id="target-stage" min="1" value={targetStage} onChange={e => setTargetStage(e.target.value)} /><br />
+      <input type="text" id="target-stage" min="1" value={targetStage} onChange={e => setTargetStage(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
       <label htmlFor="challenge-score">챌라 점수:</label>
-      <input type="number" id="challenge-score" min="0" max="300" value={challengeScore} onChange={e => setChallengeScore(e.target.value)} />
+      <input type="number" id="challenge-score" min="0" max="300" value={challengeScore} onChange={e => setChallengeScore(e.target.value)} onFocus={(e) => e.target.select()} />
       <span>만</span><br />
 
       <label htmlFor="pass">컬패 여부:</label>
