@@ -9,8 +9,6 @@ const dataProvider = {
     getMusicMeta: async () => musicMetas,
 };
 
-// const liveCalculator = new LiveCalculator(dataProvider);
-
 // Helper to create a dummy card
 const createDummyCard = (skillScoreUp, power) => {
     return {
@@ -67,21 +65,6 @@ const createDeckDetail = (totalPower, skills) => {
     };
 };
 
-// Generate permutations of an array
-const getPermutations = (arr) => {
-    if (arr.length <= 1) return [arr];
-    const result = [];
-    for (let i = 0; i < arr.length; i++) {
-        const current = arr[i];
-        const remaining = [...arr.slice(0, i), ...arr.slice(i + 1)];
-        const remainingPerms = getPermutations(remaining);
-        for (const perm of remainingPerms) {
-            result.push([current, ...perm]);
-        }
-    }
-    return result;
-};
-
 export const calculateScoreRange = (input) => {
     const {
         songId,
@@ -101,122 +84,120 @@ export const calculateScoreRange = (input) => {
         return null;
     }
 
-    // Skills: Leader is fixed at index 0. Members 2-5 are at indices 1-4.
-    const memberSkills = [skillMember2, skillMember3, skillMember4, skillMember5];
+    // Check if skill_score_auto exists and has enough data
+    if (!musicMeta.skill_score_auto || musicMeta.skill_score_auto.length < 6) {
+        console.warn(`Calculator: Missing or insufficient skill_score_auto for ID: ${songId}`);
+        return null;
+    }
 
-    // Generate all permutations of member skills
-    const memberPermutations = getPermutations(memberSkills);
+    // 1. Prepare Data
+    // Coefficients for the first 5 slots (indices 0-4)
+    const skillCoeffs = musicMeta.skill_score_auto.slice(0, 5).map((val, idx) => ({ val, idx }));
 
-    let minScore = Infinity;
-    let maxScore = -Infinity;
-    let minPermutation = [];
-    let maxPermutation = [];
+    // User's 5 skills
+    const userSkills = [skillLeader, skillMember2, skillMember3, skillMember4, skillMember5];
 
-    // For each permutation, calculate score
-    for (const perm of memberPermutations) {
-        // Construct the full skill list: [Leader, ...Permutation]
-        // But wait, DeckDetail expects cards in order.
-        // We will construct the deck such that Card 0 has Leader Skill,
-        // Card 1 has Perm[0], Card 2 has Perm[1], etc.
-        const currentSkills = [skillLeader, ...perm];
+    // Create a base deck with these skills to get Card objects
+    // Order in deck: [Leader, M2, M3, M4, M5]
+    const baseDeck = createDeckDetail(totalPower, userSkills);
+    const baseCards = baseDeck.cards;
 
-        const deckDetail = createDeckDetail(totalPower, currentSkills);
+    // 2. Logic for MAX Score
+    // Sort coefficients descending (Highest coeff first)
+    const sortedCoeffsDesc = [...skillCoeffs].sort((a, b) => b.val - a.val);
+    // Sort skills descending (Highest skill first)
+    const sortedSkillsDesc = [...userSkills].sort((a, b) => b - a);
 
-        // IMPORTANT: LiveCalculator.getLiveDetailByDeck sorts skills internally by default.
-        // To test permutations, we must explicitly pass the skill order we want.
-        // The 'skillDetails' argument for getLiveDetailByDeck expects an array of skills.
-        // The order matters for the activation sequence.
-        // In Solo/Auto live:
-        // Skill 1: Member 2 (Index 1)
-        // Skill 2: Member 3 (Index 2)
-        // Skill 3: Member 4 (Index 3)
-        // Skill 4: Member 5 (Index 4)
-        // Skill 5: Leader (Index 0)
-        // Skill 6: Leader (Index 0)
+    // Map skills to slots: Highest Skill -> Highest Coeff Slot
+    const maxOrderSkills = new Array(5);
+    for (let i = 0; i < 5; i++) {
+        const slotIndex = sortedCoeffsDesc[i].idx;
+        maxOrderSkills[slotIndex] = sortedSkillsDesc[i];
+    }
 
-        // So we need to map our deck's cards to this sequence.
-        // Our deck cards are created in order [Leader, M2, M3, M4, M5].
-        // So deck.cards[0] is Leader, deck.cards[1] is M2, etc.
+    // Construct skillDetails for MAX
+    const skillDetailsMax = constructSkillDetails(maxOrderSkills, baseCards);
 
-        // We need to construct the skillDetails array corresponding to the activation order.
-        // Activation Order: M2, M3, M4, M5, Leader, Leader
-        // Indices in our deck: 1, 2, 3, 4, 0, 0
+    // 3. Logic for MIN Score
+    // Sort coefficients descending (Highest coeff first)
+    // We want to match Lowest Skill -> Highest Coeff Slot to minimize score
+    const sortedSkillsAsc = [...userSkills].sort((a, b) => a - b);
 
-        const cards = deckDetail.cards;
-        const skillDetails = [
-            { ...cards[1], skill: cards[1] }, // Member 2
-            { ...cards[2], skill: cards[2] }, // Member 3
-            { ...cards[3], skill: cards[3] }, // Member 4
-            { ...cards[4], skill: cards[4] }, // Member 5
-            { ...cards[0], skill: cards[0] }, // Leader
-            { ...cards[0], skill: cards[0] }, // Leader
-        ];
+    const minOrderSkills = new Array(5);
+    for (let i = 0; i < 5; i++) {
+        const slotIndex = sortedCoeffsDesc[i].idx;
+        minOrderSkills[slotIndex] = sortedSkillsAsc[i];
+    }
 
-        // Use LiveType.AUTO to simulate Auto Live scoring
-        let score = 0;
-        try {
-            const liveDetail = LiveCalculator.getLiveDetailByDeck(
-                deckDetail,
-                musicMeta,
-                LiveType.AUTO, // Use AUTO to match user intent
-                skillDetails // Explicitly pass skill order to bypass internal sorting
-            );
-            score = liveDetail.score;
-        } catch (e) {
-            // Fallback calculation if sekai-calculator fails (e.g. missing note_counts)
-            // Formula: TotalPower * 3 * (BaseScoreAuto + Sum(Skill% * SkillScoreAuto[i]))
+    // Construct skillDetails for MIN
+    const skillDetailsMin = constructSkillDetails(minOrderSkills, baseCards);
 
-            if (musicMeta.base_score_auto && musicMeta.skill_score_auto) {
-                const baseScore = musicMeta.base_score_auto;
-                const skillScores = musicMeta.skill_score_auto;
+    // 4. Calculate Scores using Library
+    let minScore = 0;
+    let maxScore = 0;
 
-                // Activation Order: M2, M3, M4, M5, Leader, Leader
-                // currentSkills is [Leader, M2, M3, M4, M5]
-                // M2 = currentSkills[1]
-                // M3 = currentSkills[2]
-                // M4 = currentSkills[3]
-                // M5 = currentSkills[4]
-                // Leader = currentSkills[0]
+    try {
+        const maxLiveDetail = LiveCalculator.getLiveDetailByDeck(
+            baseDeck,
+            musicMeta,
+            LiveType.AUTO,
+            skillDetailsMax
+        );
+        maxScore = maxLiveDetail.score;
 
-                const skillMultipliers = [
-                    currentSkills[1], // M2
-                    currentSkills[2], // M3
-                    currentSkills[3], // M4
-                    currentSkills[4], // M5
-                    currentSkills[0], // Leader
-                    currentSkills[0]  // Leader
-                ];
+        const minLiveDetail = LiveCalculator.getLiveDetailByDeck(
+            baseDeck,
+            musicMeta,
+            LiveType.AUTO,
+            skillDetailsMin
+        );
+        minScore = minLiveDetail.score;
 
-                let skillContribution = 0;
-                for (let i = 0; i < 6; i++) {
-                    // Skill value is percentage (e.g. 100). We assume coefficient is for 100%? 
-                    // Or maybe coefficient is per 1.0?
-                    // Usually skill 100% means 1.0 multiplier.
-                    // If input is 100, we divide by 100.
-                    skillContribution += (skillMultipliers[i] / 100) * skillScores[i];
-                }
-
-                score = Math.floor(totalPower * 3 * (baseScore + skillContribution));
-            } else {
-                console.error('Fallback failed: missing base_score_auto or skill_score_auto');
-                continue; // Skip this permutation
-            }
-        }
-
-        if (score < minScore) {
-            minScore = score;
-            minPermutation = perm;
-        }
-        if (score > maxScore) {
-            maxScore = score;
-            maxPermutation = perm;
-        }
+    } catch (e) {
+        console.error('Calculator: Error calculating score with library', e);
+        return null;
     }
 
     return {
         min: minScore,
         max: maxScore,
-        minPermutation: [skillLeader, ...minPermutation],
-        maxPermutation: [skillLeader, ...maxPermutation],
+        // Return permutations if needed for debugging, but user only asked for scores
+        // We can return the skill values used in the first 5 slots
+        minPermutation: minOrderSkills,
+        maxPermutation: maxOrderSkills
     };
+};
+
+// Helper to construct skillDetails array
+const constructSkillDetails = (orderedSkills, baseCards) => {
+    // orderedSkills: Array of 5 skill values for slots 0-4
+    // baseCards: Array of 5 Card objects [Leader, M2, M3, M4, M5]
+
+    const availableCards = [...baseCards];
+    const skillDetails = [];
+
+    // Fill slots 0-4
+    for (let i = 0; i < 5; i++) {
+        const targetVal = orderedSkills[i];
+        // Find a card with this skill value
+        const cardIndex = availableCards.findIndex(c => c.skillEffectValue === targetVal);
+        if (cardIndex === -1) {
+            console.error('Calculator: Could not find card for skill value', targetVal);
+            // Fallback: use first available (should not happen)
+            skillDetails.push({ ...availableCards[0], skill: availableCards[0] });
+        } else {
+            const card = availableCards[cardIndex];
+            skillDetails.push({ ...card, skill: card });
+            // Remove from available to handle duplicate skill values correctly if needed
+            // (Though with dummy cards and simple logic, reusing might be fine, but removing is safer for 1:1 mapping)
+            availableCards.splice(cardIndex, 1);
+        }
+    }
+
+    // Slot 5: Leader (Always baseCards[0])
+    // Note: Leader activates twice. Once in slots 0-4, and once at slot 5.
+    // So we reuse the Leader card object.
+    skillDetails.push({ ...baseCards[0], skill: baseCards[0] });
+
+    return skillDetails;
 };
