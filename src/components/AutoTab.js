@@ -322,13 +322,39 @@ function AutoTab({ surveyData, setSurveyData }) {
                                             </div>
                                         </td>
                                         <td className="px-1 py-2 md:p-4 text-center">
-                                            <span className={`text-sm md:text-lg font-black ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
-                                                res.minRank === 'A' ? 'text-pink-500' :
-                                                    res.minRank === 'B' ? 'text-blue-500' :
-                                                        'text-gray-500'
-                                                }`}>
-                                                {res.minRank}
-                                            </span>
+                                            <div className="flex flex-col items-center justify-center">
+                                                {(() => {
+                                                    const getNextRankCutoff = (score, level) => {
+                                                        const sRank = 1040000 + 5200 * (level - 5);
+                                                        const aRank = 840000 + 4200 * (level - 5);
+                                                        const bRank = 400000 + 2000 * (level - 5);
+                                                        const cRank = 20000 + 100 * (level - 5);
+
+                                                        if (score < cRank) return cRank;
+                                                        if (score < bRank) return bRank;
+                                                        if (score < aRank) return aRank;
+                                                        if (score < sRank) return sRank;
+                                                        return null;
+                                                    };
+                                                    const nextCutoff = getNextRankCutoff(res.min, res.level);
+                                                    return (
+                                                        <>
+                                                            {nextCutoff && (
+                                                                <span className="text-[10px] md:text-xs text-gray-400 font-medium mb-0.5">
+                                                                    {nextCutoff.toLocaleString()}
+                                                                </span>
+                                                            )}
+                                                            <span className={`text-sm md:text-lg font-black ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
+                                                                res.minRank === 'A' ? 'text-pink-500' :
+                                                                    res.minRank === 'B' ? 'text-blue-500' :
+                                                                        'text-gray-500'
+                                                                }`}>
+                                                                {res.minRank}
+                                                            </span>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </div>
                                         </td>
                                         <td className="px-1 py-2 md:p-4 text-center">
                                             <div className="flex flex-col items-center">
