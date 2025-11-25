@@ -274,7 +274,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                     </th>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('rank')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            랭크
+                                            최저 랭크
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'rank' ? 'opacity-100 text-purple-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
