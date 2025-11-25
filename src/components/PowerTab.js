@@ -18,10 +18,23 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   const [loAndFoundScore, setLoAndFoundScore] = useState(0);
   const [envyScore, setEnvyScore] = useState(0);
   const [creationMythScore, setCreationMythScore] = useState(0);
+  const [omakaseScore, setOmakaseScore] = useState(0);
 
   useEffect(() => {
     const newSurveyData = { ...surveyData, power, effi, internalValue };
     setSurveyData(newSurveyData);
+
+    if (power === '' || effi === '') {
+      setMultiEff('N/A');
+      setSoloEff('N/A');
+      setAutoEff('N/A');
+      setMySekaiScore('N/A');
+      setLoAndFoundScore('N/A');
+      setEnvyScore('N/A');
+      setCreationMythScore('N/A');
+      setOmakaseScore('N/A');
+      return;
+    }
 
     const powerVal = parseFloat(power) || 0;
     const effiVal = parseInt(effi) || 0;
@@ -127,6 +140,39 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       }
     };
 
+    const getOmakaseScore = (pVal, iVal) => {
+      try {
+        const targetSongId = 572;
+        const targetDifficulty = 'master';
+        const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
+        if (!musicMeta) return 0;
+
+        const totalPowerRaw = pVal * 10000;
+        const skills = [iVal, iVal, iVal, iVal, iVal];
+        const deck = createDeckDetail(totalPowerRaw, skills);
+        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
+        skillDetails.push({ ...deck.leader, skill: deck.leader });
+
+        const liveDetail = LiveCalculator.getLiveDetailByDeck(
+          deck,
+          musicMeta,
+          LiveType.MULTI,
+          skillDetails
+        );
+
+        return EventCalculator.getEventPoint(
+          LiveType.MULTI,
+          EventType.MARATHON,
+          liveDetail.score,
+          musicMeta.event_rate,
+          effiVal,
+          25
+        );
+      } catch (e) {
+        return 0;
+      }
+    };
+
     // Calculate Scores
     const currentLoAndFound = getLoAndFoundScore(powerVal, internalVal);
     const plus1LoAndFound = getLoAndFoundScore(powerVal + 1, internalVal);
@@ -159,6 +205,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
 
     setLoAndFoundScore(currentLoAndFound);
     setCreationMythScore(currentCreationMyth);
+    setOmakaseScore(getOmakaseScore(powerVal, internalVal));
 
     // Envy Calculation (Keep as is, but maybe use helper if I want to clean up, but it's separate)
     // I'll just copy the Envy logic back or refactor it too.
@@ -236,16 +283,16 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         </button>
         {showMySekaiTable && <MySekaiTable />}
 
-        <p id="lo-and-found-score">5불 로앤파 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{loAndFoundScore.toLocaleString()}</span></p>
-        <p id="envy-score">5불 엔비 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{envyScore.toLocaleString()}</span></p>
-        <p id="creation-myth-score">1불 개벽 오토 : <span style={{ fontWeight: "bold", color: "purple" }}>{creationMythScore.toLocaleString()}</span></p>
+        <p id="lo-and-found-score">5불 로앤파 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof loAndFoundScore === 'number' ? loAndFoundScore.toLocaleString() : loAndFoundScore}</span></p>
+        <p id="omakase-score">5불 오마카세 점수 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof omakaseScore === 'number' ? omakaseScore.toLocaleString() : omakaseScore}</span></p>
+        <p id="envy-score">5불 엔비 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof envyScore === 'number' ? envyScore.toLocaleString() : envyScore}</span></p>
+        <p id="creation-myth-score">1불 개벽 오토 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof creationMythScore === 'number' ? creationMythScore.toLocaleString() : creationMythScore}</span></p>
         <p id="my-sekai-score-display">마이세카이 1불 이벤포: <span style={{ fontWeight: "bold", color: "green" }}>{mySekaiScore}</span></p>
         <br></br>
-        <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{multiEff.toFixed(2)}%</span></p>
-        <p id="solo-eff">솔로효율: <span style={{ fontWeight: "bold", color: "blue" }}>{soloEff.toFixed(2)}%</span></p>
-        <p id="auto-eff">오토효율: <span style={{ fontWeight: "bold", color: "blue" }}>{autoEff.toFixed(2)}%</span></p>
-        <p id="power-calculation-text"><br />종합력 1만과 같은 효율의 배수<br /><br />대략적인 값으로 곡이나 스킬에 따라 달라짐</p>
-
+        <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}</span></p>
+        <p id="solo-eff">솔로효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof soloEff === 'number' ? soloEff.toFixed(2) + '%' : soloEff}</span></p>
+        <p id="auto-eff">오토효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof autoEff === 'number' ? autoEff.toFixed(2) + '%' : autoEff}</span></p>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}><br></br>종합력 1만과 같은 효율의 배수<br />현 내부치 로앤파 점수 기준</p>
       </div>
     </div>
   );
