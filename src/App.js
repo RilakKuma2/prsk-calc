@@ -101,7 +101,7 @@ function App() {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 animate-fade-in-up z-50 flex items-center gap-2">
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 animate-fade-in-up z-50 flex items-center gap-2 whitespace-nowrap">
           <span className="text-green-400">✓</span>
           {toast.message}
         </div>

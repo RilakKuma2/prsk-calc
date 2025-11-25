@@ -284,7 +284,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         {showMySekaiTable && <MySekaiTable />}
 
         <p id="lo-and-found-score">5불 로앤파 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof loAndFoundScore === 'number' ? loAndFoundScore.toLocaleString() : loAndFoundScore}</span></p>
-        <p id="omakase-score">5불 오마카세 점수 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof omakaseScore === 'number' ? omakaseScore.toLocaleString() : omakaseScore}</span></p>
+        <p id="omakase-score">5불 오마카세 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof omakaseScore === 'number' ? omakaseScore.toLocaleString() : omakaseScore}</span></p>
         <p id="envy-score">5불 엔비 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof envyScore === 'number' ? envyScore.toLocaleString() : envyScore}</span></p>
         <p id="creation-myth-score">1불 개벽 오토 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof creationMythScore === 'number' ? creationMythScore.toLocaleString() : creationMythScore}</span></p>
         <p id="my-sekai-score-display">마이세카이 1불 이벤포: <span style={{ fontWeight: "bold", color: "green" }}>{mySekaiScore}</span></p>
@@ -292,7 +292,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}</span></p>
         <p id="solo-eff">솔로효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof soloEff === 'number' ? soloEff.toFixed(2) + '%' : soloEff}</span></p>
         <p id="auto-eff">오토효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof autoEff === 'number' ? autoEff.toFixed(2) + '%' : autoEff}</span></p>
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}><br></br>종합력 1만과 같은 효율의 배수<br />현 내부치 로앤파 점수 기준</p>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}><br></br>종합력 1만과 같은 효율의 배수<br />현 내부치 로앤파 점수 기준 효율</p>
       </div>
     </div>
   );
