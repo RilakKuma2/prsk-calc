@@ -27,30 +27,159 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     const effiVal = parseInt(effi) || 0;
     const internalVal = parseFloat(internalValue) || 0;
 
-    const multiConstant = 4.877;
-    const soloConstant = 2.8;
-    const autoConstant = 1.84;
+    // Helper functions for score calculation
+    const getLoAndFoundScore = (pVal, iVal) => {
+      try {
+        const targetSongId = 226;
+        const targetDifficulty = 'hard';
+        const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
+        if (!musicMeta) return 0;
 
-    const multiEfficiency =
-      ((100 + (powerVal + 1) * multiConstant) /
-        (100 + powerVal * multiConstant) -
-        1) *
-      (100 + effiVal);
-    setMultiEff(multiEfficiency);
+        const totalPowerRaw = pVal * 10000;
+        const skills = [iVal, iVal, iVal, iVal, iVal];
+        const deck = createDeckDetail(totalPowerRaw, skills);
+        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
+        skillDetails.push({ ...deck.leader, skill: deck.leader });
 
-    const soloEfficiency =
-      ((100 + (powerVal + 1) * soloConstant) /
-        (100 + powerVal * soloConstant) -
-        1) *
-      (100 + effiVal);
-    setSoloEff(soloEfficiency);
+        const liveDetail = LiveCalculator.getLiveDetailByDeck(
+          deck,
+          musicMeta,
+          LiveType.MULTI,
+          skillDetails
+        );
 
-    const autoEfficiency =
-      ((100 + (powerVal + 1) * autoConstant) /
-        (100 + powerVal * autoConstant) -
-        1) *
-      (100 + effiVal);
-    setAutoEff(autoEfficiency);
+        return EventCalculator.getEventPoint(
+          LiveType.MULTI,
+          EventType.MARATHON,
+          liveDetail.score,
+          musicMeta.event_rate,
+          effiVal,
+          25
+        );
+      } catch (e) {
+        return 0;
+      }
+    };
+
+    const getCreationMythScore = (pVal) => {
+      try {
+        const targetSongId = 186;
+        const targetDifficulty = 'master';
+        const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
+        if (!musicMeta) return 0;
+
+        const totalPowerRaw = pVal * 10000;
+        const skills = [100, 100, 100, 100, 100];
+        const deck = createDeckDetail(totalPowerRaw, skills);
+        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
+        skillDetails.push({ ...deck.leader, skill: deck.leader });
+
+        const liveDetail = LiveCalculator.getLiveDetailByDeck(
+          deck,
+          musicMeta,
+          LiveType.AUTO,
+          skillDetails
+        );
+
+        return EventCalculator.getEventPoint(
+          LiveType.AUTO,
+          EventType.MARATHON,
+          liveDetail.score,
+          musicMeta.event_rate,
+          effiVal,
+          5
+        );
+      } catch (e) {
+        return 0;
+      }
+    };
+
+    const getAppendScore = (pVal) => {
+      try {
+        const targetSongId = 488;
+        const targetDifficulty = 'append';
+        const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
+        if (!musicMeta) return 0;
+
+        const totalPowerRaw = pVal * 10000;
+        const skills = [100, 100, 100, 100, 100];
+        const deck = createDeckDetail(totalPowerRaw, skills);
+        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
+        skillDetails.push({ ...deck.leader, skill: deck.leader });
+
+        const liveDetail = LiveCalculator.getLiveDetailByDeck(
+          deck,
+          musicMeta,
+          LiveType.SOLO,
+          skillDetails
+        );
+
+        return EventCalculator.getEventPoint(
+          LiveType.SOLO,
+          EventType.MARATHON,
+          liveDetail.score,
+          musicMeta.event_rate,
+          effiVal,
+          5
+        );
+      } catch (e) {
+        return 0;
+      }
+    };
+
+    // Calculate Scores
+    const currentLoAndFound = getLoAndFoundScore(powerVal, internalVal);
+    const plus1LoAndFound = getLoAndFoundScore(powerVal + 1, internalVal);
+
+    const currentCreationMyth = getCreationMythScore(powerVal);
+    const plus1CreationMyth = getCreationMythScore(powerVal + 1);
+
+    const currentAppend = getAppendScore(powerVal);
+    const plus1Append = getAppendScore(powerVal + 1);
+
+    // Calculate Efficiencies
+    // Formula: (100 + effi) * (Score_plus1 / Score_current - 1)
+    let newMultiEff = 0;
+    if (currentLoAndFound > 0) {
+      newMultiEff = (100 + effiVal) * (plus1LoAndFound / currentLoAndFound - 1);
+    }
+    setMultiEff(newMultiEff);
+
+    let newAutoEff = 0;
+    if (currentCreationMyth > 0) {
+      newAutoEff = (100 + effiVal) * (plus1CreationMyth / currentCreationMyth - 1);
+    }
+    setAutoEff(newAutoEff);
+
+    let newSoloEff = 0;
+    if (currentAppend > 0) {
+      newSoloEff = (100 + effiVal) * (plus1Append / currentAppend - 1);
+    }
+    setSoloEff(newSoloEff);
+
+    setLoAndFoundScore(currentLoAndFound);
+    setCreationMythScore(currentCreationMyth);
+
+    // Envy Calculation (Keep as is, but maybe use helper if I want to clean up, but it's separate)
+    // I'll just copy the Envy logic back or refactor it too.
+    // Actually, I can just calculate Envy here too.
+    try {
+      const targetSongId = 74;
+      const targetDifficulty = 'expert';
+      const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
+      if (musicMeta) {
+        const totalPowerRaw = powerVal * 10000;
+        const skills = [internalVal, internalVal, internalVal, internalVal, internalVal];
+        const deck = createDeckDetail(totalPowerRaw, skills);
+        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
+        skillDetails.push({ ...deck.leader, skill: deck.leader });
+        const liveDetail = LiveCalculator.getLiveDetailByDeck(deck, musicMeta, LiveType.MULTI, skillDetails);
+        const eventPoint = EventCalculator.getEventPoint(LiveType.MULTI, EventType.MARATHON, liveDetail.score, musicMeta.event_rate, effiVal, 25);
+        setEnvyScore(eventPoint);
+      }
+    } catch (e) {
+      setEnvyScore(0);
+    }
 
     let highestPossibleScore = "N/A";
     let columnIndex = -1;
@@ -78,138 +207,6 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       }
     }
     setMySekaiScore(highestPossibleScore);
-
-    // Lost and Found Calculation
-    try {
-      const targetSongId = 226; // Lost and Found
-      const targetDifficulty = 'hard';
-      const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
-
-      if (musicMeta) {
-        const totalPowerRaw = powerVal * 10000; // Convert 'man' to raw power
-        // Assume 5 players with internalValue skills
-        const skills = [internalVal, internalVal, internalVal, internalVal, internalVal];
-        const deck = createDeckDetail(totalPowerRaw, skills);
-
-        // For Multi Live, we need to simulate the score contribution.
-        // Assuming getLiveDetailByDeck with LiveType.MULTI calculates the score based on the deck's power and skills.
-        // However, in a real multi-live, other players contribute.
-        // The request says "all users 200%". If we assume the calculator treats the input deck as the "player"
-        // and we want to know the event points for THIS player in that room condition.
-        // But sekai-calculator might not simulate the whole room.
-        // Let's assume we calculate the score for ONE player (this deck) assuming optimal activation?
-        // Or does the user mean the TOTAL score of the room?
-        // "5불 점수" usually means Event Points per 5 energy.
-        // Let's calculate the score for this deck first.
-
-        // Construct skillDetails for the deck (all 200%)
-        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
-        // Leader skill activates twice in solo/auto, but in multi?
-        // In multi, each player's leader skill activates once (plus fever).
-        // Let's stick to the standard skillDetails construction which includes the 6th activation (Leader)
-        // just to be safe with the library's expectation, although for Multi it might be different.
-        // Actually, for Multi, the library might expect just the cards.
-        // Let's try passing the standard 6-item skillDetails (5 members + leader extra).
-        skillDetails.push({ ...deck.leader, skill: deck.leader });
-
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(
-          deck,
-          musicMeta,
-          LiveType.MULTI, // Using MULTI as requested
-          skillDetails
-        );
-
-        const eventPoint = EventCalculator.getEventPoint(
-          LiveType.MULTI,
-          EventType.MARATHON,
-          liveDetail.score,
-          musicMeta.event_rate,
-          effiVal,
-          25 // Fixed 25x multiplier (5 energy)
-        );
-
-        setLoAndFoundScore(eventPoint);
-      }
-    } catch (e) {
-      console.error("Error calculating Lo&Found score", e);
-      setLoAndFoundScore(0);
-    }
-
-    // Envy Calculation
-    try {
-      const targetSongId = 74; // Hitorinbo Envy
-      const targetDifficulty = 'expert';
-      const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
-
-      if (musicMeta) {
-        const totalPowerRaw = powerVal * 10000;
-        const skills = [internalVal, internalVal, internalVal, internalVal, internalVal];
-        const deck = createDeckDetail(totalPowerRaw, skills);
-        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
-        skillDetails.push({ ...deck.leader, skill: deck.leader });
-
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(
-          deck,
-          musicMeta,
-          LiveType.MULTI,
-          skillDetails
-        );
-
-        const eventPoint = EventCalculator.getEventPoint(
-          LiveType.MULTI,
-          EventType.MARATHON,
-          liveDetail.score,
-          musicMeta.event_rate,
-          effiVal,
-          25
-        );
-
-        setEnvyScore(eventPoint);
-      }
-    } catch (e) {
-      console.error("Error calculating Envy score", e);
-      setEnvyScore(0);
-    }
-
-    // Creation Myth Auto Calculation
-    try {
-      const targetSongId = 186; // Creation Myth
-      const targetDifficulty = 'master';
-      const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
-
-      if (musicMeta) {
-        const totalPowerRaw = powerVal * 10000;
-        // All skills 100%
-        const skills = [100, 100, 100, 100, 100];
-        const deck = createDeckDetail(totalPowerRaw, skills);
-
-        // For Auto, we construct skillDetails.
-        // Since all skills are 100%, order doesn't matter for the set of values.
-        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
-        skillDetails.push({ ...deck.leader, skill: deck.leader });
-
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(
-          deck,
-          musicMeta,
-          LiveType.AUTO,
-          skillDetails
-        );
-
-        const eventPoint = EventCalculator.getEventPoint(
-          LiveType.AUTO,
-          EventType.MARATHON,
-          liveDetail.score,
-          musicMeta.event_rate,
-          effiVal,
-          5 // 1 energy = 5x multiplier
-        );
-
-        setCreationMythScore(eventPoint);
-      }
-    } catch (e) {
-      console.error("Error calculating Creation Myth score", e);
-      setCreationMythScore(0);
-    }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [power, effi, internalValue]);
@@ -239,15 +236,16 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         </button>
         {showMySekaiTable && <MySekaiTable />}
 
-
+        <p id="lo-and-found-score">5불 로앤파 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{loAndFoundScore.toLocaleString()}</span></p>
+        <p id="envy-score">5불 엔비 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{envyScore.toLocaleString()}</span></p>
+        <p id="creation-myth-score">1불 개벽 오토 : <span style={{ fontWeight: "bold", color: "purple" }}>{creationMythScore.toLocaleString()}</span></p>
+        <p id="my-sekai-score-display">마이세카이 1불 이벤포: <span style={{ fontWeight: "bold", color: "green" }}>{mySekaiScore}</span></p>
+        <br></br>
         <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{multiEff.toFixed(2)}%</span></p>
         <p id="solo-eff">솔로효율: <span style={{ fontWeight: "bold", color: "blue" }}>{soloEff.toFixed(2)}%</span></p>
         <p id="auto-eff">오토효율: <span style={{ fontWeight: "bold", color: "blue" }}>{autoEff.toFixed(2)}%</span></p>
-        <p id="my-sekai-score-display">마이세카이 불 당 이벤포: <span style={{ fontWeight: "bold", color: "green" }}>{mySekaiScore}</span></p>
-        <p id="lo-and-found-score">5불 로앤파 점수 : <span style={{ fontWeight: "bold", color: "purple" }}>{loAndFoundScore.toLocaleString()}</span></p>
-        <p id="envy-score">5불 엔비 점수 : <span style={{ fontWeight: "bold", color: "purple" }}>{envyScore.toLocaleString()}</span></p>
-        <p id="creation-myth-score">1불 개벽 오토 : <span style={{ fontWeight: "bold", color: "purple" }}>{creationMythScore.toLocaleString()}</span></p>
         <p id="power-calculation-text"><br />종합력 1만과 같은 효율의 배수<br /><br />대략적인 값으로 곡이나 스킬에 따라 달라짐</p>
+
       </div>
     </div>
   );
