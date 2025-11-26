@@ -264,18 +264,18 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                             </span>
                                         </div>
                                     </th>
-                                    <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
-                                        <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            최저 점수
-                                            <span className={`transition-opacity duration-200 ${sortConfig.key === 'min' ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-50'}`}>
-                                                {sortConfig.direction === 'asc' ? '▲' : '▼'}
-                                            </span>
-                                        </div>
-                                    </th>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('max')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
                                             최고 점수
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'max' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
+                                                {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
+                                        <div className="flex items-center justify-center gap-1 md:gap-2">
+                                            최저 점수
+                                            <span className={`transition-opacity duration-200 ${sortConfig.key === 'min' ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
                                         </div>
@@ -312,14 +312,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                                 } : {}
                                                             }
                                                         >
-                                                            {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty === 'expert' ? 'EX' : res.difficulty}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-1 py-4 md:p-4 text-center">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="font-mono text-blue-500 text-sm md:text-base font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
-                                                            {res.min.toLocaleString()}
+                                                            {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty === 'expert' ? ' EX ' : res.difficulty}
                                                         </span>
                                                     </div>
                                                 </td>
@@ -327,6 +320,13 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                     <div className="flex flex-col items-center">
                                                         <span className="font-mono text-pink-500 text-sm md:text-base font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
                                                             {res.max.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-1 py-4 md:p-4 text-center">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="font-mono text-blue-500 text-sm md:text-base font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
+                                                            {res.min.toLocaleString()}
                                                         </span>
                                                     </div>
                                                 </td>
