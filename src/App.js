@@ -23,13 +23,23 @@ function App() {
     amatsuyu: <AmatsuyuTab surveyData={surveyData} setSurveyData={setSurveyData} />,
   };
 
-  const [toast, setToast] = useState({ show: false, message: '' });
+  const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });
+  const timerRef1 = React.useRef(null);
+  const timerRef2 = React.useRef(null);
 
   const showToastMessage = (message) => {
-    setToast({ show: true, message });
-    setTimeout(() => {
-      setToast({ show: false, message: '' });
-    }, 3000);
+    if (timerRef1.current) clearTimeout(timerRef1.current);
+    if (timerRef2.current) clearTimeout(timerRef2.current);
+
+    setToast({ show: true, message, fadingOut: false });
+
+    timerRef1.current = setTimeout(() => {
+      setToast(prev => ({ ...prev, fadingOut: true }));
+    }, 1000);
+
+    timerRef2.current = setTimeout(() => {
+      setToast({ show: false, message: '', fadingOut: false });
+    }, 1500);
   };
 
   const saveData = () => {
@@ -101,7 +111,7 @@ function App() {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 animate-fade-in-up z-50 flex items-center gap-2 whitespace-nowrap">
+        <div className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 z-50 flex items-center gap-2 whitespace-nowrap ${toast.fadingOut ? 'animate-fade-out' : 'animate-fade-in-up'}`}>
           <span className="text-green-400">✓</span>
           {toast.message}
         </div>

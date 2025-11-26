@@ -65,7 +65,7 @@ export const createDeckDetail = (totalPower, skills) => {
     };
 };
 
-export const calculateScoreRange = (input) => {
+export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
     const {
         songId,
         difficulty,
@@ -84,15 +84,26 @@ export const calculateScoreRange = (input) => {
         return null;
     }
 
-    // Check if skill_score_auto exists and has enough data
-    if (!musicMeta.skill_score_auto || musicMeta.skill_score_auto.length < 6) {
-        console.warn(`Calculator: Missing or insufficient skill_score_auto for ID: ${songId}`);
+    // Determine which skill score array to use
+    let skillScoreCoeffs = [];
+    if (liveType === LiveType.SOLO) {
+        skillScoreCoeffs = musicMeta.skill_score_solo;
+    } else if (liveType === LiveType.AUTO) {
+        skillScoreCoeffs = musicMeta.skill_score_auto;
+    } else {
+        // Fallback or Multi
+        skillScoreCoeffs = musicMeta.skill_score_multi;
+    }
+
+    // Check if coefficients exist and have enough data
+    if (!skillScoreCoeffs || skillScoreCoeffs.length < 6) {
+        console.warn(`Calculator: Missing or insufficient skill_score coefficients for ID: ${songId}, Type: ${liveType}`);
         return null;
     }
 
     // 1. Prepare Data
     // Coefficients for the first 5 slots (indices 0-4)
-    const skillCoeffs = musicMeta.skill_score_auto.slice(0, 5).map((val, idx) => ({ val, idx }));
+    const skillCoeffs = skillScoreCoeffs.slice(0, 5).map((val, idx) => ({ val, idx }));
 
     // User's 5 skills
     const userSkills = [skillLeader, skillMember2, skillMember3, skillMember4, skillMember5];
@@ -119,8 +130,7 @@ export const calculateScoreRange = (input) => {
     const skillDetailsMax = constructSkillDetails(maxOrderSkills, baseCards);
 
     // 3. Logic for MIN Score
-    // Sort coefficients descending (Highest coeff first)
-    // We want to match Lowest Skill -> Highest Coeff Slot to minimize score
+    // Sort skills ascending (Lowest skill first)
     const sortedSkillsAsc = [...userSkills].sort((a, b) => a - b);
 
     const minOrderSkills = new Array(5);
@@ -140,7 +150,7 @@ export const calculateScoreRange = (input) => {
         const maxLiveDetail = LiveCalculator.getLiveDetailByDeck(
             baseDeck,
             musicMeta,
-            LiveType.AUTO,
+            liveType,
             skillDetailsMax
         );
         maxScore = maxLiveDetail.score;
@@ -148,7 +158,7 @@ export const calculateScoreRange = (input) => {
         const minLiveDetail = LiveCalculator.getLiveDetailByDeck(
             baseDeck,
             musicMeta,
-            LiveType.AUTO,
+            liveType,
             skillDetailsMin
         );
         minScore = minLiveDetail.score;
@@ -161,10 +171,9 @@ export const calculateScoreRange = (input) => {
     return {
         min: minScore,
         max: maxScore,
-        // Return permutations if needed for debugging, but user only asked for scores
-        // We can return the skill values used in the first 5 slots
         minPermutation: minOrderSkills,
-        maxPermutation: maxOrderSkills
+        maxPermutation: maxOrderSkills,
+        skillCoeffs: skillScoreCoeffs // Return raw coefficients for visualization
     };
 };
 

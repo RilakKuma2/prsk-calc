@@ -419,3 +419,19 @@ input[type="checkbox"] {
         font-size: 14px;
     }
 }
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+    }
+}
+
+.animate-fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
