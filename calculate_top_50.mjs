@@ -150,7 +150,8 @@ const run = () => {
     const results = [];
 
     musicMetas.forEach(meta => {
-        if (meta.difficulty !== 'master' && meta.difficulty !== 'append') return;
+        // Include expert, master, and append
+        if (meta.difficulty !== 'master' && meta.difficulty !== 'append' && meta.difficulty !== 'expert') return;
 
         const score = calculateScoreRange({
             songId: meta.music_id,

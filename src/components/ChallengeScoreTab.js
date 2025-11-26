@@ -34,27 +34,27 @@ const TARGET_SONGS = [
     { id: 585, difficulty: 'master' },
     { id: 150, difficulty: 'append' },
     { id: 538, difficulty: 'master' },
+    { id: 671, difficulty: 'expert' },
     { id: 585, difficulty: 'append' },
     { id: 382, difficulty: 'master' },
     { id: 583, difficulty: 'master' },
     { id: 691, difficulty: 'append' },
     { id: 74, difficulty: 'master' },
     { id: 141, difficulty: 'master' },
+    { id: 62, difficulty: 'expert' },
     { id: 622, difficulty: 'append' },
     { id: 26, difficulty: 'master' },
+    { id: 74, difficulty: 'expert' },
     { id: 100, difficulty: 'append' },
     { id: 578, difficulty: 'master' },
+    { id: 539, difficulty: 'expert' },
     { id: 320, difficulty: 'master' },
     { id: 89, difficulty: 'append' },
     { id: 554, difficulty: 'append' },
     { id: 264, difficulty: 'master' },
+    { id: 11, difficulty: 'expert' },
     { id: 374, difficulty: 'master' },
     { id: 366, difficulty: 'append' },
-    { id: 304, difficulty: 'append' },
-    { id: 622, difficulty: 'master' },
-    { id: 189, difficulty: 'master' },
-    { id: 576, difficulty: 'master' },
-    { id: 375, difficulty: 'append' },
 ];
 
 function ChallengeScoreTab({ surveyData, setSurveyData }) {
@@ -297,7 +297,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                     <div className="flex items-center justify-center gap-1 md:gap-2">
                                                         {res.songName}
                                                         <span
-                                                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${res.difficulty === 'master' || res.difficulty === 'append' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
+                                                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${res.difficulty === 'master' || res.difficulty === 'append' || res.difficulty === 'expert' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
                                                                 }`}
                                                             style={
                                                                 res.difficulty === 'master' ? {
@@ -306,10 +306,13 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                                 } : res.difficulty === 'append' ? {
                                                                     background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)',
                                                                     color: '#FFFFFF',
+                                                                } : res.difficulty === 'expert' ? {
+                                                                    backgroundColor: '#ff4477',
+                                                                    color: '#FFFFFF',
                                                                 } : {}
                                                             }
                                                         >
-                                                            {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty}
+                                                            {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty === 'expert' ? 'EX' : res.difficulty}
                                                         </span>
                                                     </div>
                                                 </td>
