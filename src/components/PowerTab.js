@@ -272,7 +272,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         <label htmlFor="internalValue">내부치:</label>
         <input type="number" id="internalValue" min="0" max="2000" value={internalValue} onChange={e => setInternalValue(e.target.value)} onFocus={(e) => e.target.select()} />
         <span>%</span><br />
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>5명이 모두 같은 내부치라 가정 후 점수 계산</p>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>5명이 모두 같은 내부치라 가정 후 점수 계산<br />자신의 내부치보단 주회방 조건 입력</p>
 
         <button
           className="action-button"

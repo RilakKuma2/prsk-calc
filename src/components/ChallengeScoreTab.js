@@ -462,6 +462,21 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                     )}
                 </div>
             )}
+
+            <div className="mt-6 text-center text-lg">
+                <span style={{ fontWeight: 'bold' }}>
+                    <a target="_blank" rel="noopener noreferrer" href="https://3-3.dev/sekai/top-deck" className="text-blue-500 hover:underline">
+                        챌라 이론덱
+                    </a>
+                </span>
+                <br />
+                <span style={{ fontWeight: 'bold' }}>
+                    <a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/2262136" className="text-blue-500 hover:underline">
+                        군청찬가 초고점 뽑기
+                    </a>
+                </span>
+                <br /><br />
+            </div>
         </div>
     );
 }

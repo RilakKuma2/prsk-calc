@@ -256,7 +256,7 @@ input[type="checkbox"] {
 
     /* First 3 tabs on the first row */
     .tab:nth-child(-n+3) {
-        width: calc((100% - 12px) / 3);
+        width: calc((100% - 60px) / 3);
     }
 
     /* Remaining tabs (4th onwards) on the second row */
