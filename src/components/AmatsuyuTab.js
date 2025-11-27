@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 
 const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const [hasCurrentYearCard, setHasCurrentYearCard] = useState(surveyData.hasCurrentYearCard || 'N');
@@ -143,26 +144,37 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   return (
     <div id="amatsuyu-tab-content" className="p-4 space-y-4">
       {/* Input Section - Reverted to Default Style (Exact Match with AutoTab) */}
-      <div>
-        <label>올해생카 보유:</label>
-        <select value={hasCurrentYearCard} onChange={e => setHasCurrentYearCard(e.target.value)}>
-          <option value="Y">Y</option>
-          <option value="N">N</option>
-        </select><br />
-
-        <label>과거생카 보유 수:</label>
-        <select value={pastCardsOwned} onChange={e => setPastCardsOwned(e.target.value)}>
-          {[0, 1, 2, 3, 4].map(num => (
-            <option key={num} value={num}>{num}</option>
-          ))}
-        </select><br />
-
-        <label>현재 레벨:</label>
-        <input type="number" value={currentLevel} onChange={e => setCurrentLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
-
-        <label>목표 레벨:</label>
-        <input type="number" value={targetLevel} onChange={e => { const value = parseInt(e.target.value); setTargetLevel(isNaN(value) ? 0 : Math.min(400, Math.max(0, value))); }} onFocus={(e) => e.target.select()} /><br />
-      </div>
+      <InputTableWrapper>
+        <SelectRow
+          label="올해생카 보유"
+          value={hasCurrentYearCard}
+          onChange={e => setHasCurrentYearCard(e.target.value)}
+          options={[
+            { value: "Y", label: "Y" },
+            { value: "N", label: "N" },
+          ]}
+          spacer={true}
+        />
+        <SelectRow
+          label="과거생카 보유 수"
+          value={pastCardsOwned}
+          onChange={e => setPastCardsOwned(e.target.value)}
+          options={[0, 1, 2, 3, 4].map(num => ({ value: num, label: num }))}
+          spacer={true}
+        />
+        <InputRow
+          label="현재 레벨"
+          value={currentLevel}
+          onChange={e => setCurrentLevel(e.target.value)}
+          spacer={true}
+        />
+        <InputRow
+          label="목표 레벨"
+          value={targetLevel}
+          onChange={e => { const value = parseInt(e.target.value); setTargetLevel(isNaN(value) ? 0 : Math.min(400, Math.max(0, value))); }}
+          spacer={true}
+        />
+      </InputTableWrapper>
 
       {/* Result Sections Wrapper - Slightly Reduced Width (340px max, 85% mobile) */}
       <div className="w-[85%] max-w-[340px] mx-auto space-y-4">

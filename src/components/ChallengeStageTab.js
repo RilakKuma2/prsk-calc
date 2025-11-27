@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { challData } from '../data/challData';
 
 const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
@@ -69,26 +70,44 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
     return (
         <div id="challenge-stage-tab-content" className="p-4 space-y-4">
             {/* Input Section */}
-            <div>
-                <label htmlFor="current-stage">현재 스테이지:</label>
-                <input type="number" id="current-stage" min="1" value={currentStage} onChange={e => setCurrentStage(e.target.value)} onFocus={(e) => e.target.select()} /><br />
-
-                <label htmlFor="remaining-score">남은 점수:</label>
-                <input type="number" id="remaining-score" min="0" value={remainingScore} onChange={e => setRemainingScore(e.target.value)} onFocus={(e) => e.target.select()} /><br />
-
-                <label htmlFor="target-stage">목표 스테이지:</label>
-                <input type="text" id="target-stage" min="1" value={targetStage} onChange={e => setTargetStage(e.target.value)} onFocus={(e) => e.target.select()} /><br />
-
-                <label htmlFor="challenge-score">챌라 점수:</label>
-                <input type="number" id="challenge-score" min="0" max="300" value={challengeScore} onChange={e => setChallengeScore(e.target.value)} onFocus={(e) => e.target.select()} />
-                <span>만</span><br />
-
-                <label htmlFor="pass">컬패 여부:</label>
-                <select id="pass" value={pass} onChange={e => setPass(e.target.value)}>
-                    <option value="1">Y</option>
-                    <option value="2">N</option>
-                </select>
-            </div>
+            <InputTableWrapper>
+                <InputRow
+                    label="현재 스테이지"
+                    value={currentStage}
+                    onChange={e => setCurrentStage(e.target.value)}
+                    min="1"
+                />
+                <InputRow
+                    label="남은 점수"
+                    value={remainingScore}
+                    onChange={e => setRemainingScore(e.target.value)}
+                    min="0"
+                />
+                <InputRow
+                    label="목표 스테이지"
+                    value={targetStage}
+                    onChange={e => setTargetStage(e.target.value)}
+                    type="text"
+                    min="1"
+                />
+                <InputRow
+                    label="챌라 점수"
+                    value={challengeScore}
+                    onChange={e => setChallengeScore(e.target.value)}
+                    suffix="만"
+                    min="0"
+                    max="300"
+                />
+                <SelectRow
+                    label="컬패 여부"
+                    value={pass}
+                    onChange={e => setPass(e.target.value)}
+                    options={[
+                        { value: "1", label: "Y" },
+                        { value: "2", label: "N" },
+                    ]}
+                />
+            </InputTableWrapper>
 
             {/* Result Section - Amatsuyu Style */}
             <div className="w-[85%] max-w-[280px] mx-auto space-y-4">

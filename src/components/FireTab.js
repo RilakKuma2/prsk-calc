@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 
 const FireTab = ({ surveyData, setSurveyData }) => {
   const [score1, setScore1] = useState(surveyData.score1 || '');
@@ -71,53 +72,83 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     <div id="fire-tab-content" className="p-4 space-y-4">
       {/* Input Section */}
-      <div>
-        <label htmlFor="score1">현재점수:</label>
-        <input type="number" id="score1" min="0" max="50000" value={score1} onChange={e => setScore1(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>만</span><br />
-
-        <label htmlFor="score2">목표점수:</label>
-        <input type="number" id="score2" min="0" max="50000" value={score2} onChange={e => setScore2(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>만</span><br />
-
-        <label htmlFor="score3">판 당 점수:</label>
-        <input type="number" id="score3" min="0" max="50000" value={score3} onChange={e => setScore3(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>만</span><br />
-
-        <label htmlFor="rounds1">간 당 판수:</label>
-        <input type="number" id="rounds1" min="0" max="50000" value={rounds1} onChange={e => setRounds1(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>회</span><br />
-
-        <label htmlFor="firea">현재 라이브보너스:</label>
-        <select id="firea" value={firea} onChange={e => setFirea(e.target.value)}>
-          <option value="1">0</option>
-          <option value="5">1</option>
-          <option value="10">2</option>
-          <option value="15">3</option>
-          <option value="20">4</option>
-          <option value="25">5</option>
-          <option value="27">6</option>
-          <option value="29">7</option>
-          <option value="31">8</option>
-          <option value="33">9</option>
-          <option value="35">10</option>
-        </select><br />
-        <label htmlFor="fires2">라이브보너스 변경:</label>
-        <select id="fires2" value={fires2} onChange={e => setFires2(e.target.value)}>
-          <option value="none">변경없음</option>
-          <option value="1">0</option>
-          <option value="5">1</option>
-          <option value="10">2</option>
-          <option value="15">3</option>
-          <option value="20">4</option>
-          <option value="25">5</option>
-          <option value="27">6</option>
-          <option value="29">7</option>
-          <option value="31">8</option>
-          <option value="33">9</option>
-          <option value="35">10</option>
-        </select>
-      </div>
+      <InputTableWrapper>
+        <InputRow
+          label="현재점수"
+          value={score1}
+          onChange={e => setScore1(e.target.value)}
+          suffix="만"
+          min="0"
+          max="50000"
+          spacer={true}
+        />
+        <InputRow
+          label="목표점수"
+          value={score2}
+          onChange={e => setScore2(e.target.value)}
+          suffix="만"
+          min="0"
+          max="50000"
+          spacer={true}
+        />
+        <InputRow
+          label="판 당 점수"
+          value={score3}
+          onChange={e => setScore3(e.target.value)}
+          suffix="만"
+          min="0"
+          max="50000"
+          spacer={true}
+        />
+        <InputRow
+          label="간 당 판수"
+          value={rounds1}
+          onChange={e => setRounds1(e.target.value)}
+          suffix="회"
+          min="0"
+          max="50000"
+          spacer={true}
+        />
+        <SelectRow
+          label="현재 라이브보너스"
+          value={firea}
+          onChange={e => setFirea(e.target.value)}
+          options={[
+            { value: "1", label: "0" },
+            { value: "5", label: "1" },
+            { value: "10", label: "2" },
+            { value: "15", label: "3" },
+            { value: "20", label: "4" },
+            { value: "25", label: "5" },
+            { value: "27", label: "6" },
+            { value: "29", label: "7" },
+            { value: "31", label: "8" },
+            { value: "33", label: "9" },
+            { value: "35", label: "10" },
+          ]}
+          spacer={true}
+        />
+        <SelectRow
+          label="라이브보너스 변경"
+          value={fires2}
+          onChange={e => setFires2(e.target.value)}
+          options={[
+            { value: "none", label: "변경없음" },
+            { value: "1", label: "0" },
+            { value: "5", label: "1" },
+            { value: "10", label: "2" },
+            { value: "15", label: "3" },
+            { value: "20", label: "4" },
+            { value: "25", label: "5" },
+            { value: "27", label: "6" },
+            { value: "29", label: "7" },
+            { value: "31", label: "8" },
+            { value: "33", label: "9" },
+            { value: "35", label: "10" },
+          ]}
+          spacer={true}
+        />
+      </InputTableWrapper>
 
       {/* Result Section - Amatsuyu Style */}
       <div className="w-[85%] max-w-[280px] mx-auto space-y-4">

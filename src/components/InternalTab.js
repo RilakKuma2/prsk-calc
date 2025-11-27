@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { InputTableWrapper, InputRow } from './common/InputComponents';
 
 const InternalTab = ({ surveyData, setSurveyData }) => {
   const [leader, setLeader] = useState(surveyData.leader || '');
@@ -32,27 +33,38 @@ const InternalTab = ({ surveyData, setSurveyData }) => {
   return (
     <div id="internal-tab-content" className="p-4 space-y-4">
       {/* Input Section */}
-      <div>
-        <label htmlFor="leader">리더 스킬:</label>
-        <input type="number" id="leader" min="0" value={leader} onChange={e => setLeader(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>%</span><br />
-
-        <label htmlFor="member2">멤버2 스킬:</label>
-        <input type="number" id="member2" min="0" value={member2} onChange={e => setMember2(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>%</span><br />
-
-        <label htmlFor="member3">멤버3 스킬:</label>
-        <input type="number" id="member3" min="0" value={member3} onChange={e => setMember3(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>%</span><br />
-
-        <label htmlFor="member4">멤버4 스킬:</label>
-        <input type="number" id="member4" min="0" value={member4} onChange={e => setMember4(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>%</span><br />
-
-        <label htmlFor="member5">멤버5 스킬:</label>
-        <input type="number" id="member5" min="0" value={member5} onChange={e => setMember5(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>%</span>
-      </div>
+      <InputTableWrapper>
+        <InputRow
+          label="리더 스킬"
+          value={leader}
+          onChange={e => setLeader(e.target.value)}
+          suffix="%"
+        />
+        <InputRow
+          label="멤버 2"
+          value={member2}
+          onChange={e => setMember2(e.target.value)}
+          suffix="%"
+        />
+        <InputRow
+          label="멤버 3"
+          value={member3}
+          onChange={e => setMember3(e.target.value)}
+          suffix="%"
+        />
+        <InputRow
+          label="멤버 4"
+          value={member4}
+          onChange={e => setMember4(e.target.value)}
+          suffix="%"
+        />
+        <InputRow
+          label="멤버 5"
+          value={member5}
+          onChange={e => setMember5(e.target.value)}
+          suffix="%"
+        />
+      </InputTableWrapper>
 
       {/* Result Section - Amatsuyu Style */}
       <div className="w-[85%] max-w-[240px] mx-auto space-y-4">

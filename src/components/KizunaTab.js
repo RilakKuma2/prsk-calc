@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { kizunaData } from '../data/kizunaData';
 
 const KizunaTab = ({ surveyData, setSurveyData }) => {
@@ -81,39 +82,57 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
   return (
     <div id="kizuna-level-tab" className="p-4 space-y-4">
       {/* Input Section */}
-      <div>
-        <label htmlFor="kizuna-current-level">현재 랭크:</label>
-        <input type="number" id="kizuna-current-level" min="1" max="75" value={currentLevel} onChange={e => setCurrentLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
-
-        <label htmlFor="kizuna-current-exp">남은 경험치:</label>
-        <input type="number" id="kizuna-current-exp" min="0" value={currentExp} onChange={e => setCurrentExp(e.target.value)} onFocus={(e) => e.target.select()} /><br />
-
-        <label htmlFor="kizuna-target-level">목표 랭크:</label>
-        <input type="number" id="kizuna-target-level" min="2" max="75" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
-
-        <label htmlFor="kizuna-rank">라이브 랭크:</label>
-        <select id="kizuna-rank" value={rank} onChange={e => setRank(e.target.value)}>
-          <option value="150">S</option>
-          <option value="130">A</option>
-          <option value="110">B</option>
-          <option value="100">C</option>
-        </select><br />
-
-        <label htmlFor="kizuna-fires">라이브보너스:</label>
-        <select id="kizuna-fires" value={fires} onChange={e => setFires(e.target.value)}>
-          <option value="1">0</option>
-          <option value="5">1</option>
-          <option value="10">2</option>
-          <option value="15">3</option>
-          <option value="20">4</option>
-          <option value="25">5</option>
-          <option value="26">6</option>
-          <option value="27">7</option>
-          <option value="28">8</option>
-          <option value="29">9</option>
-          <option value="30">10</option>
-        </select>
-      </div>
+      <InputTableWrapper>
+        <InputRow
+          label="현재 랭크"
+          value={currentLevel}
+          onChange={e => setCurrentLevel(e.target.value)}
+          min="1"
+          max="75"
+        />
+        <InputRow
+          label="남은 경험치"
+          value={currentExp}
+          onChange={e => setCurrentExp(e.target.value)}
+          min="0"
+        />
+        <InputRow
+          label="목표 랭크"
+          value={targetLevel}
+          onChange={e => setTargetLevel(e.target.value)}
+          min="2"
+          max="75"
+        />
+        <SelectRow
+          label="라이브 랭크"
+          value={rank}
+          onChange={e => setRank(e.target.value)}
+          options={[
+            { value: "150", label: "S" },
+            { value: "130", label: "A" },
+            { value: "110", label: "B" },
+            { value: "100", label: "C" },
+          ]}
+        />
+        <SelectRow
+          label="라이브보너스"
+          value={fires}
+          onChange={e => setFires(e.target.value)}
+          options={[
+            { value: "1", label: "0" },
+            { value: "5", label: "1" },
+            { value: "10", label: "2" },
+            { value: "15", label: "3" },
+            { value: "20", label: "4" },
+            { value: "25", label: "5" },
+            { value: "26", label: "6" },
+            { value: "27", label: "7" },
+            { value: "28", label: "8" },
+            { value: "29", label: "9" },
+            { value: "30", label: "10" },
+          ]}
+        />
+      </InputTableWrapper>
 
       {/* Result Section - Reverted Width, Rearranged Items */}
       <div className="w-full max-w-[280px] mx-auto space-y-4">

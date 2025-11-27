@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
 import { SONG_OPTIONS } from '../utils/songs';
 import musicMetas from '../data/music_metas.json';
@@ -195,65 +196,53 @@ function AutoTab({ surveyData, setSurveyData }) {
 
     return (
         <div id="auto-tab-content">
-            <label>종합력:</label>
-            <input
-                type="number"
-                value={totalPower}
-                onChange={(e) => {
-                    const val = e.target.value;
-                    updateDeck('totalPower', val === '' ? '' : Number(val));
-                }}
-                onFocus={(e) => e.target.select()}
-            />
-            <br />
-
-            <h3 style={{ marginTop: '5px', marginBottom: '10px' }}>멤버 스킬</h3>
-
-            <label>리더:</label>
-            <input
-                type="number"
-                value={skillLeader}
-                onChange={(e) => {
-                    const val = e.target.value;
-                    updateDeck('skillLeader', val === '' ? '' : Number(val));
-                }}
-                onFocus={(e) => e.target.select()}
-            />
-            <br />
-
-            {[
-                { label: '멤버 2:', val: skillMember2, key: 'skillMember2' },
-                { label: '멤버 3:', val: skillMember3, key: 'skillMember3' },
-                { label: '멤버 4:', val: skillMember4, key: 'skillMember4' },
-                { label: '멤버 5:', val: skillMember5, key: 'skillMember5' },
-            ].map((m, i) => (
-                <React.Fragment key={i}>
-                    <label>{m.label}</label>
-                    <input
-                        type="number"
+            <InputTableWrapper>
+                <InputRow
+                    label="종합력"
+                    value={totalPower}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        updateDeck('totalPower', val === '' ? '' : Number(val));
+                    }}
+                    spacer={true}
+                />
+                <SectionHeaderRow label="멤버 스킬" spacer={true} />
+                <InputRow
+                    label="리더"
+                    value={skillLeader}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        updateDeck('skillLeader', val === '' ? '' : Number(val));
+                    }}
+                    spacer={true}
+                />
+                {[
+                    { label: '멤버 2', val: skillMember2, key: 'skillMember2' },
+                    { label: '멤버 3', val: skillMember3, key: 'skillMember3' },
+                    { label: '멤버 4', val: skillMember4, key: 'skillMember4' },
+                    { label: '멤버 5', val: skillMember5, key: 'skillMember5' },
+                ].map((m, i) => (
+                    <InputRow
+                        key={i}
+                        label={m.label}
                         value={m.val}
                         onChange={(e) => {
                             const val = e.target.value;
                             updateDeck(m.key, val === '' ? '' : Number(val));
                         }}
-                        onFocus={(e) => e.target.select()}
+                        spacer={true}
                     />
-                    <br />
-                </React.Fragment>
-            ))}
-
-            <h3 style={{ marginTop: '10px', marginBottom: '10px' }}></h3>
-            <label>이벤트 배율:</label>
-            <input
-                type="number"
-                value={eventBonus}
-                onChange={(e) => {
-                    const val = e.target.value;
-                    updateDeck('eventBonus', val === '' ? '' : Number(val));
-                }}
-                onFocus={(e) => e.target.select()}
-            />
-            <br />
+                ))}
+                <InputRow
+                    label="이벤트 배율"
+                    value={eventBonus}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        updateDeck('eventBonus', val === '' ? '' : Number(val));
+                    }}
+                    spacer={true}
+                />
+            </InputTableWrapper>
 
             <div className="flex items-center justify-center mb-4 mt-8">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
