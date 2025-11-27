@@ -126,131 +126,128 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     return (
-        <div className="score-art-tab">
-            <InputTableWrapper>
-                <InputRow
-                    label="현재 포인트"
-                    value={currentEP}
-                    onChange={(e) => setCurrentEP(e.target.value)}
-                    placeholder="예: 10000"
-                />
-                <InputRow
-                    label="목표 포인트"
-                    value={targetEP}
-                    onChange={(e) => setTargetEP(e.target.value)}
-                    placeholder="예: 12000"
-                />
-                <InputRow
-                    label="최대 배수 (%)"
-                    value={maxBonus}
-                    onChange={(e) => setMaxBonus(e.target.value)}
-                    placeholder="예: 300"
-                />
-            </InputTableWrapper>
-
-            <div style={{ margin: '15px 0', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', cursor: 'pointer' }}>
-                    <input
-                        type="checkbox"
-                        checked={zeroScoreOnly}
-                        onChange={(e) => setZeroScoreOnly(e.target.checked)}
-                        style={{ width: '16px', height: '16px' }}
+        <div className="w-full max-w-3xl mx-auto pb-20">
+            <div className="bg-white rounded-2xl p-6 mb-8">
+                <InputTableWrapper>
+                    <InputRow
+                        label="현재 포인트"
+                        value={currentEP}
+                        onChange={(e) => setCurrentEP(e.target.value)}
+                        placeholder="예: 10000"
                     />
-                    엔비 0점만 사용 (노트 치지 않기)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', cursor: 'pointer' }}>
-                    <input
-                        type="checkbox"
-                        checked={allowNonMod5}
-                        onChange={(e) => setAllowNonMod5(e.target.checked)}
-                        style={{ width: '16px', height: '16px' }}
+                    <InputRow
+                        label="목표 포인트"
+                        value={targetEP}
+                        onChange={(e) => setTargetEP(e.target.value)}
+                        placeholder="예: 12000"
                     />
-                    배수가 5의 배수가 아닌 경우도 계산
-                </label>
-            </div>
+                    <InputRow
+                        label="최대 배수 (%)"
+                        value={maxBonus}
+                        onChange={(e) => setMaxBonus(e.target.value)}
+                        placeholder="예: 300"
+                    />
+                </InputTableWrapper>
 
-            <div style={{ textAlign: 'center', marginTop: '10px', marginBottom: '20px' }}>
-                <div style={{ fontSize: '0.8rem', color: '#e74c3c', marginBottom: '10px', lineHeight: '1.4' }}>
-                    배수에 소수점이 생기지 않도록 주의(월링 서폿덱 or 1,3 마랭) <br />
-                    마이세카이 1불만 써보고 점수 확인 후 진행
+                <div className="flex flex-col gap-3 items-center mt-6 mb-8">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={zeroScoreOnly}
+                            onChange={(e) => setZeroScoreOnly(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        />
+                        <span className="text-gray-700">엔비 0점만 사용 (노트 치지 않기)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={allowNonMod5}
+                            onChange={(e) => setAllowNonMod5(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        />
+                        <span className="text-gray-700">배수가 5의 배수가 아닌 경우도 계산</span>
+                    </label>
                 </div>
-                <a
-                    href="https://docs.google.com/spreadsheets/d/1om--O7_NqvvQ6TDg1jrsjKMVBR_s1j1o/edit?usp=sharing&ouid=113023731854367624519&rtpof=true&sd=true"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ display: 'inline-block', marginBottom: '10px', fontSize: '0.9rem', color: '#3498db', textDecoration: 'underline' }}
-                >
-                    엔비 점수표
-                </a>
-                <br />
-                <button
-                    onClick={calculate}
-                    disabled={loading || calculating}
-                    style={{
-                        padding: '10px 20px',
-                        fontSize: '1rem',
-                        backgroundColor: '#3498db',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                        opacity: (loading || calculating) ? 0.7 : 1
-                    }}
-                >
-                    {calculating ? '계산 중...' : '계산하기'}
-                </button>
+
+                <div className="text-center">
+                    <div className="text-sm text-rose-500 mb-4 leading-relaxed bg-rose-50 py-2 px-4 rounded-lg inline-block">
+                        배수에 소수점이 생기지 않도록 주의<br />(월링 서폿덱 or 1,3 마랭)<br />
+                        마이세카이 1불만 사용 후 점수 확인 후 진행
+                    </div>
+                    <div className="mb-6">
+                        <a
+                            href="https://docs.google.com/spreadsheets/d/1om--O7_NqvvQ6TDg1jrsjKMVBR_s1j1o/edit?usp=sharing&ouid=113023731854367624519&rtpof=true&sd=true"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-500 hover:text-blue-700 underline decoration-blue-300 hover:decoration-blue-700 underline-offset-2 transition-all"
+                        >
+                            엔비 점수표 확인하기
+                        </a>
+                    </div>
+                    <button
+                        onClick={calculate}
+                        disabled={loading || calculating}
+                        className={`
+                            px-8 py-3 text-base font-bold text-white rounded-xl shadow-md transition-all duration-200
+                            ${loading || calculating
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
+                            }
+                        `}
+                    >
+                        {calculating ? (
+                            <span className="flex items-center gap-2">
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                계산 중...
+                            </span>
+                        ) : '계산하기'}
+                    </button>
+                </div>
             </div>
 
-            {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '10px' }}>{error}</div>}
+            {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-center mb-6 animate-fade-in-up">
+                    {error}
+                </div>
+            )}
 
             {solutions.length > 0 && (
-                <div className="results-list" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <h3 style={{ textAlign: 'center', marginBottom: '10px', color: '#2c3e50', fontWeight: 'bold' }}>
-
-                    </h3>
+                <div className="space-y-4">
                     {currentSolutions.map((sol, idx) => {
                         const grouped = groupItems(sol.combination);
                         return (
-                            <div key={idx} className="result-item" style={{
-                                border: '1px solid #e0e0e0',
-                                borderRadius: '8px',
-                                backgroundColor: '#ffffff',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                overflow: 'hidden'
-                            }}>
-                                <div style={{
-                                    padding: '12px 15px',
-                                    borderBottom: '1px solid #f0f0f0',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    backgroundColor: '#fafafa'
-                                }}>
-                                    <span style={{ fontWeight: 'bold', color: '#555' }}>#{indexOfFirstItem + idx + 1}</span>
-                                    <div style={{ fontSize: '0.85rem', color: '#7f8c8d' }}>
-                                        엔비 {sol.envyGames}판 | {sol.totalFire}불
-                                    </div>
+                            <div key={idx} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-400 hover:shadow-md transition-all duration-200">
+                                <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-sm font-medium border border-gray-200">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+                                        엔비 {sol.envyGames}판
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-sm font-medium border border-emerald-100">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        마셐 {sol.totalFire}불
+                                    </span>
                                 </div>
-                                <div style={{ padding: '15px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                                <div className="p-4 flex flex-wrap gap-2">
                                     {grouped.map((g, gIdx) => (
                                         <div
                                             key={gIdx}
                                             onClick={() => openDetails(g.item)}
-                                            style={{
-                                                cursor: 'pointer',
-                                                padding: '6px 12px',
-                                                borderRadius: '20px',
-                                                backgroundColor: g.item.type === 'mysekai' ? '#e8f8f5' : '#f3e5f5',
-                                                color: g.item.type === 'mysekai' ? '#16a085' : '#8e44ad',
-                                                border: `1px solid ${g.item.type === 'mysekai' ? '#a3e4d7' : '#d7bde2'}`,
-                                                fontSize: '0.9rem',
-                                                fontWeight: '500',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-                                            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                                            className={`
+                                                cursor-pointer px-3 py-1.5 rounded-lg border text-sm font-medium transition-all duration-200 flex items-center gap-2
+                                                ${g.item.type === 'mysekai'
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                                }
+                                            `}
                                         >
-                                            {g.item.ep}pt <span style={{ fontSize: '1.0em', opacity: 0.8, fontWeigh: 'bold' }}>x{g.count}</span>
+                                            <span>{g.item.ep.toLocaleString()} pt</span>
+                                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${g.item.type === 'mysekai' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                                                x{g.count}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -260,20 +257,18 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
 
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', marginTop: '10px' }}>
+                        <div className="flex justify-center gap-2 mt-8">
                             {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
                                 <button
                                     key={number}
                                     onClick={() => paginate(number)}
-                                    style={{
-                                        padding: '6px 12px',
-                                        border: '1px solid #ddd',
-                                        backgroundColor: currentPage === number ? '#3498db' : 'white',
-                                        color: currentPage === number ? 'white' : '#333',
-                                        cursor: 'pointer',
-                                        borderRadius: '4px',
-                                        fontWeight: currentPage === number ? 'bold' : 'normal'
-                                    }}
+                                    className={`
+                                        w-10 h-10 rounded-lg text-sm font-bold transition-all duration-200
+                                        ${currentPage === number
+                                            ? 'bg-indigo-600 text-white shadow-md scale-105'
+                                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                        }
+                                    `}
                                 >
                                     {number}
                                 </button>
@@ -285,116 +280,107 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
 
             {/* Detail Modal */}
             {selectedItem && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
-                    backdropFilter: 'blur(2px)'
-                }} onClick={closeDetails}>
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        maxWidth: '90%',
-                        maxHeight: '85%',
-                        width: '500px',
-                        overflowY: 'auto',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-                        display: 'flex',
-                        flexDirection: 'column'
-                    }} onClick={e => e.stopPropagation()}>
-                        <div style={{ padding: '20px', borderBottom: '1px solid #eee' }}>
-                            <h3 style={{ margin: 0, color: '#2c3e50', fontSize: '1.2rem' }}>
-                                {selectedItem.ep}pt 상세 정보
+                <div
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in"
+                    onClick={closeDetails}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-scale-in"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <h3 className="text-lg font-bold text-gray-800">
+                                {selectedItem.ep.toLocaleString()} pt 상세 정보
                             </h3>
+                            <button onClick={closeDetails} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
 
-                        <div style={{ padding: '20px' }}>
+                        <div className="p-6 overflow-y-auto custom-scrollbar">
                             {selectedItem.type === 'mysekai' && (
                                 <div>
-                                    <p style={{ marginBottom: '15px', fontWeight: 'bold', color: '#16a085', fontSize: '1rem' }}>
-                                        마이세카이
-                                    </p>
-                                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.95rem' }}>
-                                        <thead>
-                                            <tr style={{ backgroundColor: '#f8f9fa' }}>
-                                                <th style={{ padding: '12px', borderBottom: '2px solid #e9ecef', textAlign: 'left', color: '#495057' }}>종합력</th>
-                                                <th style={{ padding: '12px', borderBottom: '2px solid #e9ecef', textAlign: 'right', color: '#495057' }}>필요 배수</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {selectedItem.mySekaiDetails[0].validReqs.map((req, idx) => {
-                                                const power = MY_SEKAI_POWERS[req.powerIdx];
-                                                const nextPower = MY_SEKAI_POWERS[req.powerIdx + 1];
-                                                const powerRange = nextPower
-                                                    ? `${power}만 ~ ${nextPower - 0.1}만`
-                                                    : `${power}만 이상`;
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="w-2 h-8 rounded-full bg-teal-500"></span>
+                                        <h4 className="font-bold text-teal-700 text-lg">마이세카이</h4>
+                                    </div>
+                                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-gray-50 text-gray-600 font-semibold">
+                                                <tr>
+                                                    <th className="px-4 py-3 border-b border-gray-200">종합력</th>
+                                                    <th className="px-4 py-3 border-b border-gray-200 text-right">필요 배수</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {selectedItem.mySekaiDetails[0].validReqs.map((req, idx) => {
+                                                    const power = MY_SEKAI_POWERS[req.powerIdx];
+                                                    const nextPower = MY_SEKAI_POWERS[req.powerIdx + 1];
+                                                    const powerRange = nextPower
+                                                        ? `${power}만 ~ ${nextPower - 0.1}만`
+                                                        : `${power}만 이상`;
 
-                                                const nextEp = selectedItem.ep + 500;
-                                                const nextReqs = MY_SEKAI_REQ_MULTIPLIERS[nextEp];
-                                                const nextMult = nextReqs ? nextReqs[req.powerIdx] : null;
+                                                    const nextEp = selectedItem.ep + 500;
+                                                    const nextReqs = MY_SEKAI_REQ_MULTIPLIERS[nextEp];
+                                                    const nextMult = nextReqs ? nextReqs[req.powerIdx] : null;
 
-                                                const multDisplay = nextMult
-                                                    ? `${req.reqMult}% ~ ${nextMult - 1}%`
-                                                    : `${req.reqMult}% ~`;
+                                                    const multDisplay = nextMult
+                                                        ? `${req.reqMult}% ~ ${nextMult - 1}%`
+                                                        : `${req.reqMult}% ~`;
 
-                                                return (
-                                                    <tr key={idx}>
-                                                        <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f3f5', color: '#333' }}>{powerRange}</td>
-                                                        <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f3f5', textAlign: 'right', fontWeight: 'bold', color: '#2c3e50' }}>{multDisplay}</td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
+                                                    return (
+                                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                                            <td className="px-4 py-3 text-gray-700 font-medium">{powerRange}</td>
+                                                            <td className="px-4 py-3 text-right text-indigo-600 font-bold">{multDisplay}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             )}
 
                             {selectedItem.type === 'envy' && (
                                 <div>
-                                    <p style={{ marginBottom: '15px', fontWeight: 'bold', color: '#8e44ad', fontSize: '1rem' }}>
-                                        엔비 (이지 솔로)
-                                    </p>
-                                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.95rem' }}>
-                                        <thead>
-                                            <tr style={{ backgroundColor: '#f8f9fa' }}>
-                                                <th style={{ padding: '12px', borderBottom: '2px solid #e9ecef', textAlign: 'center', color: '#495057' }}>불</th>
-                                                <th style={{ padding: '12px', borderBottom: '2px solid #e9ecef', textAlign: 'center', color: '#495057' }}>보너스</th>
-                                                <th style={{ padding: '12px', borderBottom: '2px solid #e9ecef', textAlign: 'right', color: '#495057' }}>점수 범위</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {selectedItem.envyDetails.map((d, idx) => (
-                                                d.details.map((sub, subIdx) => (
-                                                    <tr key={`${idx}-${subIdx}`}>
-                                                        <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f3f5', textAlign: 'center', color: '#333' }}>{d.energy}</td>
-                                                        <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f3f5', textAlign: 'center', color: '#333' }}>{sub.bonus}%</td>
-                                                        <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f3f5', textAlign: 'right', fontWeight: 'bold', color: '#2c3e50' }}>
-                                                            {sub.minScore} ~ {sub.maxScore}
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="w-2 h-8 rounded-full bg-purple-500"></span>
+                                        <h4 className="font-bold text-purple-700 text-lg">엔비 (이지 솔로)</h4>
+                                    </div>
+                                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-gray-50 text-gray-600 font-semibold">
+                                                <tr>
+                                                    <th className="px-4 py-3 border-b border-gray-200 text-center">불</th>
+                                                    <th className="px-4 py-3 border-b border-gray-200 text-center">보너스</th>
+                                                    <th className="px-4 py-3 border-b border-gray-200 text-right">점수 범위</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {selectedItem.envyDetails.map((d, idx) => (
+                                                    d.details.map((sub, subIdx) => (
+                                                        <tr key={`${idx}-${subIdx}`} className="hover:bg-gray-50 transition-colors">
+                                                            <td className="px-4 py-3 text-center text-gray-700">{d.energy}</td>
+                                                            <td className="px-4 py-3 text-center text-gray-700">{sub.bonus}%</td>
+                                                            <td className="px-4 py-3 text-right text-indigo-600 font-bold font-mono">
+                                                                {sub.minScore.toLocaleString()} ~ {sub.maxScore.toLocaleString()}
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ padding: '15px 20px', borderTop: '1px solid #eee', textAlign: 'right', backgroundColor: '#fafafa', borderRadius: '0 0 12px 12px' }}>
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
                             <button
                                 onClick={closeDetails}
-                                style={{
-                                    padding: '8px 24px',
-                                    backgroundColor: '#95a5a6',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: '500',
-                                    fontSize: '0.9rem',
-                                    transition: 'background-color 0.2s'
-                                }}
-                                onMouseOver={(e) => e.target.style.backgroundColor = '#7f8c8d'}
-                                onMouseOut={(e) => e.target.style.backgroundColor = '#95a5a6'}
+                                className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-bold transition-colors"
                             >
                                 닫기
                             </button>

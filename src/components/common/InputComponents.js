@@ -33,7 +33,7 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
                     max={max}
                     placeholder={placeholder}
                     onFocus={onFocus || ((e) => e.target.select())}
-                    className={`w-28 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 ${className}`}
+                    className={`w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 ${className}`}
                 />
                 {suffix && <span className="ml-1 text-gray-600">{suffix}</span>}
             </div>
