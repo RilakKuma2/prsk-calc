@@ -4,7 +4,7 @@
     border-radius: 20px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
     text-align: center;
-    max-width: 550px;
+    max-width: 650px;
     width: 100%;
     margin: 40px auto;
     transition: all 0.3s ease;
@@ -105,7 +105,7 @@ p {
 
 .tab {
     cursor: pointer;
-    padding: 10px 15px;
+    padding: 10px 10px;
     border: none;
     border-radius: 8px;
     font-size: 15px;
@@ -256,7 +256,7 @@ input[type="checkbox"] {
 
     /* First 3 tabs on the first row */
     .tab:nth-child(-n+3) {
-        width: calc((100% - 60px) / 3);
+        width: calc((100% - 17px) / 4);
     }
 
     /* Remaining tabs (4th onwards) on the second row */
