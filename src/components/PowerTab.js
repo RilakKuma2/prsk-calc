@@ -388,9 +388,9 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
 
         {isDetailedInput ? (
           <>
+            {checkboxElement}
             {detailedGridElement}
             {descriptionElement}
-            {checkboxElement}
           </>
         ) : (
           <>
