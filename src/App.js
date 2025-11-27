@@ -113,7 +113,7 @@ function App() {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 z-50 flex items-center gap-2 whitespace-nowrap ${toast.fadingOut ? 'animate-fade-out' : 'animate-fade-in-up'}`}>
+        <div className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 z-50 flex items-center gap-2 whitespace-nowrap ${toast.fadingOut ? 'animate-fade-out' : 'animate-toast-fade-in-up'}`}>
           <span className="text-green-400">✓</span>
           {toast.message}
         </div>

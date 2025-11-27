@@ -6,10 +6,11 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     { id: 'level', name: '레벨' },
     { id: 'amatsuyu', name: '아마츠유' },
     { id: 'challenge', name: '챌라' },
-    { id: 'power', name: '이벤포' },
-    { id: 'auto', name: '오토' },
     { id: 'fire', name: '이벤런' },
     { id: 'scoreArt', name: '점수아트' },
+    { id: 'power', name: '이벤포' },
+    { id: 'auto', name: '오토' },
+
   ];
 
   const tabsRef = useRef(null);
