@@ -96,13 +96,13 @@ export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
     }
 
     // Check if coefficients exist and have enough data
-    if (!skillScoreCoeffs || skillScoreCoeffs.length < 6) {
+    if (!skillScoreCoeffs || skillScoreCoeffs.length < 5) {
         console.warn(`Calculator: Missing or insufficient skill_score coefficients for ID: ${songId}, Type: ${liveType}`);
         return null;
     }
 
     // 1. Prepare Data
-    // Coefficients for the first 5 slots (indices 0-4)
+    // Use only the first 5 coefficients (1st to 5th value) as requested
     const skillCoeffs = skillScoreCoeffs.slice(0, 5).map((val, idx) => ({ val, idx }));
 
     // User's 5 skills
@@ -120,6 +120,7 @@ export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
     const sortedSkillsDesc = [...userSkills].sort((a, b) => b - a);
 
     // Map skills to slots: Highest Skill -> Highest Coeff Slot
+    // "값이 가장 큰 쪽에 스킬이 가장 높은 쪽이 할당"
     const maxOrderSkills = new Array(5);
     for (let i = 0; i < 5; i++) {
         const slotIndex = sortedCoeffsDesc[i].idx;
@@ -133,6 +134,8 @@ export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
     // Sort skills ascending (Lowest skill first)
     const sortedSkillsAsc = [...userSkills].sort((a, b) => a - b);
 
+    // Map skills to slots: Lowest Skill -> Highest Coeff Slot
+    // "최소값은 스킬이 정반대로 배치" (Highest Coeff gets Lowest Skill)
     const minOrderSkills = new Array(5);
     for (let i = 0; i < 5; i++) {
         const slotIndex = sortedCoeffsDesc[i].idx;

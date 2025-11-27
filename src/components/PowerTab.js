@@ -3,7 +3,21 @@ import MySekaiTable from './MySekaiTable';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import { LiveCalculator, EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import musicMetas from '../data/music_metas.json';
-import { createDeckDetail } from '../utils/calculator';
+import { createDeckDetail, calculateScoreRange } from '../utils/calculator';
+
+const FIRE_MULTIPLIERS = {
+  0: 1,
+  1: 5,
+  2: 10,
+  3: 15,
+  4: 20,
+  5: 25,
+  6: 27,
+  7: 29,
+  8: 31,
+  9: 33,
+  10: 35
+};
 
 const PowerTab = ({ surveyData, setSurveyData }) => {
   const [power, setPower] = useState(surveyData.power || '25');
@@ -11,17 +25,64 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   const [internalValue, setInternalValue] = useState(surveyData.internalValue || '200');
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
 
+  // Detailed Input State
+  const [isDetailedInput, setIsDetailedInput] = useState(surveyData.isDetailedInput || false);
+  const [detailedSkills, setDetailedSkills] = useState(surveyData.detailedSkills || {
+    encore: '200',
+    member1: '200',
+    member2: '200',
+    member3: '200',
+    member4: '200'
+  });
+
+  // Fire Counts State
+  const [fireCounts, setFireCounts] = useState(surveyData.fireCounts || {
+    loAndFound: 5,
+    envy: 5,
+    omakase: 5,
+    creationMyth: 1,
+    mySekai: 1
+  });
+
   const [multiEff, setMultiEff] = useState(0);
   const [soloEff, setSoloEff] = useState(0);
   const [autoEff, setAutoEff] = useState(0);
   const [mySekaiScore, setMySekaiScore] = useState('N/A');
-  const [loAndFoundScore, setLoAndFoundScore] = useState(0);
-  const [envyScore, setEnvyScore] = useState(0);
-  const [creationMythScore, setCreationMythScore] = useState(0);
-  const [omakaseScore, setOmakaseScore] = useState(0);
+  // Removed mySekaiEP state
+
+  // Scores now hold objects { min, max }
+  const [loAndFoundScore, setLoAndFoundScore] = useState({ min: 0, max: 0 });
+  const [envyScore, setEnvyScore] = useState({ min: 0, max: 0 });
+  const [creationMythScore, setCreationMythScore] = useState({ min: 0, max: 0 });
+  const [omakaseScore, setOmakaseScore] = useState({ min: 0, max: 0 });
+
+  // Helper to get skills array based on input mode
+  // Returns [Leader, M2, M3, M4, M5]
+  const getSkillsArray = () => {
+    if (isDetailedInput) {
+      return [
+        parseFloat(detailedSkills.encore) || 0,
+        parseFloat(detailedSkills.member1) || 0,
+        parseFloat(detailedSkills.member2) || 0,
+        parseFloat(detailedSkills.member3) || 0,
+        parseFloat(detailedSkills.member4) || 0
+      ];
+    } else {
+      const val = parseFloat(internalValue) || 0;
+      return [val, val, val, val, val];
+    }
+  };
 
   useEffect(() => {
-    const newSurveyData = { ...surveyData, power, effi, internalValue };
+    const newSurveyData = {
+      ...surveyData,
+      power,
+      effi,
+      internalValue,
+      isDetailedInput,
+      detailedSkills,
+      fireCounts
+    };
     setSurveyData(newSurveyData);
 
     if (power === '' || effi === '') {
@@ -29,205 +90,114 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       setSoloEff('N/A');
       setAutoEff('N/A');
       setMySekaiScore('N/A');
-      setLoAndFoundScore('N/A');
-      setEnvyScore('N/A');
-      setCreationMythScore('N/A');
-      setOmakaseScore('N/A');
+      setLoAndFoundScore({ min: 0, max: 0 });
+      setEnvyScore({ min: 0, max: 0 });
+      setCreationMythScore({ min: 0, max: 0 });
+      setOmakaseScore({ min: 0, max: 0 });
       return;
     }
 
     const powerVal = parseFloat(power) || 0;
     const effiVal = parseInt(effi) || 0;
-    const internalVal = parseFloat(internalValue) || 0;
+    const skillsArray = getSkillsArray();
 
     // Helper functions for score calculation
-    const getLoAndFoundScore = (pVal, iVal) => {
+    const getScoreRange = (pVal, skills, songId, difficulty, liveType, fireCount) => {
       try {
-        const targetSongId = 226;
-        const targetDifficulty = 'hard';
-        const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
-        if (!musicMeta) return 0;
+        const input = {
+          songId: songId,
+          difficulty: difficulty,
+          totalPower: pVal * 10000,
+          skillLeader: skills[0],
+          skillMember2: skills[1],
+          skillMember3: skills[2],
+          skillMember4: skills[3],
+          skillMember5: skills[4],
+        };
 
-        const totalPowerRaw = pVal * 10000;
-        const skills = [iVal, iVal, iVal, iVal, iVal];
-        const deck = createDeckDetail(totalPowerRaw, skills);
-        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
-        skillDetails.push({ ...deck.leader, skill: deck.leader });
+        const result = calculateScoreRange(input, liveType);
+        if (!result) return { min: 0, max: 0 };
 
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(
-          deck,
-          musicMeta,
-          LiveType.MULTI,
-          skillDetails
-        );
+        const musicMeta = musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
+        if (!musicMeta) return { min: 0, max: 0 };
 
-        return EventCalculator.getEventPoint(
-          LiveType.MULTI,
+        const multiplier = FIRE_MULTIPLIERS[fireCount] || 1;
+
+        const minEP = EventCalculator.getEventPoint(
+          liveType,
           EventType.MARATHON,
-          liveDetail.score,
+          result.min,
           musicMeta.event_rate,
           effiVal,
-          25
+          multiplier
         );
+
+        const maxEP = EventCalculator.getEventPoint(
+          liveType,
+          EventType.MARATHON,
+          result.max,
+          musicMeta.event_rate,
+          effiVal,
+          multiplier
+        );
+
+        return { min: minEP, max: maxEP };
+
       } catch (e) {
-        return 0;
+        console.error(e);
+        return { min: 0, max: 0 };
       }
     };
 
-    const getCreationMythScore = (pVal) => {
-      try {
-        const targetSongId = 186;
-        const targetDifficulty = 'master';
-        const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
-        if (!musicMeta) return 0;
+    // 1. Lost and Found (ID 186, Hard, Multi)
+    const loAndFound = getScoreRange(powerVal, skillsArray, 186, 'hard', LiveType.MULTI, fireCounts.loAndFound);
 
-        const totalPowerRaw = pVal * 10000;
-        const skills = [100, 100, 100, 100, 100];
-        const deck = createDeckDetail(totalPowerRaw, skills);
-        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
-        skillDetails.push({ ...deck.leader, skill: deck.leader });
+    // 2. Envy (ID 74, Expert, Multi)
+    const envy = getScoreRange(powerVal, skillsArray, 74, 'expert', LiveType.MULTI, fireCounts.envy);
 
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(
-          deck,
-          musicMeta,
-          LiveType.AUTO,
-          skillDetails
-        );
+    // 3. Omakase (ID 572, Master, Multi)
+    const omakase = getScoreRange(powerVal, skillsArray, 572, 'master', LiveType.MULTI, fireCounts.omakase);
 
-        return EventCalculator.getEventPoint(
-          LiveType.AUTO,
-          EventType.MARATHON,
-          liveDetail.score,
-          musicMeta.event_rate,
-          effiVal,
-          5
-        );
-      } catch (e) {
-        return 0;
-      }
-    };
+    // 4. Creation Myth (ID 186, Master, Auto) - Fixed 100% skills
+    const creationMyth = getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, fireCounts.creationMyth);
 
-    const getAppendScore = (pVal) => {
-      try {
-        const targetSongId = 488;
-        const targetDifficulty = 'append';
-        const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
-        if (!musicMeta) return 0;
+    // 5. Append (ID 488, Append, Solo) - Fixed 100% skills for Efficiency Calc
+    const append = getScoreRange(powerVal, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
 
-        const totalPowerRaw = pVal * 10000;
-        const skills = [100, 100, 100, 100, 100];
-        const deck = createDeckDetail(totalPowerRaw, skills);
-        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
-        skillDetails.push({ ...deck.leader, skill: deck.leader });
-
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(
-          deck,
-          musicMeta,
-          LiveType.SOLO,
-          skillDetails
-        );
-
-        return EventCalculator.getEventPoint(
-          LiveType.SOLO,
-          EventType.MARATHON,
-          liveDetail.score,
-          musicMeta.event_rate,
-          effiVal,
-          5
-        );
-      } catch (e) {
-        return 0;
-      }
-    };
-
-    const getOmakaseScore = (pVal, iVal) => {
-      try {
-        const targetSongId = 572;
-        const targetDifficulty = 'master';
-        const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
-        if (!musicMeta) return 0;
-
-        const totalPowerRaw = pVal * 10000;
-        const skills = [iVal, iVal, iVal, iVal, iVal];
-        const deck = createDeckDetail(totalPowerRaw, skills);
-        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
-        skillDetails.push({ ...deck.leader, skill: deck.leader });
-
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(
-          deck,
-          musicMeta,
-          LiveType.MULTI,
-          skillDetails
-        );
-
-        return EventCalculator.getEventPoint(
-          LiveType.MULTI,
-          EventType.MARATHON,
-          liveDetail.score,
-          musicMeta.event_rate,
-          effiVal,
-          25
-        );
-      } catch (e) {
-        return 0;
-      }
-    };
-
-    // Calculate Scores
-    const currentLoAndFound = getLoAndFoundScore(powerVal, internalVal);
-    const plus1LoAndFound = getLoAndFoundScore(powerVal + 1, internalVal);
-
-    const currentCreationMyth = getCreationMythScore(powerVal);
-    const plus1CreationMyth = getCreationMythScore(powerVal + 1);
-
-    const currentAppend = getAppendScore(powerVal);
-    const plus1Append = getAppendScore(powerVal + 1);
 
     // Calculate Efficiencies
-    // Formula: (100 + effi) * (Score_plus1 / Score_current - 1)
+    const loAndFoundPlus1 = getScoreRange(powerVal + 1, skillsArray, 186, 'hard', LiveType.MULTI, 5);
+    const creationMythPlus1 = getScoreRange(powerVal + 1, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, 1);
+    const appendPlus1 = getScoreRange(powerVal + 1, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
+
+    const loAndFoundBase = getScoreRange(powerVal, skillsArray, 186, 'hard', LiveType.MULTI, 5);
+    const creationMythBase = getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, 1);
+    const appendBase = getScoreRange(powerVal, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
+
     let newMultiEff = 0;
-    if (currentLoAndFound > 0) {
-      newMultiEff = (100 + effiVal) * (plus1LoAndFound / currentLoAndFound - 1);
+    if (loAndFoundBase.max > 0) {
+      newMultiEff = (100 + effiVal) * (loAndFoundPlus1.max / loAndFoundBase.max - 1);
     }
     setMultiEff(newMultiEff);
 
     let newAutoEff = 0;
-    if (currentCreationMyth > 0) {
-      newAutoEff = (100 + effiVal) * (plus1CreationMyth / currentCreationMyth - 1);
+    if (creationMythBase.max > 0) {
+      newAutoEff = (100 + effiVal) * (creationMythPlus1.max / creationMythBase.max - 1);
     }
     setAutoEff(newAutoEff);
 
     let newSoloEff = 0;
-    if (currentAppend > 0) {
-      newSoloEff = (100 + effiVal) * (plus1Append / currentAppend - 1);
+    if (appendBase.max > 0) {
+      newSoloEff = (100 + effiVal) * (appendPlus1.max / appendBase.max - 1);
     }
     setSoloEff(newSoloEff);
 
-    setLoAndFoundScore(currentLoAndFound);
-    setCreationMythScore(currentCreationMyth);
-    setOmakaseScore(getOmakaseScore(powerVal, internalVal));
+    setLoAndFoundScore(loAndFound);
+    setEnvyScore(envy);
+    setOmakaseScore(omakase);
+    setCreationMythScore(creationMyth);
 
-    // Envy Calculation (Keep as is, but maybe use helper if I want to clean up, but it's separate)
-    // I'll just copy the Envy logic back or refactor it too.
-    // Actually, I can just calculate Envy here too.
-    try {
-      const targetSongId = 74;
-      const targetDifficulty = 'expert';
-      const musicMeta = musicMetas.find(m => m.music_id === targetSongId && m.difficulty === targetDifficulty);
-      if (musicMeta) {
-        const totalPowerRaw = powerVal * 10000;
-        const skills = [internalVal, internalVal, internalVal, internalVal, internalVal];
-        const deck = createDeckDetail(totalPowerRaw, skills);
-        const skillDetails = deck.cards.map(card => ({ ...card, skill: card }));
-        skillDetails.push({ ...deck.leader, skill: deck.leader });
-        const liveDetail = LiveCalculator.getLiveDetailByDeck(deck, musicMeta, LiveType.MULTI, skillDetails);
-        const eventPoint = EventCalculator.getEventPoint(LiveType.MULTI, EventType.MARATHON, liveDetail.score, musicMeta.event_rate, effiVal, 25);
-        setEnvyScore(eventPoint);
-      }
-    } catch (e) {
-      setEnvyScore(0);
-    }
-
+    // MySekai Score (Original Logic)
     let highestPossibleScore = "N/A";
     let columnIndex = -1;
     if (powerVal >= 0) {
@@ -254,9 +224,147 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       }
     }
     setMySekaiScore(highestPossibleScore);
+    // Removed MySekai EP calculation block
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [power, effi, internalValue]);
+  }, [power, effi, internalValue, isDetailedInput, detailedSkills, fireCounts]);
+
+  const handleDetailedChange = (key, value) => {
+    setDetailedSkills(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleFireChange = (key, value) => {
+    setFireCounts(prev => ({ ...prev, [key]: parseInt(value) }));
+  };
+
+  const formatScore = (scoreObj, forceSingle = false) => {
+    if (scoreObj === 'N/A') return 'N/A';
+    if (isDetailedInput && !forceSingle) {
+      return `${scoreObj.min.toLocaleString()} ~ ${scoreObj.max.toLocaleString()}`;
+    } else {
+      return scoreObj.max.toLocaleString();
+    }
+  };
+
+  const renderFireSelect = (key, minStart = 0) => {
+    const options = [];
+    for (let i = minStart; i <= 10; i++) {
+      options.push(i);
+    }
+    return (
+      <div className="flex justify-center w-full">
+        <select
+          value={fireCounts[key]}
+          onChange={(e) => handleFireChange(key, e.target.value)}
+          className="font-bold text-gray-700 text-center bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+          style={{
+            padding: '4px 0px',
+            fontSize: '14px',
+            width: '60px',
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            MozAppearance: 'none',
+            textAlign: 'center',
+            textAlignLast: 'center',
+          }}
+        >
+          {options.map(num => (
+            <option key={num} value={num}>{num}</option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+
+  const checkboxElement = (
+    <div style={{ marginBottom: '15px', marginTop: '-5px' }}>
+      <label style={{ fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+        <input
+          type="checkbox"
+          checked={isDetailedInput}
+          onChange={(e) => setIsDetailedInput(e.target.checked)}
+          style={{ width: 'auto', margin: 0 }}
+        />
+        내부치 상세 입력
+      </label>
+    </div>
+  );
+
+  const detailedGridElement = (
+    <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'center' }}>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>앵콜</label>
+          <input
+            type="number"
+            value={detailedSkills.encore}
+            onChange={(e) => handleDetailedChange('encore', e.target.value)}
+            onFocus={(e) => e.target.select()}
+            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
+          />
+        </div>
+        <div>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>멤버 1</label>
+          <input
+            type="number"
+            value={detailedSkills.member1}
+            onChange={(e) => handleDetailedChange('member1', e.target.value)}
+            onFocus={(e) => e.target.select()}
+            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
+          />
+        </div>
+        <div>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>멤버 2</label>
+          <input
+            type="number"
+            value={detailedSkills.member2}
+            onChange={(e) => handleDetailedChange('member2', e.target.value)}
+            onFocus={(e) => e.target.select()}
+            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
+          />
+        </div>
+        <div>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>멤버 3</label>
+          <input
+            type="number"
+            value={detailedSkills.member3}
+            onChange={(e) => handleDetailedChange('member3', e.target.value)}
+            onFocus={(e) => e.target.select()}
+            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
+          />
+        </div>
+        <div>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>멤버 4</label>
+          <input
+            type="number"
+            value={detailedSkills.member4}
+            onChange={(e) => handleDetailedChange('member4', e.target.value)}
+            onFocus={(e) => e.target.select()}
+            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const descriptionElement = (
+    <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>
+      {isDetailedInput
+        ? (
+          <>
+            종합력이 가장 높은 사람이 앵콜<br />
+            세부판정 및 1픽 회선에 따라 점수 변동
+          </>
+        )
+        : (
+          <>
+            5명이 모두 같은 내부치라 가정 후 점수 계산<br />
+            자신의 내부치보단 주회방 조건 입력
+          </>
+        )
+      }
+    </p>
+  );
 
   return (
     <div>
@@ -269,25 +377,122 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         <input type="number" id="effi" min="0" max="1000" value={effi} onChange={e => setEffi(e.target.value)} onFocus={(e) => e.target.select()} />
         <span>%</span><br />
 
-        <label htmlFor="internalValue">내부치:</label>
-        <input type="number" id="internalValue" min="0" max="2000" value={internalValue} onChange={e => setInternalValue(e.target.value)} onFocus={(e) => e.target.select()} />
-        <span>%</span><br />
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>5명이 모두 같은 내부치라 가정 후 점수 계산<br />자신의 내부치보단 주회방 조건 입력</p>
+        <label htmlFor="internalValue" style={{ fontWeight: 'bold' }}>내부치</label>
+        {!isDetailedInput && (
+          <>
+            <input type="number" id="internalValue" min="0" max="2000" value={internalValue} onChange={e => setInternalValue(e.target.value)} onFocus={(e) => e.target.select()} />
+            <span>%</span>
+          </>
+        )}
+        <br />
+
+        {isDetailedInput ? (
+          <>
+            {detailedGridElement}
+            {descriptionElement}
+            {checkboxElement}
+          </>
+        ) : (
+          <>
+            {checkboxElement}
+            {descriptionElement}
+          </>
+        )}
+
+        <div className="w-full mt-4 mb-4">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">곡명</th>
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">불</th>
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">이벤포</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                    로앤파
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    {renderFireSelect('loAndFound')}
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    <span className="font-mono text-purple-600 text-sm md:text-base font-bold tracking-tight">
+                      {formatScore(loAndFoundScore)}
+                    </span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                    오마카세
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    {renderFireSelect('omakase')}
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    <span className="font-mono text-purple-600 text-sm md:text-base font-bold tracking-tight">
+                      {formatScore(omakaseScore)}
+                    </span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                    엔비
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    {renderFireSelect('envy')}
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    <span className="font-mono text-purple-600 text-sm md:text-base font-bold tracking-tight">
+                      {formatScore(envyScore)}
+                    </span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
+                  <td className="px-4 py-3 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                    개벽 오토
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    {renderFireSelect('creationMyth', 1)}
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    <span className="font-mono text-purple-600 text-sm md:text-base font-bold tracking-tight">
+                      {formatScore(creationMythScore, true)}
+                    </span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                    마이세카이
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    <div className="flex justify-center w-full">
+                      <span className="font-bold text-gray-700 text-center" style={{ fontSize: '14px', padding: '4px 0px', width: '60px', display: 'inline-block' }}>
+                        1
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                    <span className="font-mono text-green-600 text-sm md:text-base font-bold tracking-tight">
+                      {mySekaiScore > 0 ? mySekaiScore.toLocaleString() : 'N/A'}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <button
           className="action-button"
-          style={{ marginTop: '10px', marginBottom: '10px' }}
+          style={{ marginTop: '10px', marginBottom: '20px' }}
           onClick={() => setShowMySekaiTable(!showMySekaiTable)}
         >
           마이세카이 테이블
         </button>
         {showMySekaiTable && <MySekaiTable />}
 
-        <p id="lo-and-found-score">5불 로앤파 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof loAndFoundScore === 'number' ? loAndFoundScore.toLocaleString() : loAndFoundScore}</span></p>
-        <p id="omakase-score">5불 오마카세 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof omakaseScore === 'number' ? omakaseScore.toLocaleString() : omakaseScore}</span></p>
-        <p id="envy-score">5불 엔비 이벤포 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof envyScore === 'number' ? envyScore.toLocaleString() : envyScore}</span></p>
-        <p id="creation-myth-score">1불 개벽 오토 : <span style={{ fontWeight: "bold", color: "purple" }}>{typeof creationMythScore === 'number' ? creationMythScore.toLocaleString() : creationMythScore}</span></p>
-        <p id="my-sekai-score-display">마이세카이 1불 이벤포: <span style={{ fontWeight: "bold", color: "green" }}>{typeof mySekaiScore === 'number' ? mySekaiScore.toLocaleString() : mySekaiScore}</span></p>
         <br></br>
         <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}</span></p>
         <p id="solo-eff">솔로효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof soloEff === 'number' ? soloEff.toFixed(2) + '%' : soloEff}</span></p>
