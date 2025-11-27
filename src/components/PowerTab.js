@@ -253,27 +253,25 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       options.push(i);
     }
     return (
-      <div className="flex justify-center w-full">
-        <select
-          value={fireCounts[key]}
-          onChange={(e) => handleFireChange(key, e.target.value)}
-          className="font-bold text-gray-700 text-center bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors"
-          style={{
-            padding: '4px 0px',
-            fontSize: '14px',
-            width: '60px',
-            appearance: 'none',
-            WebkitAppearance: 'none',
-            MozAppearance: 'none',
-            textAlign: 'center',
-            textAlignLast: 'center',
-          }}
-        >
-          {options.map(num => (
-            <option key={num} value={num}>{num}</option>
-          ))}
-        </select>
-      </div>
+      <select
+        value={fireCounts[key]}
+        onChange={(e) => handleFireChange(key, e.target.value)}
+        className="font-bold text-gray-700 text-center bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors block mx-auto translate-y-2"
+        style={{
+          padding: '4px 0px',
+          fontSize: '14px',
+          width: '60px',
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
+          textAlign: 'center',
+          textAlignLast: 'center',
+        }}
+      >
+        {options.map(num => (
+          <option key={num} value={num}>{num}</option>
+        ))}
+      </select>
     );
   };
 
@@ -287,8 +285,8 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           style={{ width: 'auto', margin: 0 }}
         />
         내부치 상세 입력
-      </label>
-    </div>
+      </label >
+    </div >
   );
 
   const detailedGridElement = (
@@ -425,75 +423,75 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
                   <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">곡명</th>
                   <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">불</th>
-                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">이벤포</th>
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-sm md:text-base">이벤포</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
                     로앤파
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('loAndFound')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-purple-600 text-sm md:text-base font-bold tracking-tight">
+                    <span className="font-mono text-purple-600 text-base md:text-lg font-extrabold tracking-tight">
                       {formatScore(loAndFoundScore)}
                     </span>
                   </td>
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
                     오마카세
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('omakase')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-purple-600 text-sm md:text-base font-bold tracking-tight">
+                    <span className="font-mono text-purple-600 text-base md:text-lg font-extrabold tracking-tight">
                       {formatScore(omakaseScore)}
                     </span>
                   </td>
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
                     엔비
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('envy')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-purple-600 text-sm md:text-base font-bold tracking-tight">
+                    <span className="font-mono text-purple-600 text-base md:text-lg font-extrabold tracking-tight">
                       {formatScore(envyScore)}
                     </span>
                   </td>
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-4 py-3 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                  <td className="px-4 py-3 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
                     개벽 오토
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('creationMyth', 1)}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-purple-600 text-sm md:text-base font-bold tracking-tight">
+                    <span className="font-mono text-purple-600 text-base md:text-lg font-extrabold tracking-tight">
                       {formatScore(creationMythScore, true)}
                     </span>
                   </td>
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-xs md:text-base text-center align-middle">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
                     마이세카이
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <div className="flex justify-center w-full">
+                    <div className="flex justify-center items-center w-full h-full">
                       <span className="font-bold text-gray-700 text-center" style={{ fontSize: '14px', padding: '4px 0px', width: '60px', display: 'inline-block' }}>
                         1
                       </span>
                     </div>
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-green-600 text-sm md:text-base font-bold tracking-tight">
+                    <span className="font-mono text-green-600 text-base md:text-lg font-extrabold tracking-tight">
                       {mySekaiScore > 0 ? mySekaiScore.toLocaleString() : 'N/A'}
                     </span>
                   </td>

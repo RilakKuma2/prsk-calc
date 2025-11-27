@@ -195,9 +195,9 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
         </div>
 
         {/* Strategy Cards - Always 2 columns, Font Reduced to text-sm */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-2 gap-3 text-sm ">
           {/* MySekai Card */}
-          <div className="bg-green-50 rounded-lg border border-green-200 p-3">
+          <div className="bg-green-50 rounded-lg border border-green-200 p-3 ">
             <h4 className="font-bold text-green-800 mb-1 flex items-center">
               <span className="mr-1">🌱</span> 마이세카이
             </h4>
