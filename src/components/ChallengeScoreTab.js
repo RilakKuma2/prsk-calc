@@ -443,8 +443,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                         key={page}
                                         onClick={() => handlePageChange(page)}
                                         className={`w-8 h-8 rounded-md text-sm font-bold transition-all duration-200 ${currentPage === page
-                                            ? 'bg-pink-500 text-white shadow-md scale-105'
-                                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-pink-200'
+                                            ? 'bg-blue-500 text-white shadow-md scale-105'
+                                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-blue-200'
                                             }`}
                                     >
                                         {page}

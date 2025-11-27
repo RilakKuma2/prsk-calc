@@ -30,31 +30,50 @@ const InternalTab = ({ surveyData, setSurveyData }) => {
   }, [leader, member2, member3, member4, member5]);
 
   return (
-    <div id="internal-tab-content">
-      <label htmlFor="leader">리더 스킬:</label>
-      <input type="number" id="leader" min="0" value={leader} onChange={e => setLeader(e.target.value)} onFocus={(e) => e.target.select()} />
-      <span>%</span><br />
+    <div id="internal-tab-content" className="p-4 space-y-4">
+      {/* Input Section */}
+      <div>
+        <label htmlFor="leader">리더 스킬:</label>
+        <input type="number" id="leader" min="0" value={leader} onChange={e => setLeader(e.target.value)} onFocus={(e) => e.target.select()} />
+        <span>%</span><br />
 
-      <label htmlFor="member2">멤버2 스킬:</label>
-      <input type="number" id="member2" min="0" value={member2} onChange={e => setMember2(e.target.value)} onFocus={(e) => e.target.select()} />
-      <span>%</span><br />
+        <label htmlFor="member2">멤버2 스킬:</label>
+        <input type="number" id="member2" min="0" value={member2} onChange={e => setMember2(e.target.value)} onFocus={(e) => e.target.select()} />
+        <span>%</span><br />
 
-      <label htmlFor="member3">멤버3 스킬:</label>
-      <input type="number" id="member3" min="0" value={member3} onChange={e => setMember3(e.target.value)} onFocus={(e) => e.target.select()} />
-      <span>%</span><br />
+        <label htmlFor="member3">멤버3 스킬:</label>
+        <input type="number" id="member3" min="0" value={member3} onChange={e => setMember3(e.target.value)} onFocus={(e) => e.target.select()} />
+        <span>%</span><br />
 
-      <label htmlFor="member4">멤버4 스킬:</label>
-      <input type="number" id="member4" min="0" value={member4} onChange={e => setMember4(e.target.value)} onFocus={(e) => e.target.select()} />
-      <span>%</span><br />
+        <label htmlFor="member4">멤버4 스킬:</label>
+        <input type="number" id="member4" min="0" value={member4} onChange={e => setMember4(e.target.value)} onFocus={(e) => e.target.select()} />
+        <span>%</span><br />
 
-      <label htmlFor="member5">멤버5 스킬:</label>
-      <input type="number" id="member5" min="0" value={member5} onChange={e => setMember5(e.target.value)} onFocus={(e) => e.target.select()} />
-      <span>%</span>
+        <label htmlFor="member5">멤버5 스킬:</label>
+        <input type="number" id="member5" min="0" value={member5} onChange={e => setMember5(e.target.value)} onFocus={(e) => e.target.select()} />
+        <span>%</span>
+      </div>
 
+      {/* Result Section - Amatsuyu Style */}
+      <div className="w-[85%] max-w-[240px] mx-auto space-y-4">
+        <div className="bg-white rounded-lg p-3">
+          <div className="grid grid-cols-2 items-center mb-1 text-center">
+            <span className="text-gray-600">실효치</span>
+            <div>
+              <span className="font-bold text-blue-600 text-lg mr-1">{effectiveValue.toFixed(0)}%</span>
+              <span className="text-sm text-gray-500">({(effectiveValue / 100 + 1).toFixed(2)}배)</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 items-center pt-1 mt-1 text-center">
+            <span className="text-gray-600">내부합</span>
+            <span className="font-bold text-blue-600">{internalSum}%</span>
+          </div>
+        </div>
 
-      <p id="internal-effective">실효치: <span style={{ fontWeight: "bold", color: "blue" }}>{effectiveValue.toFixed(0)}%</span> = <span style={{ fontWeight: "bold", color: "blue" }}>{(effectiveValue / 100 + 1).toFixed(2)}배</span></p>
-      <p id="internal-sum">내부합: <span style={{ fontWeight: "bold", color: "blue" }}>{internalSum}</span></p>
-      <p id="internal-calculation-text">실효치 = 리더 + (나머지멤버) * 0.2</p>
+        <div className="text-xs text-gray-500 text-center">
+          실효치 = 리더 + (나머지멤버) * 0.2
+        </div>
+      </div>
     </div>
   );
 };

@@ -7,15 +7,15 @@ const LevelTab = ({ surveyData, setSurveyData }) => {
 
   return (
     <div>
-      <div className="mini-tabs">
-        <button 
-          className={`mini-tab ${activeSubTab === 'kizuna' ? 'active' : ''}`}
+      <div className="flex justify-center gap-2 mb-6">
+        <button
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeSubTab === 'kizuna' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           onClick={() => setActiveSubTab('kizuna')}
         >
           키즈나
         </button>
-        <button 
-          className={`mini-tab ${activeSubTab === 'card' ? 'active' : ''}`}
+        <button
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeSubTab === 'card' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           onClick={() => setActiveSubTab('card')}
         >
           카드

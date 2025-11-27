@@ -399,6 +399,16 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           </>
         )}
 
+        <div className="flex justify-center w-full mb-4">
+          <button
+            className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200"
+            onClick={() => setShowMySekaiTable(!showMySekaiTable)}
+          >
+            마이세카이 테이블
+          </button>
+        </div>
+        {showMySekaiTable && <MySekaiTable />}
+
         <div className="w-full mt-4 mb-4">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -484,14 +494,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           </div>
         </div>
 
-        <button
-          className="action-button"
-          style={{ marginTop: '10px', marginBottom: '20px' }}
-          onClick={() => setShowMySekaiTable(!showMySekaiTable)}
-        >
-          마이세카이 테이블
-        </button>
-        {showMySekaiTable && <MySekaiTable />}
+
 
         <br></br>
         <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}</span></p>

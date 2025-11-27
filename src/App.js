@@ -78,8 +78,8 @@ function App() {
       </div>
 
       <div className="button-container">
-        <button className="action-button" onClick={saveData}>저장</button>
-        <button className="action-button" onClick={loadData}>불러오기</button>
+        <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={saveData}>저장</button>
+        <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={loadData}>불러오기</button>
       </div>
       <div className="button-container">
         <label className="label">

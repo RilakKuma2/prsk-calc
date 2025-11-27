@@ -79,45 +79,69 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
   }, [currentLevel, currentExp, targetLevel, rank, fires]);
 
   return (
-    <div id="kizuna-level-tab">
-      <label htmlFor="kizuna-current-level">현재 랭크:</label>
-      <input type="number" id="kizuna-current-level" min="1" max="75" value={currentLevel} onChange={e => setCurrentLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
+    <div id="kizuna-level-tab" className="p-4 space-y-4">
+      {/* Input Section */}
+      <div>
+        <label htmlFor="kizuna-current-level">현재 랭크:</label>
+        <input type="number" id="kizuna-current-level" min="1" max="75" value={currentLevel} onChange={e => setCurrentLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
-      <label htmlFor="kizuna-current-exp">남은 경험치:</label>
-      <input type="number" id="kizuna-current-exp" min="0" value={currentExp} onChange={e => setCurrentExp(e.target.value)} onFocus={(e) => e.target.select()} /><br />
+        <label htmlFor="kizuna-current-exp">남은 경험치:</label>
+        <input type="number" id="kizuna-current-exp" min="0" value={currentExp} onChange={e => setCurrentExp(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
-      <label htmlFor="kizuna-target-level">목표 랭크:</label>
-      <input type="number" id="kizuna-target-level" min="2" max="75" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
+        <label htmlFor="kizuna-target-level">목표 랭크:</label>
+        <input type="number" id="kizuna-target-level" min="2" max="75" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
-      <label htmlFor="kizuna-rank">라이브 랭크:</label>
-      <select id="kizuna-rank" value={rank} onChange={e => setRank(e.target.value)}>
-        <option value="150">S</option>
-        <option value="130">A</option>
-        <option value="110">B</option>
-        <option value="100">C</option>
-      </select><br />
+        <label htmlFor="kizuna-rank">라이브 랭크:</label>
+        <select id="kizuna-rank" value={rank} onChange={e => setRank(e.target.value)}>
+          <option value="150">S</option>
+          <option value="130">A</option>
+          <option value="110">B</option>
+          <option value="100">C</option>
+        </select><br />
 
-      <label htmlFor="kizuna-fires">라이브보너스:</label>
-      <select id="kizuna-fires" value={fires} onChange={e => setFires(e.target.value)}>
-        <option value="1">0</option>
-        <option value="5">1</option>
-        <option value="10">2</option>
-        <option value="15">3</option>
-        <option value="20">4</option>
-        <option value="25">5</option>
-        <option value="26">6</option>
-        <option value="27">7</option>
-        <option value="28">8</option>
-        <option value="29">9</option>
-        <option value="30">10</option>
-      </select>
+        <label htmlFor="kizuna-fires">라이브보너스:</label>
+        <select id="kizuna-fires" value={fires} onChange={e => setFires(e.target.value)}>
+          <option value="1">0</option>
+          <option value="5">1</option>
+          <option value="10">2</option>
+          <option value="15">3</option>
+          <option value="20">4</option>
+          <option value="25">5</option>
+          <option value="26">6</option>
+          <option value="27">7</option>
+          <option value="28">8</option>
+          <option value="29">9</option>
+          <option value="30">10</option>
+        </select>
+      </div>
 
+      {/* Result Section - Reverted Width, Rearranged Items */}
+      <div className="w-full max-w-[280px] mx-auto space-y-4">
+        {errorMessage && (
+          <div className="text-red-500 font-bold text-center text-sm">{errorMessage}</div>
+        )}
 
-      <p id="error-message">{errorMessage}</p>
-      <p id="needed-exp">필요 경험치: <span style={{ fontWeight: "bold", color: "blue" }}>{neededExp}</span></p>
-      <p id="needed-rounds">필요 판수: <span style={{ fontWeight: "bold", color: "blue" }}>{neededRounds}</span></p>
-      <p id="exp-per-round">판 당 경험치 획득량: <span style={{ fontWeight: "bold", color: "blue" }}>{expPerRound}</span></p>
-      <p id="natural-fires-days">자연불 : <span style={{ fontWeight: "bold", color: "blue" }}>{naturalFiresDays}</span>일</p>
+        <div className="bg-white rounded-lg  p-3">
+          <div className="grid grid-cols-2 items-center mb-1 text-center">
+            <span className="text-gray-600">필요 경험치</span>
+            <span className="font-bold text-blue-600">{neededExp.toLocaleString()}</span>
+          </div>
+          <div className="grid grid-cols-2 items-center mb-1 text-center">
+            <span className="text-gray-600">판 당 경험치</span>
+            <span className="font-bold text-blue-600">{expPerRound.toLocaleString()}</span>
+          </div>
+
+          <div className="grid grid-cols-2 items-center pt-1 border-t mt-1 text-center">
+
+            <span className="text-gray-600">필요 판수</span>
+            <span className="font-bold text-blue-600">{neededRounds.toLocaleString()}판</span>
+          </div>
+          <div className="grid grid-cols-2 items-center mb-1 text-center">
+            <span className="text-gray-600">자연불 소요</span>
+            <span className="font-bold text-blue-600">{naturalFiresDays}일</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

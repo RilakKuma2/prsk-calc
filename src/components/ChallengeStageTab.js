@@ -67,28 +67,107 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
     }, [currentStage, remainingScore, targetStage, challengeScore, pass]);
 
     return (
-        <div id="challenge-stage-tab-content">
-            <label htmlFor="current-stage">현재 스테이지:</label>
-            <input type="number" id="current-stage" min="1" value={currentStage} onChange={e => setCurrentStage(e.target.value)} onFocus={(e) => e.target.select()} /><br />
+        <div id="challenge-stage-tab-content" className="p-4 space-y-4">
+            {/* Input Section */}
+            <div>
+                <label htmlFor="current-stage">현재 스테이지:</label>
+                <input type="number" id="current-stage" min="1" value={currentStage} onChange={e => setCurrentStage(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
-            <label htmlFor="remaining-score">남은 점수:</label>
-            <input type="number" id="remaining-score" min="0" value={remainingScore} onChange={e => setRemainingScore(e.target.value)} onFocus={(e) => e.target.select()} /><br />
+                <label htmlFor="remaining-score">남은 점수:</label>
+                <input type="number" id="remaining-score" min="0" value={remainingScore} onChange={e => setRemainingScore(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
-            <label htmlFor="target-stage">목표 스테이지:</label>
-            <input type="text" id="target-stage" min="1" value={targetStage} onChange={e => setTargetStage(e.target.value)} onFocus={(e) => e.target.select()} /><br />
+                <label htmlFor="target-stage">목표 스테이지:</label>
+                <input type="text" id="target-stage" min="1" value={targetStage} onChange={e => setTargetStage(e.target.value)} onFocus={(e) => e.target.select()} /><br />
 
-            <label htmlFor="challenge-score">챌라 점수:</label>
-            <input type="number" id="challenge-score" min="0" max="300" value={challengeScore} onChange={e => setChallengeScore(e.target.value)} onFocus={(e) => e.target.select()} />
-            <span>만</span><br />
+                <label htmlFor="challenge-score">챌라 점수:</label>
+                <input type="number" id="challenge-score" min="0" max="300" value={challengeScore} onChange={e => setChallengeScore(e.target.value)} onFocus={(e) => e.target.select()} />
+                <span>만</span><br />
 
-            <label htmlFor="pass">컬패 여부:</label>
-            <select id="pass" value={pass} onChange={e => setPass(e.target.value)}>
-                <option value="1">Y</option>
-                <option value="2">N</option>
-            </select>
+                <label htmlFor="pass">컬패 여부:</label>
+                <select id="pass" value={pass} onChange={e => setPass(e.target.value)}>
+                    <option value="1">Y</option>
+                    <option value="2">N</option>
+                </select>
+            </div>
 
+            {/* Result Section - Amatsuyu Style */}
+            <div className="w-[85%] max-w-[280px] mx-auto space-y-4">
+                {result && result.includes("올바른 스테이지") ? (
+                    <div className="text-red-500 font-bold text-center text-sm">
+                        올바른 스테이지 값을 입력해주세요.<br />
+                        <span className="text-gray-500 font-normal text-xs">목표 스테이지 151 이상 입력 시 EX로 자동변환</span>
+                    </div>
+                ) : (
+                    <>
+                        <div className="bg-white rounded-lg  p-3">
+                            {/* Extract values from the logic instead of parsing HTML string if possible, 
+                  but since the logic is inside useEffect and sets 'result' string, 
+                  we should ideally refactor the logic to set state variables. 
+                  For now, I will assume the logic is simple enough to replicate or I'll just use the state if I refactored it.
+                  Wait, I didn't refactor the logic to set state variables in the previous steps.
+                  I should probably use the variables calculated in the render if I move the logic there, or parse the result.
+                  Actually, looking at the previous file content, the logic was in useEffect setting 'result' string.
+                  I should move the calculation logic to the body of the component or a helper to get values.
+                  
+                  Let's quickly check the logic again. 
+                  It uses `currentStage`, `targetStage`, `challengeScore`, `pass`.
+                  I can recalculate these in the render function to display them cleanly.
+              */}
+                            {(() => {
+                                const currentStageVal = parseInt(currentStage) || 0;
+                                let targetStageVal = targetStage;
+                                const challengeScoreVal = parseInt(challengeScore) || 0;
+                                const remainingScoreVal = parseInt(remainingScore) || 0;
+                                const passVal = parseInt(pass);
 
-            <div id="challenge-calculation-text" dangerouslySetInnerHTML={{ __html: result }}></div>
+                                if (!isNaN(targetStageVal) && parseInt(targetStageVal) > 150) {
+                                    targetStageVal = "EX";
+                                }
+                                const targetStageNum = targetStageVal === "EX" ? 151 : parseInt(targetStageVal) || 0;
+
+                                if (currentStageVal < 1 || targetStageNum < 1 || currentStageVal >= targetStageNum) {
+                                    return null; // Handled by error check above
+                                }
+
+                                // Import challData is needed but it's already imported.
+                                // I need to access challData here. It is available in the scope.
+
+                                const currentCumulative = challData[currentStageVal]?.cumulative || 0;
+                                const targetCumulative = challData[targetStageNum - 1]?.cumulative || 0;
+
+                                const scorePerPlay = (Math.floor((challengeScoreVal * 24) / 10) + 400 + Math.floor(challengeScoreVal / 20) * 2) / passVal;
+                                const neededScore = targetCumulative - currentCumulative + remainingScoreVal;
+                                const neededPlays = Math.ceil(neededScore / scorePerPlay);
+
+                                return (
+                                    <>
+                                        <div className="grid grid-cols-2 items-center mb-1 text-center">
+                                            <span className="text-gray-600">필요 점수</span>
+                                            <span className="font-bold text-blue-600">{neededScore.toLocaleString()}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 items-center mb-1 text-center">
+                                            <span className="text-gray-600">판당 점수</span>
+                                            <span className="font-bold text-blue-600">{Math.floor(scorePerPlay).toLocaleString()}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 items-center pt-1 border-t mt-1 text-center">
+                                            <span className="text-gray-600">남은 일수</span>
+                                            <span className="font-bold text-blue-600">{neededPlays.toLocaleString()}일</span>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+
+                        <div className="text-sm text-gray-600 text-center space-y-2">
+                            <div className="flex flex-col space-y-1">
+                            </div>
+                            <div className="text-xs text-gray-400 mt-2">
+                                목표 스테이지 151 이상 입력 시 EX로 자동변환
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 };
