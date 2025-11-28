@@ -99,12 +99,12 @@ function AutoTab({ surveyData, setSurveyData }) {
             const input = {
                 songId: target.id,
                 difficulty: target.difficulty,
-                totalPower: Number(totalPower) || 0,
-                skillLeader: Number(skillLeader) || 0,
-                skillMember2: Number(skillMember2) || 0,
-                skillMember3: Number(skillMember3) || 0,
-                skillMember4: Number(skillMember4) || 0,
-                skillMember5: Number(skillMember5) || 0,
+                totalPower: Number(totalPower || '305812'),
+                skillLeader: Number(skillLeader || '120'),
+                skillMember2: Number(skillMember2 || '100'),
+                skillMember3: Number(skillMember3 || '100'),
+                skillMember4: Number(skillMember4 || '100'),
+                skillMember5: Number(skillMember5 || '100'),
             };
 
             try {
@@ -122,7 +122,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         EventType.MARATHON,
                         res.min,
                         eventRate,
-                        Number(eventBonus) || 0,
+                        Number(eventBonus || '250'),
                         boostRate
                     );
 
@@ -131,7 +131,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         EventType.MARATHON,
                         res.max,
                         eventRate,
-                        Number(eventBonus) || 0,
+                        Number(eventBonus || '250'),
                         boostRate
                     );
 
@@ -204,7 +204,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         const val = e.target.value;
                         updateDeck('totalPower', val === '' ? '' : Number(val));
                     }}
-                    placeholder="예: 305812"
+                    placeholder="305812"
                     spacer={true}
                 />
                 <SectionHeaderRow label="멤버 스킬" spacer={true} />
@@ -216,7 +216,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         updateDeck('skillLeader', val === '' ? '' : Number(val));
                     }}
                     suffix="%"
-                    placeholder="예: 120"
+                    placeholder="120"
                     spacer={true}
                 />
                 {[
@@ -234,7 +234,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                             updateDeck(m.key, val === '' ? '' : Number(val));
                         }}
                         suffix="%"
-                        placeholder="예: 100"
+                        placeholder="100"
                         spacer={true}
                     />
                 ))}
@@ -246,7 +246,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         updateDeck('eventBonus', val === '' ? '' : Number(val));
                     }}
                     suffix="%"
-                    placeholder="예: 250"
+                    placeholder="250"
                     spacer={true}
                 />
             </InputTableWrapper>

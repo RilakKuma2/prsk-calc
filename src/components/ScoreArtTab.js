@@ -67,9 +67,9 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
 
         const cur = parseInt(currentEP, 10);
         const tgt = parseInt(targetEP, 10);
-        const bonus = parseInt(maxBonus, 10);
-        const power = parseFloat(maxPower);
-        const envyLimit = parseFloat(maxEnvyScore);
+        const bonus = parseInt(maxBonus || '300', 10);
+        const power = parseFloat(maxPower || '25.5');
+        const envyLimit = parseFloat(maxEnvyScore || '80');
 
         if (isNaN(cur) || isNaN(tgt)) {
             setError('현재 점수와 목표 점수를 입력해주세요.');
@@ -149,34 +149,34 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                         value={currentEP}
                         onChange={(e) => setCurrentEP(e.target.value)}
                         suffix="pt"
-                        placeholder="예: 171923316"
+                        placeholder="171923316"
                     />
                     <InputRow
                         label="목표 포인트"
                         value={targetEP}
                         onChange={(e) => setTargetEP(e.target.value)}
                         suffix="pt"
-                        placeholder="예: 172000414"
+                        placeholder="172000414"
                     />
                     <InputRow
                         label="최대 배수"
                         value={maxBonus}
                         onChange={(e) => setMaxBonus(e.target.value)}
-                        placeholder="예: 300"
+                        placeholder="300"
                         suffix="%"
                     />
                     <InputRow
                         label="최대 종합력"
                         value={maxPower}
                         onChange={(e) => setMaxPower(e.target.value)}
-                        placeholder="예: 25.5"
+                        placeholder="25.5"
                         suffix="만"
                     />
                     <InputRow
                         label="최대 엔비 이지 점수"
                         value={maxEnvyScore}
                         onChange={(e) => setMaxEnvyScore(e.target.value)}
-                        placeholder="예: 100"
+                        placeholder="80"
                         suffix="만"
                     />
                     <tr>

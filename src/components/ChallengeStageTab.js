@@ -15,10 +15,10 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
         const newSurveyData = { ...surveyData, currentStage, remainingScore, targetStage, challengeScore, pass };
         setSurveyData(newSurveyData);
 
-        const currentStageVal = parseInt(currentStage) || 0;
-        let targetStageVal = targetStage;
-        const challengeScoreVal = parseInt(challengeScore) || 0;
-        const remainingScoreVal = parseInt(remainingScore) || 0;
+        const currentStageVal = parseInt(currentStage || '102') || 0;
+        let targetStageVal = targetStage || '140';
+        const challengeScoreVal = parseInt(challengeScore || '260') || 0;
+        const remainingScoreVal = parseInt(remainingScore || '4518') || 0;
         const passVal = parseInt(pass);
 
         if (!isNaN(targetStageVal) && parseInt(targetStageVal) > 150) {
@@ -75,14 +75,14 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
                     label="현재 스테이지"
                     value={currentStage}
                     onChange={e => setCurrentStage(e.target.value)}
-                    placeholder="예: 102"
+                    placeholder="102"
                     min="1"
                 />
                 <InputRow
                     label="남은 점수"
                     value={remainingScore}
                     onChange={e => setRemainingScore(e.target.value)}
-                    placeholder="예: 4518"
+                    placeholder="4518"
                     min="0"
                 />
                 <InputRow
@@ -90,7 +90,7 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
                     value={targetStage}
                     onChange={e => setTargetStage(e.target.value)}
                     type="text"
-                    placeholder="예: 140"
+                    placeholder="140"
                     min="1"
                 />
                 <InputRow
@@ -98,7 +98,7 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
                     value={challengeScore}
                     onChange={e => setChallengeScore(e.target.value)}
                     suffix="만"
-                    placeholder="예: 260"
+                    placeholder="260"
                     min="0"
                     max="300"
                 />

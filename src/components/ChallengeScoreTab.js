@@ -113,12 +113,12 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             const input = {
                 songId: target.id,
                 difficulty: target.difficulty,
-                totalPower: Number(totalPower) || 0,
-                skillLeader: Number(skillLeader) || 0,
-                skillMember2: Number(skillMember2) || 0,
-                skillMember3: Number(skillMember3) || 0,
-                skillMember4: Number(skillMember4) || 0,
-                skillMember5: Number(skillMember5) || 0,
+                totalPower: Number(totalPower || '410520'),
+                skillLeader: Number(skillLeader || '120'),
+                skillMember2: Number(skillMember2 || '100'),
+                skillMember3: Number(skillMember3 || '100'),
+                skillMember4: Number(skillMember4 || '100'),
+                skillMember5: Number(skillMember5 || '100'),
             };
 
             try {
@@ -201,7 +201,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 <InputRow
                     label="종합력"
                     value={totalPower}
-                    placeholder="예: 410520"
+                    placeholder="410520"
                     onChange={(e) => {
                         const val = e.target.value;
                         updateDeck('totalPower', val === '' ? '' : Number(val));
@@ -211,7 +211,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 <InputRow
                     label="리더"
                     value={skillLeader}
-                    placeholder="예: 120"
+                    placeholder="120"
                     onChange={(e) => {
                         const val = e.target.value;
                         updateDeck('skillLeader', val === '' ? '' : Number(val));
@@ -227,7 +227,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                         key={i}
                         label={m.label}
                         value={m.val}
-                        placeholder="예: 120"
+                        placeholder="100"
                         onChange={(e) => {
                             const val = e.target.value;
                             updateDeck(m.key, val === '' ? '' : Number(val));

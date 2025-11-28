@@ -86,20 +86,14 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     };
     setSurveyData(newSurveyData);
 
-    if (power === '' || effi === '') {
-      setMultiEff('N/A');
-      setSoloEff('N/A');
-      setAutoEff('N/A');
-      setMySekaiScore('N/A');
-      setLoAndFoundScore({ min: 0, max: 0 });
-      setEnvyScore({ min: 0, max: 0 });
-      setCreationMythScore({ min: 0, max: 0 });
-      setOmakaseScore({ min: 0, max: 0 });
-      return;
+    if (power === '' && effi === '') {
+      // If both are empty, we can't really do much unless we assume defaults for both.
+      // But the user asked for "when nothing is entered, treat as 25.5".
+      // Let's apply defaults if they are empty strings.
     }
 
-    const powerVal = parseFloat(power) || 0;
-    const effiVal = parseInt(effi) || 0;
+    const powerVal = parseFloat(power || '25.5');
+    const effiVal = parseInt(effi || '250', 10);
     const skillsArray = getSkillsArray();
 
     // Helper functions for score calculation
@@ -374,7 +368,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             value={power}
             onChange={e => setPower(e.target.value)}
             suffix="만"
-            placeholder="예: 25.5"
+            placeholder="25.5"
             max="45"
           />
           <InputRow
@@ -382,7 +376,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             value={effi}
             onChange={e => setEffi(e.target.value)}
             suffix="%"
-            placeholder="예: 250"
+            placeholder="250"
             max="1000"
           />
           {!isDetailedInput && (
@@ -391,7 +385,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
               value={internalValue}
               onChange={e => setInternalValue(e.target.value)}
               suffix="%"
-              placeholder="예: 200"
+              placeholder="200"
               max="2000"
             />
           )}

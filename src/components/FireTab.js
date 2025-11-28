@@ -34,10 +34,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     const newSurveyData = { ...surveyData, score1, score2, score3, rounds1, firea, fires2 };
     setSurveyData(newSurveyData);
 
-    let currentScore = parseFloat(score1) || 0;
-    let targetScore = parseFloat(score2) || 0;
-    let scorePerRound = parseFloat(score3) || 0;
-    let roundsPerInterval = parseFloat(rounds1) || 0;
+    let currentScore = parseFloat(score1 || '2500') || 0;
+    let targetScore = parseFloat(score2 || '3000') || 0;
+    let scorePerRound = parseFloat(score3 || '2.8') || 0;
+    let roundsPerInterval = parseFloat(rounds1 || '28') || 0;
     let currentFireBonus = parseInt(firea) || 0;
     let changeFireBonus = fires2;
     let firenow = getFireaValue(currentFireBonus);
@@ -80,7 +80,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           suffix="만"
           min="0"
           max="50000"
-          placeholder="예: 2500"
+          placeholder="2500"
           spacer={true}
         />
         <InputRow
@@ -90,7 +90,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           suffix="만"
           min="0"
           max="50000"
-          placeholder="예: 3000"
+          placeholder="3000"
           spacer={true}
         />
         <InputRow
@@ -100,7 +100,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           suffix="만"
           min="0"
           max="50000"
-          placeholder="예: 4.3"
+          placeholder="2.8"
           spacer={true}
         />
         <InputRow
@@ -110,7 +110,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           suffix="회"
           min="0"
           max="50000"
-          placeholder="예: 29"
+          placeholder="28"
           spacer={true}
         />
         <SelectRow

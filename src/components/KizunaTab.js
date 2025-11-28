@@ -7,7 +7,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
   const [currentExp, setCurrentExp] = useState(surveyData.kizunaCurrentExp || '');
   const [targetLevel, setTargetLevel] = useState(surveyData.kizunaTargetLevel || '');
   const [rank, setRank] = useState(surveyData.kizunaRank || '150');
-  const [fires, setFires] = useState(surveyData.kizunaFires || '1');
+  const [fires, setFires] = useState(surveyData.kizunaFires || '5');
 
   const [neededExp, setNeededExp] = useState(0);
   const [neededRounds, setNeededRounds] = useState(0);
@@ -19,9 +19,9 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
     const newSurveyData = { ...surveyData, kizunaCurrentLevel: currentLevel, kizunaCurrentExp: currentExp, kizunaTargetLevel: targetLevel, kizunaRank: rank, kizunaFires: fires };
     setSurveyData(newSurveyData);
 
-    const currentLevelVal = parseInt(currentLevel);
-    const currentExpVal = parseInt(currentExp);
-    const targetLevelVal = parseInt(targetLevel);
+    const currentLevelVal = parseInt(currentLevel || '30');
+    const currentExpVal = parseInt(currentExp || '159027');
+    const targetLevelVal = parseInt(targetLevel || '75');
     const rankVal = parseInt(rank);
     const firesVal = parseInt(fires);
 
@@ -87,7 +87,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
           label="현재 랭크"
           value={currentLevel}
           onChange={e => setCurrentLevel(e.target.value)}
-          placeholder="예: 30"
+          placeholder="30"
           min="1"
           max="75"
         />
@@ -95,14 +95,14 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
           label="남은 경험치"
           value={currentExp}
           onChange={e => setCurrentExp(e.target.value)}
-          placeholder="예: 159027"
+          placeholder="159027"
           min="0"
         />
         <InputRow
           label="목표 랭크"
           value={targetLevel}
           onChange={e => setTargetLevel(e.target.value)}
-          placeholder="예: 75"
+          placeholder="75"
           min="2"
           max="75"
         />

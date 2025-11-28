@@ -15,11 +15,11 @@ const InternalTab = ({ surveyData, setSurveyData }) => {
     const newSurveyData = { ...surveyData, leader, member2, member3, member4, member5 };
     setSurveyData(newSurveyData);
 
-    const leaderVal = parseInt(leader) || 0;
-    const member2Val = parseInt(member2) || 0;
-    const member3Val = parseInt(member3) || 0;
-    const member4Val = parseInt(member4) || 0;
-    const member5Val = parseInt(member5) || 0;
+    const leaderVal = parseInt(leader || '120') || 0;
+    const member2Val = parseInt(member2 || '100') || 0;
+    const member3Val = parseInt(member3 || '100') || 0;
+    const member4Val = parseInt(member4 || '100') || 0;
+    const member5Val = parseInt(member5 || '100') || 0;
 
     const sum = leaderVal + member2Val + member3Val + member4Val + member5Val;
     setInternalSum(sum);
@@ -38,35 +38,35 @@ const InternalTab = ({ surveyData, setSurveyData }) => {
           label="리더 스킬"
           value={leader}
           onChange={e => setLeader(e.target.value)}
-          placeholder="예: 120"
+          placeholder="120"
           suffix="%"
         />
         <InputRow
           label="멤버 2"
           value={member2}
           onChange={e => setMember2(e.target.value)}
-          placeholder="예: 120"
+          placeholder="100"
           suffix="%"
         />
         <InputRow
           label="멤버 3"
           value={member3}
           onChange={e => setMember3(e.target.value)}
-          placeholder="예: 120"
+          placeholder="100"
           suffix="%"
         />
         <InputRow
           label="멤버 4"
           value={member4}
           onChange={e => setMember4(e.target.value)}
-          placeholder="예: 120"
+          placeholder="100"
           suffix="%"
         />
         <InputRow
           label="멤버 5"
           value={member5}
           onChange={e => setMember5(e.target.value)}
-          placeholder="예: 120"
+          placeholder="100"
           suffix="%"
         />
       </InputTableWrapper>

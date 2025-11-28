@@ -7,7 +7,7 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
   const [currentExp, setCurrentExp] = useState(surveyData.currentExp || '');
   const [targetLevel, setTargetLevel] = useState(surveyData.targetLevel || '');
   const [rank, setRank] = useState(surveyData.rank || '960');
-  const [fires, setFires] = useState(surveyData.fires || '1');
+  const [fires, setFires] = useState(surveyData.fires || '5');
 
   const [neededExp, setNeededExp] = useState(0);
   const [neededRounds, setNeededRounds] = useState(0);
@@ -18,9 +18,9 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
     const newSurveyData = { ...surveyData, currentLevel, currentExp, targetLevel, rank, fires };
     setSurveyData(newSurveyData);
 
-    const currentLevelVal = parseInt(currentLevel);
-    const currentExpVal = parseInt(currentExp);
-    const targetLevelVal = parseInt(targetLevel);
+    const currentLevelVal = parseInt(currentLevel || '13');
+    const currentExpVal = parseInt(currentExp || '5332');
+    const targetLevelVal = parseInt(targetLevel || '50');
     const rankVal = parseInt(rank);
     const firesVal = parseInt(fires);
 
@@ -79,7 +79,7 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
           label="현재 레벨"
           value={currentLevel}
           onChange={e => setCurrentLevel(e.target.value)}
-          placeholder="예: 13"
+          placeholder="13"
           min="1"
           max="60"
         />
@@ -87,14 +87,14 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
           label="남은 경험치"
           value={currentExp}
           onChange={e => setCurrentExp(e.target.value)}
-          placeholder="예: 5332"
+          placeholder="5332"
           min="0"
         />
         <InputRow
           label="목표 레벨"
           value={targetLevel}
           onChange={e => setTargetLevel(e.target.value)}
-          placeholder="예: 50"
+          placeholder="50"
           min="2"
           max="60"
         />
