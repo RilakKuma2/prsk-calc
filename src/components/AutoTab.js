@@ -99,7 +99,7 @@ function AutoTab({ surveyData, setSurveyData }) {
             const input = {
                 songId: target.id,
                 difficulty: target.difficulty,
-                totalPower: Number(totalPower || '305812'),
+                totalPower: Number(totalPower || '293231'),
                 skillLeader: Number(skillLeader || '120'),
                 skillMember2: Number(skillMember2 || '100'),
                 skillMember3: Number(skillMember3 || '100'),
@@ -204,7 +204,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         const val = e.target.value;
                         updateDeck('totalPower', val === '' ? '' : Number(val));
                     }}
-                    placeholder="305812"
+                    placeholder="293231"
                     spacer={true}
                 />
                 <SectionHeaderRow label="멤버 스킬" spacer={true} />
