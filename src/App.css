@@ -295,7 +295,7 @@ input[type="checkbox"] {
 
     .header-row-text,
     .header-col-text {
-        font-size: 8px;
+        font-size: 7px;
     }
 }
 
@@ -309,16 +309,16 @@ input[type="checkbox"] {
     width: 100%;
     border-collapse: collapse;
     text-align: center;
-    font-size: clamp(10px, 1vw, 12px);
+    font-size: clamp(10.8px, 1vw, 13px);
     /* User's preferred responsive font size */
-    font-family: sans-serif;
-    /* Explicitly set sans-serif font */
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    font-weight: 600;
 }
 
 #my-sekai-table-container th,
 #my-sekai-table-container td {
     border: 1px solid #ccc;
-    padding: 4px;
+    padding: 2.3px;
 }
 
 #my-sekai-table-container th {
@@ -377,6 +377,17 @@ input[type="checkbox"] {
     font-weight: bold;
 }
 
+@media (max-width: 375px) {
+    #my-sekai-table-container table {
+        font-size: 9px;
+    }
+
+    .header-row-text,
+    .header-col-text {
+        font-size: 6px;
+    }
+}
+
 /* --- Responsive Styles --- */
 
 @media (max-width: 768px) {
@@ -417,6 +428,11 @@ input[type="checkbox"] {
         width: 30%;
         text-align: center;
         font-size: 14px;
+    }
+
+    .header-row-text,
+    .header-col-text {
+        font-size: 6.5px;
     }
 }
 

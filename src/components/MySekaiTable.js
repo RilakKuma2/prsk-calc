@@ -1,4 +1,5 @@
 import React from 'react';
+import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 
 const MySekaiTable = () => {
   return (
@@ -10,193 +11,34 @@ const MySekaiTable = () => {
               <span className="header-row-text">이벤포</span>
               <span className="header-col-text">종합력</span>
             </th>
-            <th>0</th>
-            <th>4.5</th>
-            <th>9.0</th>
-            <th>13.5</th>
-            <th>18.0</th>
-            <th>22.5</th>
-            <th>27.0</th>
-            <th>31.5</th>
-            <th>36.0</th>
+            {powerColumnThresholds.map((power) => (
+              <th key={power}>{power}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><b>1000</b></td>
-            <td>100</td>
-            <td>82</td>
-            <td>67</td>
-            <td>54</td>
-            <td>43</td>
-            <td>34</td>
-            <td>25</td>
-            <td>18</td>
-            <td>12</td>
-          </tr>
-          <tr>
-            <td><b>1500</b></td>
-            <td>200</td>
-            <td>173</td>
-            <td>150</td>
-            <td>131</td>
-            <td>115</td>
-            <td>100</td>
-            <td>88</td>
-            <td>77</td>
-            <td>67</td>
-          </tr>
-          <tr>
-            <td><b>2000</b></td>
-            <td>300</td>
-            <td>264</td>
-            <td>234</td>
-            <td>208</td>
-            <td>186</td>
-            <td>167</td>
-            <td>150</td>
-            <td>136</td>
-            <td>123</td>
-          </tr>
-          <tr>
-            <td><b>2500</b></td>
-            <td>400</td>
-            <td>355</td>
-            <td>317</td>
-            <td>285</td>
-            <td>258</td>
-            <td>234</td>
-            <td>213</td>
-            <td>195</td>
-            <td>178</td>
-          </tr>
-          <tr>
-            <td><b>3000</b></td>
-            <td>500</td>
-            <td>446</td>
-            <td>400</td>
-            <td>362</td>
-            <td>329</td>
-            <td>300</td>
-            <td>275</td>
-            <td>253</td>
-            <td>234</td>
-          </tr>
-          <tr>
-            <td><b>3500</b></td>
-            <td>600</td>
-            <td>537</td>
-            <td>484</td>
-            <td>439</td>
-            <td>400</td>
-            <td>367</td>
-            <td>338</td>
-            <td>312</td>
-            <td>289</td>
-          </tr>
-          <tr>
-            <td><b>4000</b></td>
-            <td>700</td>
-            <td>628</td>
-            <td>567</td>
-            <td>516</td>
-            <td>472</td>
-            <td>434</td>
-            <td>400</td>
-            <td>371</td>
-            <td>345</td>
-          </tr>
-          <tr>
-            <td><b>4500</b></td>
-            <td>800</td>
-            <td>719</td>
-            <td>650</td>
-            <td>593</td>
-            <td>543</td>
-            <td>500</td>
-            <td>463</td>
-            <td>430</td>
-            <td>400</td>
-          </tr>
-          <tr>
-            <td><b>5000</b></td>
-            <td></td>
-            <td></td>
-            <td>734</td>
-            <td>670</td>
-            <td>615</td>
-            <td>567</td>
-            <td>525</td>
-            <td>489</td>
-            <td>456</td>
-          </tr>
-          <tr>
-            <td><b>5500</b></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>747</td>
-            <td>686</td>
-            <td>634</td>
-            <td>588</td>
-            <td>548</td>
-            <td>512</td>
-          </tr>
-          <tr>
-            <td><b>6000</b></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>758</td>
-            <td>700</td>
-            <td>650</td>
-            <td>606</td>
-            <td>567</td>
-          </tr>
-          <tr>
-            <td><b>6500</b></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>767</td>
-            <td>713</td>
-            <td>665</td>
-            <td>623</td>
-          </tr>
-          <tr>
-            <td><b>7000</b></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>775</td>
-            <td>724</td>
-            <td>678</td>
-          </tr>
-          <tr>
-            <td><b>7500</b></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>783</td>
-            <td>734</td>
-          </tr>
-          <tr>
-            <td><b>8000</b></td>
-            <td colSpan="8" style={{ textAlign: 'left', padding: '8px', fontSize: '10px' }}>
-              ※ 목표 이벤포를 얻기 위한 최소 종합력 및 배수
-            </td>
-            <td>789</td>
-          </tr>
+          {scoreRowKeys.map((score) => {
+            if (score === 9000) {
+              return (
+                <tr key={score}>
+                  <td><b>{score}</b></td>
+                  <td colSpan={9} style={{ textAlign: 'left', padding: '4px 8px', fontSize: '10px', whiteSpace: 'nowrap' }}>
+                    ※ 목표 이벤포를 얻기 위한 최소 종합력 및 배수
+                  </td>
+                  <td>{mySekaiTableData[score][9]}</td>
+                </tr>
+              );
+            }
+            return (
+              <tr key={score}>
+                <td><b>{score}</b></td>
+                {powerColumnThresholds.map((power, idx) => {
+                  const val = mySekaiTableData[score][idx];
+                  return <td key={idx}>{val !== null ? val : ''}</td>;
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
