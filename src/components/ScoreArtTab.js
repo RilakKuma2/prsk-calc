@@ -7,12 +7,15 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const [currentEP, setCurrentEP] = useState(surveyData.currentEP || '');
     const [targetEP, setTargetEP] = useState(surveyData.targetEP || '');
     const [maxBonus, setMaxBonus] = useState(surveyData.maxBonus || '300');
+    const [maxPower, setMaxPower] = useState(surveyData.maxPower || '');
+    const [maxEnvyScore, setMaxEnvyScore] = useState(surveyData.maxEnvyScore || '');
     const [zeroScoreOnly, setZeroScoreOnly] = useState(surveyData.zeroScoreOnly || false);
     const [allowNonMod5, setAllowNonMod5] = useState(surveyData.allowNonMod5 || false);
 
     const [csvData, setCsvData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [calculating, setCalculating] = useState(false);
+    const [hasCalculated, setHasCalculated] = useState(false);
     const [solutions, setSolutions] = useState([]);
     const [error, setError] = useState('');
     const [selectedItem, setSelectedItem] = useState(null);
@@ -42,15 +45,19 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
             ...prev,
             currentEP,
             targetEP,
+            targetEP,
             maxBonus,
+            maxPower,
+            maxEnvyScore,
             zeroScoreOnly,
             allowNonMod5
         }));
-    }, [currentEP, targetEP, maxBonus, zeroScoreOnly, allowNonMod5, setSurveyData]);
+    }, [currentEP, targetEP, maxBonus, maxPower, maxEnvyScore, zeroScoreOnly, allowNonMod5, setSurveyData]);
 
     const calculate = () => {
         setError('');
         setSolutions([]);
+        setHasCalculated(false);
         setCurrentPage(1);
 
         if (!csvData) {
@@ -61,6 +68,8 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
         const cur = parseInt(currentEP, 10);
         const tgt = parseInt(targetEP, 10);
         const bonus = parseInt(maxBonus, 10);
+        const power = parseFloat(maxPower);
+        const envyLimit = parseFloat(maxEnvyScore);
 
         if (isNaN(cur) || isNaN(tgt)) {
             setError('현재 점수와 목표 점수를 입력해주세요.');
@@ -77,10 +86,11 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
         // Async calculation to prevent UI freeze
         setTimeout(() => {
             try {
-                const options = generateOptions(csvData, bonus, zeroScoreOnly);
+                const options = generateOptions(csvData, bonus, zeroScoreOnly, power, envyLimit);
                 const rawSolutions = solveScoreArt(gap, options, allowNonMod5);
                 const sorted = sortSolutions(rawSolutions, allowNonMod5);
                 setSolutions(sorted);
+                setHasCalculated(true);
                 setCalculating(false);
             } catch (err) {
                 console.error(err);
@@ -126,20 +136,20 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     return (
-        <div className="w-full max-w-3xl mx-auto pb-20">
-            <div className="bg-white rounded-2xl p-6 mb-8">
+        <div className="w-full max-w-3xl mx-auto pb-2">
+            <div className="bg-white rounded-2xl p-6 mb-2">
                 <InputTableWrapper>
                     <InputRow
                         label="현재 포인트"
                         value={currentEP}
                         onChange={(e) => setCurrentEP(e.target.value)}
-                        placeholder="예: 10000"
+                        placeholder="예: 171923316"
                     />
                     <InputRow
                         label="목표 포인트"
                         value={targetEP}
                         onChange={(e) => setTargetEP(e.target.value)}
-                        placeholder="예: 12000"
+                        placeholder="예: 172000414"
                     />
                     <InputRow
                         label="최대 배수 (%)"
@@ -147,17 +157,40 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                         onChange={(e) => setMaxBonus(e.target.value)}
                         placeholder="예: 300"
                     />
+                    <InputRow
+                        label="최대 종합력"
+                        value={maxPower}
+                        onChange={(e) => setMaxPower(e.target.value)}
+                        placeholder="예: 25"
+                        suffix="만"
+                    />
+                    <InputRow
+                        label="최대 엔비 이지 점수"
+                        value={maxEnvyScore}
+                        onChange={(e) => setMaxEnvyScore(e.target.value)}
+                        placeholder="예: 100"
+                        suffix="만"
+                    />
+                    <tr>
+                        <td colSpan={2} className="text-center text-xs text-gray-400 pb-1 align-top leading-none">
+                            엔비 점수 낮게 설정해야 조정 편함
+                        </td>
+                    </tr>
                 </InputTableWrapper>
 
-                <div className="flex flex-col gap-3 items-center mt-6 mb-8">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
+
+                <div className="flex flex-col gap-1 items-center mt-3 mb-2">
+                    <label className="flex items-start gap-2 cursor-pointer select-none text-left">
                         <input
                             type="checkbox"
                             checked={zeroScoreOnly}
                             onChange={(e) => setZeroScoreOnly(e.target.checked)}
-                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            className="w-4 h-4 mt-1 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                         />
-                        <span className="text-gray-700">엔비 0점만 사용 (노트 치지 않기)</span>
+                        <div className="flex flex-col">
+                            <span className="text-gray-700">엔비 0점만 사용 (노트 치지 않기)</span>
+                            <span className="text-xs text-gray-400">5의 배수 이벤포만 획득 가능</span>
+                        </div>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input
@@ -212,6 +245,14 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-center mb-6 animate-fade-in-up">
                     {error}
+                </div>
+            )}
+
+            {!loading && !calculating && hasCalculated && solutions.length === 0 && !error && (
+                <div className="bg-gray-50 border border-gray-200 text-gray-500 px-4 py-8 rounded-xl text-center mb-6 animate-fade-in-up">
+                    <div className="text-4xl mb-2">🤔</div>
+                    <p className="font-bold text-lg">결과가 없습니다.</p>
+                    <p className="text-sm">조건을 바꿔서 다시 시도해주세요.</p>
                 </div>
             )}
 

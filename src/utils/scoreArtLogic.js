@@ -87,16 +87,20 @@ export const parseEnvyCsv = (csvText) => {
 /**
  * Generates separate options for Envy and MySekai.
  */
-export const generateOptions = (csvData, maxBonus, zeroScoreOnly) => {
+export const generateOptions = (csvData, maxBonus, zeroScoreOnly, maxPower = null, maxEnvyScore = null) => {
     const envyOptions = [];
     const mySekaiOptions = [];
 
+    // Calculate Envy Score Limit (default 100 -> 1,000,000)
+    const envyScoreLimit = (maxEnvyScore && !isNaN(maxEnvyScore)) ? maxEnvyScore * 10000 : 1000000;
+
     // 1. Envy Options
     for (const [baseEP, details] of csvData.entries()) {
+        // Filter sub-details by bonus and MAX SCORE limit (using minScore to include the bracket)
         const validDetails = details.filter(d =>
             d.bonus <= maxBonus &&
             d.bonus >= 25 && // Min bonus 40%
-            d.maxScore <= 1000000 && // Max score 1.0M
+            d.minScore <= envyScoreLimit && // Use minScore for the limit
             (!zeroScoreOnly || d.maxScore <= 19999)
         );
 
@@ -131,6 +135,21 @@ export const generateOptions = (csvData, maxBonus, zeroScoreOnly) => {
 
 
     // 2. MySekai Options
+    // Determine user's power index if maxPower is provided
+    let userPowerIdx = -1;
+    if (maxPower !== null && !isNaN(maxPower)) {
+        // Find the highest index where MY_SEKAI_POWERS[i] <= maxPower
+        for (let i = MY_SEKAI_POWERS.length - 1; i >= 0; i--) {
+            if (MY_SEKAI_POWERS[i] <= maxPower) {
+                userPowerIdx = i;
+                break;
+            }
+        }
+    }
+
+    // First pass: Collect all achievable options
+    const allAchievableOptions = [];
+
     for (const [ptStr, reqMults] of Object.entries(MY_SEKAI_REQ_MULTIPLIERS)) {
         const pt = parseInt(ptStr, 10);
 
@@ -140,19 +159,31 @@ export const generateOptions = (csvData, maxBonus, zeroScoreOnly) => {
         let achievable = false;
         const validReqs = [];
 
-        // Use MY_SEKAI_POWERS.length to limit iteration (0 to 7 for 31.5 max)
-        for (let i = 0; i < MY_SEKAI_POWERS.length; i++) {
-            if (reqMults[i] !== null && reqMults[i] <= maxBonus) {
+        if (userPowerIdx !== -1) {
+            // User specified Max Power: ONLY check that specific power index
+            const reqMult = reqMults[userPowerIdx];
+            if (reqMult !== null && reqMult <= maxBonus) {
                 achievable = true;
                 validReqs.push({
-                    powerIdx: i,
-                    reqMult: reqMults[i]
+                    powerIdx: userPowerIdx,
+                    reqMult: reqMult
                 });
+            }
+        } else {
+            // No Max Power specified: Check ALL power indices (Existing Logic)
+            for (let i = 0; i < MY_SEKAI_POWERS.length; i++) {
+                if (reqMults[i] !== null && reqMults[i] <= maxBonus) {
+                    achievable = true;
+                    validReqs.push({
+                        powerIdx: i,
+                        reqMult: reqMults[i]
+                    });
+                }
             }
         }
 
         if (achievable) {
-            mySekaiOptions.push({
+            allAchievableOptions.push({
                 ep: pt,
                 type: 'mysekai',
                 mySekaiDetails: [{
@@ -161,6 +192,18 @@ export const generateOptions = (csvData, maxBonus, zeroScoreOnly) => {
                 }]
             });
         }
+    }
+
+    // If Max Power is specified, filter to ONLY the highest achievable point
+    if (userPowerIdx !== -1 && allAchievableOptions.length > 0) {
+        // Sort descending by EP
+        allAchievableOptions.sort((a, b) => b.ep - a.ep);
+        // Take only the highest EP option
+        const maxEpOption = allAchievableOptions[0];
+        mySekaiOptions.push(maxEpOption);
+    } else {
+        // Otherwise, use all achievable options
+        mySekaiOptions.push(...allAchievableOptions);
     }
 
     // Sort MySekai options: 3000 Priority, then Descending
@@ -182,10 +225,48 @@ export const generateOptions = (csvData, maxBonus, zeroScoreOnly) => {
 export const solveScoreArt = (gap, { envyOptions, mySekaiOptions }, allowNonMod5 = false) => {
     if (gap <= 0) return [];
 
+    // Helper to filter Envy options by Bonus % 5
+    const filterEnvyMod5 = (options) => {
+        const filtered = [];
+        for (const opt of options) {
+            if (opt.type !== 'envy') {
+                filtered.push(opt);
+                continue;
+            }
+
+            const newEnvyDetails = [];
+            for (const d of opt.envyDetails) {
+                const validSubDetails = d.details.filter(sub => sub.bonus % 5 === 0);
+                if (validSubDetails.length > 0) {
+                    newEnvyDetails.push({
+                        ...d,
+                        details: validSubDetails
+                    });
+                }
+            }
+
+            if (newEnvyDetails.length > 0) {
+                filtered.push({
+                    ...opt,
+                    envyDetails: newEnvyDetails
+                });
+            }
+        }
+        return filtered;
+    };
+
+    // Prepare initial options
+    let initialEnvyOptions = [];
+    if (allowNonMod5) {
+        initialEnvyOptions = [...envyOptions];
+    } else {
+        initialEnvyOptions = filterEnvyMod5(envyOptions);
+    }
+
     // Internal solver function
     const runSolver = (currentEnvyOptions) => {
         const solutions = [];
-        const maxSolutions = 100;
+        const maxSolutions = 100; // Find top 100 for this iteration
 
         // 1. DFS Setup
         const memoEnvy = new Map();
@@ -195,7 +276,7 @@ export const solveScoreArt = (gap, { envyOptions, mySekaiOptions }, allowNonMod5
             if (memoEnvy.has(target)) return memoEnvy.get(target);
 
             const results = [];
-            const maxResults = 50;
+            const maxResults = 200; // Sufficient depth
 
             const dfs = (rem, combo, startIdx, distinctCount) => {
                 if (results.length >= maxResults) return;
@@ -270,6 +351,8 @@ export const solveScoreArt = (gap, { envyOptions, mySekaiOptions }, allowNonMod5
                             for (let k = 0; k < count; k++) fullSolution.push(mOpt);
                             fullSolution.push(...eCombo);
                             solutions.push(fullSolution);
+
+                            if (solutions.length >= maxSolutions) break;
                         }
 
                         if (solutions.length >= maxSolutions) break;
@@ -282,48 +365,53 @@ export const solveScoreArt = (gap, { envyOptions, mySekaiOptions }, allowNonMod5
         return solutions;
     };
 
-    // Helper to filter Envy options by Bonus % 5
-    const filterEnvyMod5 = (options) => {
-        const filtered = [];
-        for (const opt of options) {
-            if (opt.type !== 'envy') {
-                filtered.push(opt);
-                continue;
+    // Iterative Ban-and-Search
+    const finalSolutions = [];
+    const diversityCounts = new Map();
+    const bannedEnvyEps = new Set();
+    const MAX_PER_TYPE = 20;
+    const TARGET_TOTAL = 100;
+
+    for (let iter = 0; iter < 10; iter++) {
+        // Filter options: Exclude banned Envy EPs
+        const iterOptions = initialEnvyOptions.filter(opt => !bannedEnvyEps.has(opt.ep));
+
+        if (iterOptions.length === 0 && initialEnvyOptions.length > 0) break;
+
+        // Run solver with filtered options
+        const newSolutions = runSolver(iterOptions);
+
+        if (newSolutions.length === 0) break;
+
+        let addedCount = 0;
+        for (const sol of newSolutions) {
+            // Find max Envy EP in this solution
+            let maxEnvyEp = 0;
+            for (const item of sol) {
+                if (item.type === 'envy' && item.ep > maxEnvyEp) maxEnvyEp = item.ep;
             }
 
-            const newEnvyDetails = [];
-            for (const d of opt.envyDetails) {
-                const validSubDetails = d.details.filter(sub => sub.bonus % 5 === 0);
-                if (validSubDetails.length > 0) {
-                    newEnvyDetails.push({
-                        ...d,
-                        details: validSubDetails
-                    });
-                }
-            }
-
-            if (newEnvyDetails.length > 0) {
-                filtered.push({
-                    ...opt,
-                    envyDetails: newEnvyDetails
-                });
+            const count = diversityCounts.get(maxEnvyEp) || 0;
+            if (count < MAX_PER_TYPE) {
+                finalSolutions.push(sol);
+                diversityCounts.set(maxEnvyEp, count + 1);
+                addedCount++;
+            } else {
+                // Saturated: Ban this Envy EP for next iterations
+                bannedEnvyEps.add(maxEnvyEp);
             }
         }
-        return filtered;
-    };
 
-    let solutions = [];
-
-    if (allowNonMod5) {
-        // If allowed, run solver with ALL options immediately
-        solutions = runSolver(envyOptions);
-    } else {
-        // Strict Mode: Filter options to ONLY include those with Bonus % 5 === 0
-        const envyMod5 = filterEnvyMod5(envyOptions);
-        solutions = runSolver(envyMod5);
+        if (finalSolutions.length >= TARGET_TOTAL) break;
+        if (addedCount === 0 && bannedEnvyEps.size > 0) {
+            // If we didn't add anything but have bans, it means the top results were ALL banned types.
+            // The loop will naturally continue with bans in place, forcing new results next time.
+            // But if we truly made NO progress and have nothing else to ban (or everything is banned), we stop.
+            // For now, let's just continue.
+        }
     }
 
-    return solutions;
+    return finalSolutions;
 };
 
 /**
@@ -375,25 +463,40 @@ export const sortSolutions = (solutions, allowNonMod5 = false) => {
         };
     });
 
+    // Find the maximum MySekai score to establish the "High Score Tier"
+    const maxMySekaiScore = Math.max(...scored.map(s => s.totalMySekaiScore));
+    const SCORE_THRESHOLD = 2000;
+
     scored.sort((a, b) => {
         // 1. All Envy Mod 5 Priority (True > False) - ONLY if not allowed non-mod 5 explicitly
         if (!allowNonMod5) {
             if (a.isAllEnvyMod5 !== b.isAllEnvyMod5) return b.isAllEnvyMod5 - a.isAllEnvyMod5;
         }
 
-        // 2. Total MySekai Score (Descending)
+        // Determine Tiers
+        // Tier 1: Score is within 2000 points of the Max Score
+        // Tier 2: Score is lower than that
+        const aIsTier1 = a.totalMySekaiScore >= (maxMySekaiScore - SCORE_THRESHOLD);
+        const bIsTier1 = b.totalMySekaiScore >= (maxMySekaiScore - SCORE_THRESHOLD);
+
+        if (aIsTier1 && bIsTier1) {
+            // Both in Tier 1: Prioritize Efficiency (Less MySekai Games)
+            if (a.mySekaiGames !== b.mySekaiGames) return a.mySekaiGames - b.mySekaiGames;
+            // If games equal, higher score wins
+            return b.totalMySekaiScore - a.totalMySekaiScore;
+        }
+
+        if (aIsTier1 !== bIsTier1) {
+            // Tier 1 wins over Tier 2
+            return bIsTier1 - aIsTier1;
+        }
+
+        // Both in Tier 2: Prioritize Higher Score
         if (a.totalMySekaiScore !== b.totalMySekaiScore) return b.totalMySekaiScore - a.totalMySekaiScore;
 
-        // 3. MySekai Games (Ascending) - Higher efficiency (less games for same score)
-        if (a.mySekaiGames !== b.mySekaiGames) return a.mySekaiGames - b.mySekaiGames;
-
-        // 4. Min Total Fire (Ascending)
+        // Fallbacks
         if (a.totalFire !== b.totalFire) return a.totalFire - b.totalFire;
-
-        // 5. Min Envy Games (Ascending)
         if (a.envyGames !== b.envyGames) return a.envyGames - b.envyGames;
-
-        // 6. Diversity
         return b.diversityScore - a.diversityScore;
     });
 
