@@ -81,6 +81,11 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
         }
 
         const gap = tgt - cur;
+
+        if (gap >= 100000) {
+            setError('목표 점수와 현재 점수의 차이는 10만 점 미만이어야 합니다.');
+            return;
+        }
         setCalculating(true);
 
         // Async calculation to prevent UI freeze
@@ -119,8 +124,8 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     };
 
     // Modal Logic
-    const openDetails = (item) => {
-        setSelectedItem(item);
+    const openDetails = (groupedItem) => {
+        setSelectedItem(groupedItem);
     };
 
     const closeDetails = () => {
@@ -276,7 +281,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                                     {grouped.map((g, gIdx) => (
                                         <div
                                             key={gIdx}
-                                            onClick={() => openDetails(g.item)}
+                                            onClick={() => openDetails(g)}
                                             className={`
                                                 cursor-pointer px-3 py-1.5 rounded-lg border text-sm font-medium transition-all duration-200 flex items-center gap-2
                                                 ${g.item.type === 'mysekai'
@@ -331,7 +336,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                     >
                         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                             <h3 className="text-lg font-bold text-gray-800">
-                                {selectedItem.ep.toLocaleString()} pt 상세 정보
+                                {selectedItem.item.ep.toLocaleString()} pt 상세 정보
                             </h3>
                             <button onClick={closeDetails} className="text-gray-400 hover:text-gray-600 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -341,7 +346,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                         </div>
 
                         <div className="p-6 overflow-y-auto custom-scrollbar">
-                            {selectedItem.type === 'mysekai' && (
+                            {selectedItem.item.type === 'mysekai' && (
                                 <div>
                                     <div className="flex items-center gap-2 mb-4">
                                         <span className="w-2 h-8 rounded-full bg-teal-500"></span>
@@ -356,14 +361,14 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
-                                                {selectedItem.mySekaiDetails[0].validReqs.map((req, idx) => {
+                                                {selectedItem.item.mySekaiDetails[0].validReqs.map((req, idx) => {
                                                     const power = MY_SEKAI_POWERS[req.powerIdx];
                                                     const nextPower = MY_SEKAI_POWERS[req.powerIdx + 1];
                                                     const powerRange = nextPower
                                                         ? `${power}만 ~ ${nextPower - 0.1}만`
                                                         : `${power}만 이상`;
 
-                                                    const nextEp = selectedItem.ep + 500;
+                                                    const nextEp = selectedItem.item.ep + 500;
                                                     const nextReqs = MY_SEKAI_REQ_MULTIPLIERS[nextEp];
                                                     const nextMult = nextReqs ? nextReqs[req.powerIdx] : null;
 
@@ -384,11 +389,19 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                                 </div>
                             )}
 
-                            {selectedItem.type === 'envy' && (
+                            {selectedItem.item.type === 'envy' && (
                                 <div>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <span className="w-2 h-8 rounded-full bg-purple-500"></span>
-                                        <h4 className="font-bold text-purple-700 text-lg">엔비 (이지 솔로)</h4>
+                                        <span className="w-2 h-8 rounded-full bg-blue-500"></span>
+                                        <h4 className="font-bold text-blue-700 text-lg flex items-center">
+                                            엔비 (이지 솔로)
+                                            <span className="ml-4 text-base font-bold text-emerald-600">
+                                                {selectedItem.count < 5
+                                                    ? `0불 ${selectedItem.count}판`
+                                                    : `1불 ${Math.floor(selectedItem.count / 5)}판 + 0불 ${selectedItem.count % 5}판`
+                                                }
+                                            </span>
+                                        </h4>
                                     </div>
                                     <div className="overflow-hidden rounded-xl border border-gray-200">
                                         <table className="w-full text-sm text-left">
@@ -400,7 +413,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
-                                                {selectedItem.envyDetails.map((d, idx) => (
+                                                {selectedItem.item.envyDetails.map((d, idx) => (
                                                     d.details.map((sub, subIdx) => (
                                                         <tr key={`${idx}-${subIdx}`} className="hover:bg-gray-50 transition-colors">
                                                             <td className="px-4 py-3 text-center text-gray-700">{d.energy}</td>
