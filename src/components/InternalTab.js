@@ -38,30 +38,35 @@ const InternalTab = ({ surveyData, setSurveyData }) => {
           label="리더 스킬"
           value={leader}
           onChange={e => setLeader(e.target.value)}
+          placeholder="예: 120"
           suffix="%"
         />
         <InputRow
           label="멤버 2"
           value={member2}
           onChange={e => setMember2(e.target.value)}
+          placeholder="예: 120"
           suffix="%"
         />
         <InputRow
           label="멤버 3"
           value={member3}
           onChange={e => setMember3(e.target.value)}
+          placeholder="예: 120"
           suffix="%"
         />
         <InputRow
           label="멤버 4"
           value={member4}
           onChange={e => setMember4(e.target.value)}
+          placeholder="예: 120"
           suffix="%"
         />
         <InputRow
           label="멤버 5"
           value={member5}
           onChange={e => setMember5(e.target.value)}
+          placeholder="예: 120"
           suffix="%"
         />
       </InputTableWrapper>

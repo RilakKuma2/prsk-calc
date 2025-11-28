@@ -76,7 +76,7 @@ function AutoTab({ surveyData, setSurveyData }) {
             setSurveyData(prev => ({
                 ...prev,
                 autoDeck: {
-                    totalPower: 200000,
+                    totalPower: 260000,
                     skillLeader: 100,
                     skillMember2: 100,
                     skillMember3: 100,
@@ -204,6 +204,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                         const val = e.target.value;
                         updateDeck('totalPower', val === '' ? '' : Number(val));
                     }}
+                    placeholder="예: 305812"
                     spacer={true}
                 />
                 <SectionHeaderRow label="멤버 스킬" spacer={true} />
@@ -214,6 +215,8 @@ function AutoTab({ surveyData, setSurveyData }) {
                         const val = e.target.value;
                         updateDeck('skillLeader', val === '' ? '' : Number(val));
                     }}
+                    suffix="%"
+                    placeholder="예: 120"
                     spacer={true}
                 />
                 {[
@@ -230,6 +233,8 @@ function AutoTab({ surveyData, setSurveyData }) {
                             const val = e.target.value;
                             updateDeck(m.key, val === '' ? '' : Number(val));
                         }}
+                        suffix="%"
+                        placeholder="예: 100"
                         spacer={true}
                     />
                 ))}
@@ -240,6 +245,8 @@ function AutoTab({ surveyData, setSurveyData }) {
                         const val = e.target.value;
                         updateDeck('eventBonus', val === '' ? '' : Number(val));
                     }}
+                    suffix="%"
+                    placeholder="예: 250"
                     spacer={true}
                 />
             </InputTableWrapper>

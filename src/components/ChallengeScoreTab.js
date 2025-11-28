@@ -201,6 +201,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 <InputRow
                     label="종합력"
                     value={totalPower}
+                    placeholder="예: 410520"
                     onChange={(e) => {
                         const val = e.target.value;
                         updateDeck('totalPower', val === '' ? '' : Number(val));
@@ -210,6 +211,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 <InputRow
                     label="리더"
                     value={skillLeader}
+                    placeholder="예: 120"
                     onChange={(e) => {
                         const val = e.target.value;
                         updateDeck('skillLeader', val === '' ? '' : Number(val));
@@ -225,6 +227,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                         key={i}
                         label={m.label}
                         value={m.val}
+                        placeholder="예: 120"
                         onChange={(e) => {
                             const val = e.target.value;
                             updateDeck(m.key, val === '' ? '' : Number(val));

@@ -87,6 +87,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
           label="현재 랭크"
           value={currentLevel}
           onChange={e => setCurrentLevel(e.target.value)}
+          placeholder="예: 30"
           min="1"
           max="75"
         />
@@ -94,12 +95,14 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
           label="남은 경험치"
           value={currentExp}
           onChange={e => setCurrentExp(e.target.value)}
+          placeholder="예: 159027"
           min="0"
         />
         <InputRow
           label="목표 랭크"
           value={targetLevel}
           onChange={e => setTargetLevel(e.target.value)}
+          placeholder="예: 75"
           min="2"
           max="75"
         />

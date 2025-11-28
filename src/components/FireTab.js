@@ -80,6 +80,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           suffix="만"
           min="0"
           max="50000"
+          placeholder="예: 2500"
           spacer={true}
         />
         <InputRow
@@ -89,6 +90,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           suffix="만"
           min="0"
           max="50000"
+          placeholder="예: 3000"
           spacer={true}
         />
         <InputRow
@@ -98,6 +100,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           suffix="만"
           min="0"
           max="50000"
+          placeholder="예: 4.3"
           spacer={true}
         />
         <InputRow
@@ -107,6 +110,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           suffix="회"
           min="0"
           max="50000"
+          placeholder="예: 29"
           spacer={true}
         />
         <SelectRow

@@ -79,6 +79,7 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
           label="현재 레벨"
           value={currentLevel}
           onChange={e => setCurrentLevel(e.target.value)}
+          placeholder="예: 13"
           min="1"
           max="60"
         />
@@ -86,12 +87,14 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
           label="남은 경험치"
           value={currentExp}
           onChange={e => setCurrentExp(e.target.value)}
+          placeholder="예: 5332"
           min="0"
         />
         <InputRow
           label="목표 레벨"
           value={targetLevel}
           onChange={e => setTargetLevel(e.target.value)}
+          placeholder="예: 50"
           min="2"
           max="60"
         />

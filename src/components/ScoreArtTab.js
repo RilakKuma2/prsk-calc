@@ -148,12 +148,14 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                         label="현재 포인트"
                         value={currentEP}
                         onChange={(e) => setCurrentEP(e.target.value)}
+                        suffix="pt"
                         placeholder="예: 171923316"
                     />
                     <InputRow
                         label="목표 포인트"
                         value={targetEP}
                         onChange={(e) => setTargetEP(e.target.value)}
+                        suffix="pt"
                         placeholder="예: 172000414"
                     />
                     <InputRow
@@ -167,7 +169,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                         label="최대 종합력"
                         value={maxPower}
                         onChange={(e) => setMaxPower(e.target.value)}
-                        placeholder="예: 25"
+                        placeholder="예: 25.5"
                         suffix="만"
                     />
                     <InputRow

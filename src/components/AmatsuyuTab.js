@@ -166,12 +166,14 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
           label="현재 레벨"
           value={currentLevel}
           onChange={e => setCurrentLevel(e.target.value)}
+          placeholder="예: 0"
           spacer={true}
         />
         <InputRow
           label="목표 레벨"
           value={targetLevel}
           onChange={e => { const value = parseInt(e.target.value); setTargetLevel(isNaN(value) ? 0 : Math.min(400, Math.max(0, value))); }}
+          placeholder="예: 400"
           spacer={true}
         />
       </InputTableWrapper>

@@ -21,7 +21,7 @@ const FIRE_MULTIPLIERS = {
 };
 
 const PowerTab = ({ surveyData, setSurveyData }) => {
-  const [power, setPower] = useState(surveyData.power || '25');
+  const [power, setPower] = useState(surveyData.power || '25.5');
   const [effi, setEffi] = useState(surveyData.effi || '250');
   const [internalValue, setInternalValue] = useState(surveyData.internalValue || '200');
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
@@ -374,13 +374,15 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             value={power}
             onChange={e => setPower(e.target.value)}
             suffix="만"
-            max="40"
+            placeholder="예: 25.5"
+            max="45"
           />
           <InputRow
             label="배수"
             value={effi}
             onChange={e => setEffi(e.target.value)}
             suffix="%"
+            placeholder="예: 250"
             max="1000"
           />
           {!isDetailedInput && (
@@ -389,6 +391,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
               value={internalValue}
               onChange={e => setInternalValue(e.target.value)}
               suffix="%"
+              placeholder="예: 200"
               max="2000"
             />
           )}
