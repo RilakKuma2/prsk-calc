@@ -157,10 +157,11 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                         placeholder="예: 172000414"
                     />
                     <InputRow
-                        label="최대 배수 (%)"
+                        label="최대 배수"
                         value={maxBonus}
                         onChange={(e) => setMaxBonus(e.target.value)}
                         placeholder="예: 300"
+                        suffix="%"
                     />
                     <InputRow
                         label="최대 종합력"
@@ -218,9 +219,9 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                             href="https://docs.google.com/spreadsheets/d/1om--O7_NqvvQ6TDg1jrsjKMVBR_s1j1o/edit?usp=sharing&ouid=113023731854367624519&rtpof=true&sd=true"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-blue-500 hover:text-blue-700 underline decoration-blue-300 hover:decoration-blue-700 underline-offset-2 transition-all"
+                            className="text-ms text-blue-500 hover:text-blue-700 underline decoration-blue-300 hover:decoration-blue-700 underline-offset-2 transition-all font-bold"
                         >
-                            엔비 점수표 확인하기
+                            엔비 점수표
                         </a>
                     </div>
                     <button
@@ -268,13 +269,31 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                         return (
                             <div key={idx} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-400 hover:shadow-md transition-all duration-200">
                                 <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-sm font-medium border border-gray-200">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
-                                        엔비 이지 {sol.envyGames}판
-                                    </span>
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-sm font-medium border border-emerald-100">
                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                         마셐 {sol.totalFire}불
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-sm font-medium border border-gray-200">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+                                        {(() => {
+                                            const envyItems = grouped.filter(g => g.item.type === 'envy');
+                                            const hasOptimizable = envyItems.some(g => g.count >= 5);
+
+                                            if (hasOptimizable) {
+                                                let fire1 = 0;
+                                                let fire0 = 0;
+                                                envyItems.forEach(g => {
+                                                    if (g.count >= 5) {
+                                                        fire1 += Math.floor(g.count / 5);
+                                                        fire0 += g.count % 5;
+                                                    } else {
+                                                        fire0 += g.count;
+                                                    }
+                                                });
+                                                return `엔비 이지 1불 ${fire1}판 + 0불 ${fire0}판`;
+                                            }
+                                            return `엔비 이지 0불 ${sol.envyGames}판`;
+                                        })()}
                                     </span>
                                 </div>
                                 <div className="p-4 flex flex-wrap gap-2">
