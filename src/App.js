@@ -13,16 +13,17 @@ import ScoreArtTab from './components/ScoreArtTab';
 function App() {
   const [currentTab, setCurrentTab] = useState('internal');
   const [surveyData, setSurveyData] = useState({});
+  const [loadVersion, setLoadVersion] = useState(0);
 
   const tabComponents = {
-    internal: <InternalTab surveyData={surveyData} setSurveyData={setSurveyData} />,
-    level: <LevelTab surveyData={surveyData} setSurveyData={setSurveyData} />,
-    power: <PowerTab surveyData={surveyData} setSurveyData={setSurveyData} />,
-    auto: <AutoTab surveyData={surveyData} setSurveyData={setSurveyData} />,
-    fire: <FireTab surveyData={surveyData} setSurveyData={setSurveyData} />,
-    challenge: <ChallengeTab surveyData={surveyData} setSurveyData={setSurveyData} />,
-    amatsuyu: <AmatsuyuTab surveyData={surveyData} setSurveyData={setSurveyData} />,
-    scoreArt: <ScoreArtTab surveyData={surveyData} setSurveyData={setSurveyData} />,
+    internal: <InternalTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    level: <LevelTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    power: <PowerTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    auto: <AutoTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    fire: <FireTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    challenge: <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    amatsuyu: <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    scoreArt: <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
   };
 
   const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });
@@ -53,6 +54,7 @@ function App() {
     const savedData = JSON.parse(localStorage.getItem('surveyData'));
     if (savedData) {
       setSurveyData(savedData);
+      setLoadVersion(v => v + 1);
       showToastMessage('데이터를 불러왔습니다.');
     } else {
       showToastMessage('저장된 데이터가 없습니다.');

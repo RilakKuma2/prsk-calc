@@ -381,16 +381,19 @@ export const sortSolutions = (solutions, allowNonMod5 = false) => {
             if (a.isAllEnvyMod5 !== b.isAllEnvyMod5) return b.isAllEnvyMod5 - a.isAllEnvyMod5;
         }
 
-        // 2. Min Total Fire (Ascending)
-        if (a.totalFire !== b.totalFire) return a.totalFire - b.totalFire;
-
-        // 3. Min Envy Games (Ascending)
-        if (a.envyGames !== b.envyGames) return a.envyGames - b.envyGames;
-
-        // 4. Total MySekai Score (Descending)
+        // 2. Total MySekai Score (Descending)
         if (a.totalMySekaiScore !== b.totalMySekaiScore) return b.totalMySekaiScore - a.totalMySekaiScore;
 
-        // 5. Diversity
+        // 3. MySekai Games (Ascending) - Higher efficiency (less games for same score)
+        if (a.mySekaiGames !== b.mySekaiGames) return a.mySekaiGames - b.mySekaiGames;
+
+        // 4. Min Total Fire (Ascending)
+        if (a.totalFire !== b.totalFire) return a.totalFire - b.totalFire;
+
+        // 5. Min Envy Games (Ascending)
+        if (a.envyGames !== b.envyGames) return a.envyGames - b.envyGames;
+
+        // 6. Diversity
         return b.diversityScore - a.diversityScore;
     });
 
