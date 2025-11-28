@@ -265,7 +265,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                                 <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-sm font-medium border border-gray-200">
                                         <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
-                                        엔비 {sol.envyGames}판
+                                        엔비 이지 {sol.envyGames}판
                                     </span>
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-sm font-medium border border-emerald-100">
                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
