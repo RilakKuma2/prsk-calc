@@ -235,6 +235,10 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                     />
                 ))}
             </InputTableWrapper>
+            <div className="text-xs text-gray-500 text-center">
+                세부 판정에 따라 점수 변동<br />스킬 시작 노트 늦게 치고 스킬 끝 노트 일찍 치는 것으로 높은 점수
+            </div>
+
 
             <div className="flex items-center justify-center mb-4 mt-8">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
