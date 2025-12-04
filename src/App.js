@@ -9,8 +9,11 @@ import ChallengeTab from './components/ChallengeTab';
 import AmatsuyuTab from './components/AmatsuyuTab';
 import AutoTab from './components/AutoTab';
 import ScoreArtTab from './components/ScoreArtTab';
+import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
+import LanguageSwitcher from './components/common/LanguageSwitcher';
 
-function App() {
+function AppContent() {
+  const { t } = useTranslation();
   const [currentTab, setCurrentTab] = useState('internal');
   const [surveyData, setSurveyData] = useState({});
   const [loadVersion, setLoadVersion] = useState(0);
@@ -47,7 +50,7 @@ function App() {
 
   const saveData = () => {
     localStorage.setItem('surveyData', JSON.stringify(surveyData));
-    showToastMessage('데이터가 저장되었습니다.');
+    showToastMessage(t('app.toast.saved'));
   };
 
   const loadData = useCallback(() => {
@@ -55,11 +58,11 @@ function App() {
     if (savedData) {
       setSurveyData(savedData);
       setLoadVersion(v => v + 1);
-      showToastMessage('데이터를 불러왔습니다.');
+      showToastMessage(t('app.toast.loaded'));
     } else {
-      showToastMessage('저장된 데이터가 없습니다.');
+      showToastMessage(t('app.toast.no_data'));
     }
-  }, []);
+  }, [t]);
 
   const toggleAutoLoad = (e) => {
     localStorage.setItem('autoLoad', e.target.checked);
@@ -74,7 +77,8 @@ function App() {
 
   return (
     <div className="container relative min-h-screen">
-      <h1 className="text-3xl font-extrabold my-6">프로세카 계산기</h1>
+      <LanguageSwitcher />
+      <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
       <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
       <div className="tab-content">
@@ -82,8 +86,8 @@ function App() {
       </div>
 
       <div className="button-container">
-        <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={saveData}>저장</button>
-        <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={loadData}>불러오기</button>
+        <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={saveData}>{t('app.save')}</button>
+        <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={loadData}>{t('app.load')}</button>
       </div>
       <div className="button-container">
         <label className="label">
@@ -93,7 +97,7 @@ function App() {
             onChange={toggleAutoLoad}
             defaultChecked={JSON.parse(localStorage.getItem('autoLoad'))}
           />
-          자동 불러오기
+          {t('app.auto_load')}
         </label>
       </div>
       <div className="button-container">
@@ -101,7 +105,7 @@ function App() {
           className="link-button"
           onClick={() => window.open('https://rilaksekai.com/', '_blank')}
         >
-          프로세카 채보
+          {t('app.chart_link')}
         </button>
       </div>
       <div className="button-container">
@@ -109,7 +113,7 @@ function App() {
           className="link-button"
           onClick={() => window.open('https://rilakkuma2.github.io/pickup/', '_blank')}
         >
-          픽업 확률 계산기
+          {t('app.gacha_link')}
         </button>
       </div>
 
@@ -121,6 +125,14 @@ function App() {
         </div>
       )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
 

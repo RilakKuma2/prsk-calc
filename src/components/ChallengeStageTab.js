@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { challData } from '../data/challData';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
+    const { t } = useTranslation();
     const [currentStage, setCurrentStage] = useState(surveyData.currentStage || '');
     const [remainingScore, setRemainingScore] = useState(surveyData.remainingScore || '');
     const [targetStage, setTargetStage] = useState(surveyData.targetStage || '');
@@ -35,8 +37,8 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
             currentStageVal >= targetStageVal
         ) {
             setResult(`
-<span style="font-weight: bold; color: red;">올바른 스테이지 값을 입력해주세요.</span><br><br>
-목표 스테이지 151 이상 입력 시 EX로 자동변환
+<span style="font-weight: bold; color: red;">${t('challenge_stage.error_stage')}</span><br><br>
+${t('challenge_stage.ex_stage_desc')}
 `);
             return;
         }
@@ -55,38 +57,38 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
         const neededPlays = Math.ceil(neededScore / scorePerPlay);
 
         setResult(`
-판당 점수: <span style="font-weight: bold; color: blue;">${scorePerPlay}</span><br><br>
-필요 점수: <span style="font-weight: bold; color: blue;">${neededScore}</span><br><br>
-남은 일수: <span style="font-weight: bold; color: blue;">${neededPlays}</span><br><br>
-<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://3-3.dev/sekai/top-deck">챌라 이론덱</a></span><br>
-<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/1893145">챌라 스킬 순서</a></span><br>
-<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/2262136">군청찬가 초고점 뽑기</a></span><br><br>
-목표 스테이지 151 이상 입력 시 EX로 자동변환
+${t('challenge_stage.score_per_round')}: <span style="font-weight: bold; color: blue;">${scorePerPlay}</span><br><br>
+${t('challenge_stage.needed_score')}: <span style="font-weight: bold; color: blue;">${neededScore}</span><br><br>
+${t('challenge_stage.remaining_days')}: <span style="font-weight: bold; color: blue;">${neededPlays}</span><br><br>
+<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://3-3.dev/sekai/top-deck">${t('challenge_stage.theory_deck_link')}</a></span><br>
+<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/1893145">${t('challenge_stage.skill_order_link')}</a></span><br>
+<span style="font-weight: bold"><a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/2262136">${t('challenge_stage.high_score_link')}</a></span><br><br>
+${t('challenge_stage.ex_stage_desc')}
 `);
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentStage, remainingScore, targetStage, challengeScore, pass]);
+    }, [currentStage, remainingScore, targetStage, challengeScore, pass, t]);
 
     return (
         <div id="challenge-stage-tab-content" className="p-4 space-y-4">
             {/* Input Section */}
             <InputTableWrapper>
                 <InputRow
-                    label="현재 스테이지"
+                    label={t('challenge_stage.current_stage')}
                     value={currentStage}
                     onChange={e => setCurrentStage(e.target.value)}
                     placeholder="102"
                     min="1"
                 />
                 <InputRow
-                    label="남은 점수"
+                    label={t('challenge_stage.remaining_score')}
                     value={remainingScore}
                     onChange={e => setRemainingScore(e.target.value)}
                     placeholder="4518"
                     min="0"
                 />
                 <InputRow
-                    label="목표 스테이지"
+                    label={t('challenge_stage.target_stage')}
                     value={targetStage}
                     onChange={e => setTargetStage(e.target.value)}
                     type="text"
@@ -94,16 +96,16 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
                     min="1"
                 />
                 <InputRow
-                    label="챌라 점수"
+                    label={t('challenge_stage.challenge_score')}
                     value={challengeScore}
                     onChange={e => setChallengeScore(e.target.value)}
-                    suffix="만"
+                    suffix={t('challenge_stage.suffix_man')}
                     placeholder="260"
                     min="0"
                     max="300"
                 />
                 <SelectRow
-                    label="컬패 여부"
+                    label={t('challenge_stage.pass_status')}
                     value={pass}
                     onChange={e => setPass(e.target.value)}
                     options={[
@@ -115,10 +117,10 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
 
             {/* Result Section - Amatsuyu Style */}
             <div className="w-[85%] max-w-[280px] mx-auto space-y-4">
-                {result && result.includes("올바른 스테이지") ? (
+                {result && result.includes(t('challenge_stage.error_stage')) ? (
                     <div className="text-red-500 font-bold text-center text-sm">
-                        올바른 스테이지 값을 입력해주세요.<br />
-                        <span className="text-gray-500 font-normal text-xs">목표 스테이지 151 이상 입력 시 EX로 자동변환</span>
+                        {t('challenge_stage.error_stage')}<br />
+                        <span className="text-gray-500 font-normal text-xs">{t('challenge_stage.ex_stage_desc')}</span>
                     </div>
                 ) : (
                     <>
@@ -165,16 +167,16 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
                                 return (
                                     <>
                                         <div className="grid grid-cols-2 items-center mb-1 text-center">
-                                            <span className="text-gray-600">필요 점수</span>
+                                            <span className="text-gray-600">{t('challenge_stage.needed_score')}</span>
                                             <span className="font-bold text-blue-600">{neededScore.toLocaleString()}</span>
                                         </div>
                                         <div className="grid grid-cols-2 items-center mb-1 text-center">
-                                            <span className="text-gray-600">판당 점수</span>
+                                            <span className="text-gray-600">{t('challenge_stage.score_per_round')}</span>
                                             <span className="font-bold text-blue-600">{Math.floor(scorePerPlay).toLocaleString()}</span>
                                         </div>
                                         <div className="grid grid-cols-2 items-center pt-1 border-t mt-1 text-center">
-                                            <span className="text-gray-600">남은 일수</span>
-                                            <span className="font-bold text-blue-600">{neededPlays.toLocaleString()}일</span>
+                                            <span className="text-gray-600">{t('challenge_stage.remaining_days')}</span>
+                                            <span className="font-bold text-blue-600">{neededPlays.toLocaleString()}{t('challenge_stage.suffix_day')}</span>
                                         </div>
                                     </>
                                 );
@@ -185,7 +187,7 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
                             <div className="flex flex-col space-y-1">
                             </div>
                             <div className="text-xs text-gray-400 mt-2">
-                                목표 스테이지 151 이상 입력 시 EX로 자동변환
+                                {t('challenge_stage.ex_stage_desc')}
                             </div>
                         </div>
                     </>

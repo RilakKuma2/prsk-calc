@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import ChallengeScoreTab from './ChallengeScoreTab';
 import ChallengeStageTab from './ChallengeStageTab';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const ChallengeTab = ({ surveyData, setSurveyData }) => {
+  const { t } = useTranslation();
   const [activeSubTab, setActiveSubTab] = useState('score');
 
   return (
@@ -12,13 +14,13 @@ const ChallengeTab = ({ surveyData, setSurveyData }) => {
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeSubTab === 'score' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           onClick={() => setActiveSubTab('score')}
         >
-          스코어
+          {t('challenge.score')}
         </button>
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeSubTab === 'stage' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           onClick={() => setActiveSubTab('stage')}
         >
-          스테이지
+          {t('challenge.stage')}
         </button>
       </div>
 

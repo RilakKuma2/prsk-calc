@@ -1,15 +1,17 @@
 import React from 'react';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const MySekaiTable = () => {
+  const { t } = useTranslation();
   return (
     <div id="my-sekai-table-container" style={{ marginTop: '10px', width: '100%', overflowX: 'auto' }}>
       <table>
         <thead>
           <tr>
             <th className="diagonal-header">
-              <span className="header-row-text">이벤포</span>
-              <span className="header-col-text">종합력</span>
+              <span className="header-row-text">{t('my_sekai_table.event_points')}</span>
+              <span className="header-col-text">{t('my_sekai_table.total_power')}</span>
             </th>
             {powerColumnThresholds.map((power) => (
               <th key={power}>{power}</th>
@@ -23,7 +25,7 @@ const MySekaiTable = () => {
                 <tr key={score}>
                   <td><b>{score}</b></td>
                   <td colSpan={9} style={{ textAlign: 'left', padding: '4px 8px', fontSize: '10px', whiteSpace: 'nowrap' }}>
-                    ※ 목표 이벤포를 얻기 위한 최소 종합력 및 배수
+                    {t('my_sekai_table.description')}
                   </td>
                   <td>{mySekaiTableData[score][9]}</td>
                 </tr>

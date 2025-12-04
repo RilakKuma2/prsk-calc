@@ -4,6 +4,7 @@ import { calculateScoreRange } from '../utils/calculator';
 import { SONG_OPTIONS } from '../utils/songs';
 import musicMetas from '../data/music_metas.json';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const ENERGY_MULTIPLIERS = {
     0: 1,
@@ -44,6 +45,7 @@ const calculateRank = (score, level) => {
 };
 
 function AutoTab({ surveyData, setSurveyData }) {
+    const { t } = useTranslation();
     // Initialize or read from surveyData
     const deck = surveyData.autoDeck || {
         totalPower: 200000,
@@ -198,7 +200,7 @@ function AutoTab({ surveyData, setSurveyData }) {
         <div id="auto-tab-content">
             <InputTableWrapper>
                 <InputRow
-                    label="종합력"
+                    label={t('auto.total_power')}
                     value={totalPower}
                     onChange={(e) => {
                         const val = e.target.value;
@@ -207,9 +209,9 @@ function AutoTab({ surveyData, setSurveyData }) {
                     placeholder="293231"
                     spacer={true}
                 />
-                <SectionHeaderRow label="멤버 스킬" spacer={true} />
+                <SectionHeaderRow label={t('auto.member_skills')} spacer={true} />
                 <InputRow
-                    label="리더"
+                    label={t('auto.leader')}
                     value={skillLeader}
                     onChange={(e) => {
                         const val = e.target.value;
@@ -220,10 +222,10 @@ function AutoTab({ surveyData, setSurveyData }) {
                     spacer={true}
                 />
                 {[
-                    { label: '멤버 2', val: skillMember2, key: 'skillMember2' },
-                    { label: '멤버 3', val: skillMember3, key: 'skillMember3' },
-                    { label: '멤버 4', val: skillMember4, key: 'skillMember4' },
-                    { label: '멤버 5', val: skillMember5, key: 'skillMember5' },
+                    { label: t('auto.member_2'), val: skillMember2, key: 'skillMember2' },
+                    { label: t('auto.member_3'), val: skillMember3, key: 'skillMember3' },
+                    { label: t('auto.member_4'), val: skillMember4, key: 'skillMember4' },
+                    { label: t('auto.member_5'), val: skillMember5, key: 'skillMember5' },
                 ].map((m, i) => (
                     <InputRow
                         key={i}
@@ -239,7 +241,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                     />
                 ))}
                 <InputRow
-                    label="이벤트 배율"
+                    label={t('auto.event_bonus')}
                     value={eventBonus}
                     onChange={(e) => {
                         const val = e.target.value;
@@ -253,7 +255,7 @@ function AutoTab({ surveyData, setSurveyData }) {
 
             <div className="flex items-center justify-center mb-4 mt-8">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
-                    오토 라이브 스코어
+                    {t('auto.score_title')}
                 </h3>
             </div>
 
@@ -266,7 +268,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                 <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('songName')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            곡명
+                                            {t('auto.song_name')}
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'songName' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
@@ -274,7 +276,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                     </th>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('rank')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            최저 랭크
+                                            {t('auto.min_rank')}
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'rank' ? 'opacity-100 text-purple-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
@@ -282,7 +284,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                     </th>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            최저 점수
+                                            {t('auto.min_score')}
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'min' ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
@@ -290,7 +292,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                     </th>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('max')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            최고 점수
+                                            {t('auto.max_score')}
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'max' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>

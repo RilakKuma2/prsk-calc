@@ -5,6 +5,7 @@ import { LiveCalculator, EventCalculator, LiveType, EventType } from 'sekai-calc
 import musicMetas from '../data/music_metas.json';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const FIRE_MULTIPLIERS = {
   0: 1,
@@ -21,6 +22,7 @@ const FIRE_MULTIPLIERS = {
 };
 
 const PowerTab = ({ surveyData, setSurveyData }) => {
+  const { t } = useTranslation();
   const [power, setPower] = useState(surveyData.power || '25.5');
   const [effi, setEffi] = useState(surveyData.effi || '250');
   const [internalValue, setInternalValue] = useState(surveyData.internalValue || '200');
@@ -278,7 +280,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           onChange={(e) => setIsDetailedInput(e.target.checked)}
           style={{ width: 'auto', margin: 0 }}
         />
-        내부치 상세 입력
+        {t('power.detailed_input')}
       </label >
     </div >
   );
@@ -287,7 +289,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'center' }}>
         <div style={{ gridColumn: '1 / -1' }}>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>앵콜</label>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.encore')}</label>
           <input
             type="number"
             value={detailedSkills.encore}
@@ -297,7 +299,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           />
         </div>
         <div>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>멤버 1</label>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.member_1')}</label>
           <input
             type="number"
             value={detailedSkills.member1}
@@ -307,7 +309,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           />
         </div>
         <div>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>멤버 2</label>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.member_2')}</label>
           <input
             type="number"
             value={detailedSkills.member2}
@@ -317,7 +319,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           />
         </div>
         <div>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>멤버 3</label>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.member_3')}</label>
           <input
             type="number"
             value={detailedSkills.member3}
@@ -327,7 +329,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           />
         </div>
         <div>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>멤버 4</label>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.member_4')}</label>
           <input
             type="number"
             value={detailedSkills.member4}
@@ -341,20 +343,10 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   );
 
   const descriptionElement = (
-    <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>
+    <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px', whiteSpace: 'pre-line' }}>
       {isDetailedInput
-        ? (
-          <>
-            종합력이 가장 높은 사람이 앵콜<br />
-            세부판정 및 1픽 회선에 따라 점수 변동
-          </>
-        )
-        : (
-          <>
-            5명이 모두 같은 내부치라 가정 후 점수 계산<br />
-            자신의 내부치보단 주회방 조건 입력
-          </>
-        )
+        ? t('power.desc_detailed')
+        : t('power.desc_simple')
       }
     </p>
   );
@@ -364,7 +356,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       <div id="power-tab-content">
         <InputTableWrapper>
           <InputRow
-            label="종합력"
+            label={t('power.total_power')}
             value={power}
             onChange={e => setPower(e.target.value)}
             suffix="만"
@@ -372,7 +364,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             max="45"
           />
           <InputRow
-            label="배수"
+            label={t('power.multiplier')}
             value={effi}
             onChange={e => setEffi(e.target.value)}
             suffix="%"
@@ -381,7 +373,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           />
           {!isDetailedInput && (
             <InputRow
-              label="내부치"
+              label={t('power.internal_value')}
               value={internalValue}
               onChange={e => setInternalValue(e.target.value)}
               suffix="%"
@@ -408,7 +400,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200"
             onClick={() => setShowMySekaiTable(!showMySekaiTable)}
           >
-            마이세카이 테이블
+            {t('power.mysekai_table')}
           </button>
         </div>
         {showMySekaiTable && <MySekaiTable />}
@@ -418,15 +410,15 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
-                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">곡명</th>
-                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">불</th>
-                  <th className="px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-sm md:text-base">이벤포</th>
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">{t('power.song')}</th>
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">{t('power.fire')}</th>
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-sm md:text-base">{t('power.event_points')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    로앤파
+                    {t('power.songs.lost_and_found')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('loAndFound')}
@@ -439,7 +431,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    오마카세
+                    {t('power.songs.omakase')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('omakase')}
@@ -452,7 +444,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    엔비
+                    {t('power.songs.envy')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('envy')}
@@ -465,7 +457,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-4 py-3 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    개벽 오토
+                    {t('power.songs.creation_myth')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('creationMyth', 1)}
@@ -478,7 +470,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    마이세카이
+                    {t('power.songs.mysekai')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     <div className="flex justify-center items-center w-full h-full">
@@ -501,10 +493,10 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
 
 
         <br></br>
-        <p id="multi-eff">멀티효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}</span></p>
-        <p id="solo-eff">솔로효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof soloEff === 'number' ? soloEff.toFixed(2) + '%' : soloEff}</span></p>
-        <p id="auto-eff">오토효율: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof autoEff === 'number' ? autoEff.toFixed(2) + '%' : autoEff}</span></p>
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}><br></br>종합력 1만과 같은 효율의 배수<br />현 내부치 로앤파 점수 기준 효율</p>
+        <p id="multi-eff">{t('power.efficiency.multi')}: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}</span></p>
+        <p id="solo-eff">{t('power.efficiency.solo')}: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof soloEff === 'number' ? soloEff.toFixed(2) + '%' : soloEff}</span></p>
+        <p id="auto-eff">{t('power.efficiency.auto')}: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof autoEff === 'number' ? autoEff.toFixed(2) + '%' : autoEff}</span></p>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px', whiteSpace: 'pre-line' }}><br></br>{t('power.desc_bottom')}</p>
       </div>
     </div>
   );

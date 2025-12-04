@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const FireTab = ({ surveyData, setSurveyData }) => {
+  const { t } = useTranslation();
   const [score1, setScore1] = useState(surveyData.score1 || '');
   const [score2, setScore2] = useState(surveyData.score2 || '');
   const [score3, setScore3] = useState(surveyData.score3 || '');
@@ -74,7 +76,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       {/* Input Section */}
       <InputTableWrapper>
         <InputRow
-          label="현재점수"
+          label={t('fire.current_score')}
           value={score1}
           onChange={e => setScore1(e.target.value)}
           suffix="만"
@@ -84,7 +86,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           spacer={true}
         />
         <InputRow
-          label="목표점수"
+          label={t('fire.target_score')}
           value={score2}
           onChange={e => setScore2(e.target.value)}
           suffix="만"
@@ -94,7 +96,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           spacer={true}
         />
         <InputRow
-          label="판 당 점수"
+          label={t('fire.score_per_round')}
           value={score3}
           onChange={e => setScore3(e.target.value)}
           suffix="만"
@@ -104,7 +106,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           spacer={true}
         />
         <InputRow
-          label="간 당 판수"
+          label={t('fire.rounds_per_interval')}
           value={rounds1}
           onChange={e => setRounds1(e.target.value)}
           suffix="회"
@@ -114,7 +116,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           spacer={true}
         />
         <SelectRow
-          label="현재 라이브보너스"
+          label={t('fire.current_fire')}
           value={firea}
           onChange={e => setFirea(e.target.value)}
           options={[
@@ -133,11 +135,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           spacer={true}
         />
         <SelectRow
-          label="라이브보너스 변경"
+          label={t('fire.change_fire')}
           value={fires2}
           onChange={e => setFires2(e.target.value)}
           options={[
-            { value: "none", label: "변경없음" },
+            { value: "none", label: t('fire.no_change') },
             { value: "1", label: "0" },
             { value: "5", label: "1" },
             { value: "10", label: "2" },
@@ -158,30 +160,30 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       <div className="w-[85%] max-w-[280px] mx-auto space-y-4">
         <div className="bg-white rounded-lg p-3">
           <div className="grid grid-cols-2 items-center mb-1 text-center">
-            <span className="text-gray-600">필요 판수</span>
-            <span className="font-bold text-blue-600">{Math.ceil(neededRounds).toLocaleString()}판</span>
+            <span className="text-gray-600">{t('fire.needed_rounds')}</span>
+            <span className="font-bold text-blue-600">{Math.ceil(neededRounds).toLocaleString()}{t('fire.rounds_suffix')}</span>
           </div>
           <div className="grid grid-cols-2 items-center mb-1 text-center">
-            <span className="text-gray-600">필요 불</span>
+            <span className="text-gray-600">{t('fire.needed_fire')}</span>
             <div>
-              <span className="font-bold text-blue-600">{Math.ceil(neededFires).toLocaleString()}불</span>
-              <span className="text-xs text-gray-500 ml-1">({Math.ceil(neededFires / 10)} 뚱캔)</span>
+              <span className="font-bold text-blue-600">{Math.ceil(neededFires).toLocaleString()}{t('fire.fire_suffix')}</span>
+              <span className="text-xs text-gray-500 ml-1">({Math.ceil(neededFires / 10)} {t('fire.cans_suffix')})</span>
             </div>
           </div>
           <div className="grid grid-cols-2 items-center pt-1 border-t mt-1 text-center">
-            <span className="text-gray-600">필요 시간</span>
-            <span className="font-bold text-blue-600">{neededTime.toFixed(1)}시간</span>
+            <span className="text-gray-600">{t('fire.needed_time')}</span>
+            <span className="font-bold text-blue-600">{neededTime.toFixed(1)}{t('fire.hours_suffix')}</span>
           </div>
         </div>
 
         <div className="text-sm text-gray-600 text-center space-y-2">
           <div>
-            <span className="font-bold block mb-1">대략적인 간 당 판수</span>
-            <span className="text-xs">엔비:26~29 로앤파:17~19 치어풀:15~17</span>
+            <span className="font-bold block mb-1">{t('fire.approx_rounds')}</span>
+            <span className="text-xs">{t('fire.approx_desc')}</span>
           </div>
           <div className="pt-2">
             <a target="_blank" rel="noopener noreferrer" href="https://71ar.github.io/index/" className="text-blue-500 hover:underline font-bold">
-              덱파워 예측 계산기
+              {t('fire.deck_power_calc')}
             </a>
           </div>
         </div>

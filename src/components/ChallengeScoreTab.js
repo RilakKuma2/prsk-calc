@@ -3,6 +3,7 @@ import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputCom
 import { calculateScoreRange } from '../utils/calculator';
 import { SONG_OPTIONS } from '../utils/songs';
 import { LiveType } from 'sekai-calculator';
+import { useTranslation } from '../contexts/LanguageContext';
 
 // Fixed configuration for batch calculation with levels
 const TARGET_SONGS = [
@@ -59,6 +60,7 @@ const TARGET_SONGS = [
 ];
 
 function ChallengeScoreTab({ surveyData, setSurveyData }) {
+    const { t } = useTranslation();
     // Initialize or read from surveyData
     // Using 'challengeDeck' to separate from 'autoDeck'
     const deck = surveyData.challengeDeck || {
@@ -199,7 +201,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         <div id="challenge-score-tab-content">
             <InputTableWrapper>
                 <InputRow
-                    label="종합력"
+                    label={t('challenge_score.total_power')}
                     value={totalPower}
                     placeholder="410520"
                     onChange={(e) => {
@@ -207,9 +209,9 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                         updateDeck('totalPower', val === '' ? '' : Number(val));
                     }}
                 />
-                <SectionHeaderRow label="멤버 스킬" />
+                <SectionHeaderRow label={t('challenge_score.member_skills')} />
                 <InputRow
-                    label="리더"
+                    label={t('challenge_score.leader')}
                     value={skillLeader}
                     placeholder="120"
                     onChange={(e) => {
@@ -218,10 +220,10 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                     }}
                 />
                 {[
-                    { label: '멤버 2', val: skillMember2, key: 'skillMember2' },
-                    { label: '멤버 3', val: skillMember3, key: 'skillMember3' },
-                    { label: '멤버 4', val: skillMember4, key: 'skillMember4' },
-                    { label: '멤버 5', val: skillMember5, key: 'skillMember5' },
+                    { label: t('challenge_score.member_2'), val: skillMember2, key: 'skillMember2' },
+                    { label: t('challenge_score.member_3'), val: skillMember3, key: 'skillMember3' },
+                    { label: t('challenge_score.member_4'), val: skillMember4, key: 'skillMember4' },
+                    { label: t('challenge_score.member_5'), val: skillMember5, key: 'skillMember5' },
                 ].map((m, i) => (
                     <InputRow
                         key={i}
@@ -235,14 +237,13 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                     />
                 ))}
             </InputTableWrapper>
-            <div className="text-xs text-gray-500 text-center">
-                세부 판정에 따라 점수 변동<br />스킬 시작 노트 늦게 치고 스킬 끝 노트 일찍 치는 것으로 높은 점수
+            <div className="text-xs text-gray-500 text-center" dangerouslySetInnerHTML={{ __html: t('challenge_score.description') }}>
             </div>
 
 
             <div className="flex items-center justify-center mb-4 mt-8">
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
-                    챌린지 라이브 스코어
+                    {t('challenge_score.title')}
                 </h3>
             </div>
 
@@ -255,7 +256,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                 <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('songName')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            곡명
+                                            {t('challenge_score.song_name')}
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'songName' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
@@ -263,7 +264,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                     </th>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('max')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            최고 점수
+                                            {t('challenge_score.max_score')}
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'max' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
@@ -271,7 +272,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                     </th>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            최저 점수
+                                            {t('challenge_score.min_score')}
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'min' ? 'opacity-100 text-blue-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
@@ -334,7 +335,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                         <div className="flex flex-col gap-6 max-w-[calc(100vw-60px)] md:max-w-none mx-auto">
                                                             {/* Optimal Skill Order */}
                                                             <div>
-                                                                <h4 className="text-sm font-bold text-gray-700 mb-2">최적 스킬 순서</h4>
+                                                                <h4 className="text-sm font-bold text-gray-700 mb-2">{t('challenge_score.optimal_skill_order')}</h4>
                                                                 <div className="flex gap-0.5 md:gap-2 overflow-x-auto pb-2 justify-between md:justify-start">
                                                                     {/* Slots 1-5 */}
                                                                     {res.maxPermutation.map((skill, i) => (
@@ -343,7 +344,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                                                 {skill}%
                                                                             </div>
                                                                             <span className="text-[10px] max-[375px]:text-[9px] text-gray-500 mt-1 font-medium whitespace-nowrap">
-                                                                                {i + 1}번째
+                                                                                {i + 1}{t('challenge_score.suffix_order')}
                                                                             </span>
                                                                         </div>
                                                                     ))}
@@ -353,7 +354,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                                             {skillLeader}%
                                                                         </div>
                                                                         <span className="text-[10px] max-[375px]:text-[9px] text-gray-400 mt-1 font-medium whitespace-nowrap">
-                                                                            앵콜
+                                                                            {t('challenge_score.encore')}
                                                                         </span>
                                                                     </div>
                                                                 </div>
@@ -361,7 +362,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
                                                             {/* Skill Coefficients Graph (Horizontal Stacked Bar) */}
                                                             <div>
-                                                                <h4 className="text-sm font-bold text-gray-700 mb-2">스킬 구간 점수 비중</h4>
+                                                                <h4 className="text-sm font-bold text-gray-700 mb-2">{t('challenge_score.skill_score_ratio')}</h4>
                                                                 {(() => {
                                                                     const targetCoeffs = res.skillCoeffs.slice(0, 5);
                                                                     const totalCoeff = targetCoeffs.reduce((a, b) => a + b, 0);
@@ -376,7 +377,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                                     const segments = targetCoeffs.map((coeff, i) => ({
                                                                         widthPercent: (coeff / totalCoeff) * 100,
                                                                         color: colors[i],
-                                                                        label: `${i + 1}번째`,
+                                                                        label: `${i + 1}${t('challenge_score.suffix_order')}`,
                                                                         coeff: coeff
                                                                     }));
 
@@ -432,7 +433,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                 disabled={currentPage === 1}
                                 className="px-3 py-1 rounded-md bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                이전
+                                {t('challenge_score.prev')}
                             </button>
                             <div className="flex gap-1">
                                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -453,7 +454,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                 disabled={currentPage === totalPages}
                                 className="px-3 py-1 rounded-md bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                다음
+                                {t('challenge_score.next')}
                             </button>
                         </div>
                     )}
@@ -463,13 +464,13 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             <div className="mt-6 text-center text-lg">
                 <span style={{ fontWeight: 'bold' }}>
                     <a target="_blank" rel="noopener noreferrer" href="https://3-3.dev/sekai/top-deck" className="text-blue-500 hover:underline">
-                        챌라 이론덱
+                        {t('challenge_score.theory_deck_link')}
                     </a>
                 </span>
                 <br />
                 <span style={{ fontWeight: 'bold' }}>
                     <a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/2262136" className="text-blue-500 hover:underline">
-                        군청찬가 초고점 뽑기
+                        {t('challenge_score.high_score_link')}
                     </a>
                 </span>
                 <br /><br />

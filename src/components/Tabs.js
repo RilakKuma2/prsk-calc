@@ -1,16 +1,17 @@
 import React, { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const Tabs = ({ currentTab, setCurrentTab }) => {
+  const { t } = useTranslation();
   const tabInfo = [
-    { id: 'internal', name: '내부치' },
-    { id: 'level', name: '레벨' },
-    { id: 'amatsuyu', name: '아마츠유' },
-    { id: 'challenge', name: '챌라' },
-    { id: 'fire', name: '이벤런' },
-    { id: 'scoreArt', name: '점수아트' },
-    { id: 'power', name: '이벤포' },
-    { id: 'auto', name: '오토' },
-
+    { id: 'internal', name: t('tabs.internal') },
+    { id: 'level', name: t('tabs.level') },
+    { id: 'amatsuyu', name: t('tabs.amatsuyu') },
+    { id: 'challenge', name: t('tabs.challenge') },
+    { id: 'fire', name: t('tabs.fire') },
+    { id: 'scoreArt', name: t('tabs.score_art') },
+    { id: 'power', name: t('tabs.power') },
+    { id: 'auto', name: t('tabs.auto') },
   ];
 
   const tabsRef = useRef(null);

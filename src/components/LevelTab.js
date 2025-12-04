@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import KizunaTab from './KizunaTab';
 import CardLevelTab from './CardLevelTab';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const LevelTab = ({ surveyData, setSurveyData }) => {
+  const { t } = useTranslation();
   const [activeSubTab, setActiveSubTab] = useState('kizuna');
 
   return (
@@ -12,13 +14,13 @@ const LevelTab = ({ surveyData, setSurveyData }) => {
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeSubTab === 'kizuna' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           onClick={() => setActiveSubTab('kizuna')}
         >
-          키즈나
+          {t('level.kizuna')}
         </button>
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeSubTab === 'card' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           onClick={() => setActiveSubTab('card')}
         >
-          카드
+          {t('level.card')}
         </button>
       </div>
 
