@@ -60,7 +60,7 @@ const TARGET_SONGS = [
 ];
 
 function ChallengeScoreTab({ surveyData, setSurveyData }) {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     // Initialize or read from surveyData
     // Using 'challengeDeck' to separate from 'autoDeck'
     const deck = surveyData.challengeDeck || {
@@ -129,7 +129,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 if (res) {
                     results.push({
                         ...res,
-                        songName: song.name,
+                        songName: language === 'ja' ? song.title_jp : song.name,
                         songId: song.id,
                         difficulty: target.difficulty,
                         level: target.level,
@@ -141,7 +141,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         });
 
         setBatchResults(results);
-    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5]);
+    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';

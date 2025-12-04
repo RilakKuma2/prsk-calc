@@ -45,7 +45,7 @@ const calculateRank = (score, level) => {
 };
 
 function AutoTab({ surveyData, setSurveyData }) {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     // Initialize or read from surveyData
     const deck = surveyData.autoDeck || {
         totalPower: '',
@@ -139,7 +139,7 @@ function AutoTab({ surveyData, setSurveyData }) {
 
                     results.push({
                         ...res,
-                        songName: song.name,
+                        songName: language === 'ja' ? song.title_jp : song.name,
                         songId: song.id,
                         difficulty: target.difficulty,
                         level: target.level,
@@ -154,7 +154,7 @@ function AutoTab({ surveyData, setSurveyData }) {
         });
 
         setBatchResults(results);
-    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus]);
+    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';

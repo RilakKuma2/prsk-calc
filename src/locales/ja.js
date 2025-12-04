@@ -56,8 +56,8 @@ const ja = {
         songs: {
             lost_and_found: 'ロスエン',
             omakase: 'おまかせ',
-            envy: '独りんぼ',
-            creation_myth: '天地',
+            envy: '🦐エビ',
+            creation_myth: '天地オート',
             mysekai: 'マイセカ',
         },
         efficiency: {
