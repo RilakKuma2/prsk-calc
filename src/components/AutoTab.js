@@ -48,12 +48,12 @@ function AutoTab({ surveyData, setSurveyData }) {
     const { t } = useTranslation();
     // Initialize or read from surveyData
     const deck = surveyData.autoDeck || {
-        totalPower: 200000,
-        skillLeader: 100,
-        skillMember2: 100,
-        skillMember3: 100,
-        skillMember4: 100,
-        skillMember5: 100
+        totalPower: '',
+        skillLeader: '',
+        skillMember2: '',
+        skillMember3: '',
+        skillMember4: '',
+        skillMember5: ''
     };
 
     const updateDeck = (key, value) => {
@@ -66,7 +66,7 @@ function AutoTab({ surveyData, setSurveyData }) {
         }));
     };
 
-    const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus = 0 } = deck;
+    const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus = '' } = deck;
     const energyUsed = 1; // Fixed to 1 as per request
 
     const [batchResults, setBatchResults] = useState(null);
@@ -78,13 +78,13 @@ function AutoTab({ surveyData, setSurveyData }) {
             setSurveyData(prev => ({
                 ...prev,
                 autoDeck: {
-                    totalPower: 260000,
-                    skillLeader: 100,
-                    skillMember2: 100,
-                    skillMember3: 100,
-                    skillMember4: 100,
-                    skillMember5: 100,
-                    eventBonus: 250
+                    totalPower: '',
+                    skillLeader: '',
+                    skillMember2: '',
+                    skillMember3: '',
+                    skillMember4: '',
+                    skillMember5: '',
+                    eventBonus: ''
                 }
             }));
         }

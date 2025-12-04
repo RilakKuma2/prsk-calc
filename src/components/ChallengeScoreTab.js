@@ -64,12 +64,12 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
     // Initialize or read from surveyData
     // Using 'challengeDeck' to separate from 'autoDeck'
     const deck = surveyData.challengeDeck || {
-        totalPower: 200000,
-        skillLeader: 100,
-        skillMember2: 100,
-        skillMember3: 100,
-        skillMember4: 100,
-        skillMember5: 100
+        totalPower: '',
+        skillLeader: '',
+        skillMember2: '',
+        skillMember3: '',
+        skillMember4: '',
+        skillMember5: ''
     };
 
     const updateDeck = (key, value) => {
@@ -93,12 +93,12 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             setSurveyData(prev => ({
                 ...prev,
                 challengeDeck: {
-                    totalPower: 200000,
-                    skillLeader: 100,
-                    skillMember2: 100,
-                    skillMember3: 100,
-                    skillMember4: 100,
-                    skillMember5: 100
+                    totalPower: '',
+                    skillLeader: '',
+                    skillMember2: '',
+                    skillMember3: '',
+                    skillMember4: '',
+                    skillMember5: ''
                 }
             }));
         }
@@ -469,7 +469,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 </span>
                 <br />
                 <span style={{ fontWeight: 'bold' }}>
-                    <a target="_blank" rel="noopener noreferrer" href="https://m.dcinside.com/board/pjsekai/2262136" className="text-blue-500 hover:underline">
+                    <a target="_blank" rel="noopener noreferrer" href="https://youtu.be/Vj1XXx1uemQ" className="text-blue-500 hover:underline">
                         {t('challenge_score.high_score_link')}
                     </a>
                 </span>

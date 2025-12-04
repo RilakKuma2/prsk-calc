@@ -5,13 +5,21 @@ import ja from '../locales/ja';
 const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
-    const [language, setLanguage] = useState('ko');
-
-    useEffect(() => {
+    const [language, setLanguage] = useState(() => {
         const savedLanguage = localStorage.getItem('language');
         if (savedLanguage) {
-            setLanguage(savedLanguage);
+            return savedLanguage;
         }
+        const browserLang = navigator.language || navigator.userLanguage;
+        if (browserLang && browserLang.startsWith('ja')) {
+            return 'ja';
+        }
+        return 'ko';
+    });
+
+    useEffect(() => {
+        // Effect to sync state if needed, but initial state handles the logic now.
+        // We can keep the localStorage sync in changeLanguage.
     }, []);
 
     const changeLanguage = (lang) => {

@@ -66,6 +66,7 @@ const ko = {
             auto: '오토효율',
         },
         desc_bottom: '종합력 1만과 같은 효율의 배수\n현 내부치 로앤파 점수 기준 효율',
+        suffix_man: '만',
     },
     auto: {
         total_power: '종합력',
@@ -100,6 +101,7 @@ const ko = {
         approx_rounds: '대략적인 간 당 판수',
         approx_desc: '엔비:26~29 로앤파:17~19 치어풀:15~17',
         deck_power_calc: '덱파워 예측 계산기',
+        suffix_man: '만',
     },
     challenge: {
         score: '스코어',

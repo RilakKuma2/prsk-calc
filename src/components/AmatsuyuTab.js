@@ -3,7 +3,7 @@ import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents
 import { useTranslation } from '../contexts/LanguageContext';
 
 const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [hasCurrentYearCard, setHasCurrentYearCard] = useState(surveyData.hasCurrentYearCard || 'N');
   const [pastCardsOwned, setPastCardsOwned] = useState(surveyData.pastCardsOwned || '0');
   const [currentLevel, setCurrentLevel] = useState(surveyData.amatsuyuCurrentLevel || '0');
@@ -268,11 +268,13 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
 
         {/* Info & Reference Table */}
         <div className="text-base text-gray-500 space-y-4">
-          <p className="text-center">
-            <a href="https://m.dcinside.com/board/pjsekai/2278357" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline font-bold">
-              {t('amatsuyu.summary_link')}
-            </a>
-          </p>
+          {language !== 'ja' && (
+            <p className="text-center">
+              <a href="https://m.dcinside.com/board/pjsekai/2278357" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline font-bold">
+                {t('amatsuyu.summary_link')}
+              </a>
+            </p>
+          )}
 
           <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm ">
             <table className="w-full text-center border-collapse text-sm">

@@ -23,19 +23,19 @@ const FIRE_MULTIPLIERS = {
 
 const PowerTab = ({ surveyData, setSurveyData }) => {
   const { t } = useTranslation();
-  const [power, setPower] = useState(surveyData.power || '25.5');
-  const [effi, setEffi] = useState(surveyData.effi || '250');
-  const [internalValue, setInternalValue] = useState(surveyData.internalValue || '200');
+  const [power, setPower] = useState(surveyData.power || '');
+  const [effi, setEffi] = useState(surveyData.effi || '');
+  const [internalValue, setInternalValue] = useState(surveyData.internalValue || '');
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
 
   // Detailed Input State
   const [isDetailedInput, setIsDetailedInput] = useState(surveyData.isDetailedInput || false);
   const [detailedSkills, setDetailedSkills] = useState(surveyData.detailedSkills || {
-    encore: '200',
-    member1: '200',
-    member2: '200',
-    member3: '200',
-    member4: '200'
+    encore: '',
+    member1: '',
+    member2: '',
+    member3: '',
+    member4: ''
   });
 
   // Fire Counts State
@@ -71,7 +71,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         parseFloat(detailedSkills.member4) || 0
       ];
     } else {
-      const val = parseFloat(internalValue) || 0;
+      const val = internalValue === '' ? 200 : (parseFloat(internalValue) || 0);
       return [val, val, val, val, val];
     }
   };
@@ -359,7 +359,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             label={t('power.total_power')}
             value={power}
             onChange={e => setPower(e.target.value)}
-            suffix="만"
+            suffix={t('power.suffix_man')}
             placeholder="25.5"
             max="45"
           />

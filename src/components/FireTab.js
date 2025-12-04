@@ -8,7 +8,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [score2, setScore2] = useState(surveyData.score2 || '');
   const [score3, setScore3] = useState(surveyData.score3 || '');
   const [rounds1, setRounds1] = useState(surveyData.rounds1 || '');
-  const [firea, setFirea] = useState(surveyData.firea || '1');
+  const [firea, setFirea] = useState(surveyData.firea || '25');
   const [fires2, setFires2] = useState(surveyData.fires2 || 'none');
 
   const [neededRounds, setNeededRounds] = useState(0);
@@ -23,13 +23,34 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       15: 3,
       20: 4,
       25: 5,
+      26: 6,
       27: 6,
       29: 7,
+      28: 7,
       31: 8,
+      29: 9,
       33: 9,
+      30: 10,
       35: 10,
+      31: 10,
     };
-    return fireaTable[firea] || null;
+    // Correcting the table based on select options values
+    // Options: 1, 5, 10, 15, 20, 25, 27, 29, 31, 33, 35
+    // Labels: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+    const fireaMap = {
+      "1": 0,
+      "5": 1,
+      "10": 2,
+      "15": 3,
+      "20": 4,
+      "25": 5,
+      "27": 6,
+      "29": 7,
+      "31": 8,
+      "33": 9,
+      "35": 10
+    };
+    return fireaMap[firea] !== undefined ? fireaMap[firea] : 0;
   }
 
   useEffect(() => {
@@ -79,7 +100,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           label={t('fire.current_score')}
           value={score1}
           onChange={e => setScore1(e.target.value)}
-          suffix="만"
+          suffix={t('fire.suffix_man')}
           min="0"
           max="50000"
           placeholder="2500"
@@ -89,7 +110,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           label={t('fire.target_score')}
           value={score2}
           onChange={e => setScore2(e.target.value)}
-          suffix="만"
+          suffix={t('fire.suffix_man')}
           min="0"
           max="50000"
           placeholder="3000"
@@ -99,7 +120,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           label={t('fire.score_per_round')}
           value={score3}
           onChange={e => setScore3(e.target.value)}
-          suffix="만"
+          suffix={t('fire.suffix_man')}
           min="0"
           max="50000"
           placeholder="2.8"
@@ -109,7 +130,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           label={t('fire.rounds_per_interval')}
           value={rounds1}
           onChange={e => setRounds1(e.target.value)}
-          suffix="회"
+          suffix={t('fire.rounds_suffix')}
           min="0"
           max="50000"
           placeholder="28"

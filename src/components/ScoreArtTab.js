@@ -8,7 +8,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const { t } = useTranslation();
     const [currentEP, setCurrentEP] = useState(surveyData.currentEP || '');
     const [targetEP, setTargetEP] = useState(surveyData.targetEP || '');
-    const [maxBonus, setMaxBonus] = useState(surveyData.maxBonus || '300');
+    const [maxBonus, setMaxBonus] = useState(surveyData.maxBonus || '');
     const [maxPower, setMaxPower] = useState(surveyData.maxPower || '');
     const [maxEnvyScore, setMaxEnvyScore] = useState(surveyData.maxEnvyScore || '');
     const [zeroScoreOnly, setZeroScoreOnly] = useState(surveyData.zeroScoreOnly || false);
