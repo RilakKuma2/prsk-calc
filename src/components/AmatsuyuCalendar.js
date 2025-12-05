@@ -36,12 +36,14 @@ const isBirthday = (date, birthday) => {
     return date.getMonth() === bMonth - 1 && date.getDate() === bDay;
 };
 
-const getAcqSignature = (date) => {
-    if (!date) return null;
-    const relevantAcq = characterBirthdays.filter(b => isAcquisitionDate(date, b));
-    if (relevantAcq.length === 0) return null;
-    const names = relevantAcq.map(b => b.nameKo).sort();
-    return names.join('+');
+const getRelevantAcqs = (date) => {
+    if (!date) return [];
+    return characterBirthdays.filter(b => isAcquisitionDate(date, b));
+};
+
+const hasIntersection = (acqs1, acqs2) => {
+    if (!acqs1 || !acqs2) return false;
+    return acqs1.some(a1 => acqs2.some(a2 => a1.nameKo === a2.nameKo));
 };
 
 const isBrightColor = (color) => {
@@ -75,45 +77,40 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
     labelRow[firstDay] = formatMonth(month);
 
     const getAcquisitionBarStyle = (date) => {
-        if (!date) return {};
-        const relevantAcq = characterBirthdays.filter(b => isAcquisitionDate(date, b));
-        if (relevantAcq.length === 0) return { display: 'none' };
+        const currAcqs = getRelevantAcqs(date);
+        if (currAcqs.length === 0) return { display: 'none' };
 
-        const currSig = getAcqSignature(date);
+        // Sort: Birthday (today) comes first
+        currAcqs.sort((a, b) => {
+            const isBa = isBirthday(date, a);
+            const isBb = isBirthday(date, b);
+            if (isBa && !isBb) return -1;
+            if (!isBa && isBb) return 1;
+            return 0;
+        });
 
-        // Next day check
-        const nextDate = new Date(date);
-        nextDate.setDate(date.getDate() + 1);
-        const nextSig = getAcqSignature(nextDate);
+        const prevDate = new Date(date); prevDate.setDate(date.getDate() - 1);
+        const nextDate = new Date(date); nextDate.setDate(date.getDate() + 1);
 
-        const sameNext = currSig === nextSig;
+        const prevAcqs = getRelevantAcqs(prevDate);
+        const nextAcqs = getRelevantAcqs(nextDate);
 
-        // Check if next day is birthday for the same character(s)
-        const isNextBd = relevantAcq.some(b => isBirthday(nextDate, b));
-
-        // Check if TODAY is birthday
-        const isTodayBirthday = relevantAcq.some(b => isBirthday(date, b));
-
-        // Previous day check (needed for positioning?)
-        const prevDate = new Date(date);
-        prevDate.setDate(date.getDate() - 1);
-        const prevSig = getAcqSignature(prevDate);
-        const samePrev = currSig === prevSig;
+        const isConnectedLeft = hasIntersection(currAcqs, prevAcqs);
+        const isConnectedRight = hasIntersection(currAcqs, nextAcqs);
+        const isAllBirthdays = currAcqs.every(b => isBirthday(date, b));
 
         const gap = '17%';
-
-        let backgroundStyle = { backgroundColor: relevantAcq[0].color };
-        if (relevantAcq.length > 1) {
-            // Assuming Rin comes first in the array as per data file
+        let backgroundStyle = { backgroundColor: currAcqs[0].color };
+        if (currAcqs.length > 1) {
             backgroundStyle = {
-                background: `linear-gradient(to right, ${relevantAcq[0].color} 50%, ${relevantAcq[1].color} 50%)`
+                background: `linear-gradient(to right, ${currAcqs[0].color} 50%, ${currAcqs[1].color} 50%)`
             };
         }
 
         return {
             ...backgroundStyle,
-            left: samePrev ? '0%' : gap,
-            right: isTodayBirthday ? '50%' : (sameNext ? '0%' : (isNextBd ? '-50%' : gap))
+            left: isConnectedLeft ? '0%' : gap,
+            right: isConnectedRight ? '0%' : (isAllBirthdays ? '50%' : gap)
         };
     };
 
@@ -141,29 +138,20 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
     };
 
     const getRoundedClass = (date) => {
-        if (!date) return 'rounded-lg';
+        const currAcqs = getRelevantAcqs(date);
+        if (currAcqs.length === 0) return 'rounded-lg';
 
-        const currSig = getAcqSignature(date);
-        if (!currSig) return 'rounded-lg';
+        const prevDate = new Date(date); prevDate.setDate(date.getDate() - 1);
+        const nextDate = new Date(date); nextDate.setDate(date.getDate() + 1);
 
-        const prevDate = new Date(date);
-        prevDate.setDate(date.getDate() - 1);
+        const prevAcqs = getRelevantAcqs(prevDate);
+        const nextAcqs = getRelevantAcqs(nextDate);
 
-        const nextDate = new Date(date);
-        nextDate.setDate(date.getDate() + 1);
+        const isConnectedLeft = hasIntersection(currAcqs, prevAcqs);
+        const isConnectedRight = hasIntersection(currAcqs, nextAcqs);
 
-        const prevSig = getAcqSignature(prevDate);
-        const nextSig = getAcqSignature(nextDate);
-
-        const samePrev = currSig === prevSig;
-        const sameNext = currSig === nextSig;
-
-        // Check if next day is birthday for current acquisition char
-        const currentAcqs = characterBirthdays.filter(b => isAcquisitionDate(date, b));
-        const isNextBd = currentAcqs.some(b => isBirthday(nextDate, b));
-
-        const roundL = samePrev ? 'rounded-l-none' : 'rounded-l-full';
-        const roundR = (sameNext || isNextBd) ? 'rounded-r-none' : 'rounded-r-full';
+        const roundL = isConnectedLeft ? 'rounded-l-none' : 'rounded-l-full';
+        const roundR = isConnectedRight ? 'rounded-r-none' : 'rounded-r-full';
 
         return `${roundL} ${roundR}`;
     };
@@ -193,7 +181,7 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
     return (
         <div className="mb-4" ref={(el) => setRef(el, index)}>
             {/* Label Row aligned with grid */}
-            <div className="px-2 grid grid-cols-7 gap-y-1 gap-x-0 mb-1">
+            <div className="px-4 grid grid-cols-7 gap-y-1 gap-x-0 mb-1">
                 {labelRow.map((label, idx) => (
                     <div key={idx} className="flex items-center justify-center text-lg font-bold text-black" style={{ fontFamily: "'Roboto', sans-serif" }}>
                         {label}
@@ -201,7 +189,7 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
                 ))}
             </div>
 
-            <div className="px-2 pb-2 grid grid-cols-7 gap-y-1 gap-x-0">
+            <div className="px-4 pb-2 grid grid-cols-7 gap-y-1 gap-x-0">
                 {calendarDays.map((date, idx) => (
                     <div
                         key={idx}
@@ -290,26 +278,32 @@ const AmatsuyuCalendar = ({ onClose }) => {
 
                 {/* Unified Sticky Header (Pure White/Translucent) */}
                 <div className="absolute top-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur-md border-b border-gray-200">
-                    <div className="px-5 pt-4 pb-2 flex justify-between items-center relative">
+                    <div className="px-4 pt-2 pb-0 flex justify-between items-end relative min-h-[40px]">
                         <div className="flex items-baseline gap-2">
                             <span className="text-2xl font-extrabold text-black" style={{ fontFamily: "'Roboto', sans-serif" }}>
                                 {formatMonth(displayDate.month)}
                             </span>
                         </div>
-                        <div className="absolute left-1/2 transform -translate-x-1/2">
-                            <span className="text-ms font-semibold text-black" style={{ fontFamily: "'Roboto', sans-serif" }}>
+
+                        {/* Center: Year + Legend */}
+                        <div className="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-end h-full pb-0.5">
+                            <span className="text-base font-semibold text-black leading-none mb-0.5" style={{ fontFamily: "'Roboto', sans-serif" }}>
                                 {formatYear(displayDate.year)}
+                            </span>
+                            <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                                {t('amatsuyu.legend_underline')}
                             </span>
                         </div>
 
-                        <button onClick={onClose} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
+                        <button onClick={onClose} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors text-gray-500 mb-1">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
+
                     {/* Weekday Header - IOS Style: Gray, small */}
-                    <div className="grid grid-cols-7 gap-0 px-2 pb-3">
+                    <div className="grid grid-cols-7 gap-0 px-4 pb-2">
                         {WEEKDAYS.map((d, idx) => (
                             <div key={d} className={`text-center text-[11px] font-semibold uppercase ${idx === 0 ? 'text-red-400' : 'text-gray-400'}`}>
                                 {d}

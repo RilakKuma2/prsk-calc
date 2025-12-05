@@ -3,6 +3,8 @@ import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents
 import { useTranslation } from '../contexts/LanguageContext';
 
 import AmatsuyuCalendar from './AmatsuyuCalendar';
+import AmatsuyuNotificationModal from './AmatsuyuNotificationModal';
+import { characterBirthdays } from '../data/characterBirthdays';
 
 const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
@@ -11,6 +13,93 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const [currentLevel, setCurrentLevel] = useState(surveyData.amatsuyuCurrentLevel || '0');
   const [targetLevel, setTargetLevel] = useState(surveyData.amatsuyuTargetLevel || '400');
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+
+  const [notifySettings, setNotifySettings] = useState(() => {
+    const saved = localStorage.getItem('amatsuyu_notify_settings');
+    return saved ? JSON.parse(saved) : { enabled: false, notifyAcq: true, notifyBd: true, time: '21:00' };
+  });
+
+  // Notification Logic
+  useEffect(() => {
+    if (!notifySettings.enabled) return;
+
+    const checkNotification = () => {
+      const now = new Date();
+      const [targetHour, targetMinute] = notifySettings.time.split(':').map(Number);
+
+      // Check if current time matches (roughly within the minute)
+      // Or if we passed it and haven't notified today? 
+      // Simple trigger: If now.hours == target && now.minutes == target
+      // Better: Store 'last_notified_date' in localStorage to avoid duplicate/missed.
+
+      const lastNotified = localStorage.getItem('amatsuyu_last_notified');
+      const todayStr = now.toISOString().split('T')[0];
+
+      if (lastNotified === todayStr) return; // Already notified today
+
+      if (now.getHours() === targetHour && now.getMinutes() === targetMinute) {
+        // Check logic
+        const checkDate = (offsetDays) => {
+          // Return list of characters whose event is 'offsetDays' away from now?
+          // Logic: 
+          // Notify "Tomorrow is Acq Start" -> Today is (AcqStart - 1). AcqStart is (Bd - 3). So Today is (Bd - 4).
+          // Notify "Tomorrow is Birthday" -> Today is (Bd - 1).
+
+          // Construct test date: Today + Offset
+          const targetDate = new Date();
+          targetDate.setDate(now.getDate() + offsetDays);
+          const tMonth = targetDate.getMonth() + 1;
+          const tDay = targetDate.getDate();
+
+          return characterBirthdays.filter(c => {
+            const [bM, bD] = c.date.split('.').map(Number);
+            return bM === tMonth && bD === tDay;
+          });
+        };
+
+        const msgs = [];
+
+        if (notifySettings.notifyAcq) {
+          // Check if Today is D-4 (Tomorrow is D-3 = Acq Start)
+          // Actually: Browser D-1 of Acq Start.
+          // Acq Start is "Birthday - 3 days".
+          // Notification Day = "Acq Start - 1 day" = "Birthday - 4 days".
+          // So we want to find birthdays strictly 4 days ahead.
+          const acqTargets = checkDate(4);
+          acqTargets.forEach(c => {
+            const name = language === 'ko' ? c.nameKo : c.nameJa; // Fallback? Locale depends on browser context usually for Notification but here app context.
+            // Keep simple: use app language logic if possible, or mixed.
+            msgs.push(language === 'ko' ? `${name} 아마츠유 획득 기간 시작 전날입니다.` : `${name} あまつゆ獲得期間開始の前日です。`);
+          });
+        }
+
+        if (notifySettings.notifyBd) {
+          // Check if Today is D-1 (Tomorrow is Birthday)
+          const bdTargets = checkDate(1);
+          bdTargets.forEach(c => {
+            const name = language === 'ko' ? c.nameKo : c.nameJa;
+            msgs.push(language === 'ko' ? `${name} 생일 전날입니다.` : `${name} 誕生日の前日です。`);
+          });
+        }
+
+        if (msgs.length > 0) {
+          if (Notification.permission === 'granted') {
+            new Notification('Proseka Calculator', { body: msgs.join('\n') });
+            localStorage.setItem('amatsuyu_last_notified', todayStr);
+          }
+        }
+      }
+    };
+
+    const interval = setInterval(checkNotification, 15000); // Check every 15s to be safe
+    return () => clearInterval(interval);
+  }, [notifySettings, language]);
+
+  const saveSettings = (newSettings) => {
+    setNotifySettings(newSettings);
+    localStorage.setItem('amatsuyu_notify_settings', JSON.stringify(newSettings));
+  };
 
   const rewardTable = [
     { level: 2, rewards: { 'birthday_title': 'basic 1', 'small_can': 3, 'skill_book_inter': 1, 'photo_film': 5 } },
@@ -189,13 +278,25 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
 
       {/* Result Sections Wrapper - Slightly Reduced Width (340px max, 85% mobile) */}
       <div className="w-[85%] max-w-[340px] mx-auto space-y-4">
-        {/* Calendar Button */}
-        <div className="flex justify-center">
+        {/* Calendar & Notification Buttons */}
+        <div className="flex justify-center gap-2">
           <button
             onClick={() => setShowCalendar(true)}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full font-bold text-sm hover:bg-indigo-100 transition-colors border border-indigo-200"
           >
-            <span className="text-lg">📅</span> {t('amatsuyu.calendar')}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            {t('amatsuyu.calendar')}
+          </button>
+
+          <button
+            onClick={() => setShowNotifyModal(true)}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors border ${notifySettings.enabled ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'}`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
           </button>
         </div>
 
@@ -324,6 +425,13 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
         </div>
       </div>
       {showCalendar && <AmatsuyuCalendar onClose={() => setShowCalendar(false)} />}
+      {showNotifyModal && (
+        <AmatsuyuNotificationModal
+          settings={notifySettings}
+          onSave={saveSettings}
+          onClose={() => setShowNotifyModal(false)}
+        />
+      )}
     </div>
   );
 };
