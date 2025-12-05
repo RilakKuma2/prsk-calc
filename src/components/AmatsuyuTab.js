@@ -20,81 +20,9 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
     return saved ? JSON.parse(saved) : { enabled: false, notifyAcq: true, notifyBd: true, time: '21:00' };
   });
 
-  // Notification Logic
-  useEffect(() => {
-    if (!notifySettings.enabled) return;
+  // Notification Logic - Handled by Cloudflare Worker via Web Push
+  // Client-side polling removed to prevent double notifications and reliance on open tab
 
-    const checkNotification = () => {
-      const now = new Date();
-      const [targetHour, targetMinute] = notifySettings.time.split(':').map(Number);
-
-      // Check if current time matches (roughly within the minute)
-      // Or if we passed it and haven't notified today? 
-      // Simple trigger: If now.hours == target && now.minutes == target
-      // Better: Store 'last_notified_date' in localStorage to avoid duplicate/missed.
-
-      const lastNotified = localStorage.getItem('amatsuyu_last_notified');
-      const todayStr = now.toISOString().split('T')[0];
-
-      if (lastNotified === todayStr) return; // Already notified today
-
-      if (now.getHours() === targetHour && now.getMinutes() === targetMinute) {
-        // Check logic
-        const checkDate = (offsetDays) => {
-          // Return list of characters whose event is 'offsetDays' away from now?
-          // Logic: 
-          // Notify "Tomorrow is Acq Start" -> Today is (AcqStart - 1). AcqStart is (Bd - 3). So Today is (Bd - 4).
-          // Notify "Tomorrow is Birthday" -> Today is (Bd - 1).
-
-          // Construct test date: Today + Offset
-          const targetDate = new Date();
-          targetDate.setDate(now.getDate() + offsetDays);
-          const tMonth = targetDate.getMonth() + 1;
-          const tDay = targetDate.getDate();
-
-          return characterBirthdays.filter(c => {
-            const [bM, bD] = c.date.split('.').map(Number);
-            return bM === tMonth && bD === tDay;
-          });
-        };
-
-        const msgs = [];
-
-        if (notifySettings.notifyAcq) {
-          // Check if Today is D-4 (Tomorrow is D-3 = Acq Start)
-          // Actually: Browser D-1 of Acq Start.
-          // Acq Start is "Birthday - 3 days".
-          // Notification Day = "Acq Start - 1 day" = "Birthday - 4 days".
-          // So we want to find birthdays strictly 4 days ahead.
-          const acqTargets = checkDate(4);
-          acqTargets.forEach(c => {
-            const name = language === 'ko' ? c.nameKo : c.nameJa; // Fallback? Locale depends on browser context usually for Notification but here app context.
-            // Keep simple: use app language logic if possible, or mixed.
-            msgs.push(language === 'ko' ? `${name} 아마츠유 획득 기간 시작 전날입니다.` : `${name} あまつゆ獲得期間開始の前日です。`);
-          });
-        }
-
-        if (notifySettings.notifyBd) {
-          // Check if Today is D-1 (Tomorrow is Birthday)
-          const bdTargets = checkDate(1);
-          bdTargets.forEach(c => {
-            const name = language === 'ko' ? c.nameKo : c.nameJa;
-            msgs.push(language === 'ko' ? `${name} 생일 전날입니다.` : `${name} 誕生日の前日です。`);
-          });
-        }
-
-        if (msgs.length > 0) {
-          if (Notification.permission === 'granted') {
-            new Notification('Proseka Calculator', { body: msgs.join('\n') });
-            localStorage.setItem('amatsuyu_last_notified', todayStr);
-          }
-        }
-      }
-    };
-
-    const interval = setInterval(checkNotification, 15000); // Check every 15s to be safe
-    return () => clearInterval(interval);
-  }, [notifySettings, language]);
 
   const saveSettings = (newSettings) => {
     setNotifySettings(newSettings);
