@@ -143,6 +143,7 @@ const ko = {
         suffix_count: '개',
         suffix_fire: '불',
         suffix_laps: '바퀴',
+        calendar: '아마츠유 캘린더',
     },
     score_art: {
         load_error: '데이터 파일을 불러오는데 실패했습니다.',

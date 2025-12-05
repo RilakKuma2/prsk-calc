@@ -143,6 +143,7 @@ const ja = {
         suffix_count: '個',
         suffix_fire: '炊き',
         suffix_laps: '周',
+        calendar: 'あまつゆカレンダー',
     },
     score_art: {
         load_error: '読込失敗',

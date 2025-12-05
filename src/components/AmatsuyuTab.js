@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { useTranslation } from '../contexts/LanguageContext';
 
+import AmatsuyuCalendar from './AmatsuyuCalendar';
+
 const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
   const [hasCurrentYearCard, setHasCurrentYearCard] = useState(surveyData.hasCurrentYearCard || 'N');
   const [pastCardsOwned, setPastCardsOwned] = useState(surveyData.pastCardsOwned || '0');
   const [currentLevel, setCurrentLevel] = useState(surveyData.amatsuyuCurrentLevel || '0');
   const [targetLevel, setTargetLevel] = useState(surveyData.amatsuyuTargetLevel || '400');
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const rewardTable = [
     { level: 2, rewards: { 'birthday_title': 'basic 1', 'small_can': 3, 'skill_book_inter': 1, 'photo_film': 5 } },
@@ -186,6 +189,16 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
 
       {/* Result Sections Wrapper - Slightly Reduced Width (340px max, 85% mobile) */}
       <div className="w-[85%] max-w-[340px] mx-auto space-y-4">
+        {/* Calendar Button */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShowCalendar(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full font-bold text-sm hover:bg-indigo-100 transition-colors border border-indigo-200"
+          >
+            <span className="text-lg">📅</span> {t('amatsuyu.calendar')}
+          </button>
+        </div>
+
         {/* Summary - Compact, No Header */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 ">
           <div className="grid grid-cols-2 items-center mb-1 text-center max-[375px]:text-sm">
@@ -268,13 +281,11 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
 
         {/* Info & Reference Table */}
         <div className="text-base text-gray-500 space-y-4">
-          {language !== 'ja' && (
-            <p className="text-center">
-              <a href="https://m.dcinside.com/board/pjsekai/2278357" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline font-bold">
-                {t('amatsuyu.summary_link')}
-              </a>
-            </p>
-          )}
+          <p className="text-center">
+            <a href={language === 'ja' ? "https://pjsekai.com/?086da69e4a" : "https://m.dcinside.com/board/pjsekai/2278357"} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline font-bold">
+              {t('amatsuyu.summary_link')}
+            </a>
+          </p>
 
           <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm ">
             <table className="w-full text-center border-collapse text-sm">
@@ -312,6 +323,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
           </div>
         </div>
       </div>
+      {showCalendar && <AmatsuyuCalendar onClose={() => setShowCalendar(false)} />}
     </div>
   );
 };
