@@ -3,13 +3,18 @@
 @tailwind utilities;
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Noto Sans JP', sans-serif;
     min-height: 100vh;
     margin: 0;
     background-color: #f7f9fc;
     /* A lighter, more modern background */
     overflow-y: auto;
     box-sizing: border-box;
+}
+
+
+:lang(ja) .tab {
+    font-size: 0.86rem;
 }
 
 *,

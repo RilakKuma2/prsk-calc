@@ -75,15 +75,24 @@ function AppContent() {
     }
   }, [loadData]);
 
+  // Update page title and iOS app name based on language
+  useEffect(() => {
+    document.title = t('app.title');
+
+    // Update iOS web app title
+    const metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (metaTitle) {
+      metaTitle.setAttribute('content', t('app.title'));
+    }
+  }, [t]);
+
   return (
     <div className="container relative min-h-screen">
       <LanguageSwitcher />
       <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
       <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-      <div className="tab-content">
-        {tabComponents[currentTab]}
-      </div>
+      {tabComponents[currentTab]}
 
       <div className="button-container">
         <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={saveData}>{t('app.save')}</button>

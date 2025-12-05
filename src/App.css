@@ -111,7 +111,7 @@ p {
     font-size: 15px;
     font-weight: bold;
     color: #576574;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
     flex-grow: 1;
     position: relative;
     /* Ensure text is above the glider */

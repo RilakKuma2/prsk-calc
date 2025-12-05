@@ -80,12 +80,12 @@ const InternalTab = ({ surveyData, setSurveyData }) => {
             <span className="text-gray-600">{t('internal.effective_value')}</span>
             <div>
               <span className="font-bold text-blue-600 text-lg mr-1">{effectiveValue.toFixed(0)}%</span>
-              <span className="text-sm text-gray-500">({(effectiveValue / 100 + 1).toFixed(2)}{t('internal.multiplier')})</span>
+              <span className="text-xs text-gray-500">({(effectiveValue / 100 + 1).toFixed(2)}{t('internal.multiplier')})</span>
             </div>
           </div>
           <div className="grid grid-cols-2 items-center pt-1 mt-1 text-center">
             <span className="text-gray-600">{t('internal.internal_sum')}</span>
-            <span className="font-bold text-blue-600">{internalSum}%</span>
+            <span className="font-bold text-blue-600 text-lg">{internalSum}%</span>
           </div>
         </div>
 

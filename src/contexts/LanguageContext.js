@@ -18,13 +18,13 @@ export const LanguageProvider = ({ children }) => {
     });
 
     useEffect(() => {
-        // Effect to sync state if needed, but initial state handles the logic now.
-        // We can keep the localStorage sync in changeLanguage.
-    }, []);
+        document.documentElement.lang = language;
+    }, [language]);
 
     const changeLanguage = (lang) => {
         setLanguage(lang);
         localStorage.setItem('language', lang);
+        document.documentElement.lang = lang;
     };
 
     const translations = {
