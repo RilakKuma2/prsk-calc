@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 
 const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const [localSettings, setLocalSettings] = useState(settings);
     const [permission, setPermission] = useState(() => {
         // Safe check for Notification API
         return (typeof Notification !== 'undefined') ? Notification.permission : 'default';
     });
+
 
     // VAPID Public Key - User needs to replace this!
     const VAPID_PUBLIC_KEY = 'BA_OF5pmVPIDSJx5ByCNUf3zIodBRi069ihknUmR3f5FWiESg79F6wg5vJKloaorfJaFbc0bb-ArdMbTe3LbsPY';
@@ -28,136 +29,11 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
         return outputArray;
     }
 
-    const handleToggle = async (key) => {
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleToggle = (key) => {
         if (key === 'enabled') {
-            const newValue = !localSettings.enabled;
-
-            if (newValue === true) {
-                // User trying to enable notifications
-                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                    alert("이 브라우저는 푸시 알림을 지원하지 않습니다.");
-                    return;
-                }
-
-                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-                const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-
-                if (isIOS && !isStandalone) {
-                    alert("아이폰에서는 홈 화면에 추가된 앱에서만 알림을 사용할 수 있습니다.\n\n사파리 하단 공유 버튼 누름 -> '홈 화면에 추가'를 통해 앱을 설치한 뒤 실행해주세요.");
-                    return;
-                }
-
-                if (permission !== 'granted') {
-                    try {
-                        const result = await Notification.requestPermission();
-                        setPermission(result);
-
-                        if (result === 'granted') {
-                            // 1. Check/Register SW
-                            // Add timeout to prevent hanging if SW is dead
-                            const getRegistration = async () => {
-                                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Service Worker Timeout")), 3000));
-                                const ready = navigator.serviceWorker.ready;
-                                return Promise.race([ready, timeout]);
-                            };
-
-                            let registration;
-                            try {
-                                registration = await getRegistration();
-                            } catch (e) {
-                                alert("서비스 워커 로드 실패: 새로고침 후 다시 시도해주세요. (로컬/HTTPS 문제일 수 있습니다)");
-                                setLocalSettings(prev => ({ ...prev, [key]: false }));
-                                return;
-                            }
-
-                            // 2. Subscribe
-                            if (VAPID_PUBLIC_KEY === 'YOUR_VAPID_PUBLIC_KEY_HERE') {
-                                alert("개발자 설정 필요: VAPID Public Key가 설정되지 않았습니다.");
-                                return;
-                            }
-
-                            const subscription = await registration.pushManager.subscribe({
-                                userVisibleOnly: true,
-                                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                            });
-
-                            // 3. Send to Backend
-                            const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
-                            const response = await fetch(`${cleanUrl}/subscribe`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(subscription)
-                            });
-
-                            if (!response.ok) {
-                                const errData = await response.json().catch(() => ({}));
-                                throw new Error(errData.error || `서버 응답 오류: ${response.status}`);
-                            }
-
-                            setLocalSettings(prev => ({ ...prev, [key]: true }));
-
-                            if (isIOS) {
-                                alert("알림이 허용되었습니다.\n매일 오후 6시에 획득 기간 및 생일 알림이 발송됩니다.");
-                            }
-                        } else {
-                            if (isIOS) {
-                                alert("알림 권한이 거부되었습니다.\n아이폰 설정 > 알림에서앱을 찾아 켜주세요.");
-                            } else {
-                                alert(t('amatsuyu.permission_denied'));
-                            }
-                            setLocalSettings(prev => ({ ...prev, [key]: false }));
-                        }
-                    } catch (error) {
-                        console.error("Subscription error:", error);
-                        // Distinguish SW timeout from other errors
-                        if (error.message === "Service Worker Timeout") {
-                            alert("서비스 워커 로드 실패: 새로고침 후 다시 시도해주세요.");
-                        } else {
-                            alert("알림 설정 실패: " + error.message);
-                        }
-                        setLocalSettings(prev => ({ ...prev, [key]: false }));
-                    }
-                } else {
-                    // Already granted - Retry Subscription to ensure backend is synced
-                    try {
-                        const getRegistration = async () => {
-                            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Service Worker Timeout")), 3000));
-                            const ready = navigator.serviceWorker.ready;
-                            return Promise.race([ready, timeout]);
-                        };
-                        const registration = await getRegistration();
-
-                        const subscription = await registration.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                        });
-
-                        const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
-                        const response = await fetch(`${cleanUrl}/subscribe`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(subscription)
-                        });
-
-                        if (!response.ok) {
-                            const errData = await response.json().catch(() => ({}));
-                            throw new Error(errData.error || `서버 응답 오류: ${response.status}`);
-                        }
-
-                        setLocalSettings(prev => ({ ...prev, [key]: true }));
-                        alert("알림이 다시 활성화되었습니다. (테스트 알림이 전송됩니다)");
-
-                    } catch (error) {
-                        console.error("Re-subscription error:", error);
-                        alert("알림 재설정 실패: " + error.message);
-                        setLocalSettings(prev => ({ ...prev, [key]: false })); // FIX: Turn off on error
-                    }
-                }
-            } else {
-                // Disable
-                setLocalSettings(prev => ({ ...prev, [key]: false }));
-                // Ideally call /unsubscribe on worker
-            }
+            setLocalSettings(prev => ({ ...prev, enabled: !prev.enabled }));
         } else {
             setLocalSettings(prev => ({ ...prev, [key]: !prev[key] }));
         }
@@ -167,10 +43,122 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
         setLocalSettings(prev => ({ ...prev, [key]: value }));
     };
 
-    const handleSave = () => {
-        // Just save whatever state we have
-        onSave(localSettings);
-        onClose();
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            // Case 1: Disable Notifications (Unsubscribe)
+            if (!localSettings.enabled) {
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                    const registration = await navigator.serviceWorker.ready;
+                    const subscription = await registration.pushManager.getSubscription();
+                    if (subscription) {
+                        // Call backend to remove key
+                        const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
+                        await fetch(`${cleanUrl}/unsubscribe`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ endpoint: subscription.endpoint })
+                        });
+                        // Local unsubscribe
+                        await subscription.unsubscribe();
+                    }
+                }
+                onSave(localSettings);
+                onClose();
+                return;
+            }
+
+            // Case 2: Enable/Update Notifications (Subscribe/Sync)
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                alert(t('amatsuyu.alerts.unsupported'));
+                return;
+            }
+
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+            if (isIOS && !isStandalone) {
+                alert(t('amatsuyu.alerts.ios_standalone'));
+                return;
+            }
+
+            if (permission !== 'granted') {
+                const result = await Notification.requestPermission();
+                setPermission(result);
+                if (result !== 'granted') {
+                    if (isIOS) {
+                        alert(t('amatsuyu.alerts.permission_denied_ios'));
+                    } else if (/Android/i.test(navigator.userAgent)) {
+                        alert(t('amatsuyu.alerts.permission_denied_android'));
+                    } else {
+                        alert(t('amatsuyu.permission_denied'));
+                    }
+                    return; // Stop saving
+                }
+            }
+
+            // Register/Get SW
+            const getRegistration = async () => {
+                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Service Worker Timeout")), 3000));
+                const ready = navigator.serviceWorker.ready;
+                return Promise.race([ready, timeout]);
+            };
+
+            const registration = await getRegistration();
+
+            // Get or Create Subscription
+            let subscription = await registration.pushManager.getSubscription();
+            if (!subscription) {
+                if (VAPID_PUBLIC_KEY === 'YOUR_VAPID_PUBLIC_KEY_HERE') {
+                    alert(t('amatsuyu.alerts.vapid_missing'));
+                    return;
+                }
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+            }
+
+            // Sync to Backend
+            const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
+            const response = await fetch(`${cleanUrl}/subscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subscription,
+                    lang: language,
+                    settings: {
+                        notifyBd: localSettings.notifyBd,
+                        notifyAcq: localSettings.notifyAcq,
+                        notifyTimes: localSettings.notifyTimes || [18],
+                        notifySameDay: localSettings.notifySameDay || false
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || t('amatsuyu.alerts.sync_fail') + response.status);
+            }
+
+            // Validate Success
+            if (isIOS && !settings.enabled) { // Only show alert on initial enable
+                alert(t('amatsuyu.alerts.saved'));
+            }
+
+            onSave(localSettings);
+            onClose();
+
+        } catch (error) {
+            console.error("Save error:", error);
+            if (error.message === "Service Worker Timeout") {
+                alert(t('amatsuyu.alerts.sw_timeout'));
+            } else {
+                alert(t('amatsuyu.alerts.save_fail') + error.message);
+            }
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -226,21 +214,59 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                 />
                             </div>
 
-                            {/* Time Picker - Removed as it's now handled by Cloudflare Worker at 18:00 KST */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">{t('amatsuyu.notify_time')}</span>
-                                <span className="text-sm font-bold text-gray-800">18:00</span>
+                            {/* Notification Time Selector */}
+                            <div className="pt-2">
+                                <span className="text-xs font-semibold text-gray-500 block mb-2">{t('amatsuyu.notify_time_select')}</span>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {[0, 3, 6, 9, 12, 15, 18, 21].map((hour) => (
+                                        <button
+                                            key={hour}
+                                            onClick={() => {
+                                                const current = localSettings.notifyTimes || [18];
+                                                const isSelected = current.includes(hour);
+                                                const newTimes = isSelected
+                                                    ? current.filter(h => h !== hour)
+                                                    : [...current, hour];
+                                                handleChange('notifyTimes', newTimes);
+                                            }}
+                                            className={`py-1 text-xs rounded border transition-colors ${(localSettings.notifyTimes || [18]).includes(hour)
+                                                ? 'bg-purple-100 border-purple-300 text-purple-700 font-bold'
+                                                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            {`${String(hour).padStart(2, '0')}:00`}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Same Day Notification */}
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                                <span className="text-sm text-gray-600">{t('amatsuyu.notify_daily_0')}</span>
+                                <input
+                                    type="checkbox"
+                                    checked={localSettings.notifySameDay || false}
+                                    onChange={() => handleToggle('notifySameDay')}
+                                    className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                                />
                             </div>
                         </div>
                     )}
                 </div>
 
+                <div className="px-4 pb-2 text-center">
+                    <p className="text-xs text-gray-400">{t('amatsuyu.notify_timezone')}</p>
+                </div>
                 <div className="p-4 bg-gray-50 flex justify-end">
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-sm hover:bg-purple-700 transition-colors shadow-sm"
+                        disabled={isSaving}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm shadow-sm transition-colors ${isSaving
+                            ? 'bg-gray-400 cursor-not-allowed text-gray-200'
+                            : 'bg-purple-600 text-white hover:bg-purple-700'
+                            }`}
                     >
-                        {t('app.save')}
+                        {isSaving ? 'Saving...' : t('app.save')}
                     </button>
                 </div>
             </div>

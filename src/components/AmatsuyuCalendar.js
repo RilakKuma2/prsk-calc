@@ -130,10 +130,24 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
         }
 
         return (
-            <div
-                className="absolute w-10 h-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-[52]"
-                style={style}
-            />
+            <>
+                <div
+                    className="absolute w-10 h-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-[52]"
+                    style={style}
+                />
+                {/* Character Images */}
+                <div className="absolute bottom-0 right-0 z-[56] flex flex-row-reverse pointer-events-none">
+                    {birthdays.map((char) => (
+                        <div key={char.nameKo} className="relative w-6 h-6 -ml-2 first:ml-0">
+                            <img
+                                src={`/assets/characters/${char.image}.webp`}
+                                alt={char.nameKo}
+                                className="w-full h-full object-contain filter drop-shadow-md"
+                            />
+                        </div>
+                    ))}
+                </div>
+            </>
         );
     };
 

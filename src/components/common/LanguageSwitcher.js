@@ -2,15 +2,28 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 
 const LanguageSwitcher = () => {
-    const { language, changeLanguage } = useTranslation();
+    const { language, changeLanguage, t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
 
-    // Close dropdown when clicking outside
+    // Info Bubble State
+    const [showInfo, setShowInfo] = useState(false);
+    const [isInfoLocked, setIsInfoLocked] = useState(false);
+
+    const dropdownRef = useRef(null);
+    const infoRef = useRef(null);
+
+    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
+            // Language Dropdown
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsOpen(false);
+            }
+
+            // Info Bubble (Unlock on outside click)
+            if (isInfoLocked && infoRef.current && !infoRef.current.contains(event.target)) {
+                setIsInfoLocked(false);
+                setShowInfo(false);
             }
         };
 
@@ -18,7 +31,7 @@ const LanguageSwitcher = () => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [isInfoLocked]);
 
     const toggleDropdown = () => setIsOpen(!isOpen);
 
@@ -27,52 +40,107 @@ const LanguageSwitcher = () => {
         setIsOpen(false);
     };
 
-    return (
-        <div className="absolute top-6 right-6 z-50" ref={dropdownRef}>
-            <button
-                onClick={toggleDropdown}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
-                aria-label="Change Language"
-            >
-                {/* Globe Icon SVG */}
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-gray-600"
-                >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                </svg>
-            </button>
+    // Info Button Handlers
+    const handleInfoEnter = () => {
+        if (!isInfoLocked) setShowInfo(true);
+    };
 
-            {isOpen && (
-                <div className="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+    const handleInfoLeave = () => {
+        if (!isInfoLocked) setShowInfo(false);
+    };
+
+    const handleInfoClick = () => {
+        if (isInfoLocked) {
+            // If already locked, unlock and hide (toggle off)
+            setIsInfoLocked(false);
+            setShowInfo(false);
+        } else {
+            // Lock it open
+            setIsInfoLocked(true);
+            setShowInfo(true);
+        }
+    };
+
+    return (
+        <>
+            {/* Info Button - Positioned Top Left */}
+            <div className="absolute top-6 left-6 z-50" ref={infoRef}>
+                <div className="relative">
                     <button
-                        onClick={() => handleLanguageChange('ko')}
-                        className={`block w-full text-left px-4 py-2 text-sm ${language === 'ko' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'
-                            }`}
+                        className={`p-2 rounded-full transition-colors duration-200 focus:outline-none ${isInfoLocked ? 'bg-gray-100 text-gray-800' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'}`}
+
+                        onMouseEnter={handleInfoEnter}
+                        onMouseLeave={handleInfoLeave}
+                        onClick={handleInfoClick}
+                        aria-label="Copyright Info"
                     >
-                        한국어
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
                     </button>
-                    <button
-                        onClick={() => handleLanguageChange('ja')}
-                        className={`block w-full text-left px-4 py-2 text-sm ${language === 'ja' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'
-                            }`}
-                    >
-                        日本語
-                    </button>
+
+                    {/* Info Tooltip */}
+                    {showInfo && (
+                        <div className="absolute top-10 left-0 w-64 bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-xl border border-gray-100 text-xs text-gray-600 leading-relaxed z-[60] animate-fade-in text-left">
+                            {t('app.copyright')}
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
+            </div>
+
+            {/* Language Toggle - Positioned Top Right */}
+            <div className="absolute top-6 right-6 z-50" ref={dropdownRef}>
+                <div className="relative">
+                    <button
+                        onClick={toggleDropdown}
+                        className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
+                        aria-label="Change Language"
+                    >
+                        {/* Globe Icon SVG */}
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-gray-600"
+                        >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                    </button>
+
+                    {/* Language Dropdown */}
+                    {isOpen && (
+                        <div className="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-[55]">
+                            <button
+                                onClick={() => handleLanguageChange('ko')}
+                                className={`block w-full text-left px-4 py-2 text-sm ${language === 'ko' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                            >
+                                한국어
+                            </button>
+                            <button
+                                onClick={() => handleLanguageChange('ja')}
+                                className={`block w-full text-left px-4 py-2 text-sm ${language === 'ja' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                            >
+                                日本語
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
     );
 };
 
 export default LanguageSwitcher;
+

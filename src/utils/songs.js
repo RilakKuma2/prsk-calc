@@ -147,7 +147,7 @@ export const SONG_OPTIONS = [
     { id: 180, name: '미라이', title_jp: 'ミライ' },
     { id: 199, name: '고스트 룰', title_jp: 'ゴーストルール' },
     { id: 170, name: '빌런', title_jp: 'ヴィラン' },
-    { id: 104, name: '샹드리용', title_jp: 'サンドリヨン 10th Anniversary' },
+    { id: 104, name: '샹드리용', title_jp: 'サンドリヨン' },
     { id: 169, name: '소녀 레이', title_jp: '少女レイ' },
     { id: 200, name: '갈란드', title_jp: 'ガランド' },
     { id: 162, name: '엔드마크에 희망과 눈물을 더하며', title_jp: 'エンドマークに希望と涙を添えて' },
