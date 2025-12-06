@@ -9,6 +9,7 @@ import ChallengeTab from './components/ChallengeTab';
 import AmatsuyuTab from './components/AmatsuyuTab';
 import AutoTab from './components/AutoTab';
 import ScoreArtTab from './components/ScoreArtTab';
+import UpcomingEvents from './components/UpcomingEvents';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
 
@@ -89,7 +90,9 @@ function AppContent() {
   return (
     <div className="container relative min-h-screen">
       <LanguageSwitcher />
-      <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
+      <UpcomingEvents>
+        <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
+      </UpcomingEvents>
       <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
       {tabComponents[currentTab]}

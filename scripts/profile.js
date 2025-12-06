@@ -18,7 +18,11 @@ function parseSus(content) {
         const data = parts[1].trim();
 
         if (header.match(/^BPM\d{2}$/)) {
-            // ...
+            console.log(`Found BPM Def: ${header} : ${data}`);
+        } else if (header.match(/^\d{3}02$/)) {
+            console.log(`Found Time Sig: ${header} : ${data}`);
+        } else if (header.match(/^\d{3}08$/)) {
+            console.log(`Found BPM Change: ${header} : ${data}`);
         } else if (header.match(/^\d{3}[1-9a-zA-Z]{2}$/)) {
             const measure = parseInt(header.substring(0, 3));
             const channel = header.substring(3);

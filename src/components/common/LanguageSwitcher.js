@@ -83,8 +83,23 @@ const LanguageSwitcher = () => {
 
                     {/* Info Tooltip */}
                     {showInfo && (
-                        <div className="absolute top-10 left-0 w-64 bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-xl border border-gray-100 text-xs text-gray-600 leading-relaxed z-[60] animate-fade-in text-left">
-                            {t('app.copyright')}
+                        <div className="absolute top-10 left-0 w-72 bg-white/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-gray-100 text-sm text-gray-600 leading-relaxed z-[60] animate-fade-in text-left flex flex-col gap-3">
+                            {/* Contact Info */}
+                            <div className="flex items-center gap-2 text-gray-800 font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                                </svg>
+                                <a href="mailto:rilak@rilaksekai.com" className="hover:text-indigo-600 transition-colors">rilak@rilaksekai.com</a>
+                            </div>
+
+                            {/* Separator */}
+                            <div className="border-t border-gray-100"></div>
+
+                            {/* Disclaimer */}
+                            <div className="text-[10px] text-gray-400 text-justify leading-snug">
+                                {t('app.copyright') || "이 웹사이트는 자료를 소유하지 않습니다. 모든 권리는 Sega, Colorful Palette, Crypton을 포함한 자료들의 정당한 소유자에게 있습니다."}
+                            </div>
                         </div>
                     )}
                 </div>
