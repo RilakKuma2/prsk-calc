@@ -84,7 +84,9 @@ const ko = {
         song_name: '곡명',
         min_rank: '최저 랭크',
         min_score: '최저 점수',
-        max_score: '최고 점수',
+        max_score: '최대 스코어',
+        score_title: '배치 결과',
+        excluded_song_note: '0.034APD가 메모리아 보다 효율이 좋지만 계산기 오작동으로 추가하지 않음',
     },
     fire: {
         current_score: '현재점수',

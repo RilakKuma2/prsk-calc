@@ -170,18 +170,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
   // Rank Interaction State
   const [activeRank, setActiveRank] = useState(null);
-  const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
   const tableRef = React.useRef(null);
-  const [popoverScore, setPopoverScore] = useState(0);
+  // Remove unused popoverScore state if we pass it directly, but we might need it for consistent handling or just pass safely.
+  // Actually simpler to just pass it in the render function since we have access to 'row'.
 
   useEffect(() => {
     const handleClickOutsideTable = (event) => {
-      // Close if clicking outside the table but allow clicking the popover itself (which is not in tableRef)
-      // We'll handle popover clicks separately or ensure they don't propagate if needed.
-      // Actually, since the popover is rendered separately, we need to check if the click target is the popover.
-      // But simpler: just unset activeRank if clicking outside row/popover.
-      // For now, let's just use a window click listener that clears if not on the button.
-      if (activeRank && !event.target.closest('.target-popover') && !event.target.closest('tr')) {
+      // Just unset activeRank if clicking outside row/button.
+      if (activeRank && !event.target.closest('tr') && !event.target.closest('button')) {
         setActiveRank(null);
       }
     };
@@ -191,19 +187,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     };
   }, [activeRank]);
 
-  const handleRowClick = (e, rank, predictedScore) => {
-    // Prevent toggling off immediately if clicking the same row? 
-    // Or allow toggling.
-    // If clicking a different row, switch to it.
+  const handleRowClick = (e, rank) => {
+    // If clicking the button itself, don't toggle
+    if (e.target.closest('button')) return;
+
     if (activeRank === rank) {
       setActiveRank(null);
     } else {
-      const x = e.clientX;
-      const y = e.clientY;
-      setPopoverPos({ x, y });
       setActiveRank(rank);
-      // Store the score to use in the popover
-      setPopoverScore(predictedScore);
     }
   };
 
@@ -211,6 +202,23 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     const manScore = parseFloat((score / 10000).toFixed(4));
     setScore2(manScore.toString());
     setActiveRank(null);
+  };
+
+  const renderTargetButton = (rank, score) => {
+    if (activeRank !== rank) return null;
+    return (
+      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSetTarget(score);
+          }}
+          className="bg-indigo-600 text-white text-[10px] px-2 py-1.5 rounded shadow-lg whitespace-nowrap hover:bg-indigo-700 active:scale-95 transition-all animate-fade-in flex items-center gap-1"
+        >
+          {t('fire.set_target')}
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -463,13 +471,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                               <tr
                                 key={row.rank}
                                 className={`transition-colors cursor-pointer active:bg-indigo-100 ${index % 2 === 0 ? 'bg-indigo-50/10 hover:bg-indigo-50/60' : 'bg-indigo-50/40 hover:bg-indigo-50/80'}`}
-                                onClick={(e) => handleRowClick(e, row.rank, row.predictedScore)}
+                                onClick={(e) => handleRowClick(e, row.rank)}
                               >
-                                <td className="px-3 py-2 font-bold text-indigo-600 w-20">#{row.rank}</td>
+                                <td className="px-3 py-2 font-bold text-indigo-600 w-20 relative">
+                                  #{row.rank}
+                                  {renderTargetButton(row.rank, row.predictedScore)}
+                                </td>
                                 <td className="px-3 py-2 text-right tabular-nums text-gray-700">
                                   {Math.floor(row.currentScore).toLocaleString()}
                                 </td>
-                                <td className="px-3 py-2 text-right tabular-nums font-medium text-gray-900">
+                                <td className="px-3 py-2 text-right tabular-nums font-bold text-gray-900">
                                   {Math.floor(row.predictedScore).toLocaleString()}
                                 </td>
                               </tr>
@@ -485,13 +496,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     <tr
                       key={row.rank}
                       className={`transition-colors cursor-pointer active:bg-gray-200 ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'}`}
-                      onClick={(e) => handleRowClick(e, row.rank, row.predictedScore)}
+                      onClick={(e) => handleRowClick(e, row.rank)}
                     >
-                      <td className="px-3 py-2 font-bold text-indigo-600">#{row.rank}</td>
+                      <td className="px-3 py-2 font-bold text-indigo-600 relative">
+                        #{row.rank}
+                        {renderTargetButton(row.rank, row.predictedScore)}
+                      </td>
                       <td className="px-3 py-2 text-right tabular-nums text-gray-700">
                         {Math.floor(row.currentScore).toLocaleString()}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums font-medium text-gray-900">
+                      <td className="px-3 py-2 text-right tabular-nums font-bold text-gray-900">
                         {Math.floor(row.predictedScore).toLocaleString()}
                       </td>
                     </tr>
@@ -514,26 +528,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           </div>
         </div>
       </div>
-
-      {/* Floating Popover Button */}
-      {activeRank && (
-        <div
-          className="fixed z-[100] target-popover animate-scale-in"
-          style={{
-            top: popoverPos.y + 10,
-            left: popoverPos.x,
-            transform: 'translateX(-50%)'
-          }}
-        >
-          <button
-            onClick={() => handleSetTarget(popoverScore)}
-            className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap hover:bg-indigo-700 active:scale-95 transition-all flex items-center gap-1 ring-2 ring-white"
-          >
-            <span>{t('fire.set_target')}</span>
-            <span className="opacity-75 text-[10px]">#{activeRank}</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 };

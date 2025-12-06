@@ -383,6 +383,9 @@ function AutoTab({ surveyData, setSurveyData }) {
                             </tbody>
                         </table>
                     </div>
+                    <div className="mt-2 text-[11px] text-gray-400 text-right px-1">
+                        * {t('auto.excluded_song_note')}
+                    </div>
                 </div>
             )}
         </div>
