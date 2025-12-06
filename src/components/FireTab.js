@@ -351,30 +351,30 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             {eventInfo ? (
               <div className="mb-2">
                 {/* Top Row: Last Updated | Event Name | Ends In */}
-                <div className="flex justify-between items-center mb-2 gap-2">
+                <div className="flex justify-between items-center mb-2 gap-1 sm:gap-2">
                   {/* Last Updated (Left) */}
                   <div className="flex flex-col items-start min-w-max">
-                    <span className="text-[10px] text-gray-400 font-medium leading-none mb-1">
+                    <span className="text-[9px] sm:text-[10px] text-gray-400 font-medium leading-none mb-0.5 sm:mb-1">
                       {t('fire.last_updated')}
                     </span>
-                    <span className="text-xs text-gray-700 font-extrabold tracking-tight">
+                    <span className="text-[10px] sm:text-xs text-gray-700 font-extrabold tracking-tight">
                       {lastUpdated ? formatTime(lastUpdated) : "-"}
                     </span>
                   </div>
 
                   {/* Event Name (Center) */}
-                  <div className="flex-1 text-center px-1">
-                    <div className="font-bold text-indigo-600 text-base leading-tight break-keep">
+                  <div className="flex-1 text-center px-0.5 sm:px-1 min-w-0">
+                    <div className="font-bold text-indigo-600 text-sm sm:text-lg leading-tight break-keep line-clamp-2">
                       {eventInfo.name}
                     </div>
                   </div>
 
                   {/* Ends In (Right) */}
                   <div className="flex flex-col items-end min-w-max">
-                    <span className="text-[10px] text-gray-400 font-medium leading-none mb-1">
+                    <span className="text-[9px] sm:text-[10px] text-gray-400 font-medium leading-none mb-0.5 sm:mb-1">
                       {t('fire.ends_in')}
                     </span>
-                    <span className="text-xs text-indigo-600 font-extrabold tracking-tight">
+                    <span className="text-[10px] sm:text-xs text-indigo-600 font-extrabold tracking-tight">
                       {eventInfo && lastUpdated ? (
                         formatDuration((eventInfo.end * 1000) - lastUpdated)
                       ) : (
