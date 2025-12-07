@@ -11,9 +11,12 @@
 }
 
 h1 {
-    color: #2c3e50;
-    margin-bottom: 25px;
+    color: #475569;
+    /* Softer color */
+    margin-bottom: 20px;
     font-weight: 600;
+    font-size: 22px;
+    /* reduced from default */
 }
 
 label {
@@ -82,46 +85,7 @@ p {
     font-weight: 500;
 }
 
-.tabs {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 25px;
-    background-color: #f0f2f5;
-    border-radius: 12px;
-    padding: 5px;
-    position: relative;
-    /* Needed for the glider */
-}
 
-.glider {
-    position: absolute;
-    top: 5px;
-    height: calc(100% - 10px);
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease-in-out;
-}
-
-.tab {
-    cursor: pointer;
-    padding: 10px 10px;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: bold;
-    color: #576574;
-    transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
-    flex-grow: 1;
-    position: relative;
-    /* Ensure text is above the glider */
-    z-index: 2;
-}
-
-.tab.active {
-    /* The background is now handled by the glider */
-    color: #3498db;
-}
 
 .button-container {
     display: flex;
@@ -219,61 +183,9 @@ input[type="checkbox"] {
     }
 
     h1 {
-        font-size: 24px;
-    }
-
-    .tabs {
-        flex-wrap: wrap;
-        gap: 5px;
-        padding: 5px;
-        margin-left: 10px;
-        margin-right: 10px;
-        background-color: #f1f5f9;
-        border-radius: 12px;
-    }
-
-    .tab {
-        font-size: 14px;
-        font-weight: 500;
-        padding: 8px 1px;
-        white-space: nowrap;
-        flex-grow: 1;
-        border-radius: 8px;
-        color: #64748b;
-        transition: all 0.2s ease;
-        box-sizing: border-box;
-    }
-
-    .tab:hover:not(.active) {
-        background-color: rgba(255, 255, 255, 0.6);
-        color: #475569;
-    }
-
-    .tab:active {
-        transform: scale(0.96);
-        background-color: #e2e8f0;
-    }
-
-    /* First 3 tabs on the first row */
-    .tab:nth-child(-n+3) {
-        width: calc((100% - 17px) / 4);
-    }
-
-    /* Remaining tabs (4th onwards) on the second row */
-    .tab:nth-child(n+4) {
-        width: calc((100% - 17px) / 4);
-    }
-
-    /* Disable glider animation and revert to static background for active tab */
-    .glider {
-        display: none;
-    }
-
-    .tab.active {
-        background-color: #ffffff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        color: #2563eb;
-        font-weight: 700;
+        font-size: 20px;
+        /* Reduced specific mobile size */
+        margin-bottom: 15px;
     }
 
     [id$="-tab-content"] {
@@ -281,21 +193,110 @@ input[type="checkbox"] {
         padding: 10px 5px;
     }
 
+    @media (min-width: 769px) {
+        .tabs {
+            margin: 0 -30px 20px -30px;
+            padding: 0 30px;
+            justify-content: center;
+        }
+    }
+
     label {
         width: auto;
         margin: 0 10px 15px 0;
         font-size: 15px;
     }
+}
 
-    input,
-    select {
-        width: 35%;
-        font-size: 14px;
-    }
+.tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0 10px;
+    margin: 0 0 10px 0;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    border-radius: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    align-items: center;
+    height: 48px;
+}
 
-    .header-row-text,
-    .header-col-text {
-        font-size: 7px;
+.tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tab {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 0;
+    margin-right: 18px;
+    height: 100%;
+    color: #94a3b8;
+    position: relative;
+    background: transparent;
+    border: none;
+    transition: color 0.2s ease;
+    z-index: 2;
+}
+
+.tab:last-child {
+    margin-right: 0;
+}
+
+.tab:hover:not(.active) {
+    color: #64748b;
+}
+
+.glider {
+    display: none;
+}
+
+.tab.active {
+    color: #2563eb;
+    font-weight: 800;
+}
+
+/* Underline indicator */
+.tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #2563eb;
+    border-radius: 3px 3px 0 0;
+}
+
+input,
+select {
+    width: 35%;
+    font-size: 14px;
+}
+
+.header-row-text,
+.header-col-text {
+    font-size: 7px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Adjustments for Desktop Container */
+@media (min-width: 769px) {
+    .tabs {
+        margin: 0 -30px 20px -30px;
+        /* Bleed into container padding */
+        padding: 0 30px;
+        justify-content: center;
+        /* Restore centering */
     }
 }
 
@@ -398,21 +399,7 @@ input[type="checkbox"] {
         padding: 10px 10px;
     }
 
-    h1 {
-        font-size: 30px;
-        font-weight: bold;
-    }
-
-    .tabs {
-        gap: 1px;
-    }
-
-    .tab {
-        font-size: 14px;
-        font-weight: bold;
-        padding: 8px 1px;
-        white-space: nowrap;
-    }
+    /* Duplicate H1 removed */
 
     [id$="-tab-content"] {
         padding: 10px 0px;
@@ -541,4 +528,15 @@ input[type="checkbox"] {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+}
+
+/* Adjustments for Desktop Container */
+@media (min-width: 769px) {
+    .tabs {
+        margin: 0 -30px 20px -30px;
+        /* Wider bleed for larger padding container */
+        padding: 0 30px;
+        justify-content: center;
+        /* Center tabs on desktop */
+    }
 }

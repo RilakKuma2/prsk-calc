@@ -5,13 +5,13 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
   const { t } = useTranslation();
   const tabInfo = [
     { id: 'internal', name: t('tabs.internal') },
-    { id: 'level', name: t('tabs.level') },
     { id: 'amatsuyu', name: t('tabs.amatsuyu') },
     { id: 'challenge', name: t('tabs.challenge') },
-    { id: 'scoreArt', name: t('tabs.score_art') },
     { id: 'fire', name: t('tabs.fire') },
     { id: 'power', name: t('tabs.power') },
     { id: 'auto', name: t('tabs.auto') },
+    { id: 'scoreArt', name: t('tabs.score_art') },
+    { id: 'level', name: t('tabs.level') },
   ];
 
   const tabsRef = useRef(null);
@@ -29,9 +29,15 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     }
   }, []);
 
-  // Update glider on tab change
+  // Update glider on tab change and scroll active tab into view
   useLayoutEffect(() => {
     updateGlider();
+    if (tabsRef.current) {
+      const activeTabElement = tabsRef.current.querySelector('.tab.active');
+      if (activeTabElement) {
+        activeTabElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
   }, [currentTab, updateGlider]);
 
   // Update glider on window resize
