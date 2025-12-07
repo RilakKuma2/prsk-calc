@@ -75,6 +75,13 @@ const LanguageSwitcher = () => {
                             >
                                 日本語
                             </button>
+                            <button
+                                onClick={() => handleLanguageChange('en')}
+                                className={`block w-full text-left px-4 py-2 text-sm ${language === 'en' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                            >
+                                English
+                            </button>
                         </div>
                     )}
                 </div>

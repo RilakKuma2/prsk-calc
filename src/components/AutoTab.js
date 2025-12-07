@@ -139,7 +139,7 @@ function AutoTab({ surveyData, setSurveyData }) {
 
                     results.push({
                         ...res,
-                        songName: language === 'ja' ? song.title_jp : song.name,
+                        songName: (language === 'ja' || language === 'en') ? song.title_jp : song.name,
                         songId: song.id,
                         difficulty: target.difficulty,
                         level: target.level,

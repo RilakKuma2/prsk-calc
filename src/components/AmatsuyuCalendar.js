@@ -119,8 +119,8 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
         const birthdays = characterBirthdays.filter(b => isBirthday(date, b));
         if (birthdays.length === 0) return null;
 
-        const hasRin = birthdays.find(b => b.nameKo === '린');
-        const hasLen = birthdays.find(b => b.nameKo === '렌');
+        const hasRin = birthdays.find(b => b.nameKo === '린' || b.nameEn === 'Rin');
+        const hasLen = birthdays.find(b => b.nameKo === '렌' || b.nameEn === 'Len');
 
         const style = {};
         if (hasRin && hasLen) {
@@ -141,7 +141,7 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
                         <div key={char.nameKo} className="relative w-6 h-6 -ml-2 first:ml-0">
                             <img
                                 src={`/assets/characters/${char.image}.webp`}
-                                alt={char.nameKo}
+                                alt={language === 'en' ? char.nameEn : (language === 'ja' ? char.nameJa : char.nameKo)}
                                 className="w-full h-full object-contain filter drop-shadow-md"
                             />
                         </div>
@@ -174,8 +174,8 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
         // Birthday -> White/Contrast
         const birthdays = characterBirthdays.filter(b => isBirthday(date, b));
         if (birthdays.length > 0) {
-            const hasRin = birthdays.find(b => b.nameKo === '린');
-            const hasLen = birthdays.find(b => b.nameKo === '렌');
+            const hasRin = birthdays.find(b => b.nameKo === '린' || b.nameEn === 'Rin');
+            const hasLen = birthdays.find(b => b.nameKo === '렌' || b.nameEn === 'Len');
             if (hasRin || hasLen) return 'text-gray-800';
             if (isBrightColor(birthdays[0].color)) return 'text-gray-800';
             return 'text-white';
