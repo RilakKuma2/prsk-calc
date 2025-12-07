@@ -86,6 +86,7 @@ const ja = {
         min_score: '最低スコア',
         max_score: '最高スコア',
         excluded_song_note: '0.0000034 APDはメモリアより効率が良いようですが、計算機の不具合によりリストに追加していません。',
+        recommend_0034: '* 0.0000034APDへ変更推奨',
     },
     fire: {
         current_score: '現在P',

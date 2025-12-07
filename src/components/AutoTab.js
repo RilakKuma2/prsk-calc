@@ -304,23 +304,32 @@ function AutoTab({ surveyData, setSurveyData }) {
                                 {sortedBatchResults.map((res, idx) => (
                                     <tr key={`${res.songId}-${res.difficulty}-${idx}`} className="hover:bg-gray-50 transition-colors duration-200 group/row">
                                         <td className="px-1 py-2 md:p-4 font-bold text-gray-800 group-hover/row:text-pink-600 transition-colors text-xs md:text-base text-center">
-                                            <div className="flex items-center justify-center gap-1 md:gap-2">
-                                                {res.songName}
-                                                <span
-                                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${res.difficulty === 'master' || res.difficulty === 'append' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
-                                                        }`}
-                                                    style={
-                                                        res.difficulty === 'master' ? {
-                                                            backgroundColor: '#cc33ff',
-                                                            color: '#FFFFFF',
-                                                        } : res.difficulty === 'append' ? {
-                                                            background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)',
-                                                            color: '#FFFFFF',
-                                                        } : {}
-                                                    }
-                                                >
-                                                    {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty}
-                                                </span>
+                                            <div className="relative flex flex-col items-center justify-center">
+                                                <div className="flex items-center justify-center gap-1 md:gap-2">
+                                                    {res.songName}
+                                                    <span
+                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${res.difficulty === 'master' || res.difficulty === 'append' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
+                                                            }`}
+                                                        style={
+                                                            res.difficulty === 'master' ? {
+                                                                backgroundColor: '#cc33ff',
+                                                                color: '#FFFFFF',
+                                                            } : res.difficulty === 'append' ? {
+                                                                background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)',
+                                                                color: '#FFFFFF',
+                                                            } : {}
+                                                        }
+                                                    >
+                                                        {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty}
+                                                    </span>
+                                                </div>
+                                                {res.songId === 488 && (
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-max">
+                                                        <span className="text-[9px] text-gray-400 font-medium whitespace-nowrap">
+                                                            {t('auto.recommend_0034')}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-1 py-2 md:p-4 text-center">
@@ -383,7 +392,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                             </tbody>
                         </table>
                     </div>
-                    <div className="mt-2 text-[11px] text-gray-400 text-right px-1">
+                    <div className="mt-2 text-[11px] text-gray-500 text-right px-1">
                         * {t('auto.excluded_song_note')}
                     </div>
                 </div>

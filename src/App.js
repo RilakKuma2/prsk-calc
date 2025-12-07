@@ -115,7 +115,7 @@ function AppContent() {
       <div className="button-container">
         <button
           className="link-button"
-          onClick={() => window.open('https://rilaksekai.com/', '_blank')}
+          onClick={() => window.open('https://chart.rilaksekai.com/', '_blank')}
         >
           {t('app.chart_link')}
         </button>
