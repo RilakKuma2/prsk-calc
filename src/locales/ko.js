@@ -6,6 +6,7 @@ const ko = {
         auto_load: '자동 불러오기',
         chart_link: '프로세카 채보',
         gacha_link: '픽업 확률 계산기',
+        official_store: '공식 웹 스토어',
         toast: {
             saved: '데이터가 저장되었습니다.',
             loaded: '데이터를 불러왔습니다.',

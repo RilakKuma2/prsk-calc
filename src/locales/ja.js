@@ -6,6 +6,7 @@ const ja = {
         auto_load: '自動読込',
         chart_link: '譜面保管所',
         gacha_link: 'ガチャ計算',
+        official_store: '公式Web Store',
         toast: {
             saved: '保存しました',
             loaded: '読み込みました',
