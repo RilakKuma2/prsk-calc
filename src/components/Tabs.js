@@ -7,11 +7,12 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     { id: 'internal', name: t('tabs.internal') },
     { id: 'amatsuyu', name: t('tabs.amatsuyu') },
     { id: 'challenge', name: t('tabs.challenge') },
+    { id: 'auto', name: t('tabs.auto') },
     { id: 'fire', name: t('tabs.fire') },
     { id: 'power', name: t('tabs.power') },
-    { id: 'auto', name: t('tabs.auto') },
     { id: 'scoreArt', name: t('tabs.score_art') },
     { id: 'level', name: t('tabs.level') },
+    { id: 'gacha', name: t('tabs.gacha') },
   ];
 
   const tabsRef = useRef(null);

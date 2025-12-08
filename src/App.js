@@ -12,9 +12,10 @@ import ScoreArtTab from './components/ScoreArtTab';
 import UpcomingEvents from './components/UpcomingEvents';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
+import GachaTab from './components/GachaTab';
 
 function AppContent() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [currentTab, setCurrentTab] = useState('internal');
   const [surveyData, setSurveyData] = useState({});
   const [loadVersion, setLoadVersion] = useState(0);
@@ -67,6 +68,7 @@ function AppContent() {
     challenge: <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     amatsuyu: <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     scoreArt: <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    gacha: <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
   };
 
   const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });
@@ -154,19 +156,12 @@ function AppContent() {
       <div className="button-container">
         <button
           className="link-button"
-          onClick={() => window.open('https://chart.rilaksekai.com/', '_blank')}
+          onClick={() => window.open(language === 'ko' ? 'https://chart.rilaksekai.com/' : 'https://sdvx.in/prsk.html', '_blank')}
         >
           {t('app.chart_link')}
         </button>
       </div>
-      <div className="button-container">
-        <button
-          className="link-button"
-          onClick={() => window.open('https://rilakkuma2.github.io/pickup/', '_blank')}
-        >
-          {t('app.gacha_link')}
-        </button>
-      </div>
+
 
       {/* Info Button - Positioned in Bottom Right of Container */}
       <div className="absolute bottom-6 right-6 z-50" ref={infoRef}>

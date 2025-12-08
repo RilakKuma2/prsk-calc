@@ -22,9 +22,10 @@ const en = {
         power: 'EP',
         auto: 'Auto',
         fire: 'Event Run',
-        challenge: 'Chall Live',
+        challenge: 'Challenge',
         amatsuyu: 'Amatsuyu',
         score_art: 'Score Art',
+        gacha: 'Gacha',
     },
     internal: {
         leader_skill: 'Leader Skill',
@@ -294,6 +295,19 @@ const en = {
         event_points: 'EP',
         total_power: 'Total Power',
         description: '※ Minimum power and multiplier to reach target EP',
+    },
+    gacha: {
+        pickup_prob: 'PU Prob',
+        pickup_count: 'PU Count',
+        attempt_count: 'Attempts',
+        pity_count: 'Spark Count',
+        pickup_probability: 'PU Probability',
+        fraction: ' 1 in',
+        none: 'None',
+        error_too_many_pickups: 'Error: Too many PUs',
+        error_pity_too_high: 'Error: Spark count too high',
+        chart_cumulative: 'Cumulative Probability in Chart',
+        suffix_pickup: ' PU',
     },
 };
 

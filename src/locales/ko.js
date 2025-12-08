@@ -25,6 +25,7 @@ const ko = {
         challenge: '챌라',
         amatsuyu: '아마츠유',
         score_art: '점수아트',
+        gacha: '가챠',
     },
     internal: {
         leader_skill: '리더 스킬',
@@ -294,6 +295,19 @@ const ko = {
         event_points: '이벤포',
         total_power: '종합력',
         description: '※ 목표 이벤포를 얻기 위한 최소 종합력 및 배수',
+    },
+    gacha: {
+        pickup_prob: '픽업 확률',
+        pickup_count: '픽업 개수',
+        attempt_count: '시도 횟수',
+        pity_count: '천장 교환 수',
+        pickup_probability: '픽업 확률',
+        fraction: '분의 1',
+        none: '없음',
+        error_too_many_pickups: '오류 : 픽업 수가 너무 많습니다',
+        error_pity_too_high: '오류 : 천장 수가 너무 많습니다',
+        chart_cumulative: '차트 내 누적확률 표기',
+        suffix_pickup: '픽업',
     },
 };
 

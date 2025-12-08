@@ -25,6 +25,7 @@ const ja = {
         challenge: 'チャレ',
         amatsuyu: 'あまつゆ',
         score_art: 'ポイント調整',
+        gacha: 'ガチャ',
     },
     internal: {
         leader_skill: 'リーダー',
@@ -293,6 +294,19 @@ const ja = {
         event_points: 'イベP',
         total_power: '総合力',
         description: '※ 目標Pのための最小総合力・倍率',
+    },
+    gacha: {
+        pickup_prob: 'PU確率',
+        pickup_count: 'PU数',
+        attempt_count: '回数',
+        pity_count: '天井交換数',
+        pickup_probability: 'PU 確率',
+        fraction: '分の1',
+        none: 'なし',
+        error_too_many_pickups: 'エラー：PU数が多すぎます',
+        error_pity_too_high: 'エラー：天井回数が多すぎます',
+        chart_cumulative: 'チャート内累積確率表記',
+        suffix_pickup: 'PU',
     },
 };
 

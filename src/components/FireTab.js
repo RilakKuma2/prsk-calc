@@ -3,7 +3,7 @@ import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents
 import { useTranslation } from '../contexts/LanguageContext';
 
 const FireTab = ({ surveyData, setSurveyData }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [score1, setScore1] = useState(surveyData.score1 || '');
   const [score2, setScore2] = useState(surveyData.score2 || '');
   const [score3, setScore3] = useState(surveyData.score3 || '');
@@ -528,6 +528,20 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           </div>
         </div>
       </div>
+
+      {language === 'ko' && (
+        <div className="w-full max-w-2xl mx-auto mt-4 text-center">
+          <button
+            onClick={() => window.open('https://x.rilaksekai.com/', '_blank')}
+            className="w-full bg-white border border-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-gray-50 hover:text-indigo-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z" />
+            </svg>
+            주회글 생성기
+          </button>
+        </div>
+      )}
     </div>
   );
 };
