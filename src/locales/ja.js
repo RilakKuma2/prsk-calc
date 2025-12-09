@@ -119,6 +119,12 @@ const ja = {
         show_top_50: 'TOP 50 表示',
         hide_top_50: 'TOP 50 非表示',
         set_target: '目標に設定',
+        room_all: '全体周回',
+        room_envy: 'エビ',
+        room_lost_sage: 'ロスエン / sage',
+        room_omakase: 'おまかせ',
+        room_mv: 'MV',
+        room_search: '周回',
     },
     challenge: {
         score: 'スコア',

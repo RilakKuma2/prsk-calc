@@ -119,6 +119,12 @@ const en = {
         show_top_50: 'Show TOP 50',
         hide_top_50: 'Hide TOP 50',
         set_target: 'Target this',
+        room_all: 'All Rooms',
+        room_envy: 'Envy',
+        room_lost_sage: 'Lost / Sage',
+        room_omakase: 'Omakase',
+        room_mv: 'MV',
+        room_search: 'Room Search',
     },
     challenge: {
         score: 'Score',

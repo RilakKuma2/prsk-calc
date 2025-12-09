@@ -120,6 +120,12 @@ const ko = {
         show_top_50: 'TOP 50 보기',
         hide_top_50: 'TOP 50 숨기기',
         set_target: '목표로 설정',
+        room_all: '전체 주회',
+        room_envy: '엔비',
+        room_lost_sage: '로앤파 / Sage',
+        room_omakase: '오마카세',
+        room_mv: 'MV',
+        room_search: '주회방',
     },
     challenge: {
         score: '스코어',
