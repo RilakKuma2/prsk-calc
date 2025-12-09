@@ -5,21 +5,12 @@ import { useTranslation } from '../contexts/LanguageContext';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-// Helper logic extracted for reuse
 const isAcquisitionDate = (date, birthday) => {
     if (!date) return false;
     const [bMonth, bDay] = birthday.date.split('.').map(Number);
     const year = date.getFullYear();
 
 
-    // We need to handle year boundaries properly for logic
-    // But since we compare timestamps, we just need the correct birthday year relative to date
-
-    // Correct logic: Find the birthday instance closest to 'date' or ensure year matches
-    // Actually, simply constructing bDate with date.getFullYear() works for standard cases
-    // but D-3 could be in previous year (e.g. Jan 2 birthday -> Dec 30 acq).
-
-    // Let's check date against birthday in current year, prev year, next year
     const checkYear = (y) => {
         const bd = new Date(y, bMonth - 1, bDay);
         const oneDay = 86400000;
@@ -58,7 +49,6 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
     const firstDay = getFirstDayOfMonth(year, month);
 
     const formatMonth = (m) => {
-        // iOS style usually just number or "N월"
         if (language === 'ko') return `${m + 1}월`;
         if (language === 'ja') return `${m + 1}月`;
         return `${m + 1}`;
@@ -72,7 +62,6 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
         calendarDays.push(new Date(year, month, i));
     }
 
-    // Label Row Logic: Position month name above the 1st day
     const labelRow = Array(7).fill(null);
     labelRow[firstDay] = formatMonth(month);
 
@@ -80,7 +69,6 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
         const currAcqs = getRelevantAcqs(date);
         if (currAcqs.length === 0) return { display: 'none' };
 
-        // Sort: Birthday (today) comes first
         currAcqs.sort((a, b) => {
             const isBa = isBirthday(date, a);
             const isBb = isBirthday(date, b);
@@ -171,7 +159,6 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
     };
 
     const getTextColor = (date, idx) => {
-        // Birthday -> White/Contrast
         const birthdays = characterBirthdays.filter(b => isBirthday(date, b));
         if (birthdays.length > 0) {
             const hasRin = birthdays.find(b => b.nameKo === '린' || b.nameEn === 'Rin');
@@ -180,9 +167,6 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
             if (isBrightColor(birthdays[0].color)) return 'text-gray-800';
             return 'text-white';
         }
-
-        // Acquisition (Outlined) -> Standard Text Color (Black/Gray)
-        // So we fall through to default logic below
 
         const isSun = idx % 7 === 0;
         const isSat = idx % 7 === 6;

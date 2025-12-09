@@ -17,8 +17,8 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
         const newSurveyData = { ...surveyData, currentStage, remainingScore, targetStage, challengeScore, pass };
         setSurveyData(newSurveyData);
 
-        const currentStageVal = parseInt(currentStage || '102') || 0;
-        let targetStageVal = targetStage || '140';
+        const currentStageVal = parseInt(currentStage || '120') || 0;
+        let targetStageVal = targetStage || 'EX';
         const challengeScoreVal = parseInt(challengeScore || '260') || 0;
         const remainingScoreVal = parseInt(remainingScore || '4518') || 0;
         const passVal = parseInt(pass);
@@ -77,7 +77,7 @@ ${t('challenge_stage.ex_stage_desc')}
                     label={t('challenge_stage.current_stage')}
                     value={currentStage}
                     onChange={e => setCurrentStage(e.target.value)}
-                    placeholder="102"
+                    placeholder="120"
                     min="1"
                 />
                 <InputRow
@@ -92,7 +92,7 @@ ${t('challenge_stage.ex_stage_desc')}
                     value={targetStage}
                     onChange={e => setTargetStage(e.target.value)}
                     type="text"
-                    placeholder="140"
+                    placeholder="EX"
                     min="1"
                 />
                 <InputRow
@@ -139,10 +139,10 @@ ${t('challenge_stage.ex_stage_desc')}
                   I can recalculate these in the render function to display them cleanly.
               */}
                             {(() => {
-                                const currentStageVal = parseInt(currentStage) || 0;
-                                let targetStageVal = targetStage;
-                                const challengeScoreVal = parseInt(challengeScore) || 0;
-                                const remainingScoreVal = parseInt(remainingScore) || 0;
+                                const currentStageVal = parseInt(currentStage || '120') || 0;
+                                let targetStageVal = targetStage || 'EX';
+                                const challengeScoreVal = parseInt(challengeScore || '260') || 0;
+                                const remainingScoreVal = parseInt(remainingScore || '4518') || 0;
                                 const passVal = parseInt(pass);
 
                                 if (!isNaN(targetStageVal) && parseInt(targetStageVal) > 150) {

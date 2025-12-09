@@ -21,6 +21,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const [solutions, setSolutions] = useState([]);
     const [error, setError] = useState('');
     const [selectedItem, setSelectedItem] = useState(null);
+    const [calculatedGap, setCalculatedGap] = useState(0);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -66,8 +67,8 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
             return;
         }
 
-        const cur = parseInt(currentEP, 10);
-        const tgt = parseInt(targetEP, 10);
+        const cur = parseInt(currentEP || '171923316', 10);
+        const tgt = parseInt(targetEP || '172000414', 10);
         const bonus = parseInt(maxBonus || '300', 10);
         const power = parseFloat(maxPower || '25.5');
         const envyLimit = parseFloat(maxEnvyScore || '80');
@@ -82,6 +83,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
         }
 
         const gap = tgt - cur;
+        setCalculatedGap(gap);
 
         if (gap >= 100000) {
             setError(t('score_art.gap_error'));
@@ -267,10 +269,18 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
 
             {solutions.length > 0 && (
                 <div className="space-y-4">
+                    {/* Calculated Gap Display */}
+                    <div className="bg-white rounded-xl border border-gray-200 py-3 text-center animate-fade-in-up shadow-sm flex items-center justify-center gap-2">
+                        <span className="text-gray-500 text-sm font-bold">{t('score_art.earned_points')}</span>
+                        <span className="text-indigo-600 text-sm font-bold font-mono">
+                            {calculatedGap.toLocaleString()} pt
+                        </span>
+                    </div>
+
                     {currentSolutions.map((sol, idx) => {
                         const grouped = groupItems(sol.combination);
                         return (
-                            <div key={idx} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-400 hover:shadow-md transition-all duration-200">
+                            <div key={idx} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-gray-400 hover:shadow-md transition-all duration-200 animate-fade-in-up">
                                 <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-sm font-medium border border-emerald-100">
                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>

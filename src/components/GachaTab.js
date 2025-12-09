@@ -68,10 +68,10 @@ const GachaTab = ({ surveyData, setSurveyData }) => {
     const { t } = useTranslation();
 
     // State for inputs
-    const [pickupProb, setPickupProb] = useState(surveyData.pickupProb || '0.4');
-    const [pickupCount, setPickupCount] = useState(surveyData.pickupCount || '3');
-    const [attemptCount, setAttemptCount] = useState(surveyData.attemptCount || '200');
-    const [pityCount, setPityCount] = useState(surveyData.pityCount || '0');
+    const [pickupProb, setPickupProb] = useState(surveyData.pickupProb || '');
+    const [pickupCount, setPickupCount] = useState(surveyData.pickupCount || '');
+    const [attemptCount, setAttemptCount] = useState(surveyData.attemptCount || '');
+    const [pityCount, setPityCount] = useState(surveyData.pityCount || '');
 
     // State for results
     const [resultHtml, setResultHtml] = useState([]); // Array of JSX elements or objects
@@ -92,10 +92,10 @@ const GachaTab = ({ surveyData, setSurveyData }) => {
 
     // Calculation and Chart Update Logic
     useEffect(() => {
-        const probVal = parseFloat(pickupProb) / 100;
-        const pickupCountVal = parseInt(pickupCount);
-        const attemptCountVal = parseInt(attemptCount);
-        const pityCountVal = parseInt(pityCount);
+        const probVal = parseFloat(pickupProb === '' ? '0.4' : pickupProb) / 100;
+        const pickupCountVal = parseInt(pickupCount === '' ? '3' : pickupCount);
+        const attemptCountVal = parseInt(attemptCount === '' ? '200' : attemptCount);
+        const pityCountVal = parseInt(pityCount === '' ? '0' : pityCount);
 
         let newResultHtml = [];
         let pro = [];
