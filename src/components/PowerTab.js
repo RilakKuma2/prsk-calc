@@ -403,7 +403,9 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             {t('power.mysekai_table')}
           </button>
         </div>
-        {showMySekaiTable && <MySekaiTable />}
+        <div className={`overflow-hidden transition-all duration-200 ease-in-out ${showMySekaiTable ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+          <MySekaiTable />
+        </div>
 
         <div className="w-full mt-4 mb-4">
           <div className="overflow-x-auto">

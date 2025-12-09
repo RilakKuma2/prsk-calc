@@ -304,90 +304,17 @@ select {
     width: 100%;
     overflow-x: auto;
     /* Keep for safety on small screens */
-}
-
-#my-sekai-table-container table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: center;
-    font-size: clamp(10.8px, 1vw, 13px);
-    /* User's preferred responsive font size */
-    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-    font-weight: 600;
-}
-
-#my-sekai-table-container th,
-#my-sekai-table-container td {
-    border: 1px solid #ccc;
-    padding: 2.3px;
-}
-
-#my-sekai-table-container th {
-    background-color: #f2f2f2;
-}
-
-.diagonal-header {
-    position: relative;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     overflow: hidden;
+    /* Ensures corners are clipped */
 }
 
-.diagonal-header::after {
-    content: '';
-    position: absolute;
-    width: 200%;
-    height: 1px;
-    background-color: #ccc;
-    /* Match border color */
-    left: -50%;
-    top: 50%;
-    transform: rotate(25deg);
-}
+/* Legacy MySekai Table styles removed - now using Tailwind in component */
 
-.header-row-text,
-.header-col-text {
-    position: absolute;
-    font-weight: bold;
-    font-size: 7.5px;
-    /* Smaller font size */
-}
-
-.header-row-text {
-    bottom: 1px;
-    left: 1px;
-}
-
-.header-col-text {
-    top: 1px;
-    right: 1px;
-}
-
-#my-sekai-table-container th {
-    background-color: #f7f9fc;
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-#my-sekai-table-container td:not(:first-child):not(:empty)::after {
-    content: "%";
-    color: #000000;
-    font-size: 0.9em;
-    margin-left: 0px;
-}
-
-#my-sekai-table-container td:first-child {
-    font-weight: bold;
-}
-
-@media (max-width: 375px) {
-    #my-sekai-table-container table {
-        font-size: 9px;
-    }
-
-    .header-row-text,
-    .header-col-text {
-        font-size: 6px;
-    }
-}
 
 /* --- Responsive Styles --- */
 
@@ -539,4 +466,21 @@ select {
         justify-content: center;
         /* Center tabs on desktop */
     }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: scaleY(0);
+    }
+
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+}
+
+.animate-slide-down {
+    animation: slideDown 0.15s ease-out forwards;
+    transform-origin: top;
 }

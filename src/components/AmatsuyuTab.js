@@ -353,6 +353,12 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
         </div>
       </div>
       {showCalendar && <AmatsuyuCalendar onClose={() => setShowCalendar(false)} />}
+
+      {/* Hidden div to pre-load Roboto font for Calendar to prevent FOUT */}
+      <div style={{ fontFamily: "'Roboto', sans-serif", opacity: 0, position: 'absolute', pointerEvents: 'none', height: 0, overflow: 'hidden' }}>
+        Pre-load Roboto Font 0123456789
+      </div>
+
       {showNotifyModal && (
         <AmatsuyuNotificationModal
           settings={notifySettings}
