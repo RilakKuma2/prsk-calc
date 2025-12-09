@@ -7,15 +7,28 @@ const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
     const [language, setLanguage] = useState(() => {
+        // 1. Check URL query parameter (Priority)
+        const params = new URLSearchParams(window.location.search);
+        const urlLang = params.get('lang');
+        if (urlLang && ['ko', 'ja', 'en'].includes(urlLang)) {
+            return urlLang;
+        }
+
+        // 2. Check Local Storage
         const savedLanguage = localStorage.getItem('language');
         if (savedLanguage) {
             return savedLanguage;
         }
+
+        // 3. Check Browser Language
         const browserLang = navigator.language || navigator.userLanguage;
         if (browserLang) {
             if (browserLang.startsWith('ja')) return 'ja';
-            if (browserLang.startsWith('en')) return 'en';
+            // User requested to NOT auto-detect English, defaulting to Korean instead
+            // if (browserLang.startsWith('en')) return 'en'; 
         }
+
+        // 4. Default
         return 'ko';
     });
 
@@ -27,6 +40,11 @@ export const LanguageProvider = ({ children }) => {
         setLanguage(lang);
         localStorage.setItem('language', lang);
         document.documentElement.lang = lang;
+
+        // Update URL query parameter without reloading
+        const url = new URL(window.location);
+        url.searchParams.set('lang', lang);
+        window.history.pushState({}, '', url);
     };
 
     const translations = {
