@@ -28,7 +28,7 @@ const MySekaiTable = () => {
               if (score === 9000) {
                 return (
                   <tr key={score} className="bg-yellow-50/50">
-                    <td className={`py-1 px-0.5 font-bold bg-gray-50 border-r border-gray-200 transition-colors duration-150 ${hoveredCell.row === score ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}>{score}</td>
+                    <td className={`py-1 px-0.5 font-bold border-r border-gray-200 transition-colors duration-150 ${hoveredCell.row === score ? 'bg-blue-100 text-blue-900' : 'bg-gray-50 text-gray-900'}`}>{score}</td>
                     <td colSpan={10} className="py-1 px-1 text-left text-gray-500 italic">
                       {t('my_sekai_table.description')}
                     </td>
@@ -38,7 +38,7 @@ const MySekaiTable = () => {
               const isRowHovered = hoveredCell.row === score;
               return (
                 <tr key={score} className="transition-colors duration-150">
-                  <td className={`py-0.5 px-0.5 font-bold bg-gray-50 border-r border-gray-200 transition-colors duration-150 ${isRowHovered ? 'bg-blue-100 text-blue-900' : 'text-gray-800'}`}>
+                  <td className={`py-0.5 px-0.5 font-bold border-r border-gray-200 transition-colors duration-150 ${isRowHovered ? 'bg-blue-100 text-blue-900' : 'bg-gray-50 text-gray-800'}`}>
                     {score}
                   </td>
                   {powerColumnThresholds.map((power, idx) => {
