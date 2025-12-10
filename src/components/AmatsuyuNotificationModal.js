@@ -408,6 +408,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
 
                 <div className="px-4 pb-2 text-center">
                     <p className="text-xs text-gray-400">{t('amatsuyu.notify_timezone')}</p>
+                    <p className="text-xs text-red-500 font-bold mt-1">{t('amatsuyu.save_warning')}</p>
                 </div>
                 <div className="p-4 bg-gray-50 flex justify-end">
                     <button

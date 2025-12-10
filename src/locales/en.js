@@ -180,6 +180,7 @@ const en = {
         notify_time: 'Alert Time',
         permission_denied: 'Notifications blocked. Please allow in browser settings.',
         notification_desc: 'If notifications do not appear, check browser permissions.\niOS: Add to Home Screen for best experience.',
+        save_warning: 'Please make sure to check if you receive a confirmation alert after saving',
         alerts: {
             unsupported: "This browser does not support push notifications. (iOS: Use 'Add to Home Screen')",
             ios_standalone: "iOS: Notifications work only when added to Home Screen.\n\nTap Share -> 'Add to Home Screen', then launch the app.",
