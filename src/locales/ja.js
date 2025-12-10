@@ -189,6 +189,25 @@ const ja = {
             save_fail: '設定保存失敗: ',
             vapid_missing: '開発者設定が必要です: VAPID Public Keyが設定されていません。',
             sync_fail: 'サーバー同期失敗: ',
+            invalid_webhook: '無効なDiscord Webhook URLです',
+            missing_chat_id: 'Chat IDを入力してください',
+            saving: '保存中...',
+        },
+        tabs: {
+            web: 'ブラウザ通知',
+            discord: 'Discord',
+            telegram: 'Telegram'
+        },
+        discord: {
+            desc: 'Discord Webhookを通じて通知を受け取ります。\nサーバーチャンネルや個人DMで通知を受け取れます。',
+            connect_btn: 'Discord連携',
+            connected: '連携済み:'
+        },
+        telegram: {
+            desc: 'Telegram Botを通じて通知を受け取ります。\n「連携」ボタンを押してボットを開き、Startを押してください。',
+            connect_btn: 'Telegram連携',
+            connecting: '連携確認中...',
+            connected: '連携済み:'
         }
     },
     score_art: {

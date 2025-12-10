@@ -190,6 +190,25 @@ const en = {
             save_fail: 'Failed to save settings: ',
             vapid_missing: 'Developer Config Error: VAPID Key missing.',
             sync_fail: 'Server Sync Failed: ',
+            invalid_webhook: 'Invalid Discord Webhook URL',
+            missing_chat_id: 'Please enter Chat ID',
+            saving: 'Saving...',
+        },
+        tabs: {
+            web: 'Web Push',
+            discord: 'Discord',
+            telegram: 'Telegram'
+        },
+        discord: {
+            desc: 'Receive notifications via a Discord Webhook.\nIdeal for server channels or personal DMs.',
+            connect_btn: 'Connect Discord',
+            connected: 'Connected:'
+        },
+        telegram: {
+            desc: 'Receive notifications via the Telegram Bot.\nClick "Connect" to open the bot and press Start.',
+            connect_btn: 'Connect Telegram',
+            connecting: 'Waiting for connection...',
+            connected: 'Connected:'
         }
     },
     score_art: {
