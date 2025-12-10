@@ -58,6 +58,7 @@ const ja = {
         song: '曲名',
         fire: '消費',
         event_points: 'イベP',
+        average: '平均',
         songs: {
             lost_and_found: 'ロスエン(ハード)',
             omakase: 'おまかせ',

@@ -18,24 +18,76 @@ export const InputTableWrapper = ({ children }) => (
     </div>
 );
 
-export const InputRow = ({ label, value, onChange, type = "number", min, max, suffix, className = "", onFocus, spacer, placeholder }) => (
+export const InputRow = ({ label, value, onChange, type = "number", min, max, suffix, className = "", onFocus, spacer, placeholder, comparisonMode, valueB, onChangeB, showLabels, tabIndexA, tabIndexB }) => (
     <tr>
-        <td className="text-right pr-2 py-0.5">
+        <td className="text-right pr-2 py-0.5" style={{ verticalAlign: 'middle' }}>
             <label className="whitespace-nowrap font-bold text-gray-700">{label}</label>
         </td>
         <td className="text-left py-0.5">
-            <div className="flex items-center">
-                <input
-                    type={type}
-                    value={value}
-                    onChange={onChange}
-                    min={min}
-                    max={max}
-                    placeholder={placeholder}
-                    onFocus={onFocus || ((e) => e.target.select())}
-                    className={`w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 ${className}`}
-                />
-                {suffix && <span className="ml-1 text-gray-600">{suffix}</span>}
+            <div className="flex items-center gap-1">
+                {comparisonMode ? (
+                    <>
+                        {/* Input A */}
+                        <div className="flex flex-col items-center">
+                            <div className="flex items-center">
+                                <input
+                                    type={type}
+                                    value={value}
+                                    onChange={onChange}
+                                    min={min}
+                                    max={max}
+                                    placeholder={placeholder}
+                                    onFocus={onFocus || ((e) => e.target.select())}
+                                    className={`w-20 text-center bg-gray-50 rounded-lg px-1 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm ${className}`}
+                                    tabIndex={tabIndexA}
+                                />
+                                {suffix && <span className="ml-0.5 text-xs text-gray-500">{suffix}</span>}
+                            </div>
+                            {showLabels && (
+                                <div className="w-full h-0.5 bg-blue-200 mt-0.5 relative">
+                                    <span className="absolute top-1 left-1/2 transform -translate-x-1/2 text-[9px] text-blue-400 font-bold leading-none">A</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Input B */}
+                        <div className="flex flex-col items-center">
+                            <div className="flex items-center">
+                                <input
+                                    type={type}
+                                    value={valueB}
+                                    onChange={onChangeB}
+                                    min={min}
+                                    max={max}
+                                    placeholder={placeholder}
+                                    onFocus={onFocus || ((e) => e.target.select())}
+                                    className={`w-20 text-center bg-gray-50 rounded-lg px-1 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm ${className}`}
+                                    tabIndex={tabIndexB}
+                                />
+                                {suffix && <span className="ml-0.5 text-xs text-gray-500">{suffix}</span>}
+                            </div>
+                            {showLabels && (
+                                <div className="w-full h-0.5 bg-red-200 mt-0.5 relative">
+                                    <span className="absolute top-1 left-1/2 transform -translate-x-1/2 text-[9px] text-red-400 font-bold leading-none">B</span>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <input
+                            type={type}
+                            value={value}
+                            onChange={onChange}
+                            min={min}
+                            max={max}
+                            placeholder={placeholder}
+                            onFocus={onFocus || ((e) => e.target.select())}
+                            className={`w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 ${className}`}
+                        />
+                        {suffix && <span className="ml-1 text-gray-600">{suffix}</span>}
+                    </>
+                )}
             </div>
         </td>
         {spacer && <td className="w-8"></td>}

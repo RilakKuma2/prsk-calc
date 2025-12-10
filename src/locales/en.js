@@ -45,8 +45,9 @@ const en = {
     power: {
         total_power: 'Total Power',
         multiplier: 'Multiplier',
-        internal_value: 'Internal Value',
+        internal_value: 'Skill',
         detailed_input: 'Detailed Input',
+        average: 'Average',
         encore: 'Encore',
         member_1: 'Member 1',
         member_2: 'Member 2',

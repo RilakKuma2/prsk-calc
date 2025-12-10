@@ -28,9 +28,22 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   const [internalValue, setInternalValue] = useState(surveyData.internalValue || '');
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
 
+  // Comparison Mode State
+  const [isComparisonMode, setIsComparisonMode] = useState(surveyData.isComparisonMode || false);
+  const [powerB, setPowerB] = useState(surveyData.powerB || '');
+  const [effiB, setEffiB] = useState(surveyData.effiB || '');
+  const [internalValueB, setInternalValueB] = useState(surveyData.internalValueB || '');
+
   // Detailed Input State
   const [isDetailedInput, setIsDetailedInput] = useState(surveyData.isDetailedInput || false);
   const [detailedSkills, setDetailedSkills] = useState(surveyData.detailedSkills || {
+    encore: '',
+    member1: '',
+    member2: '',
+    member3: '',
+    member4: ''
+  });
+  const [detailedSkillsB, setDetailedSkillsB] = useState(surveyData.detailedSkillsB || {
     encore: '',
     member1: '',
     member2: '',
@@ -59,21 +72,41 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   const [creationMythScore, setCreationMythScore] = useState({ min: 0, max: 0 });
   const [omakaseScore, setOmakaseScore] = useState({ min: 0, max: 0 });
 
+  // Deck B Scores
+  const [loAndFoundScoreB, setLoAndFoundScoreB] = useState({ min: 0, max: 0 });
+  const [envyScoreB, setEnvyScoreB] = useState({ min: 0, max: 0 });
+  const [creationMythScoreB, setCreationMythScoreB] = useState({ min: 0, max: 0 });
+  const [omakaseScoreB, setOmakaseScoreB] = useState({ min: 0, max: 0 });
+  const [mySekaiScoreB, setMySekaiScoreB] = useState('N/A');
+
+
   // Helper to get skills array based on input mode
   // Returns [Leader, M2, M3, M4, M5]
-  const getSkillsArray = () => {
-    if (isDetailedInput) {
+  const getSkillsArray = (isDetailed, skillsDetail, simpleVal) => {
+    if (isDetailed) {
       return [
-        parseFloat(detailedSkills.encore) || 0,
-        parseFloat(detailedSkills.member1) || 0,
-        parseFloat(detailedSkills.member2) || 0,
-        parseFloat(detailedSkills.member3) || 0,
-        parseFloat(detailedSkills.member4) || 0
+        parseFloat(skillsDetail.encore) || 0,
+        parseFloat(skillsDetail.member1) || 0,
+        parseFloat(skillsDetail.member2) || 0,
+        parseFloat(skillsDetail.member3) || 0,
+        parseFloat(skillsDetail.member4) || 0
       ];
     } else {
-      const val = internalValue === '' ? 200 : (parseFloat(internalValue) || 0);
+      const val = simpleVal === '' ? 200 : (parseFloat(simpleVal) || 0);
       return [val, val, val, val, val];
     }
+  };
+
+  const calculateAverage = (skillsDetail) => {
+    const values = [
+      parseFloat(skillsDetail.encore) || 0,
+      parseFloat(skillsDetail.member1) || 0,
+      parseFloat(skillsDetail.member2) || 0,
+      parseFloat(skillsDetail.member3) || 0,
+      parseFloat(skillsDetail.member4) || 0
+    ];
+    const sum = values.reduce((a, b) => a + b, 0);
+    return Math.round((sum / 5) * 10) / 10;
   };
 
   useEffect(() => {
@@ -82,152 +115,165 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       power,
       effi,
       internalValue,
+      isComparisonMode,
+      powerB,
+      effiB,
+      internalValueB,
       isDetailedInput,
       detailedSkills,
+      detailedSkillsB,
       fireCounts
     };
     setSurveyData(newSurveyData);
 
-    if (power === '' && effi === '') {
-      // If both are empty, we can't really do much unless we assume defaults for both.
-      // But the user asked for "when nothing is entered, treat as 25.5".
-      // Let's apply defaults if they are empty strings.
-    }
-
-    const powerVal = parseFloat(power || '25.5');
-    const effiVal = parseInt(effi || '250', 10);
-    const skillsArray = getSkillsArray();
-
-    // Helper functions for score calculation
-    const getScoreRange = (pVal, skills, songId, difficulty, liveType, fireCount) => {
-      try {
-        const input = {
-          songId: songId,
-          difficulty: difficulty,
-          totalPower: pVal * 10000,
-          skillLeader: skills[0],
-          skillMember2: skills[1],
-          skillMember3: skills[2],
-          skillMember4: skills[3],
-          skillMember5: skills[4],
-        };
-
-        const result = calculateScoreRange(input, liveType);
-        if (!result) return { min: 0, max: 0 };
-
-        const musicMeta = musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
-        if (!musicMeta) return { min: 0, max: 0 };
-
-        const multiplier = FIRE_MULTIPLIERS[fireCount] || 1;
-
-        const minEP = EventCalculator.getEventPoint(
-          liveType,
-          EventType.MARATHON,
-          result.min,
-          musicMeta.event_rate,
-          effiVal,
-          multiplier
-        );
-
-        const maxEP = EventCalculator.getEventPoint(
-          liveType,
-          EventType.MARATHON,
-          result.max,
-          musicMeta.event_rate,
-          effiVal,
-          multiplier
-        );
-
-        return { min: minEP, max: maxEP };
-
-      } catch (e) {
-        console.error(e);
-        return { min: 0, max: 0 };
+    const inputsList = [
+      {
+        p: power, e: effi, i: internalValue, skills: detailedSkills,
+        setLo: setLoAndFoundScore, setEn: setEnvyScore, setOm: setOmakaseScore, setCr: setCreationMythScore, setMs: setMySekaiScore,
+        calcEff: true
       }
-    };
+    ];
 
-    // 1. Lost and Found (ID 186, Hard, Multi)
-    const loAndFound = getScoreRange(powerVal, skillsArray, 186, 'hard', LiveType.MULTI, fireCounts.loAndFound);
-
-    // 2. Envy (ID 74, Expert, Multi)
-    const envy = getScoreRange(powerVal, skillsArray, 74, 'expert', LiveType.MULTI, fireCounts.envy);
-
-    // 3. Omakase (ID 572, Master, Multi)
-    const omakase = getScoreRange(powerVal, skillsArray, 572, 'master', LiveType.MULTI, fireCounts.omakase);
-
-    // 4. Creation Myth (ID 186, Master, Auto) - Fixed 100% skills
-    const creationMyth = getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, fireCounts.creationMyth);
-
-    // 5. Append (ID 488, Append, Solo) - Fixed 100% skills for Efficiency Calc
-    const append = getScoreRange(powerVal, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
-
-
-    // Calculate Efficiencies
-    const loAndFoundPlus1 = getScoreRange(powerVal + 1, skillsArray, 186, 'hard', LiveType.MULTI, 5);
-    const creationMythPlus1 = getScoreRange(powerVal + 1, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, 1);
-    const appendPlus1 = getScoreRange(powerVal + 1, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
-
-    const loAndFoundBase = getScoreRange(powerVal, skillsArray, 186, 'hard', LiveType.MULTI, 5);
-    const creationMythBase = getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, 1);
-    const appendBase = getScoreRange(powerVal, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
-
-    let newMultiEff = 0;
-    if (loAndFoundBase.max > 0) {
-      newMultiEff = (100 + effiVal) * (loAndFoundPlus1.max / loAndFoundBase.max - 1);
+    if (isComparisonMode) {
+      inputsList.push({
+        p: powerB, e: effiB, i: internalValueB, skills: detailedSkillsB,
+        setLo: setLoAndFoundScoreB, setEn: setEnvyScoreB, setOm: setOmakaseScoreB, setCr: setCreationMythScoreB, setMs: setMySekaiScoreB,
+        calcEff: false
+      });
     }
-    setMultiEff(newMultiEff);
 
-    let newAutoEff = 0;
-    if (creationMythBase.max > 0) {
-      newAutoEff = (100 + effiVal) * (creationMythPlus1.max / creationMythBase.max - 1);
-    }
-    setAutoEff(newAutoEff);
+    inputsList.forEach(({ p, e, i, skills, setLo, setEn, setOm, setCr, setMs, calcEff }) => {
+      const powerVal = parseFloat(p || '25.5');
+      const effiVal = parseInt(e || '250', 10);
+      const skillsArray = getSkillsArray(isDetailedInput, skills, i);
 
-    let newSoloEff = 0;
-    if (appendBase.max > 0) {
-      newSoloEff = (100 + effiVal) * (appendPlus1.max / appendBase.max - 1);
-    }
-    setSoloEff(newSoloEff);
+      // Helper functions for score calculation
+      const getScoreRange = (pVal, skillsArr, songId, difficulty, liveType, fireCount) => {
+        try {
+          const input = {
+            songId: songId,
+            difficulty: difficulty,
+            totalPower: pVal * 10000,
+            skillLeader: skillsArr[0],
+            skillMember2: skillsArr[1],
+            skillMember3: skillsArr[2],
+            skillMember4: skillsArr[3],
+            skillMember5: skillsArr[4],
+          };
 
-    setLoAndFoundScore(loAndFound);
-    setEnvyScore(envy);
-    setOmakaseScore(omakase);
-    setCreationMythScore(creationMyth);
+          const result = calculateScoreRange(input, liveType);
+          if (!result) return { min: 0, max: 0 };
 
-    // MySekai Score (Original Logic)
-    let highestPossibleScore = "N/A";
-    let columnIndex = -1;
-    if (powerVal >= 0) {
-      for (let j = powerColumnThresholds.length - 1; j >= 0; j--) {
-        if (powerColumnThresholds[j] <= powerVal) {
-          columnIndex = j;
-          break;
+          const musicMeta = musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
+          if (!musicMeta) return { min: 0, max: 0 };
+
+          const multiplier = FIRE_MULTIPLIERS[fireCount] || 1;
+
+          const minEP = EventCalculator.getEventPoint(
+            liveType,
+            EventType.MARATHON,
+            result.min,
+            musicMeta.event_rate,
+            effiVal,
+            multiplier
+          );
+
+          const maxEP = EventCalculator.getEventPoint(
+            liveType,
+            EventType.MARATHON,
+            result.max,
+            musicMeta.event_rate,
+            effiVal,
+            multiplier
+          );
+
+          return { min: minEP, max: maxEP };
+
+        } catch (e) {
+          console.error(e);
+          return { min: 0, max: 0 };
+        }
+      };
+
+      // 1. Lost and Found (ID 186, Hard, Multi)
+      setLo(getScoreRange(powerVal, skillsArray, 186, 'hard', LiveType.MULTI, fireCounts.loAndFound));
+
+      // 2. Envy (ID 74, Expert, Multi)
+      setEn(getScoreRange(powerVal, skillsArray, 74, 'expert', LiveType.MULTI, fireCounts.envy));
+
+      // 3. Omakase (ID 572, Master, Multi)
+      setOm(getScoreRange(powerVal, skillsArray, 572, 'master', LiveType.MULTI, fireCounts.omakase));
+
+      // 4. Creation Myth (ID 186, Master, Auto) - Fixed 100% skills
+      setCr(getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, fireCounts.creationMyth));
+
+      if (calcEff) {
+        // Calculate Efficiencies (Only for A)
+        const loAndFoundPlus1 = getScoreRange(powerVal + 1, skillsArray, 186, 'hard', LiveType.MULTI, 5);
+        const creationMythPlus1 = getScoreRange(powerVal + 1, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, 1);
+        const appendPlus1 = getScoreRange(powerVal + 1, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
+
+        const loAndFoundBase = getScoreRange(powerVal, skillsArray, 186, 'hard', LiveType.MULTI, 5);
+        const creationMythBase = getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, 1);
+        const appendBase = getScoreRange(powerVal, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
+
+        let newMultiEff = 0;
+        if (loAndFoundBase.max > 0) {
+          newMultiEff = (100 + effiVal) * (loAndFoundPlus1.max / loAndFoundBase.max - 1);
+        }
+        setMultiEff(newMultiEff);
+
+        let newAutoEff = 0;
+        if (creationMythBase.max > 0) {
+          newAutoEff = (100 + effiVal) * (creationMythPlus1.max / creationMythBase.max - 1);
+        }
+        setAutoEff(newAutoEff);
+
+        let newSoloEff = 0;
+        if (appendBase.max > 0) {
+          newSoloEff = (100 + effiVal) * (appendPlus1.max / appendBase.max - 1);
+        }
+        setSoloEff(newSoloEff);
+      }
+
+      // MySekai Score Logic
+      let highestPossibleScore = "N/A";
+      let columnIndex = -1;
+      if (powerVal >= 0) {
+        for (let j = powerColumnThresholds.length - 1; j >= 0; j--) {
+          if (powerColumnThresholds[j] <= powerVal) {
+            columnIndex = j;
+            break;
+          }
         }
       }
-    }
 
-    if (columnIndex !== -1) {
-      for (let i = scoreRowKeys.length - 1; i >= 0; i--) {
-        const currentScoreRow = scoreRowKeys[i];
-        const requiredEffiForThisScore =
-          mySekaiTableData[currentScoreRow][columnIndex];
-        if (
-          requiredEffiForThisScore !== null &&
-          effiVal >= requiredEffiForThisScore
-        ) {
-          highestPossibleScore = currentScoreRow;
-          break;
+      if (columnIndex !== -1) {
+        for (let i = scoreRowKeys.length - 1; i >= 0; i--) {
+          const currentScoreRow = scoreRowKeys[i];
+          const requiredEffiForThisScore =
+            mySekaiTableData[currentScoreRow][columnIndex];
+          if (
+            requiredEffiForThisScore !== null &&
+            effiVal >= requiredEffiForThisScore
+          ) {
+            highestPossibleScore = currentScoreRow;
+            break;
+          }
         }
       }
-    }
-    setMySekaiScore(highestPossibleScore);
-    // Removed MySekai EP calculation block
+      setMs(highestPossibleScore);
+    });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [power, effi, internalValue, isDetailedInput, detailedSkills, fireCounts]);
+  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB]);
 
   const handleDetailedChange = (key, value) => {
     setDetailedSkills(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleDetailedChangeB = (key, value) => {
+    setDetailedSkillsB(prev => ({ ...prev, [key]: value }));
   };
 
   const handleFireChange = (key, value) => {
@@ -285,60 +331,52 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     </div >
   );
 
+  const renderDetailedGrid = (skills, onChangeHandler, labelSuffix = "") => (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'center' }}>
+      <div style={{ gridColumn: '1 / -1' }}>
+        <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>
+          {t('power.encore')}
+          {labelSuffix && <span className="text-[10px] text-gray-400 ml-1">{labelSuffix}</span>}
+        </label>
+        <input
+          type="number"
+          value={skills.encore}
+          onChange={(e) => onChangeHandler('encore', e.target.value)}
+          onFocus={(e) => e.target.select()}
+          style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
+        />
+      </div>
+      {['member1', 'member2', 'member3', 'member4'].map((memberKey, idx) => (
+        <div key={memberKey}>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t(`power.member_${idx + 1}`)}</label>
+          <input
+            type="number"
+            value={skills[memberKey]}
+            onChange={(e) => onChangeHandler(memberKey, e.target.value)}
+            onFocus={(e) => e.target.select()}
+            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+
   const detailedGridElement = (
     <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'center' }}>
-        <div style={{ gridColumn: '1 / -1' }}>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.encore')}</label>
-          <input
-            type="number"
-            value={detailedSkills.encore}
-            onChange={(e) => handleDetailedChange('encore', e.target.value)}
-            onFocus={(e) => e.target.select()}
-            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
-          />
+      {isComparisonMode ? (
+        <div className="flex gap-4">
+          <div className="flex-1 border-r border-gray-200 pr-2">
+            <div className="text-center mb-2 font-bold text-blue-500 text-xs">Deck A</div>
+            {renderDetailedGrid(detailedSkills, handleDetailedChange)}
+          </div>
+          <div className="flex-1 pl-2">
+            <div className="text-center mb-2 font-bold text-red-500 text-xs">Deck B</div>
+            {renderDetailedGrid(detailedSkillsB, handleDetailedChangeB)}
+          </div>
         </div>
-        <div>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.member_1')}</label>
-          <input
-            type="number"
-            value={detailedSkills.member1}
-            onChange={(e) => handleDetailedChange('member1', e.target.value)}
-            onFocus={(e) => e.target.select()}
-            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.member_2')}</label>
-          <input
-            type="number"
-            value={detailedSkills.member2}
-            onChange={(e) => handleDetailedChange('member2', e.target.value)}
-            onFocus={(e) => e.target.select()}
-            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.member_3')}</label>
-          <input
-            type="number"
-            value={detailedSkills.member3}
-            onChange={(e) => handleDetailedChange('member3', e.target.value)}
-            onFocus={(e) => e.target.select()}
-            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t('power.member_4')}</label>
-          <input
-            type="number"
-            value={detailedSkills.member4}
-            onChange={(e) => handleDetailedChange('member4', e.target.value)}
-            onFocus={(e) => e.target.select()}
-            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
-          />
-        </div>
-      </div>
+      ) : (
+        renderDetailedGrid(detailedSkills, handleDetailedChange)
+      )}
     </div>
   );
 
@@ -362,6 +400,12 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             suffix={t('power.suffix_man')}
             placeholder="25.5"
             max="45"
+            comparisonMode={isComparisonMode}
+            valueB={powerB}
+            onChangeB={e => setPowerB(e.target.value)}
+            showLabels={false}
+            tabIndexA={1}
+            tabIndexB={4}
           />
           <InputRow
             label={t('power.multiplier')}
@@ -370,6 +414,12 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             suffix="%"
             placeholder="250"
             max="1000"
+            comparisonMode={isComparisonMode}
+            valueB={effiB}
+            onChangeB={e => setEffiB(e.target.value)}
+            showLabels={isDetailedInput}
+            tabIndexA={2}
+            tabIndexB={5}
           />
           {!isDetailedInput && (
             <InputRow
@@ -379,6 +429,12 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
               suffix="%"
               placeholder="200"
               max="2000"
+              comparisonMode={isComparisonMode}
+              valueB={internalValueB}
+              onChangeB={e => setInternalValueB(e.target.value)}
+              showLabels={true}
+              tabIndexA={3}
+              tabIndexB={6}
             />
           )}
         </InputTableWrapper>
@@ -395,7 +451,22 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           </>
         )}
 
-        <div className="flex justify-center w-full mb-4">
+        <div className="flex justify-center w-full mb-4 gap-2">
+          {/* Comparison Mode Toggle */}
+          <button
+            className={`px-4 py-2 font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 flex items-center gap-1 ${isComparisonMode ? 'bg-purple-500 text-white border-purple-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+            onClick={() => setIsComparisonMode(!isComparisonMode)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+              <line x1="10" y1="9" x2="10" y2="13"></line>
+              <line x1="14" y1="9" x2="14" y2="13"></line>
+            </svg>
+            VS
+          </button>
+
           <button
             className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200"
             onClick={() => setShowMySekaiTable(!showMySekaiTable)}
@@ -412,9 +483,33 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
-                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">{t('power.song')}</th>
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none" style={{ width: '25%' }}>{t('power.song')}</th>
                   <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">{t('power.fire')}</th>
-                  <th className="px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-sm md:text-base">{t('power.event_points')}</th>
+                  {/* Result Header A */}
+                  <th className={`px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-sm md:text-base ${isComparisonMode ? 'text-blue-600' : ''}`}>
+                    {isComparisonMode ? (
+                      <div className="flex flex-col leading-tight">
+                        <span>{power || '25.5'}{t('power.suffix_man')}/{effi || '250'}%</span>
+                        <span className="text-[10px] md:text-xs text-blue-500 font-normal">
+                          {t('power.internal_value')}:{isDetailedInput ? calculateAverage(detailedSkills) : (internalValue || '200')}%
+                          {isDetailedInput && `(${t('power.average')})`}
+                        </span>
+                      </div>
+                    ) : (
+                      t('power.event_points')
+                    )}
+                  </th>
+                  {isComparisonMode && (
+                    <th className="px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-red-500 text-xs md:text-base">
+                      <div className="flex flex-col leading-tight">
+                        <span>{powerB || '25.5'}{t('power.suffix_man')}/{effiB || '250'}%</span>
+                        <span className="text-[10px] md:text-xs text-red-500 font-normal">
+                          {t('power.internal_value')}:{isDetailedInput ? calculateAverage(detailedSkillsB) : (internalValueB || '200')}%
+                          {isDetailedInput && `(${t('power.average')})`}
+                        </span>
+                      </div>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -425,11 +520,18 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('loAndFound')}
                   </td>
-                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-purple-600 text-base md:text-lg font-extrabold tracking-tight">
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
                       {formatScore(loAndFoundScore)}
                     </span>
                   </td>
+                  {isComparisonMode && (
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
+                      <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        {formatScore(loAndFoundScoreB, true)}
+                      </span>
+                    </td>
+                  )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
@@ -438,11 +540,18 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('omakase')}
                   </td>
-                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-purple-600 text-base md:text-lg font-extrabold tracking-tight">
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
                       {formatScore(omakaseScore)}
                     </span>
                   </td>
+                  {isComparisonMode && (
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
+                      <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        {formatScore(omakaseScoreB, true)}
+                      </span>
+                    </td>
+                  )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
@@ -451,11 +560,18 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('envy')}
                   </td>
-                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-purple-600 text-base md:text-lg font-extrabold tracking-tight">
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
                       {formatScore(envyScore)}
                     </span>
                   </td>
+                  {isComparisonMode && (
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
+                      <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        {formatScore(envyScoreB, true)}
+                      </span>
+                    </td>
+                  )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-4 py-3 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
@@ -464,11 +580,18 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('creationMyth', 1)}
                   </td>
-                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <span className="font-mono text-purple-600 text-base md:text-lg font-extrabold tracking-tight">
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
                       {formatScore(creationMythScore, true)}
                     </span>
                   </td>
+                  {isComparisonMode && (
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
+                      <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        {formatScore(creationMythScoreB, true)}
+                      </span>
+                    </td>
+                  )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
@@ -481,11 +604,18 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                       </span>
                     </div>
                   </td>
-                  <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
                     <span className="font-mono text-green-600 text-base md:text-lg font-extrabold tracking-tight">
                       {mySekaiScore > 0 ? mySekaiScore.toLocaleString() : 'N/A'}
                     </span>
                   </td>
+                  {isComparisonMode && (
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
+                      <span className="font-mono text-green-600 text-sm md:text-base font-bold tracking-tight">
+                        {mySekaiScoreB > 0 ? mySekaiScoreB.toLocaleString() : 'N/A'}
+                      </span>
+                    </td>
+                  )}
                 </tr>
               </tbody>
             </table>

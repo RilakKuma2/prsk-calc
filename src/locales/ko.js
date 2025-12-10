@@ -58,6 +58,7 @@ const ko = {
         song: '곡명',
         fire: '불',
         event_points: '이벤포',
+        average: '평균',
         songs: {
             lost_and_found: '로앤파 하드',
             omakase: '오마카세',
