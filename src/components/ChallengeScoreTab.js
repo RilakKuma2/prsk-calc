@@ -473,7 +473,10 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                     style={
                                                         customResult.difficulty === 'master' ? { backgroundColor: '#cc33ff', color: '#FFFFFF' } :
                                                             customResult.difficulty === 'append' ? { background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)', color: '#FFFFFF' } :
-                                                                customResult.difficulty === 'expert' ? { backgroundColor: '#ff4477', color: '#FFFFFF' } : {}
+                                                                customResult.difficulty === 'expert' ? { backgroundColor: '#ff4477', color: '#FFFFFF' } :
+                                                                    customResult.difficulty === 'hard' ? { border: '2px solid #ffcc00', backgroundColor: '#ffcc00', color: '#FFFFFF' } :
+                                                                        customResult.difficulty === 'normal' ? { border: '2px solid #33ccff', backgroundColor: '#33ccff', color: '#FFFFFF' } :
+                                                                            customResult.difficulty === 'easy' ? { border: '2px solid #13d675', backgroundColor: '#13d675', color: '#FFFFFF' } : {}
                                                     }
                                                 >
                                                     {customResult.difficulty === 'master' ? 'MAS' : customResult.difficulty === 'append' ? 'APD' : customResult.difficulty === 'expert' ? ' EX ' : customResult.difficulty}
@@ -653,6 +656,18 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                                     color: '#FFFFFF',
                                                                 } : res.difficulty === 'expert' ? {
                                                                     backgroundColor: '#ff4477',
+                                                                    color: '#FFFFFF',
+                                                                } : res.difficulty === 'hard' ? {
+                                                                    border: '2px solid #ffcc00',
+                                                                    backgroundColor: '#ffcc00',
+                                                                    color: '#FFFFFF',
+                                                                } : res.difficulty === 'normal' ? {
+                                                                    border: '2px solid #33ccff',
+                                                                    backgroundColor: '#33ccff',
+                                                                    color: '#FFFFFF',
+                                                                } : res.difficulty === 'easy' ? {
+                                                                    border: '2px solid #13d675',
+                                                                    backgroundColor: '#13d675',
                                                                     color: '#FFFFFF',
                                                                 } : {}
                                                             }

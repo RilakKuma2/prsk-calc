@@ -317,6 +317,18 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                             } : res.difficulty === 'append' ? {
                                                                 background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)',
                                                                 color: '#FFFFFF',
+                                                            } : res.difficulty === 'hard' ? {
+                                                                border: '2px solid #ffcc00', // Adjusted border width for balance
+                                                                backgroundColor: '#ffcc00',
+                                                                color: '#FFFFFF',
+                                                            } : res.difficulty === 'normal' ? {
+                                                                border: '2px solid #33ccff',
+                                                                backgroundColor: '#33ccff',
+                                                                color: '#FFFFFF',
+                                                            } : res.difficulty === 'easy' ? {
+                                                                border: '2px solid #13d675',
+                                                                backgroundColor: '#13d675',
+                                                                color: '#FFFFFF',
                                                             } : {}
                                                         }
                                                     >

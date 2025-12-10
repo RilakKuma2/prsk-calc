@@ -655,6 +655,53 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
+                {/* Custom Result Row */}
+                {selectedSong && (
+                  <tr className="hover:bg-indigo-50 transition-colors duration-200 group/row bg-indigo-50/30">
+                    <td className="px-2 py-2 md:px-4 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle relative">
+                      <div className="flex flex-col items-center justify-center min-h-[40px]">
+                        <span>{language === 'ko' ? selectedSong.name : selectedSong.title_jp}</span>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide mt-1 ${searchDifficulty === 'master' || searchDifficulty === 'append' || searchDifficulty === 'expert' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
+                            }`}
+                          style={
+                            searchDifficulty === 'master' ? { backgroundColor: '#cc33ff', color: '#FFFFFF' } :
+                              searchDifficulty === 'append' ? { background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)', color: '#FFFFFF' } :
+                                searchDifficulty === 'expert' ? { backgroundColor: '#ff4477', color: '#FFFFFF' } :
+                                  searchDifficulty === 'hard' ? { border: '2px solid #ffcc00', backgroundColor: '#ffcc00', color: '#FFFFFF' } :
+                                    searchDifficulty === 'normal' ? { border: '2px solid #33ccff', backgroundColor: '#33ccff', color: '#FFFFFF' } :
+                                      searchDifficulty === 'easy' ? { border: '2px solid #13d675', backgroundColor: '#13d675', color: '#FFFFFF' } : {}
+                          }
+                        >
+                          {searchDifficulty}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => { setSelectedSong(null); setSearchQuery(''); }}
+                        className="absolute left-1 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors p-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </td>
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
+                      {renderFireSelect('custom')}
+                    </td>
+                    <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                      <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
+                        {formatScore(customScore)}
+                      </span>
+                    </td>
+                    {isComparisonMode && (
+                      <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
+                        <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
+                          {formatScore(customScoreB, true)}
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                )}
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
                     {t('power.songs.lost_and_found')}
