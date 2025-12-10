@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MySekaiTable from './MySekaiTable';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import { LiveCalculator, EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import musicMetas from '../data/music_metas.json';
+import { SONG_OPTIONS } from '../utils/songs';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -22,7 +23,7 @@ const FIRE_MULTIPLIERS = {
 };
 
 const PowerTab = ({ surveyData, setSurveyData }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [power, setPower] = useState(surveyData.power || '');
   const [effi, setEffi] = useState(surveyData.effi || '');
   const [internalValue, setInternalValue] = useState(surveyData.internalValue || '');
@@ -57,7 +58,8 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     envy: 5,
     omakase: 5,
     creationMyth: 1,
-    mySekai: 1
+    mySekai: 1,
+    custom: 5
   });
 
   const [multiEff, setMultiEff] = useState(0);
@@ -71,6 +73,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   const [envyScore, setEnvyScore] = useState({ min: 0, max: 0 });
   const [creationMythScore, setCreationMythScore] = useState({ min: 0, max: 0 });
   const [omakaseScore, setOmakaseScore] = useState({ min: 0, max: 0 });
+  const [customScore, setCustomScore] = useState({ min: 0, max: 0 });
 
   // Deck B Scores
   const [loAndFoundScoreB, setLoAndFoundScoreB] = useState({ min: 0, max: 0 });
@@ -78,6 +81,66 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   const [creationMythScoreB, setCreationMythScoreB] = useState({ min: 0, max: 0 });
   const [omakaseScoreB, setOmakaseScoreB] = useState({ min: 0, max: 0 });
   const [mySekaiScoreB, setMySekaiScoreB] = useState('N/A');
+  const [customScoreB, setCustomScoreB] = useState({ min: 0, max: 0 });
+
+  // Search State
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedSong, setSelectedSong] = useState(null);
+  const [searchDifficulty, setSearchDifficulty] = useState('master');
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  // Click Outside Effect for Search
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setIsDropdownVisible(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Search Effect
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const normalize = (str) => {
+      if (!str) return '';
+      return str.toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+    };
+
+    const query = normalize(searchQuery);
+
+    const results = SONG_OPTIONS.filter(song => {
+      const name = normalize(song.name);
+      const titleJp = normalize(song.title_jp);
+      const titleEn = normalize(song.title_en);
+
+      if (name.includes(query)) return true;
+
+      if (language === 'ko') {
+        if (titleJp && titleJp.includes(query)) return true;
+        if (titleEn && titleEn.includes(query)) return true;
+      } else if (language === 'ja') {
+        if (titleJp && titleJp.includes(query)) return true;
+      } else {
+        if (titleEn && titleEn.includes(query)) return true;
+      }
+
+      return false;
+    }).slice(0, 5);
+
+    setSearchResults(results);
+    setIsDropdownVisible(true);
+  }, [searchQuery, language]);
 
 
   // Helper to get skills array based on input mode
@@ -109,6 +172,13 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     return Math.round((sum / 5) * 10) / 10;
   };
 
+  const handleSelectSong = (song) => {
+    setSelectedSong(song);
+    setSearchQuery(language === 'ko' ? song.name : (language === 'ja' ? song.title_jp : song.name));
+    setSearchResults([]);
+    setIsDropdownVisible(false);
+  };
+
   useEffect(() => {
     const newSurveyData = {
       ...surveyData,
@@ -129,7 +199,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     const inputsList = [
       {
         p: power, e: effi, i: internalValue, skills: detailedSkills,
-        setLo: setLoAndFoundScore, setEn: setEnvyScore, setOm: setOmakaseScore, setCr: setCreationMythScore, setMs: setMySekaiScore,
+        setLo: setLoAndFoundScore, setEn: setEnvyScore, setOm: setOmakaseScore, setCr: setCreationMythScore, setMs: setMySekaiScore, setCust: setCustomScore,
         calcEff: true
       }
     ];
@@ -137,12 +207,12 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     if (isComparisonMode) {
       inputsList.push({
         p: powerB, e: effiB, i: internalValueB, skills: detailedSkillsB,
-        setLo: setLoAndFoundScoreB, setEn: setEnvyScoreB, setOm: setOmakaseScoreB, setCr: setCreationMythScoreB, setMs: setMySekaiScoreB,
+        setLo: setLoAndFoundScoreB, setEn: setEnvyScoreB, setOm: setOmakaseScoreB, setCr: setCreationMythScoreB, setMs: setMySekaiScoreB, setCust: setCustomScoreB,
         calcEff: false
       });
     }
 
-    inputsList.forEach(({ p, e, i, skills, setLo, setEn, setOm, setCr, setMs, calcEff }) => {
+    inputsList.forEach(({ p, e, i, skills, setLo, setEn, setOm, setCr, setMs, setCust, calcEff }) => {
       const powerVal = parseFloat(p || '25.5');
       const effiVal = parseInt(e || '250', 10);
       const skillsArray = getSkillsArray(isDetailedInput, skills, i);
@@ -196,7 +266,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       };
 
       // 1. Lost and Found (ID 186, Hard, Multi)
-      setLo(getScoreRange(powerVal, skillsArray, 186, 'hard', LiveType.MULTI, fireCounts.loAndFound));
+      setLo(getScoreRange(powerVal, skillsArray, 226, 'hard', LiveType.MULTI, fireCounts.loAndFound));
 
       // 2. Envy (ID 74, Expert, Multi)
       setEn(getScoreRange(powerVal, skillsArray, 74, 'expert', LiveType.MULTI, fireCounts.envy));
@@ -206,6 +276,13 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
 
       // 4. Creation Myth (ID 186, Master, Auto) - Fixed 100% skills
       setCr(getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, fireCounts.creationMyth));
+
+      // 5. Custom Song
+      if (selectedSong) {
+        setCust(getScoreRange(powerVal, skillsArray, selectedSong.id, searchDifficulty, LiveType.MULTI, fireCounts.custom || 5));
+      } else {
+        setCust({ min: 0, max: 0 });
+      }
 
       if (calcEff) {
         // Calculate Efficiencies (Only for A)
@@ -266,7 +343,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB]);
+  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB, selectedSong, searchDifficulty]);
 
   const handleDetailedChange = (key, value) => {
     setDetailedSkills(prev => ({ ...prev, [key]: value }));
@@ -451,7 +528,72 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           </>
         )}
 
+        {/* Search Bar */}
+        <div className={`transition-all duration-300 ${isSearchOpen ? 'max-h-40 opacity-100 mb-4 overflow-visible' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+          <div ref={searchContainerRef} className="bg-white rounded-xl shadow-sm border border-indigo-100 p-4 mx-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (!e.target.value) setSelectedSong(null);
+                  }}
+                  onFocus={() => setIsDropdownVisible(true)}
+                  placeholder={t('challenge_score.song_name') || "곡 제목"}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                />
+                {/* Autocomplete Dropdown */}
+                {searchResults.length > 0 && isDropdownVisible && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-100 z-[100] max-h-60 overflow-y-auto">
+                    {searchResults.map((song) => (
+                      <div
+                        key={song.id}
+                        onClick={() => handleSelectSong(song)}
+                        className="px-4 py-3 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-gray-50 last:border-none flex justify-between items-center"
+                      >
+                        <span className="font-medium text-gray-700 truncate flex-1 min-w-0 mr-2">
+                          {language === 'ko' ? song.name : (language === 'ja' ? song.title_jp : song.name)}
+                        </span>
+                        {language === 'ko' && (
+                          <span className="text-xs text-gray-400">
+                            {song.title_jp}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <select
+                value={searchDifficulty}
+                onChange={(e) => setSearchDifficulty(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white font-medium text-gray-700"
+              >
+                <option value="easy">EASY</option>
+                <option value="normal">NORMAL</option>
+                <option value="hard">HARD</option>
+                <option value="expert">EXPERT</option>
+                <option value="master">MASTER</option>
+                <option value="append">APPEND</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div className="flex justify-center w-full mb-4 gap-2">
+          {/* Search Toggle Button */}
+          <button
+            className={`px-4 py-2 font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 flex items-center gap-1 ${isSearchOpen ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {t || "Search"}
+          </button>
+
           {/* Comparison Mode Toggle */}
           <button
             className={`px-4 py-2 font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 flex items-center gap-1 ${isComparisonMode ? 'bg-purple-500 text-white border-purple-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
@@ -621,6 +763,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             </table>
           </div>
         </div>
+
 
 
 
