@@ -60,9 +60,9 @@ const ko = {
         event_points: '이벤포',
         average: '평균',
         songs: {
-            lost_and_found: '로앤파 하드',
+            lost_and_found: '로앤파',
             omakase: '오마카세',
-            envy: '엔비 익스',
+            envy: '엔비',
             creation_myth: '개벽 오토',
             mysekai: '마이세카이',
         },

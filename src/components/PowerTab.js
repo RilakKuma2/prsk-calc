@@ -112,7 +112,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
 
     const normalize = (str) => {
       if (!str) return '';
-      return str.toLowerCase()
+      return str.normalize('NFC').toLowerCase()
         .replace(/\s+/g, '')
         .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
     };
@@ -123,8 +123,12 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       const name = normalize(song.name);
       const titleJp = normalize(song.title_jp);
       const titleEn = normalize(song.title_en);
+      const titleHi = normalize(song.title_hi);
+      const titleHangul = normalize(song.title_hangul);
 
       if (name.includes(query)) return true;
+      if (titleHi && titleHi.includes(query)) return true;
+      if (titleHangul && titleHangul.includes(query)) return true;
 
       if (language === 'ko') {
         if (titleJp && titleJp.includes(query)) return true;
@@ -551,13 +555,16 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                       <div
                         key={song.id}
                         onClick={() => handleSelectSong(song)}
-                        className="px-4 py-3 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-gray-50 last:border-none flex justify-between items-center"
+                        className={`px-4 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-gray-50 last:border-none ${language === 'ko'
+                          ? 'py-1.5 flex flex-col justify-center items-start' // Korean: Compact vertical stack
+                          : 'py-3 flex justify-between items-center'          // Others: Standard horizontal split
+                          }`}
                       >
-                        <span className="font-medium text-gray-700 truncate flex-1 min-w-0 mr-2">
+                        <span className="font-medium text-gray-700 truncate w-full">
                           {language === 'ko' ? song.name : (language === 'ja' ? song.title_jp : song.name)}
                         </span>
                         {language === 'ko' && (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-[10px] text-gray-400 truncate w-full -mt-0.5">
                             {song.title_jp}
                           </span>
                         )}
@@ -625,7 +632,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
-                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none" style={{ width: '25%' }}>{t('power.song')}</th>
+                  <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none" style={{ width: '27%' }}>{t('power.song')}</th>
                   <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">{t('power.fire')}</th>
                   {/* Result Header A */}
                   <th className={`px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-sm md:text-base ${isComparisonMode ? 'text-blue-600' : ''}`}>
@@ -659,21 +666,23 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 {selectedSong && (
                   <tr className="hover:bg-indigo-50 transition-colors duration-200 group/row bg-indigo-50/30">
                     <td className="px-2 py-2 md:px-4 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle relative">
-                      <div className="flex flex-col items-center justify-center min-h-[40px]">
+                      <div className="flex flex-wrap items-center justify-center min-h-[40px] gap-1">
                         <span>{language === 'ko' ? selectedSong.name : selectedSong.title_jp}</span>
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide mt-1 ${searchDifficulty === 'master' || searchDifficulty === 'append' || searchDifficulty === 'expert' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
-                            }`}
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide ${searchDifficulty === 'master' || searchDifficulty === 'append' || searchDifficulty === 'expert' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'} leading-tight`}
                           style={
                             searchDifficulty === 'master' ? { backgroundColor: '#cc33ff', color: '#FFFFFF' } :
                               searchDifficulty === 'append' ? { background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)', color: '#FFFFFF' } :
                                 searchDifficulty === 'expert' ? { backgroundColor: '#ff4477', color: '#FFFFFF' } :
-                                  searchDifficulty === 'hard' ? { border: '2px solid #ffcc00', backgroundColor: '#ffcc00', color: '#FFFFFF' } :
-                                    searchDifficulty === 'normal' ? { border: '2px solid #33ccff', backgroundColor: '#33ccff', color: '#FFFFFF' } :
-                                      searchDifficulty === 'easy' ? { border: '2px solid #13d675', backgroundColor: '#13d675', color: '#FFFFFF' } : {}
+                                  searchDifficulty === 'hard' ? { border: '1px solid #ffcc00', backgroundColor: '#ffcc00', color: '#FFFFFF' } :
+                                    searchDifficulty === 'normal' ? { border: '1px solid #33ccff', backgroundColor: '#33ccff', color: '#FFFFFF' } :
+                                      searchDifficulty === 'easy' ? { border: '1px solid #13d675', backgroundColor: '#13d675', color: '#FFFFFF' } : {}
                           }
                         >
-                          {searchDifficulty}
+                          {searchDifficulty === 'master' ? 'MAS' :
+                            searchDifficulty === 'append' ? 'APD' :
+                              searchDifficulty === 'expert' ? 'EX' :
+                                searchDifficulty.toUpperCase()}
                         </span>
                       </div>
                       <button
@@ -704,7 +713,12 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 )}
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    {t('power.songs.lost_and_found')}
+                    <div className="flex flex-wrap items-center justify-center gap-1">
+                      <span>{t('power.songs.lost_and_found')}</span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-[#ffcc00] text-white border border-[#ffcc00] leading-tight">
+                        HARD
+                      </span>
+                    </div>
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('loAndFound')}
@@ -744,7 +758,12 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    {t('power.songs.envy')}
+                    <div className="flex flex-wrap items-center justify-center gap-1">
+                      <span>{t('power.songs.envy')}</span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-[#ff4477] text-white leading-tight">
+                        EX
+                      </span>
+                    </div>
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('envy')}
@@ -764,7 +783,12 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-4 py-3 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    {t('power.songs.creation_myth')}
+                    <div className="flex flex-wrap items-center justify-center gap-1">
+                      <span>{t('power.songs.creation_myth')}</span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-[#cc33ff] text-white leading-tight">
+                        MAS
+                      </span>
+                    </div>
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('creationMyth', 1)}

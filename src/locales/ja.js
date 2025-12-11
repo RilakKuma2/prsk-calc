@@ -60,10 +60,10 @@ const ja = {
         event_points: 'イベP',
         average: '平均',
         songs: {
-            lost_and_found: 'ロスエン(ハード)',
+            lost_and_found: 'ロスエン',
             omakase: 'おまかせ',
-            envy: 'エビ(エキスパ)',
-            creation_myth: '天地オート',
+            envy: 'エビ',
+            creation_myth: '天地',
             mysekai: 'マイセカ',
         },
         efficiency: {

@@ -60,10 +60,10 @@ const en = {
         fire: 'Energy',
         event_points: 'EP',
         songs: {
-            lost_and_found: 'Lost and Found (Hard)',
+            lost_and_found: 'Lost and Found',
             omakase: 'Random',
-            envy: 'Hitorinbo Envy (Expert)',
-            creation_myth: 'Creation Myth (Auto)',
+            envy: 'Hitorinbo Envy',
+            creation_myth: 'Creation Myth',
             mysekai: 'MySekai',
         },
         efficiency: {
