@@ -274,7 +274,13 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={language === 'ko' ? '곡 제목, 히라가나, 한글 발음으로 검색...' : 'Search by title...'}
+                            placeholder={
+                                language === 'ko'
+                                    ? '곡 제목, 히라가나, 한글 발음으로 검색...'
+                                    : language === 'ja'
+                                        ? '樂曲名'
+                                        : 'Search by title...'
+                            }
                             className="w-full text-sm outline-none bg-transparent"
                             autoFocus
                         />
