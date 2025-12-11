@@ -63,16 +63,23 @@ const ja = {
             lost_and_found: 'ロスエン',
             omakase: 'おまかせ',
             envy: 'エビ',
-            creation_myth: '天地',
+            creation_myth: '天地オート',
             mysekai: 'マイセカ',
         },
         efficiency: {
+            title: '総合力1万相当の倍率',
             multi: 'マルチ',
+            multi_short: 'マルチ',
             solo: 'ソロ',
+            solo_short: 'ソロ',
             auto: 'オート',
+            auto_short: 'オート',
         },
-        desc_bottom: '総合力1万あたりの効率\n現実効値のロスエン基準',
+        desc_bottom: '現実効値のロスエン基準',
         suffix_man: '万',
+        view_all_scores: '全曲スコア表示',
+        difficulty_setting: '難易度設定',
+        refresh_after_modify: '入力値（総合力、スキルなど）を変更した後は、必ず更新ボタンを押してください',
     },
     auto: {
         total_power: '総合力',
@@ -85,7 +92,7 @@ const ja = {
         event_bonus: 'イベボ',
         score_title: 'オートライブスコア',
         song_name: '曲名',
-        min_rank: '最低ランク',
+        min_rank: '最低\nランク',
         min_score: '最低スコア',
         max_score: '最高スコア',
         excluded_song_note: '0.0000034 APDはメモリアより効率が良いようですが、計算機の不具合によりリストに追加していません。',
@@ -336,6 +343,7 @@ const ja = {
         error_pity_too_high: 'エラー：天井回数が多すぎます',
         chart_cumulative: 'チャート内累積確率表記',
         suffix_pickup: 'PU',
+
     },
 };
 

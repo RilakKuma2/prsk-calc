@@ -67,12 +67,19 @@ const ko = {
             mysekai: '마이세카이',
         },
         efficiency: {
+            title: '종합력 1만과 같은 효율의 배수',
             multi: '멀티효율',
+            multi_short: '멀티',
             solo: '솔로효율',
+            solo_short: '솔로',
             auto: '오토효율',
+            auto_short: '오토',
         },
-        desc_bottom: '종합력 1만과 같은 효율의 배수\n현 내부치 로앤파 점수 기준 효율',
+        desc_bottom: '현 내부치 로앤파 점수 기준 효율',
         suffix_man: '만',
+        view_all_scores: '전곡 점수 보기',
+        difficulty_setting: '난이도 설정',
+        refresh_after_modify: '상단 입력값(종합력, 스킬 등) 수정 후에는 반드시 새로고침을 눌러주세요',
     },
     auto: {
         total_power: '종합력',
@@ -83,9 +90,8 @@ const ko = {
         member_4: '멤버 4',
         member_5: '멤버 5',
         event_bonus: '이벤트 배율',
-        score_title: '오토 라이브 스코어',
         song_name: '곡명',
-        min_rank: '최저 랭크',
+        min_rank: '최저\n랭크',
         min_score: '최저 점수',
         max_score: '최대 스코어',
         score_title: '오토 스코어',
@@ -342,8 +348,8 @@ const ko = {
         error_pity_too_high: '오류 : 천장 수가 너무 많습니다',
         chart_cumulative: '차트 내 누적확률 표기',
         suffix_pickup: '픽업',
+
     },
 };
 
 export default ko;
-

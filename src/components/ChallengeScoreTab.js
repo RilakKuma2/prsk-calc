@@ -130,8 +130,12 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             const name = normalize(song.name);
             const titleJp = normalize(song.title_jp);
             const titleEn = normalize(song.title_en);
+            const titleHi = normalize(song.title_hi);
+            const titleHangul = normalize(song.title_hangul);
 
             if (name.includes(query)) return true;
+            if (titleHi && titleHi.includes(query)) return true;
+            if (titleHangul && titleHangul.includes(query)) return true;
 
             if (language === 'ko') {
                 if (titleJp && titleJp.includes(query)) return true;
@@ -151,7 +155,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
     const handleSelectSong = (song) => {
         setSelectedSong(song);
-        setSearchQuery(language === 'ko' ? song.name : (language === 'ja' ? song.title_jp : song.name));
+        setSearchQuery(language === 'ko' ? song.name : song.title_jp);
         setSearchResults([]);
 
         // Calculate result immediately
@@ -172,7 +176,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 if (res) {
                     setCustomResult({
                         ...res,
-                        songName: language === 'ja' ? song.title_jp : song.name,
+                        songName: language === 'ko' ? song.name : song.title_jp,
                         songId: song.id,
                         difficulty: searchDifficulty,
                         // level: ??? (Need to fetch level if possible, but might not be in SONG_OPTIONS directly without song data lookup, handled by calculator?)
@@ -216,7 +220,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             if (res) {
                 setCustomResult({
                     ...res,
-                    songName: language === 'ja' ? selectedSong.title_jp : selectedSong.name,
+                    songName: language === 'ko' ? selectedSong.name : selectedSong.title_jp,
                     songId: selectedSong.id,
                     difficulty: searchDifficulty,
                 });
@@ -270,7 +274,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 if (res) {
                     results.push({
                         ...res,
-                        songName: language === 'ja' ? song.title_jp : song.name,
+                        songName: language === 'ko' ? song.name : song.title_jp,
                         songId: song.id,
                         difficulty: target.difficulty,
                         level: target.level,
@@ -413,13 +417,16 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                         <div
                                             key={song.id}
                                             onClick={() => handleSelectSong(song)}
-                                            className="px-4 py-3 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-gray-50 last:border-none flex justify-between items-center"
+                                            className={`px-4 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-gray-50 last:border-none ${language === 'ko'
+                                                ? 'py-1.5 flex flex-col justify-center items-start'
+                                                : 'py-3 flex justify-between items-center'
+                                                }`}
                                         >
-                                            <span className="font-medium text-gray-700 truncate flex-1 min-w-0 mr-2">
-                                                {language === 'ko' ? song.name : (language === 'ja' ? song.title_jp : song.name)}
+                                            <span className="font-medium text-gray-700 truncate w-full">
+                                                {language === 'ko' ? song.name : song.title_jp}
                                             </span>
                                             {language === 'ko' && (
-                                                <span className="text-xs text-gray-400">
+                                                <span className="text-[10px] text-gray-400 truncate w-full -mt-0.5">
                                                     {song.title_jp}
                                                 </span>
                                             )}

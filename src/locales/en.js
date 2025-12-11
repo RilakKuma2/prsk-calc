@@ -62,17 +62,24 @@ const en = {
         songs: {
             lost_and_found: 'Lost and Found',
             omakase: 'Random',
-            envy: 'Hitorinbo Envy',
-            creation_myth: 'Creation Myth',
+            envy: 'Envy',
+            creation_myth: 'Creation Myth Auto',
             mysekai: 'MySekai',
         },
         efficiency: {
+            title: 'Multiplier equivalent to 10k Power',
             multi: 'Multi Eff.',
+            multi_short: 'Multi',
             solo: 'Solo Eff.',
+            solo_short: 'Solo',
             auto: 'Auto Eff.',
+            auto_short: 'Auto',
         },
-        desc_bottom: 'Multiplier equivalent to 10k power\nEfficiency based on Lost and Found score',
+        desc_bottom: 'Efficiency based on Lost and Found score',
         suffix_man: '0k',
+        view_all_scores: 'View All Songs',
+        difficulty_setting: 'Set Diff',
+        refresh_after_modify: 'Please refresh after modifying input values (Power, Skill, etc.)',
     },
     auto: {
         total_power: 'Total Power',
@@ -337,6 +344,7 @@ const en = {
         error_pity_too_high: 'Error: Spark count too high',
         chart_cumulative: 'Cumulative Probability in Chart',
         suffix_pickup: ' PU',
+
     },
 };
 

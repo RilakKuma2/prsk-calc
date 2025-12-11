@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MySekaiTable from './MySekaiTable';
+import AllSongsTable from './AllSongsTable';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import { LiveCalculator, EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import musicMetas from '../data/music_metas.json';
@@ -28,6 +29,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   const [effi, setEffi] = useState(surveyData.effi || '');
   const [internalValue, setInternalValue] = useState(surveyData.internalValue || '');
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
+  const [showAllSongsTable, setShowAllSongsTable] = useState(false);
 
   // Comparison Mode State
   const [isComparisonMode, setIsComparisonMode] = useState(surveyData.isComparisonMode || false);
@@ -151,12 +153,13 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   // Returns [Leader, M2, M3, M4, M5]
   const getSkillsArray = (isDetailed, skillsDetail, simpleVal) => {
     if (isDetailed) {
+      const getVal = (v) => (v === '' || v === null || v === undefined) ? 200 : (parseFloat(v) || 0);
       return [
-        parseFloat(skillsDetail.encore) || 0,
-        parseFloat(skillsDetail.member1) || 0,
-        parseFloat(skillsDetail.member2) || 0,
-        parseFloat(skillsDetail.member3) || 0,
-        parseFloat(skillsDetail.member4) || 0
+        getVal(skillsDetail.encore),
+        getVal(skillsDetail.member1),
+        getVal(skillsDetail.member2),
+        getVal(skillsDetail.member3),
+        getVal(skillsDetail.member4)
       ];
     } else {
       const val = simpleVal === '' ? 200 : (parseFloat(simpleVal) || 0);
@@ -165,12 +168,13 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   };
 
   const calculateAverage = (skillsDetail) => {
+    const getVal = (v) => (v === '' || v === null || v === undefined) ? 200 : (parseFloat(v) || 0);
     const values = [
-      parseFloat(skillsDetail.encore) || 0,
-      parseFloat(skillsDetail.member1) || 0,
-      parseFloat(skillsDetail.member2) || 0,
-      parseFloat(skillsDetail.member3) || 0,
-      parseFloat(skillsDetail.member4) || 0
+      getVal(skillsDetail.encore),
+      getVal(skillsDetail.member1),
+      getVal(skillsDetail.member2),
+      getVal(skillsDetail.member3),
+      getVal(skillsDetail.member4)
     ];
     const sum = values.reduce((a, b) => a + b, 0);
     return Math.round((sum / 5) * 10) / 10;
@@ -178,7 +182,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
 
   const handleSelectSong = (song) => {
     setSelectedSong(song);
-    setSearchQuery(language === 'ko' ? song.name : (language === 'ja' ? song.title_jp : song.name));
+    setSearchQuery(language === 'ko' ? song.name : song.title_jp);
     setSearchResults([]);
     setIsDropdownVisible(false);
   };
@@ -361,9 +365,18 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     setFireCounts(prev => ({ ...prev, [key]: parseInt(value) }));
   };
 
-  const formatScore = (scoreObj, forceSingle = false) => {
+  const renderScore = (scoreObj, forceSingle = false) => {
     if (scoreObj === 'N/A') return 'N/A';
     if (isDetailedInput && !forceSingle) {
+      if (isComparisonMode) {
+        return (
+          <>
+            {scoreObj.min.toLocaleString()}
+            <br />
+            ~{scoreObj.max.toLocaleString()}
+          </>
+        );
+      }
       return `${scoreObj.min.toLocaleString()} ~ ${scoreObj.max.toLocaleString()}`;
     } else {
       return scoreObj.max.toLocaleString();
@@ -424,6 +437,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           value={skills.encore}
           onChange={(e) => onChangeHandler('encore', e.target.value)}
           onFocus={(e) => e.target.select()}
+          placeholder="200"
           style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
         />
       </div>
@@ -435,6 +449,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             value={skills[memberKey]}
             onChange={(e) => onChangeHandler(memberKey, e.target.value)}
             onFocus={(e) => e.target.select()}
+            placeholder="200"
             style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
           />
         </div>
@@ -561,7 +576,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                           }`}
                       >
                         <span className="font-medium text-gray-700 truncate w-full">
-                          {language === 'ko' ? song.name : (language === 'ja' ? song.title_jp : song.name)}
+                          {language === 'ko' ? song.name : song.title_jp}
                         </span>
                         {language === 'ko' && (
                           <span className="text-[10px] text-gray-400 truncate w-full -mt-0.5">
@@ -697,15 +712,15 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                       {renderFireSelect('custom')}
                     </td>
-                    <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                      <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
-                        {formatScore(customScore)}
+                    <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                      <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
+                        {renderScore(customScore)}
                       </span>
                     </td>
                     {isComparisonMode && (
-                      <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
-                        <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
-                          {formatScore(customScoreB, true)}
+                      <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
+                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                          {renderScore(customScoreB, true)}
                         </span>
                       </td>
                     )}
@@ -723,15 +738,15 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('loAndFound')}
                   </td>
-                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
-                      {formatScore(loAndFoundScore)}
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
+                      {renderScore(loAndFoundScore)}
                     </span>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
-                      <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
-                        {formatScore(loAndFoundScoreB, true)}
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
+                      <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        {renderScore(loAndFoundScoreB, true)}
                       </span>
                     </td>
                   )}
@@ -743,15 +758,15 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('omakase')}
                   </td>
-                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
-                      {formatScore(omakaseScore)}
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
+                      {renderScore(omakaseScore)}
                     </span>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
-                      <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
-                        {formatScore(omakaseScoreB, true)}
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
+                      <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        {renderScore(omakaseScoreB, true)}
                       </span>
                     </td>
                   )}
@@ -768,40 +783,35 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('envy')}
                   </td>
-                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
-                      {formatScore(envyScore)}
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
+                      {renderScore(envyScore)}
                     </span>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
-                      <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
-                        {formatScore(envyScoreB, true)}
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
+                      <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        {renderScore(envyScoreB, true)}
                       </span>
                     </td>
                   )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
                   <td className="px-4 py-3 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
-                    <div className="flex flex-wrap items-center justify-center gap-1">
-                      <span>{t('power.songs.creation_myth')}</span>
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-[#cc33ff] text-white leading-tight">
-                        MAS
-                      </span>
-                    </div>
+                    {t('power.songs.creation_myth')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
                     {renderFireSelect('creationMyth', 1)}
                   </td>
-                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="font-mono text-blue-600 text-base md:text-lg font-extrabold tracking-tight">
-                      {formatScore(creationMythScore, true)}
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="text-blue-600 text-base md:text-lg font-bold tracking-tight">
+                      {renderScore(creationMythScore, true)}
                     </span>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
-                      <span className="font-mono text-red-600 text-sm md:text-base font-bold tracking-tight">
-                        {formatScore(creationMythScoreB, true)}
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
+                      <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        {renderScore(creationMythScoreB, true)}
                       </span>
                     </td>
                   )}
@@ -817,14 +827,14 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                       </span>
                     </div>
                   </td>
-                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="font-mono text-green-600 text-base md:text-lg font-extrabold tracking-tight">
+                  <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
+                    <span className="text-green-600 text-base md:text-lg font-bold tracking-tight">
                       {mySekaiScore > 0 ? mySekaiScore.toLocaleString() : 'N/A'}
                     </span>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30">
-                      <span className="font-mono text-green-600 text-sm md:text-base font-bold tracking-tight">
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
+                      <span className="text-green-600 text-sm md:text-base font-bold tracking-tight">
                         {mySekaiScoreB > 0 ? mySekaiScoreB.toLocaleString() : 'N/A'}
                       </span>
                     </td>
@@ -832,16 +842,68 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                 </tr>
               </tbody>
             </table>
+
+
+          </div>
+        </div>
+
+        {/* View All Songs Button - Relocated */}
+        <div className="flex flex-col mb-4">
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={() => setShowAllSongsTable(!showAllSongsTable)}
+              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              {t('power.view_all_scores')}
+            </button>
+          </div>
+
+          <AllSongsTable
+            isVisible={showAllSongsTable}
+            language={language}
+            power={power}
+            effi={effi}
+            skills={getSkillsArray(isDetailedInput, detailedSkills, internalValue)}
+          />
+        </div>
+
+        <div className="w-[85%] max-w-[240px] mx-auto space-y-4 mb-4">
+          <div className="bg-white rounded-lg p-3">
+            <h4 className="text-center font-bold text-gray-700 mb-3 text-sm">{t('power.efficiency.title')}</h4>
+            {/* Multi */}
+            <div className="grid grid-cols-2 items-center text-center">
+              <span className="text-gray-600 text-sm font-bold">{t('power.efficiency.multi_short')}</span>
+              <span className="font-bold text-blue-600 text-lg">
+                {typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}
+              </span>
+            </div>
+
+            <div className="my-2"></div>
+
+            {/* Solo */}
+            <div className="grid grid-cols-2 items-center text-center">
+              <span className="text-gray-600 text-sm font-bold">{t('power.efficiency.solo_short')}</span>
+              <span className="font-bold text-blue-600 text-lg">
+                {typeof soloEff === 'number' ? soloEff.toFixed(2) + '%' : soloEff}
+              </span>
+            </div>
+
+            <div className="my-2"></div>
+
+            {/* Auto */}
+            <div className="grid grid-cols-2 items-center text-center">
+              <span className="text-gray-600 text-sm font-bold">{t('power.efficiency.auto_short')}</span>
+              <span className="font-bold text-blue-600 text-lg">
+                {typeof autoEff === 'number' ? autoEff.toFixed(2) + '%' : autoEff}
+              </span>
+            </div>
           </div>
         </div>
 
 
-
-
-        <br></br>
-        <p id="multi-eff">{t('power.efficiency.multi')}: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof multiEff === 'number' ? multiEff.toFixed(2) + '%' : multiEff}</span></p>
-        <p id="solo-eff">{t('power.efficiency.solo')}: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof soloEff === 'number' ? soloEff.toFixed(2) + '%' : soloEff}</span></p>
-        <p id="auto-eff">{t('power.efficiency.auto')}: <span style={{ fontWeight: "bold", color: "blue" }}>{typeof autoEff === 'number' ? autoEff.toFixed(2) + '%' : autoEff}</span></p>
         <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px', whiteSpace: 'pre-line' }}><br></br>{t('power.desc_bottom')}</p>
       </div>
     </div>

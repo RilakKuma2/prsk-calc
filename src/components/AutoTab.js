@@ -265,7 +265,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
+                                <tr className={`bg-white text-gray-600 uppercase tracking-wider border-b border-gray-200 ${language === 'ja' ? 'text-[9px] md:text-[11px]' : 'text-[10px] md:text-xs'}`}>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('songName')}>
                                         <div className="flex items-center justify-center gap-1 md:gap-2">
                                             {t('auto.song_name')}
@@ -274,12 +274,9 @@ function AutoTab({ surveyData, setSurveyData }) {
                                             </span>
                                         </div>
                                     </th>
-                                    <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('rank')}>
-                                        <div className="flex items-center justify-center gap-1 md:gap-2">
+                                    <th className="px-1 py-2 md:p-4 font-bold text-center min-w-[50px] md:min-w-[80px]">
+                                        <div className="flex items-center justify-center whitespace-pre-line leading-tight">
                                             {t('auto.min_rank')}
-                                            <span className={`transition-opacity duration-200 ${sortConfig.key === 'rank' ? 'opacity-100 text-purple-500' : 'opacity-0 group-hover:opacity-50'}`}>
-                                                {sortConfig.direction === 'asc' ? '▲' : '▼'}
-                                            </span>
                                         </div>
                                     </th>
                                     <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('min')}>
