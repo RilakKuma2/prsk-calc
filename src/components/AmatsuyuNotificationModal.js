@@ -182,6 +182,34 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
         }
     };
 
+    const handleDisconnect = async (type) => {
+        if (!window.confirm(t('amatsuyu.alerts.confirm_disconnect'))) return;
+
+        const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
+        try {
+            let body = {};
+            if (type === 'discord') body = { webhookUrl: discordWebhook };
+            else if (type === 'telegram') body = { chatId: telegramChatId };
+
+            const response = await fetch(`${cleanUrl}/unsubscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (response.ok) {
+                if (type === 'discord') setDiscordWebhook('');
+                else if (type === 'telegram') setTelegramChatId('');
+                alert(t('amatsuyu.alerts.disconnected'));
+            } else {
+                alert(t('amatsuyu.alerts.disconnect_fail') + response.status);
+            }
+        } catch (error) {
+            console.error('Disconnect error:', error);
+            alert(t('amatsuyu.alerts.disconnect_fail') + error.message);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm w-[90%] relative font-sans" onClick={e => e.stopPropagation()}>
@@ -279,7 +307,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                     <span className="text-sm text-indigo-700 font-medium truncate max-w-[200px]">
                                         {t('amatsuyu.discord.connected')} {discordWebhook.slice(0, 30)}...
                                     </span>
-                                    <button onClick={() => setDiscordWebhook('')} className="text-xs text-red-500 hover:text-red-700 font-bold px-2">
+                                    <button onClick={() => handleDisconnect('discord')} className="text-xs text-red-500 hover:text-red-700 font-bold px-2">
                                         ✕
                                     </button>
                                 </div>
@@ -333,7 +361,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                     <span className="text-sm text-blue-700 font-medium">
                                         {t('amatsuyu.telegram.connected')} {telegramChatId}
                                     </span>
-                                    <button onClick={() => setTelegramChatId('')} className="text-xs text-red-500 hover:text-red-700 font-bold px-2">
+                                    <button onClick={() => handleDisconnect('telegram')} className="text-xs text-red-500 hover:text-red-700 font-bold px-2">
                                         ✕
                                     </button>
                                 </div>

@@ -200,6 +200,9 @@ const ja = {
             invalid_webhook: '無効なDiscord Webhook URLです',
             missing_chat_id: 'Chat IDを入力してください',
             saving: '保存中...',
+            confirm_disconnect: '本当に連携を解除しますか？(サーバーから設定が削除されます)',
+            disconnected: '連携を解除しました。',
+            disconnect_fail: '解除失敗: ',
         },
         tabs: {
             web: 'ブラウザ通知',

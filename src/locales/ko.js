@@ -200,6 +200,9 @@ const ko = {
             invalid_webhook: '올바르지 않은 디스코드 웹훅 URL입니다',
             missing_chat_id: 'Chat ID를 입력해주세요',
             saving: '저장 중...',
+            confirm_disconnect: '정말 연동을 해제하시겠습니까? (서버에서 알림 설정이 삭제됩니다)',
+            disconnected: '연동이 해제되었습니다.',
+            disconnect_fail: '연동 해제 실패: ',
         },
         tabs: {
             web: '웹 푸시',
