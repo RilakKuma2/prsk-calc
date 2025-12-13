@@ -158,14 +158,30 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
         return `${roundL} ${roundR}`;
     };
 
+    const isToday = (date) => {
+        if (!date) return false;
+        const today = new Date();
+        return date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear();
+    };
+
     const getTextColor = (date, idx) => {
         const birthdays = characterBirthdays.filter(b => isBirthday(date, b));
-        if (birthdays.length > 0) {
+        const hasBirthday = birthdays.length > 0;
+
+        if (isToday(date) && !hasBirthday) return 'text-white font-extrabold'; // Normal Today
+
+        if (hasBirthday) {
             const hasRin = birthdays.find(b => b.nameKo === '린' || b.nameEn === 'Rin');
             const hasLen = birthdays.find(b => b.nameKo === '렌' || b.nameEn === 'Len');
-            if (hasRin || hasLen) return 'text-gray-800';
-            if (isBrightColor(birthdays[0].color)) return 'text-gray-800';
-            return 'text-white';
+            let colorClass = 'text-white';
+
+            if (hasRin || hasLen || isBrightColor(birthdays[0].color)) {
+                colorClass = 'text-gray-800';
+            }
+
+            return isToday(date) ? `${colorClass} font-extrabold` : colorClass;
         }
 
         const isSun = idx % 7 === 0;
@@ -174,6 +190,28 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
         if (isSun) return 'text-[#8a898d]';
         if (isSat) return 'text-[#8a898d]';
         return 'text-black';
+    };
+
+    const renderTodayCircle = (date) => {
+        if (!isToday(date)) return null;
+
+        const hasBirthday = characterBirthdays.some(b => isBirthday(date, b));
+
+        if (hasBirthday) {
+            // If birthday exists, add a neon border ring labeled "Today" - Keep Fluorescent
+            return (
+                <div
+                    className="absolute w-10 h-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-[53] border-2 border-[#ccff00] shadow-[0_0_8px_#ccff00]"
+                />
+            );
+        }
+
+        // Normal Today: #FF383C
+        return (
+            <div
+                className="absolute w-9 h-9 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-[51] bg-[#FF383C] shadow-md"
+            />
+        );
     };
 
     return (
@@ -202,6 +240,7 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
                                 }}
                             />
                         )}
+                        {renderTodayCircle(date)}
                         {renderBirthdayCircle(date)}
                         <span className={`relative z-[55] ${date ? getTextColor(date, idx) : ''}`} style={{ fontFamily: "'Roboto', sans-serif" }}>
                             {date ? date.getDate() : ''}

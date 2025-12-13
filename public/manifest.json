@@ -3,7 +3,7 @@
     "name": "Project Sekai Calculator",
     "icons": [
         {
-            "src": "icon.png",
+            "src": "icon192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
