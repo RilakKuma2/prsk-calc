@@ -6,15 +6,15 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
     const [localSettings, setLocalSettings] = useState(settings);
     const [activeTab, setActiveTab] = useState('web'); // web, discord, telegram
 
-    // VAPID Public Key - User needs to replace this!
-    const VAPID_PUBLIC_KEY = 'BA_OF5pmVPIDSJx5ByCNUf3zIodBRi069ihknUmR3f5FWiESg79F6wg5vJKloaorfJaFbc0bb-ArdMbTe3LbsPY';
-    const WORKER_URL = 'https://noti.rilaksekai.com/';
+    // VAPID Public Key
+    const VAPID_PUBLIC_KEY = process.env.REACT_APP_VAPID_PUBLIC_KEY;
+    const WORKER_URL = process.env.REACT_APP_WORKER_URL;
 
-    // Discord Client ID - User needs to replace this!
-    const DISCORD_CLIENT_ID = '1448258116264398931'; // Replace with your Application ID
+    // Discord Client ID
+    const DISCORD_CLIENT_ID = process.env.REACT_APP_DISCORD_CLIENT_ID;
 
-    // Telegram Bot Username - User needs to replace this!
-    const TELEGRAM_BOT_USERNAME = 'prsk_bd_bot'; // Replace with your Bot Username (without @)
+    // Telegram Bot Username
+    const TELEGRAM_BOT_USERNAME = process.env.REACT_APP_TELEGRAM_BOT_USERNAME || 'prsk_bd_bot';
 
     function urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);

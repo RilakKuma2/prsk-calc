@@ -45,7 +45,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   useEffect(() => {
     const fetchPredictionData = async () => {
       try {
-        const response = await fetch("https://api.rilaksekai.com/api/ranking");
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/ranking`);
         const data = await response.json();
 
         if (data.data) {

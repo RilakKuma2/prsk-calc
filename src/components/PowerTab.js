@@ -383,6 +383,24 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
     }
   };
 
+  const renderDiff = (currentScore, otherScore) => {
+    if (!isComparisonMode || !currentScore || !otherScore) return null;
+    const currentMax = currentScore.max;
+    const otherMax = otherScore.max;
+
+    if (otherMax === 0) return null;
+
+    if (currentMax > otherMax) {
+      const diffPercent = ((currentMax - otherMax) / otherMax * 100).toFixed(1);
+      return (
+        <div className="text-[10px] text-red-500 font-bold leading-none mt-0.5">
+          (+{diffPercent}%)
+        </div>
+      );
+    }
+    return null;
+  };
+
   const renderFireSelect = (key, minStart = 0) => {
     const options = [];
     for (let i = minStart; i <= 10; i++) {
@@ -713,15 +731,21 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                       {renderFireSelect('custom')}
                     </td>
                     <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                      <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
-                        {renderScore(customScore)}
-                      </span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
+                          {renderScore(customScore)}
+                        </span>
+                        {renderDiff(customScore, customScoreB)}
+                      </div>
                     </td>
                     {isComparisonMode && (
                       <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
-                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
-                          {renderScore(customScoreB, true)}
-                        </span>
+                        <div className="flex flex-col items-center justify-center">
+                          <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                            {renderScore(customScoreB, true)}
+                          </span>
+                          {renderDiff(customScoreB, customScore)}
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -739,15 +763,21 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                     {renderFireSelect('loAndFound')}
                   </td>
                   <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
-                      {renderScore(loAndFoundScore)}
-                    </span>
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
+                        {renderScore(loAndFoundScore)}
+                      </span>
+                      {renderDiff(loAndFoundScore, loAndFoundScoreB)}
+                    </div>
                   </td>
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
-                      <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
-                        {renderScore(loAndFoundScoreB, true)}
-                      </span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                          {renderScore(loAndFoundScoreB, true)}
+                        </span>
+                        {renderDiff(loAndFoundScoreB, loAndFoundScore)}
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -759,15 +789,21 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                     {renderFireSelect('omakase')}
                   </td>
                   <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
-                      {renderScore(omakaseScore)}
-                    </span>
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
+                        {renderScore(omakaseScore)}
+                      </span>
+                      {renderDiff(omakaseScore, omakaseScoreB)}
+                    </div>
                   </td>
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
-                      <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
-                        {renderScore(omakaseScoreB, true)}
-                      </span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                          {renderScore(omakaseScoreB, true)}
+                        </span>
+                        {renderDiff(omakaseScoreB, omakaseScore)}
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -784,15 +820,21 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                     {renderFireSelect('envy')}
                   </td>
                   <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
-                      {renderScore(envyScore)}
-                    </span>
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-blue-600 font-bold tracking-tight text-base md:text-lg">
+                        {renderScore(envyScore)}
+                      </span>
+                      {renderDiff(envyScore, envyScoreB)}
+                    </div>
                   </td>
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
-                      <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
-                        {renderScore(envyScoreB, true)}
-                      </span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                          {renderScore(envyScoreB, true)}
+                        </span>
+                        {renderDiff(envyScoreB, envyScore)}
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -804,15 +846,21 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                     {renderFireSelect('creationMyth', 1)}
                   </td>
                   <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="text-blue-600 text-base md:text-lg font-bold tracking-tight">
-                      {renderScore(creationMythScore, true)}
-                    </span>
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-blue-600 text-base md:text-lg font-bold tracking-tight">
+                        {renderScore(creationMythScore, true)}
+                      </span>
+                      {renderDiff(creationMythScore, creationMythScoreB)}
+                    </div>
                   </td>
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
-                      <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
-                        {renderScore(creationMythScoreB, true)}
-                      </span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                          {renderScore(creationMythScoreB, true)}
+                        </span>
+                        {renderDiff(creationMythScoreB, creationMythScore)}
+                      </div>
                     </td>
                   )}
                 </tr>
