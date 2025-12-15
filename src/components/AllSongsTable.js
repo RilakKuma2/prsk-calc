@@ -38,6 +38,17 @@ const DIFFICULTY_LABELS = {
     best: '난이도 설정'
 };
 
+
+const UNIT_COLORS = {
+    'L/n': '#4455dd',       // Leo/need
+    'MMJ': '#88dd44',                   // MORE MORE JUMP!
+    'VBS': '#ee1166',                 // Vivid BAD SQUAD
+    'WxS': '#ff9900',             // Wonderlands×Showtime
+    'N25': '#884499',         // 25-ji, Nightcord de.                // VIRTUAL SINGER
+    'Oth': '#333333',
+    'none': '#999999',                   // Other/Instrumental
+};
+
 const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
     const { t } = useTranslation();
     const [results, setResults] = useState([]);
@@ -66,14 +77,21 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
         setCurrentPage(1);
     }, [searchQuery]);
 
+    const normalize = (str) => {
+        if (!str) return '';
+        return str.normalize('NFC').toLowerCase()
+            .replace(/\s+/g, '')
+            .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+    };
+
     const filteredResults = useMemo(() => {
         if (!searchQuery) return results;
-        const term = searchQuery.toLowerCase();
+        const term = normalize(searchQuery);
         return results.filter(row =>
-            (row.name && row.name.toLowerCase().includes(term)) ||
-            (row.title_jp && row.title_jp.toLowerCase().includes(term)) ||
-            (row.title_hi && row.title_hi.toLowerCase().includes(term)) ||
-            (row.title_hangul && row.title_hangul.toLowerCase().includes(term))
+            (row.name && normalize(row.name).includes(term)) ||
+            (row.title_jp && normalize(row.title_jp).includes(term)) ||
+            (row.title_hi && normalize(row.title_hi).includes(term)) ||
+            (row.title_hangul && normalize(row.title_hangul).includes(term))
         );
     }, [results, searchQuery]);
 
@@ -199,6 +217,8 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                 songResults.sort((a, b) => b.maxEP - a.maxEP);
                 const best = songResults[0];
 
+                // ... inside AllSongsTable component ...
+
                 calculatedResults.push({
                     id: song.id,
                     name: song.name,
@@ -206,12 +226,10 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                     title_hi: song.title_hi,
                     title_hangul: song.title_hangul,
                     length: song.length,
+                    mv: song.mv,
+                    unit: song.unit, // Pass unit info
                     ...best,
-                    allDiffs: songResults // For expansion (shows only computed ones? usually user wants all diffs in expansion? 
-                    // If we filter by 'expert', maybe expansion should still show all? 
-                    // Current logic: calculateAll calculates ONLY target diffs. 
-                    // Better UX: Calculate ALL for expansion, but filter list for ranking.
-                    // For performance, let's keep it simple: if filtering, only calculate that diff. 
+                    allDiffs: songResults
                 });
             }
         });
@@ -480,13 +498,23 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                                                 className={`hover:bg-gray-50 transition-colors duration-200 group/row cursor-pointer ${isExpanded ? 'bg-indigo-50/50' : ''}`}
                                                 onClick={() => handleRowClick(res.id)}
                                             >
-                                                <td className="px-1 py-1 md:px-2 md:py-2 text-center text-gray-400 text-xs font-bold">
+                                                <td
+                                                    className="px-1 py-1 md:px-2 md:py-2 text-center text-white text-xs font-bold shadow-sm"
+                                                    style={{ backgroundColor: UNIT_COLORS[res.unit] || '#9ca3af' }}
+                                                >
                                                     {rank}
                                                 </td>
-                                                <td className="px-1 py-1 md:px-2 md:py-2 text-left align-middle max-w-[120px] md:max-w-[200px] truncate">
-                                                    <span className="text-gray-800 text-[13px] md:text-base font-medium block truncate">
-                                                        {language === 'ko' ? res.name : res.title_jp}
-                                                    </span>
+                                                <td className="px-1 py-1 md:px-2 md:py-2 text-left align-middle max-w-[120px] md:max-w-[200px]">
+                                                    <div className="flex items-center gap-1 w-full">
+                                                        <span className="text-gray-800 text-[13px] md:text-base font-medium block truncate">
+                                                            {language === 'ko' ? res.name : res.title_jp}
+                                                        </span>
+                                                        {res.mv === 3 && (
+                                                            <span className="shrink-0 inline-flex items-center justify-center px-1 py-[1px] rounded text-[9px] font-bold border border-yellow-400 text-yellow-400 bg-slate-700 leading-none select-none">
+                                                                3D
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-1 py-1 md:px-2 md:py-2 text-center align-middle">
                                                     <span
