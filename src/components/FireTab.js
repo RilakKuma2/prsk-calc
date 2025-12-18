@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+import { formatDuration } from '../utils/time';
+import RankingGraphModal from './RankingGraphModal';
 import { useTranslation } from '../contexts/LanguageContext';
 import { calculateScoreRange } from '../utils/calculator';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
@@ -27,7 +29,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [showTop50, setShowTop50] = useState(false);
   const [isRoomSearchOpen, setIsRoomSearchOpen] = useState(false);
   const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('roomSearchEngine') || 'yahoo');
-  const [predictionOpen, setPredictionOpen] = useState(false);
   const [currentNaturalFire, setCurrentNaturalFire] = useState(surveyData.currentNaturalFire || '');
   const [challengeScore, setChallengeScore] = useState(surveyData.challengeScore || ''); // Default empty, used as 250 if empty
   const [worldPass, setWorldPass] = useState(surveyData.worldPass || false);
@@ -72,6 +73,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       setMySekaiScore(rawScore);
     }
   };
+  // Ranking Graph State
+  const [graphRank, setGraphRank] = useState(null);
+
+  // Ref for tooltips
   const dropdownRef = useRef(null);
   const importMenuRef = useRef(null);
 
@@ -135,15 +140,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     return date.toLocaleString('ko-KR', {
       month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
     });
-  };
-
-  const formatDuration = (ms) => {
-    if (!ms || ms <= 0) return "종료됨";
-    const totalMinutes = Math.floor(ms / (1000 * 60));
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const minutes = totalMinutes % 60;
-    return `${days}일 ${hours}시간 ${minutes}분`;
   };
 
   const getFireaValue = (firea) => {
@@ -388,7 +384,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const renderTargetButton = (rank, score) => {
     if (activeRank !== rank) return null;
     return (
-      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50">
+      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 flex gap-1">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -398,6 +394,22 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         >
           {t('fire.set_target')}
         </button>
+        {language === 'ko' && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setGraphRank(rank);
+            }}
+            className="bg-pink-500 text-white text-[10px] px-2 py-1.5 rounded shadow-lg whitespace-nowrap hover:bg-pink-600 active:scale-95 transition-all animate-fade-in flex items-center justify-center"
+            title="View Graph"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </button>
+        )}
       </div>
     );
   };
@@ -596,6 +608,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               type="number"
               value={score1}
               onChange={e => setScore1(e.target.value)}
+              onFocus={(e) => e.target.select()}
               placeholder="217"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
             />
@@ -612,6 +625,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               type="number"
               value={score2}
               onChange={e => setScore2(e.target.value)}
+              onFocus={(e) => e.target.select()}
               placeholder="3000"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
             />
@@ -664,6 +678,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               type="number"
               value={score3}
               onChange={e => setScore3(e.target.value)}
+              onFocus={(e) => e.target.select()}
               placeholder="2.8"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
             />
@@ -700,6 +715,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               type="number"
               value={rounds1}
               onChange={e => setRounds1(e.target.value)}
+              onFocus={(e) => e.target.select()}
               placeholder="28"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
             />
@@ -805,6 +821,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   type="number"
                   value={currentNaturalFire}
                   onChange={(e) => setCurrentNaturalFire(e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   placeholder="0"
                   className={`w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow ${currentNaturalFire === '' ? 'text-gray-400' : 'text-gray-900'}`}
                 />
@@ -819,6 +836,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     type="number"
                     value={challengeScore}
                     onChange={(e) => setChallengeScore(e.target.value)}
+                    onFocus={(e) => e.target.select()}
                     placeholder="250"
                     className={`w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow ${challengeScore === '' ? 'text-gray-400' : 'text-gray-900'}`}
                   />
@@ -846,6 +864,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       type="number"
                       value={mySekaiScore}
                       onChange={(e) => setMySekaiScore(e.target.value)}
+                      onFocus={(e) => e.target.select()}
                       placeholder="2500"
                       className={`w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow ${mySekaiScore === '' ? 'text-gray-400' : 'text-gray-900'}`}
                     />
@@ -872,6 +891,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           </div>
           <div className="text-[9px] text-gray-400 text-center mt-2">
             {t('fire.prediction_disclaimer')}
+            <div className="mt-0.5">{t('fire.prediction_disclaimer_note')}</div>
           </div>
         </div>
       )}
@@ -908,7 +928,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                             <span className="font-bold">{naturalStats.earnedScore.toFixed(1)}{t('fire.suffix_man')}</span>
                           </div>
                           <div className="text-[10px] text-gray-400 pl-1">
-                            {naturalStats.recoveryFire}{t('fire.fire_suffix')} + {t('fire.ad_bonus')} {naturalStats.loginFire}{t('fire.fire_suffix')} {naturalStats.userCurrentNatural > 0 ? `+ ${naturalStats.userCurrentNatural}${t('fire.fire_suffix')}` : ''}
+                            {naturalStats.recoveryFire}{t('fire.fire_suffix')} + {t('fire.ad_bonus')} {naturalStats.loginFire}{t('fire.fire_suffix')} {naturalStats.userCurrentNatural > 0 ? `+ ${naturalStats.userCurrentNatural}${t('fire.fire_suffix')} ` : ''}
                           </div>
                         </div>
 
@@ -972,58 +992,76 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       </div>
 
       {/* Room Search Dropdown (Below Result) - Minimal Margin */}
-      <div className="w-[85%] max-w-[260px] mx-auto flex justify-end mt-0.5 items-center gap-2" ref={dropdownRef}>
-        {/* Engine Toggle */}
-        <div className="flex bg-gray-100 rounded-lg p-0.5 h-full items-center">
+      <div className={`w-[85%] max-w-[260px] mx-auto flex ${language === 'ko' ? 'justify-between' : 'justify-end'} mt-0.5 items-center gap-2`} ref={dropdownRef}>
+        {/* Ranking Board Button (Small Icon) */}
+        {/* Ranking Board Button (Small Icon) - Only for Korean */}
+        {language === 'ko' && (
           <button
-            onClick={() => setSearchEngine('yahoo')}
-            className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${searchEngine === 'yahoo' ? 'bg-white text-[#FF0033] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+            onClick={() => window.open('https://jp.seka.ing/', '_blank')}
+            className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1.5"
+            title={t('fire.ranking_board')}
           >
-            Yahoo
-          </button>
-          <button
-            onClick={() => setSearchEngine('x')}
-            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${searchEngine === 'x' ? 'bg-black text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            X
-          </button>
-        </div>
-
-        <div className="relative inline-block text-left">
-          <button
-            onClick={() => setIsRoomSearchOpen(!isRoomSearchOpen)}
-            className="bg-white hover:bg-gray-50 text-gray-600 font-bold py-1 px-3 rounded-full border border-gray-200 shadow-sm hover:shadow-md transition-all text-xs flex items-center gap-1.5"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
             </svg>
-            {t('fire.room_search')}
+            <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')}</span>
           </button>
+        )}
+        <div className="flex gap-2 items-center">
 
-          {isRoomSearchOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-slide-down">
-              <div className="py-1">
-                <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29&ei=UTF-8&ifr=tl_sc" : "https://x.com/search?q=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
-                  {t('fire.room_all')}
-                </a>
-                <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+-%E3%83%AD%E3%82%B9+-%E3%81%8A%E3%81%BE%E3%81%8B%E3%81%9B+-%E3%83%93%E3%83%90%E3%83%8F%E3%83%94+-sage&ei=UTF-8&ifr=tl_sc" : "https://x.com/search?q=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+-%E3%83%AD%E3%82%B9+-%E3%81%8A%E3%81%BE%E3%81%8B%E3%81%9B+-%E3%83%93%E3%83%90%E3%83%8F%E3%83%94+-sage"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
-                  {t('fire.room_envy')}
-                </a>
-                <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+%28%E3%83%AD%E3%82%B9+OR+sage%29&ei=UTF-8&ifr=tl_sc" : "https://x.com/search?q=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+%28%E3%83%AD%E3%82%B9+OR+sage%29"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
-                  {t('fire.room_lost_sage')}
-                </a>
-                <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=(%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B%20OR%20%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86)%20%E3%81%8A%E3%81%BE%E3%81%8B%E3%81%9B" : "https://x.com/search?q=(%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B%20OR%20%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86)%20%E3%81%8A%E3%81%BE%E3%81%8B%E3%81%9B"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
-                  {t('fire.room_omakase')}
-                </a>
-                <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+MV&ei=UTF-8&ifr=tl_sc" : "https://x.com/search?q=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+MV"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
-                  {t('fire.room_mv')}
-                </a>
+          {/* Engine Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-0.5 h-full items-center">
+            <button
+              onClick={() => setSearchEngine('yahoo')}
+              className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${searchEngine === 'yahoo' ? 'bg-white text-[#FF0033] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              Yahoo
+            </button>
+            <button
+              onClick={() => setSearchEngine('x')}
+              className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${searchEngine === 'x' ? 'bg-black text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              X
+            </button>
+          </div>
+
+          <div className="relative inline-block text-left">
+            <button
+              onClick={() => setIsRoomSearchOpen(!isRoomSearchOpen)}
+              className="bg-white hover:bg-gray-50 text-gray-600 font-bold py-1 px-3 rounded-full border border-gray-200 shadow-sm hover:shadow-md transition-all text-xs flex items-center gap-1.5"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {t('fire.room_search')}
+            </button>
+
+            {isRoomSearchOpen && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-slide-down">
+                <div className="py-1">
+                  <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29&ei=UTF-8&ifr=tl_sc" : "https://x.com/search?q=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
+                    {t('fire.room_all')}
+                  </a>
+                  <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+-%E3%83%AD%E3%82%B9+-%E3%81%8A%E3%81%BE%E3%81%8B%E3%81%9B+-%E3%83%93%E3%83%90%E3%83%8F%E3%83%94+-sage&ei=UTF-8&ifr=tl_sc" : "https://x.com/search?q=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+-%E3%83%AD%E3%82%B9+-%E3%81%8A%E3%81%BE%E3%81%8B%E3%81%9B+-%E3%83%93%E3%83%90%E3%83%8F%E3%83%94+-sage"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
+                    {t('fire.room_envy')}
+                  </a>
+                  <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+%28%E3%83%AD%E3%82%B9+OR+sage%29&ei=UTF-8&ifr=tl_sc" : "https://x.com/search?q=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+%28%E3%83%AD%E3%82%B9+OR+sage%29"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
+                    {t('fire.room_lost_sage')}
+                  </a>
+                  <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=(%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B%20OR%20%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86)%20%E3%81%8A%E3%81%BE%E3%81%8B%E3%81%9B" : "https://x.com/search?q=(%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B%20OR%20%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86)%20%E3%81%8A%E3%81%BE%E3%81%8B%E3%81%9B"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
+                    {t('fire.room_omakase')}
+                  </a>
+                  <a href={searchEngine === 'yahoo' ? "https://search.yahoo.co.jp/realtime/search?p=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+MV&ei=UTF-8&ifr=tl_sc" : "https://x.com/search?q=%28%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8D%94%E5%8A%9B+OR+%23%E3%83%97%E3%83%AD%E3%82%BB%E3%82%AB%E5%8B%9F%E9%9B%86%29+MV"} target="_blank" rel="noopener noreferrer" className="block px-4 py-2.5 text-xs sm:text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors font-medium">
+                    {t('fire.room_mv')}
+                  </a>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-
       {/* Jiiku Prediction Table - Clean Mobile/Desktop Style */}
       <div className="w-full max-w-2xl mx-auto mt-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" ref={tableRef}>
@@ -1075,7 +1113,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     <div className="relative w-full h-6 bg-gray-200 rounded-lg overflow-hidden shadow-inner mt-1">
                       <div
                         className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all duration-500"
-                        style={{ width: `${progress}%` }}
+                        style={{ width: `${progress}% ` }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] z-10 leading-none pb-[1px]">
                         {elapsedHours.toFixed(1)}h / {totalHours}h ({progress.toFixed(1)}%)
@@ -1092,10 +1130,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             {!eventInfo && (
               <div className="flex justify-between items-center text-xs mt-2 text-gray-500 px-1">
                 <span>
-                  {lastUpdated && `${t('fire.last_updated')}: ${formatTime(lastUpdated)}`}
+                  {lastUpdated && `${t('fire.last_updated')}: ${formatTime(lastUpdated)} `}
                 </span>
                 <span>
-                  {timeRemaining !== null && `${t('fire.ends_in')}: ${formatDuration(timeRemaining)}`}
+                  {timeRemaining !== null && `${t('fire.ends_in')}: ${formatDuration(timeRemaining)} `}
                 </span>
               </div>
             )}
@@ -1201,6 +1239,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         </div>
       </div>
 
+
+
       {
         language === 'ko' && (
           <div className="w-full max-w-2xl mx-auto mt-4 text-center">
@@ -1216,6 +1256,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           </div>
         )
       }
+
+      <RankingGraphModal
+        isOpen={!!graphRank}
+        onClose={() => setGraphRank(null)}
+        rank={graphRank}
+        t={t}
+      />
     </div>
   );
 };

@@ -101,7 +101,8 @@ const en = {
     fire: {
         current_score: 'Current Score',
         target_score: 'Target Score',
-        score_per_round: 'Score/Round',
+        current_live_bonus: 'Current Fire Consumption',
+        score_per_game: 'Score Per Game',
         rounds_per_interval: 'Rounds/Interval',
         current_fire: 'Current Energy',
         change_fire: 'Change Energy',
@@ -153,7 +154,9 @@ const en = {
         world_pass: 'World Pass',
         my_sekai_score: 'My Sekai Score',
         my_sekai_ep: 'My Sekai EP',
-        prediction_disclaimer: '*Uses current score and score per round from top inputs',
+        prediction_disclaimer: 'Calculated using current score and score per game above',
+        prediction_disclaimer_note: 'Ignores level-up recovery, assumes daily My Sekai/Challenge Live completed',
+        ranking_board: 'Ranking Board',
     },
     challenge: {
         score: 'Score',
@@ -307,6 +310,7 @@ const en = {
         natural_fire_days: 'Natural Regen Days',
         suffix_round: 'Rounds',
         suffix_day: 'Days',
+        natural_fire_note: 'Natural fire recovers 58/day. Assumes ≤5 fire usage.',
     },
     challenge_score: {
         total_power: 'Total Power',

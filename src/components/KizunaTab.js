@@ -165,6 +165,11 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
             <span className="font-bold text-blue-600">{naturalFiresDays}{t('kizuna.suffix_day')}</span>
           </div>
         </div>
+
+        {/* Natural Fire Note */}
+        <p className="text-xs text-gray-400 mt-2 text-center whitespace-pre-wrap">
+          {t('kizuna.natural_fire_note')}
+        </p>
       </div>
     </div>
   );

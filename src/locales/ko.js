@@ -138,7 +138,7 @@ const ko = {
         natural_fire: '자연불 계산',
         natural_score: '자연불 획득 점수',
         score_after_natural: '자연불 예측 점수',
-        current_natural_fire: '현재 불',
+        current_natural_fire: '현재 잔여 불',
         ad_bonus: '광고',
         natural_score_row: '자연불 점수',
         current_ep: '현재 이벤포',
@@ -161,6 +161,8 @@ const ko = {
         my_sekai_score: '마셐 1불 점수',
         my_sekai_ep: '마이세카이 P',
         prediction_disclaimer: '상단의 현재점수와 판 당 점수를 계산에 사용',
+        prediction_disclaimer_note: '렙업불 무시, 오늘 마셐 챌라 완료했다 가정',
+        ranking_board: '랭킹판',
     },
     challenge: {
         score: '스코어',
@@ -321,6 +323,7 @@ const ko = {
         natural_fire_days: '자연불 소요',
         suffix_round: '판',
         suffix_day: '일',
+        natural_fire_note: '자연불은 일 58불회복. 5불이하 사용 가정',
     },
     challenge_score: {
         total_power: '종합력',
