@@ -35,6 +35,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
 
     // Load existing specific settings if any
     const [discordWebhook, setDiscordWebhook] = useState(settings?.discordWebhook || '');
+    const [discordChannelId, setDiscordChannelId] = useState(settings?.discordChannelId || '');
     const [telegramChatId, setTelegramChatId] = useState(settings?.telegramChatId || '');
 
     const handleToggle = (key) => {
@@ -54,9 +55,10 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
         setLocalSettings(prev => ({
             ...prev,
             discordWebhook,
+            discordChannelId,
             telegramChatId
         }));
-    }, [discordWebhook, telegramChatId]);
+    }, [discordWebhook, discordChannelId, telegramChatId]);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -144,6 +146,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                     body: JSON.stringify({
                         type: 'discord',
                         webhookUrl: discordWebhook,
+                        channelId: discordChannelId,
                         lang: language,
                         settings: commonSettings
                     })
@@ -198,7 +201,10 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
             });
 
             if (response.ok) {
-                if (type === 'discord') setDiscordWebhook('');
+                if (type === 'discord') {
+                    setDiscordWebhook('');
+                    setDiscordChannelId('');
+                }
                 else if (type === 'telegram') setTelegramChatId('');
                 alert(t('amatsuyu.alerts.disconnected'));
             } else {
@@ -282,7 +288,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                             // 1. Open Popup
                                             const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
                                             const popup = window.open(
-                                                `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(cleanUrl + '/auth/discord/callback')}&response_type=code&scope=webhook.incoming`,
+                                                `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(cleanUrl + '/auth/discord/callback')}&response_type=code&scope=webhook.incoming%20bot%20applications.commands`,
                                                 'Discord Auth',
                                                 `width=${width},height=${height},top=${top},left=${left}`
                                             );
@@ -291,6 +297,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                             const listener = (event) => {
                                                 if (event.data.type === 'DISCORD_WEBHOOK') {
                                                     setDiscordWebhook(event.data.webhook.url);
+                                                    setDiscordChannelId(event.data.webhook.channel_id);
                                                     window.removeEventListener('message', listener);
                                                 }
                                             };

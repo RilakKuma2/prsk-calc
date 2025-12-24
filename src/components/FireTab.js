@@ -1080,11 +1080,20 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     </span>
                   </div>
 
-                  {/* Event Name (Center) */}
-                  <div className="flex-1 text-center px-0.5 sm:px-1 min-w-0">
-                    <div className="font-bold text-indigo-600 text-sm sm:text-lg leading-tight break-keep line-clamp-2">
-                      {eventInfo.name}
-                    </div>
+                  {/* Event Name (Center) - Replaced with Banner */}
+                  <div className="flex-1 text-center px-0.5 sm:px-1 min-w-0 flex justify-center z-10 -my-3 relative">
+                    <img
+                      src={`https://asset.rilaksekai.com/event_story/${eventInfo.asname}/screen_image/banner_event_story.webp`}
+                      alt={eventInfo.name}
+                      className="h-[80px] w-auto max-w-[140%] sm:max-w-lg shadow-lg object-cover transform scale-105"
+                      style={{
+                        clipPath: 'inset(5px round 15px)',
+                        maskImage: 'linear-gradient(to bottom, transparent 5%, black 15%, black 85%, transparent 95%), linear-gradient(to right, transparent 5%, black 15%, black 85%, transparent 95%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 5%, black 15%, black 85%, transparent 95%), linear-gradient(to right, transparent 5%, black 15%, black 85%, transparent 95%)',
+                        maskComposite: 'intersect',
+                        WebkitMaskComposite: 'source-in'
+                      }}
+                    />
                   </div>
 
                   {/* Ends In (Right) */}
@@ -1110,7 +1119,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   const progress = Math.min(100, Math.max(0, (elapsedHours / totalHours) * 100));
 
                   return (
-                    <div className="relative w-full h-6 bg-gray-200 rounded-lg overflow-hidden shadow-inner mt-1">
+                    <div className="relative w-full h-6 bg-gray-200 rounded-lg overflow-hidden shadow-inner mt-0">
                       <div
                         className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all duration-500"
                         style={{ width: `${progress}% ` }}

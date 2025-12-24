@@ -161,6 +161,14 @@ function AppContent() {
           {t('app.chart_link')}
         </button>
       </div>
+      <div className="button-container">
+        <button
+          className="link-button"
+          onClick={() => window.open(language === 'ko' ? 'https://card.rilaksekai.com' : 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing', '_blank')}
+        >
+          {t('app.summary_button')}
+        </button>
+      </div>
 
 
       {/* Info Button - Positioned in Bottom Right of Container */}
