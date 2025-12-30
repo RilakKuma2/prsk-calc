@@ -49,7 +49,7 @@ const TARGET_SONGS = [
     { id: 74, difficulty: 'expert' },
     { id: 100, difficulty: 'append' },
     { id: 578, difficulty: 'master' },
-    { id: 539, difficulty: 'expert' },
+    { id: 610, difficulty: 'master' },
     { id: 320, difficulty: 'master' },
     { id: 89, difficulty: 'append' },
     { id: 554, difficulty: 'append' },
@@ -164,8 +164,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 songId: song.id,
                 difficulty: searchDifficulty,
                 totalPower: Number(deck.totalPower || '410520'),
-                skillLeader: Number(deck.skillLeader || '120'),
-                skillMember2: Number(deck.skillMember2 || '100'),
+                skillLeader: Number(deck.skillLeader || '140'),
+                skillMember2: Number(deck.skillMember2 || '120'),
                 skillMember3: Number(deck.skillMember3 || '100'),
                 skillMember4: Number(deck.skillMember4 || '100'),
                 skillMember5: Number(deck.skillMember5 || '100'),
@@ -208,8 +208,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             songId: selectedSong.id,
             difficulty: searchDifficulty,
             totalPower: Number(deck.totalPower || '410520'),
-            skillLeader: Number(deck.skillLeader || '120'),
-            skillMember2: Number(deck.skillMember2 || '100'),
+            skillLeader: Number(deck.skillLeader || '140'),
+            skillMember2: Number(deck.skillMember2 || '120'),
             skillMember3: Number(deck.skillMember3 || '100'),
             skillMember4: Number(deck.skillMember4 || '100'),
             skillMember5: Number(deck.skillMember5 || '100'),
@@ -261,8 +261,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 songId: target.id,
                 difficulty: target.difficulty,
                 totalPower: Number(totalPower || '410520'),
-                skillLeader: Number(skillLeader || '120'),
-                skillMember2: Number(skillMember2 || '100'),
+                skillLeader: Number(skillLeader || '140'),
+                skillMember2: Number(skillMember2 || '120'),
                 skillMember3: Number(skillMember3 || '100'),
                 skillMember4: Number(skillMember4 || '100'),
                 skillMember5: Number(skillMember5 || '100'),
@@ -358,23 +358,23 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 <InputRow
                     label={t('challenge_score.leader')}
                     value={skillLeader}
-                    placeholder="120"
+                    placeholder="140"
                     onChange={(e) => {
                         const val = e.target.value;
                         updateDeck('skillLeader', val === '' ? '' : Number(val));
                     }}
                 />
                 {[
-                    { label: t('challenge_score.member_2'), val: skillMember2, key: 'skillMember2' },
-                    { label: t('challenge_score.member_3'), val: skillMember3, key: 'skillMember3' },
-                    { label: t('challenge_score.member_4'), val: skillMember4, key: 'skillMember4' },
-                    { label: t('challenge_score.member_5'), val: skillMember5, key: 'skillMember5' },
+                    { label: t('challenge_score.member_2'), val: skillMember2, key: 'skillMember2', placeholder: '120' },
+                    { label: t('challenge_score.member_3'), val: skillMember3, key: 'skillMember3', placeholder: '100' },
+                    { label: t('challenge_score.member_4'), val: skillMember4, key: 'skillMember4', placeholder: '100' },
+                    { label: t('challenge_score.member_5'), val: skillMember5, key: 'skillMember5', placeholder: '100' },
                 ].map((m, i) => (
                     <InputRow
                         key={i}
                         label={m.label}
                         value={m.val}
-                        placeholder="100"
+                        placeholder={m.placeholder}
                         onChange={(e) => {
                             const val = e.target.value;
                             updateDeck(m.key, val === '' ? '' : Number(val));

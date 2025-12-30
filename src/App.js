@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Tabs from './components/Tabs';
 import InternalTab from './components/InternalTab';
@@ -14,9 +15,64 @@ import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
 import GachaTab from './components/GachaTab';
 
+// Main tab to path mapping
+const TAB_PATHS = {
+  internal: '/internal',
+  amatsuyu: '/amatsuyu',
+  challenge: '/chall',
+  auto: '/auto',
+  power: '/power',
+  fire: '/fire',
+  scoreArt: '/scoreart',
+  level: '/level',
+  gacha: '/gacha',
+};
+
+const PATH_TO_TAB = Object.entries(TAB_PATHS).reduce((acc, [tab, path]) => {
+  acc[path] = tab;
+  return acc;
+}, {});
+
 function AppContent() {
   const { t, language } = useTranslation();
-  const [currentTab, setCurrentTab] = useState('internal');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine current tab from URL path
+  const getTabFromPath = useCallback(() => {
+    const path = location.pathname;
+    // Check for exact match first
+    if (PATH_TO_TAB[path]) {
+      return { mainTab: PATH_TO_TAB[path], subPath: null };
+    }
+    // Check for sub-tab paths (e.g., /chall/score, /level/kizuna)
+    for (const [mainPath, tabId] of Object.entries(PATH_TO_TAB)) {
+      if (path.startsWith(mainPath + '/')) {
+        const subPath = path.substring(mainPath.length + 1);
+        return { mainTab: tabId, subPath };
+      }
+    }
+    // Default to internal
+    return { mainTab: 'internal', subPath: null };
+  }, [location.pathname]);
+
+  const { mainTab, subPath } = getTabFromPath();
+  const [currentTab, setCurrentTab] = useState(mainTab);
+
+  // Update currentTab when URL changes
+  useEffect(() => {
+    const { mainTab: newTab } = getTabFromPath();
+    if (newTab !== currentTab) {
+      setCurrentTab(newTab);
+    }
+  }, [location.pathname, getTabFromPath, currentTab]);
+
+  // Handle tab change - update URL
+  const handleTabChange = useCallback((tabId) => {
+    setCurrentTab(tabId);
+    const path = TAB_PATHS[tabId] || '/internal';
+    navigate(path);
+  }, [navigate]);
   const [surveyData, setSurveyData] = useState({});
   const [loadVersion, setLoadVersion] = useState(0);
 
@@ -61,11 +117,11 @@ function AppContent() {
 
   const tabComponents = {
     internal: <InternalTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
-    level: <LevelTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    level: <LevelTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
     power: <PowerTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     auto: <AutoTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     fire: <FireTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
-    challenge: <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    challenge: <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
     amatsuyu: <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     scoreArt: <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     gacha: <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
@@ -134,7 +190,7 @@ function AppContent() {
       <UpcomingEvents>
         <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
       </UpcomingEvents>
-      <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
+      <Tabs currentTab={currentTab} setCurrentTab={handleTabChange} />
 
       {tabComponents[currentTab]}
 
