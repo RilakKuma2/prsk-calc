@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { calculateScoreRange } from '../utils/calculator';
-import { SONG_OPTIONS } from '../utils/songs';
-import musicMetas from '../data/music_metas.json';
+import { getSongOptions, getMusicMetas, getSongOptionsSync, getMusicMetasSync } from '../utils/dataLoader';
 import { LiveType, EventCalculator, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -58,11 +57,24 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
     const [usedParams, setUsedParams] = useState(null); // { power, effi, skillLeader }
     const [targetDifficulty, setTargetDifficulty] = useState('best'); // 'best', 'easy', ...
     const [sortOrder, setSortOrder] = useState('desc'); // 'desc' or 'asc'
+    const [sortKey, setSortKey] = useState('maxEP'); // 'maxEP' or 'length'
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [songOptions, setSongOptions] = useState([]);
+    const [musicMetas, setMusicMetas] = useState([]);
 
     const itemsPerPage = 10;
+
+    // Load data on mount
+    useEffect(() => {
+        const loadData = async () => {
+            const [songs, metas] = await Promise.all([getSongOptions(), getMusicMetas()]);
+            setSongOptions(songs);
+            setMusicMetas(metas);
+        };
+        loadData();
+    }, []);
 
     useEffect(() => {
         if (isVisible) {
@@ -70,7 +82,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isVisible, targetDifficulty, sortOrder]); // Added targetDifficulty and sortOrder to dependencies
+    }, [isVisible, targetDifficulty, sortOrder, sortKey]); // Added targetDifficulty, sortOrder, sortKey to dependencies
 
     // Reset pagination when search query changes
     useEffect(() => {
@@ -159,7 +171,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
             ? ['easy', 'normal', 'hard', 'expert', 'master', 'append']
             : [targetDifficulty];
 
-        SONG_OPTIONS.forEach(song => {
+        songOptions.forEach(song => {
             const songResults = [];
 
             diffsToCheck.forEach(diff => {
@@ -242,22 +254,29 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
         });
 
         // Initial Sort
-        sortResults(calculatedResults, sortOrder);
+        sortResults(calculatedResults, sortKey, sortOrder);
         setIsCalculating(false);
     };
 
-    const sortResults = (data, order) => {
+    const sortResults = (data, key, order) => {
         const sorted = [...data].sort((a, b) => {
-            if (order === 'desc') return b.maxEP - a.maxEP;
-            return a.maxEP - b.maxEP;
+            let valA = key === 'length' ? a.length : a.maxEP;
+            let valB = key === 'length' ? b.length : b.maxEP;
+
+            if (order === 'desc') return valB - valA;
+            return valA - valB;
         });
         setResults(sorted);
     };
 
-    const handleSortToggle = () => {
-        const newOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+    const handleSortToggle = (key) => {
+        let newOrder = 'desc';
+        if (sortKey === key) {
+            newOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+        }
+        setSortKey(key);
         setSortOrder(newOrder);
-        sortResults(results, newOrder);
+        sortResults(results, key, newOrder);
     };
 
     const handleRowClick = (id) => {
@@ -474,14 +493,24 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                                     <th className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-8">#</th>
                                     <th className="px-1 py-1 md:px-2 md:py-2 font-bold text-left select-none w-auto">{language === 'ko' ? '곡명' : 'Song'}</th>
                                     <th className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-[50px] min-w-[50px] md:w-[70px] md:min-w-[70px]">{language === 'ko' ? '난이도' : 'Diff'}</th>
-                                    <th className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-[40px] min-w-[40px] md:w-[50px] md:min-w-[50px]">{language === 'ko' ? '길이' : 'Len'}</th>
+                                    <th
+                                        className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-[50px] min-w-[50px] md:w-[60px] md:min-w-[60px] cursor-pointer hover:bg-gray-50 transition-colors group"
+                                        onClick={() => handleSortToggle('length')}
+                                    >
+                                        <div className="flex items-center justify-center gap-1">
+                                            {language === 'ko' ? '길이' : 'Len'}
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${sortKey === 'length' ? (sortOrder === 'asc' ? 'rotate-180' : '') : 'opacity-0 group-hover:opacity-50'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                    </th>
                                     <th
                                         className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none cursor-pointer hover:bg-gray-50 transition-colors group w-[80px] min-w-[80px] md:w-[140px] md:min-w-[140px]"
-                                        onClick={handleSortToggle}
+                                        onClick={() => handleSortToggle('maxEP')}
                                     >
                                         <div className="flex items-center justify-center gap-1">
                                             {language === 'ko' ? '최대 이벤포' : 'Max EP'}
-                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${sortKey === 'maxEP' ? (sortOrder === 'asc' ? 'rotate-180' : '') : 'opacity-0 group-hover:opacity-50'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                             </svg>
                                         </div>

@@ -157,6 +157,12 @@ const ja = {
         prediction_disclaimer: '上段の現在ポイントと周回ptを計算に使用',
         prediction_disclaimer_note: 'レベルアップ回復無視、本日のマイセカイ・チャレライ完了済みと仮定',
         ranking_board: 'ボーダー',
+        // レベルアップ回復関連
+        levelup_bonus: 'Lv回復',
+        levelup_bonus_toggle: 'Lvアップ回復',
+        player_level: 'Lv (P.Rank)',
+        player_remaining_exp: '残りEXP',
+        player_live_rank: 'ランク',
     },
     challenge: {
         score: 'スコア',
@@ -312,7 +318,16 @@ const ja = {
         natural_fire_days: '自然回復',
         suffix_round: '回',
         suffix_day: '日',
+        suffix_fire: '炊き',
         natural_fire_note: '自然ライフは1日58回復。消費5以下を想定',
+        // レベルアップ回復関連
+        levelup_fire_section: 'Lvアップ回復',
+        levelup_fire_toggle: 'Lvアップ含む',
+        player_level: 'P.Rank',
+        player_remaining_exp: '残りEXP',
+        player_live_rank: 'ランク',
+        levelup_fire_bonus: 'Lvアップ回復',
+        adjusted_natural_days: '補正日数',
     },
     challenge_score: {
         total_power: '総合力',

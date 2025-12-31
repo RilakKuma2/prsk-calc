@@ -17,12 +17,12 @@ import GachaTab from './components/GachaTab';
 
 // Main tab to path mapping
 const TAB_PATHS = {
-  internal: '/internal',
+  internal: '/skill',
   amatsuyu: '/amatsuyu',
   challenge: '/chall',
   auto: '/auto',
-  power: '/power',
-  fire: '/fire',
+  power: '/ep',
+  fire: '/eventrun',
   scoreArt: '/scoreart',
   level: '/level',
   gacha: '/gacha',

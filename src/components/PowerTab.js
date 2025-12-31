@@ -3,8 +3,7 @@ import MySekaiTable from './MySekaiTable';
 import AllSongsTable from './AllSongsTable';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import { LiveCalculator, EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import musicMetas from '../data/music_metas.json';
-import { SONG_OPTIONS } from '../utils/songs';
+import { getSongOptionsSync, getMusicMetasSync } from '../utils/dataLoader';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -121,7 +120,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
 
     const query = normalize(searchQuery);
 
-    const results = SONG_OPTIONS.filter(song => {
+    const results = getSongOptionsSync().filter(song => {
       const name = normalize(song.name);
       const titleJp = normalize(song.title_jp);
       const titleEn = normalize(song.title_en);
@@ -242,7 +241,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           const result = calculateScoreRange(input, liveType);
           if (!result) return { min: 0, max: 0 };
 
-          const musicMeta = musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
+          const musicMeta = getMusicMetasSync().find(m => m.music_id === songId && m.difficulty === difficulty);
           if (!musicMeta) return { min: 0, max: 0 };
 
           const multiplier = FIRE_MULTIPLIERS[fireCount] || 1;
@@ -668,7 +667,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none" style={{ width: '27%' }}>{t('power.song')}</th>
                   <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">{t('power.fire')}</th>
                   {/* Result Header A */}
-                  <th className={`px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-sm md:text-base ${isComparisonMode ? 'text-blue-600' : ''}`}>
+                  <th className={`px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-xs md:text-base ${isComparisonMode ? 'text-blue-600' : ''}`}>
                     {isComparisonMode ? (
                       <div className="flex flex-col leading-tight">
                         <span>{power || '25.5'}{t('power.suffix_man')}/{effi || '250'}%</span>
@@ -741,7 +740,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                     {isComparisonMode && (
                       <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                         <div className="flex flex-col items-center justify-center">
-                          <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                          <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                             {renderScore(customScoreB, true)}
                           </span>
                           {renderDiff(customScoreB, customScore)}
@@ -751,7 +750,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   </tr>
                 )}
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-base md:text-base text-center align-middle">
                     <div className="flex flex-wrap items-center justify-center gap-1">
                       <span>{t('power.songs.lost_and_found')}</span>
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-[#ffcc00] text-white border border-[#ffcc00] leading-tight">
@@ -773,7 +772,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                       <div className="flex flex-col items-center justify-center">
-                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                           {renderScore(loAndFoundScoreB, true)}
                         </span>
                         {renderDiff(loAndFoundScoreB, loAndFoundScore)}
@@ -782,7 +781,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-base md:text-base text-center align-middle">
                     {t('power.songs.omakase')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
@@ -799,7 +798,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                       <div className="flex flex-col items-center justify-center">
-                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                           {renderScore(omakaseScoreB, true)}
                         </span>
                         {renderDiff(omakaseScoreB, omakaseScore)}
@@ -808,7 +807,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-base md:text-base text-center align-middle">
                     <div className="flex flex-wrap items-center justify-center gap-1">
                       <span>{t('power.songs.envy')}</span>
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-[#ff4477] text-white leading-tight">
@@ -830,7 +829,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                       <div className="flex flex-col items-center justify-center">
-                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                           {renderScore(envyScoreB, true)}
                         </span>
                         {renderDiff(envyScoreB, envyScore)}
@@ -839,7 +838,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-4 py-3 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
+                  <td className="px-4 py-3 font-bold text-gray-800 text-base md:text-base text-center align-middle">
                     {t('power.songs.creation_myth')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
@@ -856,7 +855,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                       <div className="flex flex-col items-center justify-center">
-                        <span className="text-red-600 text-sm md:text-base font-bold tracking-tight">
+                        <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                           {renderScore(creationMythScoreB, true)}
                         </span>
                         {renderDiff(creationMythScoreB, creationMythScore)}
@@ -865,7 +864,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-base md:text-base text-center align-middle">
                     {t('power.songs.mysekai')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
@@ -882,7 +881,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                   </td>
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
-                      <span className="text-green-600 text-sm md:text-base font-bold tracking-tight">
+                      <span className="text-green-600 text-base md:text-lg font-bold tracking-tight">
                         {mySekaiScoreB > 0 ? mySekaiScoreB.toLocaleString() : 'N/A'}
                       </span>
                     </td>

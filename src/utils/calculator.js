@@ -1,13 +1,5 @@
 import { LiveCalculator, LiveType } from 'sekai-calculator';
-import musicMetas from '../data/music_metas.json';
-
-// Initialize calculator with data provider
-const dataProvider = {
-    getMasterData: async (key) => [],
-    getUserDataAll: async () => ({}),
-    getUserData: async (key) => null,
-    getMusicMeta: async () => musicMetas,
-};
+import { getMusicMetasSync } from './dataLoader';
 
 // Helper to create a dummy card
 export const createDummyCard = (skillScoreUp, power) => {
@@ -77,6 +69,7 @@ export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
         skillMember5,
     } = input;
 
+    const musicMetas = getMusicMetasSync();
     const musicMeta = musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
 
     if (!musicMeta) {

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
-import { SONG_OPTIONS } from '../utils/songs';
-import musicMetas from '../data/music_metas.json';
+import { getSongOptionsSync, getMusicMetasSync } from '../utils/dataLoader';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -29,6 +28,8 @@ const TARGET_SONGS = [
     { id: 488, difficulty: 'append', level: 31 },  // 메모리아
     { id: 48, difficulty: 'master', level: 24 },   // 월이마
     { id: 186, difficulty: 'master', level: 28 },  // 개벽 (Creation Myth)
+    { id: 610, difficulty: 'master', level: 24 },  // 개벽 (Creation Myth)
+    { id: 691, difficulty: 'append', level: 31 },  // 개벽 (Creation Myth)
 ];
 
 const calculateRank = (score, level) => {
@@ -95,7 +96,7 @@ function AutoTab({ surveyData, setSurveyData }) {
         const results = [];
 
         TARGET_SONGS.forEach(target => {
-            const song = SONG_OPTIONS.find(s => s.id === target.id);
+            const song = getSongOptionsSync().find(s => s.id === target.id);
             if (!song) return;
 
             const input = {
@@ -115,7 +116,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                     const minRank = calculateRank(res.min, target.level);
 
                     // Event Point Calculation
-                    const musicMeta = musicMetas.find(m => m.music_id === target.id && m.difficulty === target.difficulty);
+                    const musicMeta = getMusicMetasSync().find(m => m.music_id === target.id && m.difficulty === target.difficulty);
                     const eventRate = musicMeta ? musicMeta.event_rate : 100;
                     const boostRate = ENERGY_MULTIPLIERS[energyUsed] || 1;
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
-import { SONG_OPTIONS } from '../utils/songs';
+import { getSongOptionsSync } from '../utils/dataLoader';
 import { LiveType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -126,7 +126,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
         const query = normalize(searchQuery);
 
-        const results = SONG_OPTIONS.filter(song => {
+        const results = getSongOptionsSync().filter(song => {
             const name = normalize(song.name);
             const titleJp = normalize(song.title_jp);
             const titleEn = normalize(song.title_en);
@@ -254,7 +254,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         const results = [];
 
         TARGET_SONGS.forEach(target => {
-            const song = SONG_OPTIONS.find(s => s.id === target.id);
+            const song = getSongOptionsSync().find(s => s.id === target.id);
             if (!song) return;
 
             const input = {

@@ -164,6 +164,12 @@ const ko = {
         prediction_disclaimer: '상단의 현재점수와 판 당 점수를 계산에 사용',
         prediction_disclaimer_note: '렙업불 무시, 오늘 마셐 챌라 완료했다 가정',
         ranking_board: '랭킹판',
+        // 렙업불 관련
+        levelup_bonus: '렙업불',
+        levelup_bonus_toggle: '렙업불',
+        player_level: 'Lv (P.Rank)',
+        player_remaining_exp: '남은 EXP',
+        player_live_rank: '랭크',
     },
     challenge: {
         score: '스코어',
@@ -324,7 +330,16 @@ const ko = {
         natural_fire_days: '자연불 소요',
         suffix_round: '판',
         suffix_day: '일',
+        suffix_fire: '불',
         natural_fire_note: '자연불은 일 58불회복. 5불이하 사용 가정',
+        // 렙업불 관련
+        levelup_fire_section: '렙업불 계산',
+        levelup_fire_toggle: '렙업불 포함',
+        player_level: 'P.Rank',
+        player_remaining_exp: '남은 EXP',
+        player_live_rank: '랭크',
+        levelup_fire_bonus: '렙업불 획득',
+        adjusted_natural_days: '보정 소요일',
     },
     challenge_score: {
         total_power: '종합력',

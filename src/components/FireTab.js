@@ -5,8 +5,9 @@ import RankingGraphModal from './RankingGraphModal';
 import { useTranslation } from '../contexts/LanguageContext';
 import { calculateScoreRange } from '../utils/calculator';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import musicMetas from '../data/music_metas.json';
+import { getMusicMetasSync } from '../utils/dataLoader';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
+import playerLevelData from '../data/player_levels.json';
 
 const FireTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
@@ -34,6 +35,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [worldPass, setWorldPass] = useState(surveyData.worldPass || false);
   const [mySekaiScore, setMySekaiScore] = useState(surveyData.mySekaiScore || ''); // Default empty, used as 2500 if empty
   const [importMenuOpen, setImportMenuOpen] = useState(false);
+
+  // Level Up Bonus State (토글은 항상 OFF로 시작, 나머지 값은 저장됨)
+  const [isLevelUpBonusEnabled, setIsLevelUpBonusEnabled] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState(surveyData.fireCurrentLevel || '');
+  const [remainingExp, setRemainingExp] = useState(surveyData.fireRemainingExp || '');
+  const [liveRank, setLiveRank] = useState(surveyData.fireLiveRank || 'S');
 
   // ... (existing code)
 
@@ -100,28 +107,140 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   }, []);
 
 
+  // Stale Data Warning State
+  const [staleWarning, setStaleWarning] = useState(false);
+
   useEffect(() => {
     const fetchPredictionData = async () => {
 
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/ranking`);
-        const data = await response.json();
+        const [mainResponse, assetResponse] = await Promise.all([
+          fetch(`${process.env.REACT_APP_API_BASE_URL}/api/ranking`),
+          fetch('https://api.rilaksekai.com/api/eventlivejp').catch(e => null) // Allow asset fetch to fail gently
+        ]);
 
-        if (data.data) {
-          const processedData = data.data.map(item => ({
+        const mainData = await mainResponse.json();
+        let assetJson = null;
+        if (assetResponse && assetResponse.ok) {
+          try {
+            assetJson = await assetResponse.json();
+          } catch (e) { console.error(e); }
+        }
+
+        const assetData = assetJson?.data?.eventRankings || [];
+
+        // 1. Determine Event IDs
+        const mainEventId = mainData.event_info?.id || 0;
+        const assetEventId = (assetData.length > 0 && assetData[0].eventId) ? assetData[0].eventId : 0;
+
+        let finalData = [];
+        let mergedEventInfo = mainData.event_info;
+        let mergedUpdatedAt = mainData.updatedAt;
+        let isStale = false;
+
+        // 2. Logic: Compare Event IDs
+        if (assetEventId > mainEventId) {
+          // Asset data is newer event
+          finalData = assetData.map(item => ({
             rank: item.rank,
-            currentScore: item.current,
-            predictedScore: item.predicted
-          }));
-          setPredictionData(processedData);
-          setLastUpdated(data.updatedAt);
-          // Set event info if available (added from rank.py)
-          if (data.event_info) {
-            setEventInfo(data.event_info);
+            currentScore: item.score,
+            predictedScore: 0 // No prediction
+          })).sort((a, b) => a.rank - b.rank);
+          // Can't really update eventInfo properly without metadata, but we follow instruction "display higher event number"
+          // We'll keep mainData.event_info if available (might be old), or maybe we should just not show outdated event info?
+          // Since we have no metadata for the new event, we might just have to live with old or empty metadata.
+          // But we update timestamps.
+          if (assetData.length > 0) {
+            mergedUpdatedAt = new Date(assetData[0].timestamp).getTime();
           }
+        } else if (mainEventId > assetEventId) {
+          // Main API is newer (or asset data is old)
+          if (mainData.data) {
+            finalData = mainData.data.map(item => ({
+              rank: item.rank,
+              currentScore: item.current,
+              predictedScore: item.predicted
+            })).sort((a, b) => a.rank - b.rank);
+          }
+        } else {
+          // Same Event - Merge
+          const mainMap = new Map((mainData.data || []).map(i => [i.rank, i]));
+          const assetMap = new Map(assetData.map(i => [i.rank, i]));
+
+          const allRanks = new Set([...mainMap.keys(), ...assetMap.keys()]);
+
+          finalData = Array.from(allRanks).map(rank => {
+            const mainItem = mainMap.get(rank);
+            const assetItem = assetMap.get(rank);
+
+            let currentScore = 0;
+            let predictedScore = 0;
+
+            if (mainItem) {
+              currentScore = mainItem.current;
+              predictedScore = mainItem.predicted;
+            }
+
+            // Overwrite/Max with asset current score
+            if (assetItem && assetItem.score > currentScore) {
+              currentScore = assetItem.score;
+            }
+
+            return { rank, currentScore, predictedScore };
+          }).sort((a, b) => a.rank - b.rank);
+
+          // Check Stale
+          if (assetData.length > 0 && mainData.updatedAt) {
+            const assetTime = new Date(assetData[0].timestamp).getTime();
+            const mainTime = mainData.updatedAt;
+            const diff = Math.abs(assetTime - mainTime);
+            // 1 day = 24 * 60 * 60 * 1000 = 86400000
+            if (diff > 86400000) {
+              isStale = true;
+            }
+          }
+        }
+
+        // Filter specific ranks (새 eventlivejp.json에 맞춤)
+        const allowedRanks = new Set([
+          1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+          20, 30, 40, 50, 60, 70, 80, 90,
+          100, 200, 300, 400, 500,
+          1000, 1500, 2000, 2500, 3000, 4000, 5000, 10000,
+          20000, 30000, 40000, 50000, 100000, 200000, 300000
+        ]);
+
+        finalData = finalData.filter(item => allowedRanks.has(item.rank));
+
+        setPredictionData(finalData);
+        setLastUpdated(mergedUpdatedAt);
+        setStaleWarning(isStale);
+
+        if (mergedEventInfo) {
+          // [추가] latest_event가 있으면 그 정보를 우선 사용 (배너 이미지, 종료 시간)
+          const latestEvent = mainData.latest_event;
+          if (latestEvent) {
+            // asname은 latest_event의 assetbundleName 사용
+            mergedEventInfo.asname = latestEvent.assetbundleName || mergedEventInfo.asname;
+            // aggregateAt은 밀리초 단위, end는 초 단위라서 변환
+            if (latestEvent.aggregateAt) {
+              mergedEventInfo.end = latestEvent.aggregateAt / 1000;
+            }
+            // start도 업데이트 (진행률 계산용)
+            if (latestEvent.startAt) {
+              mergedEventInfo.start = latestEvent.startAt / 1000;
+            }
+          }
+          setEventInfo(mergedEventInfo);
           const now = Date.now();
-          const diff = data.endsAt - now;
-          setTimeRemaining(diff > 0 ? diff : 0);
+          const diff = mergedEventInfo.end ? (mergedEventInfo.end * 1000 - now) : 0; // Ensure end exists and convert to ms if needed (mainData has epoch seconds usually)
+          // Wait, data.endsAt was used before. MainData usually provides endsAt (ms) or event_info.end (seconds). 
+          // Previous code: const diff = data.endsAt - now; 
+          // Let's use data.endsAt if available, else calc
+          if (mainData.endsAt) {
+            const timeDiff = mainData.endsAt - now;
+            setTimeRemaining(timeDiff > 0 ? timeDiff : 0);
+          }
         }
 
         setLoading(false);
@@ -180,11 +299,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     return fireaMap[firea] !== undefined ? fireaMap[firea] : 0;
   }
 
+
   useEffect(() => {
     const newSurveyData = {
       ...surveyData,
       score1, score2, score3, rounds1, firea, fires2,
-      currentNaturalFire, challengeScore, worldPass, mySekaiScore
+      currentNaturalFire, challengeScore, worldPass, mySekaiScore,
+      fireCurrentLevel: currentLevel, fireRemainingExp: remainingExp, fireLiveRank: liveRank
     };
     setSurveyData(newSurveyData);
 
@@ -220,7 +341,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     setNeededTime(time);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [score1, score2, score3, rounds1, firea, fires2, currentNaturalFire, challengeScore, worldPass, mySekaiScore]);
+  }, [score1, score2, score3, rounds1, firea, fires2, currentNaturalFire, challengeScore, worldPass, mySekaiScore, isLevelUpBonusEnabled, currentLevel, remainingExp, liveRank]);
 
   // Tooltip State
   const [tooltipHover, setTooltipHover] = useState(false);
@@ -255,7 +376,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     const days = loginFire / 10;
     const userCurrentNatural = parseInt(currentNaturalFire) || 0;
-    const totalNaturalFire = recoveryFire + loginFire + userCurrentNatural;
+    const baseNaturalFire = recoveryFire + loginFire + userCurrentNatural; // Base without level up
 
     let currentScoreVal = parseFloat(score1 || '217') || 0;
     let scPerRound = parseFloat(score3 || '2.8') || 0;
@@ -265,16 +386,109 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     let fireConsumption = getFireaValue(curFireBonus);
     let finalScorePerRound = scPerRound;
 
+    // Logic for setting up simulation parameters
+    let nextConsumption = fireConsumption;
     if (chgFireBonus !== "none") {
       const newFireBonus = parseInt(chgFireBonus);
       finalScorePerRound = (scPerRound / curFireBonus) * newFireBonus;
-      fireConsumption = getFireaValue(newFireBonus);
+      // Assume we use the new fire consumption for simulation if simulation is enabled
+      // If user sets "Change Fire" to 3, they likely mean they are running at 3 fires.
+      nextConsumption = getFireaValue(newFireBonus);
     }
 
-    if (fireConsumption === 0) fireConsumption = 1;
+    if (nextConsumption === 0) nextConsumption = 1;
 
-    const runs = totalNaturalFire / fireConsumption;
-    const earnedScore = runs * finalScorePerRound;
+    let runs = 0;
+    let earnedScore = 0;
+    let levelUpFire = 0;
+    let totalNaturalFire = baseNaturalFire;
+
+    // Simulation for Level Up Bonus
+    if (isLevelUpBonusEnabled && currentLevel && remainingExp) {
+      let simFire = baseNaturalFire;
+      let simLevel = parseInt(currentLevel);
+      let simExp = parseInt(remainingExp);
+      let simEarnedScore = 0;
+
+      // Rank Bonus
+      let rankExpBonus = 1600; // S
+      if (liveRank === 'A') rankExpBonus = 1400;
+      if (liveRank === 'B') rankExpBonus = 1200;
+      if (liveRank === 'C') rankExpBonus = 1000;
+
+      let safeGuard = 0;
+      const MAX_LOOPS = 20000; // Protection
+
+      while (simFire >= nextConsumption && safeGuard < MAX_LOOPS) {
+        safeGuard++;
+
+        const xpPerRun = nextConsumption * rankExpBonus;
+        // Runs needed to level up
+        // Avoid division by zero
+        if (xpPerRun === 0) break;
+
+        const runsToLevel = Math.ceil(simExp / xpPerRun);
+        const fireNeeded = runsToLevel * nextConsumption;
+
+        if (simFire >= fireNeeded) {
+          // Can Level Up
+          simFire -= fireNeeded;
+          simEarnedScore += runsToLevel * finalScorePerRound;
+
+          // Calculate overflow exp
+          const xpGained = runsToLevel * xpPerRun;
+          const overflow = xpGained - simExp;
+
+          simLevel++;
+          levelUpFire += 10;
+          totalNaturalFire += 10; // Included in total tracking
+          simFire += 10; // Usage tracking
+
+          // Get next level exp
+          const levelData = playerLevelData.find(d => {
+            // Check range
+            if (d.range === String(simLevel)) return true;
+            if (d.range.includes('~')) {
+              const [min, max] = d.range.split('~').map(Number);
+              if (simLevel >= min && simLevel <= max) return true;
+            }
+            return false;
+          });
+
+          if (levelData && levelData.exp) {
+            simExp = levelData.exp - overflow;
+            // Handle multi-level up if overflow is massive (unlikely with normal fire usage but possible)
+            // For simplicity, assume one level up per batch for now as XP req scales up usually.
+            if (simExp <= 0) simExp = 1;
+          } else {
+            // Max level or unknown
+            simExp = 999999999;
+          }
+        } else {
+          // Cannot Level Up, use all fire
+          const possibleRuns = Math.floor(simFire / nextConsumption);
+          simFire -= possibleRuns * nextConsumption;
+          simEarnedScore += possibleRuns * finalScorePerRound;
+          simExp -= possibleRuns * xpPerRun;
+          // Remainder simFire is left unused (less than consumption)
+        }
+      }
+      earnedScore = simEarnedScore;
+      // recalculate runs for display if needed? 
+      // Logic below uses runs = totalNaturalFire / fireConsumption for standard mode.
+      // For simulation mode, earnedScore is exact.
+    } else {
+      runs = baseNaturalFire / nextConsumption;
+      earnedScore = runs * finalScorePerRound;
+    }
+
+    if (isLevelUpBonusEnabled && currentLevel) {
+      // If simulation ran, 'earnedScore' checks out.
+      // We tracked 'totalNaturalFire' correctly (base + levelUpFire).
+    } else {
+      // Standard
+      totalNaturalFire = baseNaturalFire;
+    }
 
     // Challenge Live Logic
     const cScoreVal = parseFloat(challengeScore) || 250;
@@ -314,7 +528,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       mySekaiDays,
       totalMySekaiEP,
       scoreAfter,
-      currentScoreVal
+      currentScoreVal,
+      levelUpFire
     };
   };
 
@@ -566,7 +781,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     const result = calculateScoreRange(inputInput, liveType);
     if (result) {
-      const musicMeta = musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
+      const musicMeta = getMusicMetasSync().find(m => m.music_id === songId && m.difficulty === difficulty);
       if (musicMeta) {
         // Calculate EP
         const getEP = (score) => EventCalculator.getEventPoint(
@@ -888,6 +1103,64 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 </div>
               </div>
             </div>
+            {/* Level Up Bonus Toggle & Inputs */}
+            <div className="border-t border-indigo-100 pt-2 mt-2 pb-1">
+              <label className="flex items-center gap-2 cursor-pointer mb-2 justify-center">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isLevelUpBonusEnabled}
+                    onChange={(e) => setIsLevelUpBonusEnabled(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                </div>
+                <span className="text-xs font-bold text-gray-700">{t('fire.levelup_bonus_toggle')}</span>
+              </label>
+
+              {isLevelUpBonusEnabled && (
+                <div className="grid grid-cols-3 gap-2 animate-fade-in px-1">
+                  {/* Current Level */}
+                  <div className="flex flex-col items-center">
+                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_level')}</label>
+                    <input
+                      type="number"
+                      value={currentLevel}
+                      onChange={(e) => setCurrentLevel(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      placeholder="300"
+                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                  {/* XP Left */}
+                  <div className="flex flex-col items-center">
+                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_remaining_exp')}</label>
+                    <input
+                      type="number"
+                      value={remainingExp}
+                      onChange={(e) => setRemainingExp(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      placeholder="5000"
+                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                  {/* Live Rank */}
+                  <div className="flex flex-col items-center">
+                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_live_rank')}</label>
+                    <select
+                      value={liveRank}
+                      onChange={(e) => setLiveRank(e.target.value)}
+                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 h-[26px]"
+                    >
+                      <option value="S">S</option>
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="text-[9px] text-gray-400 text-center mt-2">
             {t('fire.prediction_disclaimer')}
@@ -928,7 +1201,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                             <span className="font-bold">{naturalStats.earnedScore.toFixed(1)}{t('fire.suffix_man')}</span>
                           </div>
                           <div className="text-[10px] text-gray-400 pl-1">
-                            {naturalStats.recoveryFire}{t('fire.fire_suffix')} + {t('fire.ad_bonus')} {naturalStats.loginFire}{t('fire.fire_suffix')} {naturalStats.userCurrentNatural > 0 ? `+ ${naturalStats.userCurrentNatural}${t('fire.fire_suffix')} ` : ''}
+                            {naturalStats.recoveryFire}{t('fire.fire_suffix')} + {t('fire.ad_bonus')} {naturalStats.loginFire}{t('fire.fire_suffix')} {naturalStats.userCurrentNatural > 0 ? `+ ${naturalStats.userCurrentNatural}${t('fire.fire_suffix')} ` : ''} {naturalStats.levelUpFire > 0 ? `+ ${t('fire.levelup_bonus')} ${naturalStats.levelUpFire}${t('fire.fire_suffix')} ` : ''}
                           </div>
                         </div>
 
@@ -1130,6 +1403,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     </div>
                   );
                 })()}
+
+                {/* Stale Warning */}
+                {staleWarning && (
+                  <div className="mt-2 bg-amber-50 border border-amber-200 text-amber-600 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold text-center animate-pulse flex items-center justify-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span>{language === 'ko' ? '데이터 갱신 시간이 1일 이상 차이나 예측이 부정확할 수 있습니다.' : 'Prediction data might be outdated due to sync delay (>24h).'}</span>
+                  </div>
+                )}
               </div>
             ) : (
               <h3 className="font-bold text-gray-700 text-center mb-2">{t('fire.event_predictions')}</h3>
