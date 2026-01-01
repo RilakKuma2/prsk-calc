@@ -124,7 +124,7 @@ function AppContent() {
     challenge: <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
     amatsuyu: <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     scoreArt: <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
-    gacha: <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    gacha: <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
   };
 
   const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });
