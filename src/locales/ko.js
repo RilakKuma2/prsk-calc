@@ -143,6 +143,7 @@ const ko = {
         ad_bonus: '광고',
         natural_score_row: '자연불 점수',
         current_ep: '현재 이벤포',
+        next_event_fire: '이벤 시작 시: {{count}}불',
         natural_live_ep: '자연불 라이브 이벤포',
         challenge_ep: '챌라 이벤포',
         mysekai_ep: '마셐 이벤포',
@@ -167,6 +168,9 @@ const ko = {
         // 렙업불 관련
         levelup_bonus: '렙업불',
         levelup_bonus_toggle: '렙업불',
+        next_event_fire_toggle: '담벤불',
+        next_event_date: '시작 날짜',
+        next_event_time: '시작 시간',
         player_level: 'Lv (P.Rank)',
         player_remaining_exp: '남은 EXP',
         player_live_rank: '랭크',

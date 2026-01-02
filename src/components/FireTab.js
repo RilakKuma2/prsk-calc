@@ -42,6 +42,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [remainingExp, setRemainingExp] = useState(surveyData.fireRemainingExp || '');
   const [liveRank, setLiveRank] = useState(surveyData.fireLiveRank || 'S');
 
+  // Next Event Fire State
+  const [isNextEventFireEnabled, setIsNextEventFireEnabled] = useState(false);
+  const [manualNextEventDate, setManualNextEventDate] = useState('');
+  const [manualNextEventTime, setManualNextEventTime] = useState('');
+
   // ... (existing code)
 
   const importMySekaiForPrediction = () => {
@@ -204,10 +209,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         // Filter specific ranks (새 eventlivejp.json에 맞춤)
         const allowedRanks = new Set([
           1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-          20, 30, 40, 50, 60, 70, 80, 90,
+          20, 30, 40, 50,
           100, 200, 300, 400, 500,
-          1000, 1500, 2000, 2500, 3000, 4000, 5000, 10000,
-          20000, 30000, 40000, 50000, 100000, 200000, 300000
+          1000, 1500, 2000, 2500, 3000, 4000, 5000, 10000
         ]);
 
         finalData = finalData.filter(item => allowedRanks.has(item.rank));
@@ -358,6 +362,65 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     const now = Date.now();
     const end = eventInfo.end * 1000;
+
+    let isWaitingForNextEvent = false;
+    let fireAtNextEvent = null;
+    let nextEventStartMs = null;
+    let manualTargetMs = null;
+    const startMs = eventInfo.start ? eventInfo.start * 1000 : 0;
+
+    if (isNextEventFireEnabled && manualNextEventDate && manualNextEventTime) {
+      // Manual Mode
+      let targetDate;
+      // Handle YY/MM/DD format
+      if (manualNextEventDate.includes('/')) {
+        const parts = manualNextEventDate.split('/');
+        if (parts.length === 3) {
+          const year = parseInt(parts[0].length === 2 ? '20' + parts[0] : parts[0]);
+          const month = parseInt(parts[1]) - 1;
+          const day = parseInt(parts[2]);
+          targetDate = new Date(year, month, day);
+          const [hours, minutes] = manualNextEventTime.split(':');
+          targetDate.setHours(hours, minutes, 0, 0);
+        }
+      } else {
+        // Fallback for standard YYYY-MM-DD if user somehow inputs that
+        targetDate = new Date(`${manualNextEventDate}T${manualNextEventTime}`);
+      }
+
+      if (targetDate && !isNaN(targetDate.getTime())) {
+        manualTargetMs = targetDate.getTime();
+        if (manualTargetMs > now) {
+          isWaitingForNextEvent = true;
+          // For calculation, fireAtNextEvent is the accumulated natural fire until that time
+          const diff = manualTargetMs - now;
+          const rec = Math.floor(diff / (30 * 60 * 1000));
+          const cur = parseInt(currentNaturalFire) || 0;
+          fireAtNextEvent = cur + rec + (isLevelUpBonusEnabled ? 10 : 0);
+          nextEventStartMs = manualTargetMs;
+        }
+      }
+    } else if (!isNextEventFireEnabled) {
+      // Auto Mode Logic (Only if Manual Toggle is OFF)
+      if (now > end) {
+        const endDate = new Date(end);
+        endDate.setDate(endDate.getDate() + 2);
+        endDate.setHours(15, 0, 0, 0);
+        nextEventStartMs = endDate.getTime();
+        isWaitingForNextEvent = true;
+      } else if (now < startMs) {
+        nextEventStartMs = startMs;
+        isWaitingForNextEvent = true;
+      }
+
+      if (isWaitingForNextEvent && nextEventStartMs && nextEventStartMs > now) {
+        const diff = nextEventStartMs - now;
+        const rec = Math.floor(diff / (30 * 60 * 1000));
+        const cur = parseInt(currentNaturalFire) || 0;
+        fireAtNextEvent = cur + rec + (isLevelUpBonusEnabled ? 10 : 0);
+      }
+    }
+
     const remainingMs = Math.max(0, end - now);
 
     const recoveryFire = Math.floor(remainingMs / (30 * 60 * 1000));
@@ -529,11 +592,22 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       totalMySekaiEP,
       scoreAfter,
       currentScoreVal,
-      levelUpFire
+      scoreAfter,
+      currentScoreVal,
+      levelUpFire,
+      isWaitingForNextEvent,
+      fireAtNextEvent,
+      nextEventStartMs
     };
   };
 
   const naturalStats = calculateNaturalFireStats();
+
+  const formatTargetTime = (ms) => {
+    if (!ms) return '';
+    const date = new Date(ms);
+    return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1103,9 +1177,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 </div>
               </div>
             </div>
-            {/* Level Up Bonus Toggle & Inputs */}
-            <div className="border-t border-indigo-100 pt-2 mt-2 pb-1">
-              <label className="flex items-center gap-2 cursor-pointer mb-2 justify-center">
+            {/* Toggles Row */}
+            <div className="border-t border-indigo-100 pt-2 mt-2 pb-1 flex justify-center items-center gap-4">
+              {/* Level Up Bonus Toggle */}
+              <label className="flex items-center gap-2 cursor-pointer">
                 <div className="relative">
                   <input
                     type="checkbox"
@@ -1118,56 +1193,181 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 <span className="text-xs font-bold text-gray-700">{t('fire.levelup_bonus_toggle')}</span>
               </label>
 
-              {isLevelUpBonusEnabled && (
-                <div className="grid grid-cols-3 gap-2 animate-fade-in px-1">
-                  {/* Current Level */}
-                  <div className="flex flex-col items-center">
-                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_level')}</label>
+              <div className="h-4 w-px bg-gray-200"></div>
+
+              {/* Next Event Fire Toggle */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isNextEventFireEnabled}
+                    onChange={(e) => {
+                      const checked = e.target.value === 'true' || e.target.checked;
+                      setIsNextEventFireEnabled(checked);
+
+                      // Auto-fill logic when manually enabling
+                      if (checked && eventInfo) {
+                        const now = Date.now();
+                        const end = eventInfo.end * 1000;
+                        // Calculate target: If event ended, or during event -> End + 2 days 15:00
+                        // If before event -> Actual next start
+                        let targetMs = null;
+                        const startMs = eventInfo.start ? eventInfo.start * 1000 : 0;
+
+                        if (now < startMs) {
+                          // Before event
+                          targetMs = startMs;
+                        } else {
+                          // During or After event -> End + 2 days
+                          const endDate = new Date(end);
+                          endDate.setDate(endDate.getDate() + 2);
+                          endDate.setHours(15, 0, 0, 0);
+                          targetMs = endDate.getTime();
+                        }
+
+                        if (targetMs) {
+                          const date = new Date(targetMs);
+                          const yy = String(date.getFullYear()).slice(-2);
+                          const mm = String(date.getMonth() + 1).padStart(2, '0');
+                          const dd = String(date.getDate()).padStart(2, '0');
+                          setManualNextEventDate(`${yy}/${mm}/${dd}`);
+                          const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                          setManualNextEventTime(timeStr);
+                        }
+                      }
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                </div>
+                <span className="text-xs font-bold text-gray-700">{t('fire.next_event_fire_toggle')}</span>
+              </label>
+            </div>
+
+            {/* Level Up Inputs */}
+            {isLevelUpBonusEnabled && (
+              <div className="grid grid-cols-3 gap-2 animate-fade-in px-1 mb-2">
+                {/* Current Level */}
+                <div className="flex flex-col items-center">
+                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_level')}</label>
+                  <input
+                    type="number"
+                    value={currentLevel}
+                    onChange={(e) => setCurrentLevel(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="300"
+                    className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                {/* XP Left */}
+                <div className="flex flex-col items-center">
+                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_remaining_exp')}</label>
+                  <input
+                    type="number"
+                    value={remainingExp}
+                    onChange={(e) => setRemainingExp(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="5000"
+                    className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                {/* Live Rank */}
+                <div className="flex flex-col items-center">
+                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_live_rank')}</label>
+                  <select
+                    value={liveRank}
+                    onChange={(e) => setLiveRank(e.target.value)}
+                    className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 h-[26px]"
+                  >
+                    <option value="S">S</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Next Event Fire Inputs - Manual Date/Time */}
+            {isNextEventFireEnabled && (
+              <div className="grid grid-cols-2 gap-2 animate-fade-in px-1 mb-2">
+                <div className="flex flex-col items-center">
+                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.next_event_date')}</label>
+                  <div className="relative w-full flex items-center">
                     <input
-                      type="number"
-                      value={currentLevel}
-                      onChange={(e) => setCurrentLevel(e.target.value)}
-                      onFocus={(e) => e.target.select()}
-                      placeholder="300"
-                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      type="text"
+                      value={manualNextEventDate}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                        if (val.length > 6) val = val.slice(0, 6);
+
+                        // Auto-format as YY/MM/DD
+                        if (val.length > 4) {
+                          val = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`;
+                        } else if (val.length > 2) {
+                          val = `${val.slice(0, 2)}/${val.slice(2)}`;
+                        }
+                        setManualNextEventDate(val);
+                      }}
+                      placeholder="YY/MM/DD"
+                      maxLength={8}
+                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-8 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-purple-500"
                     />
-                  </div>
-                  {/* XP Left */}
-                  <div className="flex flex-col items-center">
-                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_remaining_exp')}</label>
-                    <input
-                      type="number"
-                      value={remainingExp}
-                      onChange={(e) => setRemainingExp(e.target.value)}
-                      onFocus={(e) => e.target.select()}
-                      placeholder="5000"
-                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                  </div>
-                  {/* Live Rank */}
-                  <div className="flex flex-col items-center">
-                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_live_rank')}</label>
-                    <select
-                      value={liveRank}
-                      onChange={(e) => setLiveRank(e.target.value)}
-                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 h-[26px]"
-                    >
-                      <option value="S">S</option>
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                    </select>
+                    <div className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center cursor-pointer z-10">
+                      <input
+                        type="date"
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const date = new Date(e.target.value);
+                            const yy = String(date.getFullYear()).slice(-2);
+                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                            const dd = String(date.getDate()).padStart(2, '0');
+                            setManualNextEventDate(`${yy}/${mm}/${dd}`);
+                          }
+                        }}
+                        onClick={(e) => {
+                          try {
+                            if (manualNextEventDate) {
+                              const parts = manualNextEventDate.split('/');
+                              if (parts.length === 3 && parts[0].length === 2) {
+                                const y = '20' + parts[0];
+                                e.target.value = `${y}-${parts[1]}-${parts[2]}`;
+                                // Some browsers need a little nudge or showPicker() but opacity-0 input usually works on click.
+                                if (typeof e.target.showPicker === 'function') {
+                                  // e.target.showPicker(); // Optional: might double trigger on some browsers if click propagates
+                                }
+                              }
+                            }
+                          } catch (err) { }
+                        }}
+                      />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
+                <div className="flex flex-col items-center">
+                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.next_event_time')}</label>
+                  <input
+                    type="time"
+                    value={manualNextEventTime}
+                    onChange={(e) => setManualNextEventTime(e.target.value)}
+                    className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+            )}
+
           </div>
           <div className="text-[9px] text-gray-400 text-center mt-2">
             {t('fire.prediction_disclaimer')}
             <div className="mt-0.5">{t('fire.prediction_disclaimer_note')}</div>
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Result Section - Amatsuyu Style */}
       <div className="w-[85%] max-w-[300px] mx-auto space-y-4">
@@ -1237,6 +1437,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 <span className="text-[10px] text-gray-400 mt-0.5 leading-none">
                   {(naturalStats.currentScoreVal).toFixed(1)} + {(naturalStats.earnedScore + (naturalStats.totalChallengeEP / 10000) + (naturalStats.totalMySekaiEP / 10000)).toFixed(1)}
                 </span>
+                {naturalStats.isWaitingForNextEvent && naturalStats.fireAtNextEvent !== null && (
+                  <div className="flex flex-col items-center mt-1 animate-pulse">
+                    <span className="text-[10px] text-pink-500 font-bold">
+                      {t('fire.next_event_fire', { count: naturalStats.fireAtNextEvent })}
+                    </span>
+                    <span className="text-[8px] text-pink-400">
+                      ({formatTargetTime(naturalStats.nextEventStartMs)})
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1555,7 +1765,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         rank={graphRank}
         t={t}
       />
-    </div>
+    </div >
   );
 };
 

@@ -53,7 +53,7 @@ export const LanguageProvider = ({ children }) => {
         en,
     };
 
-    const t = (key) => {
+    const t = (key, replacements = {}) => {
         const keys = key.split('.');
         let value = translations[language];
 
@@ -63,6 +63,13 @@ export const LanguageProvider = ({ children }) => {
             } else {
                 return key; // Fallback to key if translation missing
             }
+        }
+
+        // Simple string interpolation for {{key}}
+        if (typeof value === 'string' && replacements) {
+            Object.keys(replacements).forEach(rKey => {
+                value = value.replace(new RegExp(`{{${rKey}}}`, 'g'), replacements[rKey]);
+            });
         }
 
         return value;
