@@ -350,8 +350,11 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                     value={totalPower}
                     placeholder="410520"
                     onChange={(e) => {
-                        const val = e.target.value;
-                        updateDeck('totalPower', val === '' ? '' : Number(val));
+                        let val = parseInt(e.target.value) || 0;
+                        if (val > 460000) {
+                            val = 460000;
+                        }
+                        updateDeck('totalPower', val > 0 ? val : '');
                     }}
                 />
                 <SectionHeaderRow label={t('challenge_score.member_skills')} />
@@ -360,8 +363,9 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                     value={skillLeader}
                     placeholder="140"
                     onChange={(e) => {
-                        const val = e.target.value;
-                        updateDeck('skillLeader', val === '' ? '' : Number(val));
+                        let val = parseInt(e.target.value) || 0;
+                        if (val > 160) val = 160;
+                        updateDeck('skillLeader', val > 0 ? val : '');
                     }}
                 />
                 {[
@@ -376,8 +380,9 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                         value={m.val}
                         placeholder={m.placeholder}
                         onChange={(e) => {
-                            const val = e.target.value;
-                            updateDeck(m.key, val === '' ? '' : Number(val));
+                            let val = parseInt(e.target.value) || 0;
+                            if (val > 160) val = 160;
+                            updateDeck(m.key, val > 0 ? val : '');
                         }}
                     />
                 ))}

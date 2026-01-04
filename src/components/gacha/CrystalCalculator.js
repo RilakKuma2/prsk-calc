@@ -728,14 +728,15 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
                                             min="1"
                                             max="31"
                                             value={passRenewalDate}
+                                            onFocus={(e) => e.target.select()}
                                             onChange={(e) => {
                                                 const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
                                                 setPassRenewalDate(val);
                                             }}
-                                            className="w-12 px-1 py-0.5 border rounded text-right"
+                                            className="w-10 px-1 py-0.5 border rounded text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                             placeholder="1"
                                         />
-                                        <span>일</span>
+                                        <span>{t('gacha.day_suffix')}</span>
                                     </div>
                                 </div>
                                 <div className="flex gap-1">
@@ -800,14 +801,15 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
                                     min="1"
                                     max="31"
                                     value={worldPassRenewalDate}
+                                    onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
                                         const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
                                         setWorldPassRenewalDate(val);
                                     }}
-                                    className="w-10 px-1 py-0.5 border rounded text-right"
+                                    className="w-10 px-1 py-0.5 border rounded text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                     placeholder="1"
                                 />
-                                <span>일</span>
+                                <span>{t('gacha.day_suffix')}</span>
                             </div>
                         </div>
                         {/* Paid Gacha - Select & Happiness */}
@@ -1025,10 +1027,10 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
 
                                     return (
                                         <div className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-1 px-1">
-                                            <span>{t('gacha.breakdown.attendance')} <span className="text-[10px] text-gray-400">(50개 × {daysInMonth}일)</span></span>
+                                            <span>{t('gacha.breakdown.attendance')} <span className="text-[10px] text-gray-400">({t('gacha.breakdown.attendance_detail', { days: daysInMonth })})</span></span>
                                             <span>{attendance.toLocaleString()}</span>
 
-                                            <span>{t('gacha.breakdown.challenge_live')} <span className="text-[10px] text-gray-400">(20개 × {daysInMonth}일)</span></span>
+                                            <span>{t('gacha.breakdown.challenge_live')} <span className="text-[10px] text-gray-400">({t('gacha.breakdown.challenge_live_detail', { days: daysInMonth })})</span></span>
                                             <span>{challengeLive.toLocaleString()}</span>
 
                                             <span>{t('gacha.breakdown.basic_pass')} <span className="text-[10px] text-gray-400">({settings.premiumPass ? t('gacha.breakdown.premium_pass_bonus') : MONTHLY_FREE.basicPass})</span></span>
@@ -1048,7 +1050,7 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
 
                                             <div className="flex flex-col">
                                                 <span>{t('gacha.breakdown.song_rewards')}</span>
-                                                <span className="text-[10px] text-gray-400">- S랭({MONTHLY_FREE.songRewardsPerSong.sRank})+하드({MONTHLY_FREE.songRewardsPerSong.hard})+익스({MONTHLY_FREE.songRewardsPerSong.expert}){settings.masterMission ? `+마스터(${MONTHLY_FREE.songRewardsPerSong.master})` : ''} × {MONTHLY_FREE.newSongsPerMonth}곡</span>
+                                                <span className="text-[10px] text-gray-400">- {t('gacha.breakdown.song_detail', { sRank: MONTHLY_FREE.songRewardsPerSong.sRank, hard: MONTHLY_FREE.songRewardsPerSong.hard, expert: MONTHLY_FREE.songRewardsPerSong.expert, master: settings.masterMission ? `+M(${MONTHLY_FREE.songRewardsPerSong.master})` : '', songs: MONTHLY_FREE.newSongsPerMonth })}</span>
                                             </div>
                                             <span>{SONG_REWARDS_TOTAL.toLocaleString()}</span>
 
@@ -1406,6 +1408,11 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
                                                             {t('gacha.no_gacha_planned')}
                                                         </div>
                                                     )}
+
+                                                    {/* Tip */}
+                                                    <div className="text-center text-[10px] text-gray-400 pt-0.5 leading-tight">
+                                                        {t('gacha.half_price_tip')}
+                                                    </div>
                                                 </div>
                                             );
                                         })()}

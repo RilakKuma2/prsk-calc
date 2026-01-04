@@ -39,35 +39,70 @@ const InternalTab = ({ surveyData, setSurveyData }) => {
         <InputRow
           label={t('internal.leader_skill')}
           value={leader}
-          onChange={e => setLeader(e.target.value)}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 160) {
+              setLeader('160');
+            } else {
+              setLeader(e.target.value);
+            }
+          }}
           placeholder="120"
           suffix="%"
         />
         <InputRow
           label={t('internal.member_2')}
           value={member2}
-          onChange={e => setMember2(e.target.value)}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 160) {
+              setMember2('160');
+            } else {
+              setMember2(e.target.value);
+            }
+          }}
           placeholder="100"
           suffix="%"
         />
         <InputRow
           label={t('internal.member_3')}
           value={member3}
-          onChange={e => setMember3(e.target.value)}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 160) {
+              setMember3('160');
+            } else {
+              setMember3(e.target.value);
+            }
+          }}
           placeholder="100"
           suffix="%"
         />
         <InputRow
           label={t('internal.member_4')}
           value={member4}
-          onChange={e => setMember4(e.target.value)}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 160) {
+              setMember4('160');
+            } else {
+              setMember4(e.target.value);
+            }
+          }}
           placeholder="100"
           suffix="%"
         />
         <InputRow
           label={t('internal.member_5')}
           value={member5}
-          onChange={e => setMember5(e.target.value)}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 160) {
+              setMember5('160');
+            } else {
+              setMember5(e.target.value);
+            }
+          }}
           placeholder="100"
           suffix="%"
         />

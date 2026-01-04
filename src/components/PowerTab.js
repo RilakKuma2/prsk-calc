@@ -353,11 +353,15 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB, selectedSong, searchDifficulty]);
 
   const handleDetailedChange = (key, value) => {
-    setDetailedSkills(prev => ({ ...prev, [key]: value }));
+    const val = parseInt(value) || 0;
+    const clamped = val > 288 ? '288' : value;
+    setDetailedSkills(prev => ({ ...prev, [key]: clamped }));
   };
 
   const handleDetailedChangeB = (key, value) => {
-    setDetailedSkillsB(prev => ({ ...prev, [key]: value }));
+    const val = parseInt(value) || 0;
+    const clamped = val > 288 ? '288' : value;
+    setDetailedSkillsB(prev => ({ ...prev, [key]: clamped }));
   };
 
   const handleFireChange = (key, value) => {
@@ -509,13 +513,27 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           <InputRow
             label={t('power.total_power')}
             value={power}
-            onChange={e => setPower(e.target.value)}
+            onChange={e => {
+              const val = parseFloat(e.target.value);
+              if (val > 46) {
+                setPower('46');
+              } else {
+                setPower(e.target.value);
+              }
+            }}
             suffix={t('power.suffix_man')}
             placeholder="25.5"
-            max="45"
+            max="46"
             comparisonMode={isComparisonMode}
             valueB={powerB}
-            onChangeB={e => setPowerB(e.target.value)}
+            onChangeB={e => {
+              const val = parseFloat(e.target.value);
+              if (val > 46) {
+                setPowerB('46');
+              } else {
+                setPowerB(e.target.value);
+              }
+            }}
             showLabels={false}
             tabIndexA={1}
             tabIndexB={4}
@@ -538,13 +556,19 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
             <InputRow
               label={t('power.internal_value')}
               value={internalValue}
-              onChange={e => setInternalValue(e.target.value)}
+              onChange={e => {
+                const val = Math.min(288, parseInt(e.target.value) || 0);
+                setInternalValue(val > 0 ? val.toString() : e.target.value);
+              }}
               suffix="%"
               placeholder="200"
-              max="2000"
+              max="288"
               comparisonMode={isComparisonMode}
               valueB={internalValueB}
-              onChangeB={e => setInternalValueB(e.target.value)}
+              onChangeB={e => {
+                const val = Math.min(288, parseInt(e.target.value) || 0);
+                setInternalValueB(val > 0 ? val.toString() : e.target.value);
+              }}
               showLabels={true}
               tabIndexA={3}
               tabIndexB={6}

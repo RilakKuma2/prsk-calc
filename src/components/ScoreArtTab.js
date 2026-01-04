@@ -171,14 +171,28 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                     <InputRow
                         label={t('score_art.max_power')}
                         value={maxPower}
-                        onChange={(e) => setMaxPower(e.target.value)}
+                        onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (val > 46) {
+                                setMaxPower('46');
+                            } else {
+                                setMaxPower(e.target.value);
+                            }
+                        }}
                         placeholder="25.5"
                         suffix={t('score_art.suffix_man')}
                     />
                     <InputRow
                         label={t('score_art.max_envy_score')}
                         value={maxEnvyScore}
-                        onChange={(e) => setMaxEnvyScore(e.target.value)}
+                        onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (val > 249) {
+                                setMaxEnvyScore('249');
+                            } else {
+                                setMaxEnvyScore(e.target.value);
+                            }
+                        }}
                         placeholder="80"
                         suffix={t('score_art.suffix_man')}
                     />

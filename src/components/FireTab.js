@@ -8,6 +8,7 @@ import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import { getMusicMetasSync } from '../utils/dataLoader';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import playerLevelData from '../data/player_levels.json';
+import { characterBirthdays } from '../data/characterBirthdays';
 
 const FireTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
@@ -46,6 +47,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [isNextEventFireEnabled, setIsNextEventFireEnabled] = useState(false);
   const [manualNextEventDate, setManualNextEventDate] = useState('');
   const [manualNextEventTime, setManualNextEventTime] = useState('');
+  const [remainingFireMinutes, setRemainingFireMinutes] = useState(30);
 
   // ... (existing code)
 
@@ -394,7 +396,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           isWaitingForNextEvent = true;
           // For calculation, fireAtNextEvent is the accumulated natural fire until that time
           const diff = manualTargetMs - now;
-          const rec = Math.floor(diff / (30 * 60 * 1000));
+          // First fire charges after remainingFireMinutes, then every 30 min
+          const remainingMs = remainingFireMinutes * 60 * 1000;
+          const afterFirstFire = Math.max(0, diff - remainingMs);
+          const rec = afterFirstFire > 0 ? 1 + Math.floor(afterFirstFire / (30 * 60 * 1000)) : (diff >= remainingMs ? 1 : 0);
           const cur = parseInt(currentNaturalFire) || 0;
           fireAtNextEvent = cur + rec + (isLevelUpBonusEnabled ? 10 : 0);
           nextEventStartMs = manualTargetMs;
@@ -409,7 +414,39 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         nextEventStartMs = endDate.getTime();
         isWaitingForNextEvent = true;
       } else if (now < startMs) {
-        nextEventStartMs = startMs;
+        // Calculate next amatsuyu acquisition start based on character birthdays
+        // Acquisition period: birthday - 3 days at 0:00 to birthday at 23:59
+        const today = new Date(now);
+        let nextAmatsuyuStartMs = null;
+
+        // Find the next acquisition start (birthday - 3 days at 0:00)
+        for (let yearOffset = 0; yearOffset <= 1; yearOffset++) {
+          for (const char of characterBirthdays) {
+            const [bMonth, bDay] = char.date.split('.').map(Number);
+            const bdDate = new Date(today.getFullYear() + yearOffset, bMonth - 1, bDay);
+            const acqStartDate = new Date(bdDate);
+            acqStartDate.setDate(acqStartDate.getDate() - 3);
+            acqStartDate.setHours(0, 0, 0, 0);
+            const acqStartMs = acqStartDate.getTime();
+
+            if (acqStartMs > now) {
+              if (!nextAmatsuyuStartMs || acqStartMs < nextAmatsuyuStartMs) {
+                nextAmatsuyuStartMs = acqStartMs;
+              }
+            }
+          }
+          if (nextAmatsuyuStartMs) break;
+        }
+
+        const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+        const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+
+        // If event start is 3+ days away AND amatsuyu start is within 2 days
+        if (nextAmatsuyuStartMs && (startMs - now) >= threeDaysMs && (nextAmatsuyuStartMs - now) <= twoDaysMs) {
+          nextEventStartMs = nextAmatsuyuStartMs;
+        } else {
+          nextEventStartMs = startMs;
+        }
         isWaitingForNextEvent = true;
       }
 
@@ -896,7 +933,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             <input
               type="number"
               value={score1}
-              onChange={e => setScore1(e.target.value)}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                if (val > 40000) {
+                  setScore1('40000');
+                } else {
+                  setScore1(e.target.value);
+                }
+              }}
               onFocus={(e) => e.target.select()}
               placeholder="217"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
@@ -913,7 +957,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             <input
               type="number"
               value={score2}
-              onChange={e => setScore2(e.target.value)}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                if (val > 40000) {
+                  setScore2('40000');
+                } else {
+                  setScore2(e.target.value);
+                }
+              }}
               onFocus={(e) => e.target.select()}
               placeholder="3000"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
@@ -966,7 +1017,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             <input
               type="number"
               value={score3}
-              onChange={e => setScore3(e.target.value)}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                if (val > 14) {
+                  setScore3('14');
+                } else {
+                  setScore3(e.target.value);
+                }
+              }}
               onFocus={(e) => e.target.select()}
               placeholder="2.8"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
@@ -1003,7 +1061,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             <input
               type="number"
               value={rounds1}
-              onChange={e => setRounds1(e.target.value)}
+              onChange={e => {
+                const val = parseInt(e.target.value);
+                if (val > 40) {
+                  setRounds1('40');
+                } else {
+                  setRounds1(e.target.value);
+                }
+              }}
               onFocus={(e) => e.target.select()}
               placeholder="28"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
@@ -1215,14 +1280,76 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         const startMs = eventInfo.start ? eventInfo.start * 1000 : 0;
 
                         if (now < startMs) {
-                          // Before event
-                          targetMs = startMs;
+                          // Before event - check if we should show amatsuyu start instead
+                          const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+                          const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+
+                          // Find next amatsuyu acquisition start (birthday - 3 days at 0:00)
+                          let nextAmatsuyuStartMs = null;
+                          const today = new Date(now);
+
+                          for (let yearOffset = 0; yearOffset <= 1; yearOffset++) {
+                            for (const char of characterBirthdays) {
+                              const [bMonth, bDay] = char.date.split('.').map(Number);
+                              const bdDate = new Date(today.getFullYear() + yearOffset, bMonth - 1, bDay);
+                              const acqStartDate = new Date(bdDate);
+                              acqStartDate.setDate(acqStartDate.getDate() - 3);
+                              acqStartDate.setHours(0, 0, 0, 0);
+                              const acqStartMs = acqStartDate.getTime();
+
+                              if (acqStartMs > now) {
+                                if (!nextAmatsuyuStartMs || acqStartMs < nextAmatsuyuStartMs) {
+                                  nextAmatsuyuStartMs = acqStartMs;
+                                }
+                              }
+                            }
+                            if (nextAmatsuyuStartMs) break;
+                          }
+
+                          // If event start is 3+ days away AND amatsuyu start is within 2 days
+                          if (nextAmatsuyuStartMs && (startMs - now) >= threeDaysMs && (nextAmatsuyuStartMs - now) <= twoDaysMs) {
+                            targetMs = nextAmatsuyuStartMs;
+                          } else {
+                            targetMs = startMs;
+                          }
                         } else {
-                          // During or After event -> End + 2 days
+                          // During or After event -> Check amatsuyu first, else End + 2 days
                           const endDate = new Date(end);
                           endDate.setDate(endDate.getDate() + 2);
                           endDate.setHours(15, 0, 0, 0);
-                          targetMs = endDate.getTime();
+                          const defaultTargetMs = endDate.getTime();
+
+                          const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+                          const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+
+                          // Find next amatsuyu acquisition start (birthday - 3 days at 0:00)
+                          let nextAmatsuyuStartMs = null;
+                          const today = new Date(now);
+
+                          for (let yearOffset = 0; yearOffset <= 1; yearOffset++) {
+                            for (const char of characterBirthdays) {
+                              const [bMonth, bDay] = char.date.split('.').map(Number);
+                              const bdDate = new Date(today.getFullYear() + yearOffset, bMonth - 1, bDay);
+                              const acqStartDate = new Date(bdDate);
+                              acqStartDate.setDate(acqStartDate.getDate() - 3);
+                              acqStartDate.setHours(0, 0, 0, 0);
+                              const acqStartMs = acqStartDate.getTime();
+
+                              if (acqStartMs > now) {
+                                if (!nextAmatsuyuStartMs || acqStartMs < nextAmatsuyuStartMs) {
+                                  nextAmatsuyuStartMs = acqStartMs;
+                                }
+                              }
+                            }
+                            if (nextAmatsuyuStartMs) break;
+                          }
+
+                          // If default target is 3+ days away AND amatsuyu start is within 2 days
+                          if (nextAmatsuyuStartMs && (defaultTargetMs - now) >= threeDaysMs && (nextAmatsuyuStartMs - now) <= twoDaysMs) {
+                            targetMs = nextAmatsuyuStartMs;
+                          } else {
+                            targetMs = defaultTargetMs;
+                          }
                         }
 
                         if (targetMs) {
@@ -1290,72 +1417,63 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
             {/* Next Event Fire Inputs - Manual Date/Time */}
             {isNextEventFireEnabled && (
-              <div className="grid grid-cols-2 gap-2 animate-fade-in px-1 mb-2">
-                <div className="flex flex-col items-center">
-                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.next_event_date')}</label>
-                  <div className="relative w-full flex items-center">
-                    <input
-                      type="text"
-                      value={manualNextEventDate}
-                      onChange={(e) => {
-                        let val = e.target.value.replace(/\D/g, ''); // Remove non-digits
-                        if (val.length > 6) val = val.slice(0, 6);
-
-                        // Auto-format as YY/MM/DD
-                        if (val.length > 4) {
-                          val = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`;
-                        } else if (val.length > 2) {
-                          val = `${val.slice(0, 2)}/${val.slice(2)}`;
-                        }
-                        setManualNextEventDate(val);
-                      }}
-                      placeholder="YY/MM/DD"
-                      maxLength={8}
-                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-8 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-purple-500"
-                    />
-                    <div className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center cursor-pointer z-10">
-                      <input
-                        type="date"
-                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            const date = new Date(e.target.value);
-                            const yy = String(date.getFullYear()).slice(-2);
-                            const mm = String(date.getMonth() + 1).padStart(2, '0');
-                            const dd = String(date.getDate()).padStart(2, '0');
-                            setManualNextEventDate(`${yy}/${mm}/${dd}`);
-                          }
-                        }}
-                        onClick={(e) => {
-                          try {
-                            if (manualNextEventDate) {
-                              const parts = manualNextEventDate.split('/');
-                              if (parts.length === 3 && parts[0].length === 2) {
-                                const y = '20' + parts[0];
-                                e.target.value = `${y}-${parts[1]}-${parts[2]}`;
-                                // Some browsers need a little nudge or showPicker() but opacity-0 input usually works on click.
-                                if (typeof e.target.showPicker === 'function') {
-                                  // e.target.showPicker(); // Optional: might double trigger on some browsers if click propagates
-                                }
-                              }
-                            }
-                          } catch (err) { }
-                        }}
-                      />
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  </div>
+              <div className="flex flex-col gap-1.5 animate-fade-in px-3 mb-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs text-gray-600 font-bold whitespace-nowrap">{t('fire.next_event_date')}</label>
+                  <input
+                    type="date"
+                    value={(() => {
+                      if (!manualNextEventDate) return '';
+                      const parts = manualNextEventDate.split('/');
+                      if (parts.length === 3) {
+                        return `20${parts[0]}-${parts[1]}-${parts[2]}`;
+                      }
+                      return '';
+                    })()}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const date = new Date(e.target.value);
+                        const yy = String(date.getFullYear()).slice(-2);
+                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                        const dd = String(date.getDate()).padStart(2, '0');
+                        setManualNextEventDate(`${yy}/${mm}/${dd}`);
+                      }
+                    }}
+                    className="flex-1 max-w-[140px] text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-purple-500 h-[26px]"
+                  />
                 </div>
-                <div className="flex flex-col items-center">
-                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.next_event_time')}</label>
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs text-gray-600 font-bold whitespace-nowrap">{t('fire.next_event_time')}</label>
                   <input
                     type="time"
                     value={manualNextEventTime}
                     onChange={(e) => setManualNextEventTime(e.target.value)}
-                    className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    className="flex-1 max-w-[140px] text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-purple-500 h-[26px]"
                   />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs text-gray-600 font-bold whitespace-nowrap">{t('fire.remaining_fire_time')}</label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="30"
+                      value={remainingFireMinutes === 30 ? '' : remainingFireMinutes}
+                      placeholder="30"
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => {
+                        const rawVal = e.target.value;
+                        if (rawVal === '') {
+                          setRemainingFireMinutes(30);
+                        } else {
+                          const val = Math.min(30, Math.max(0, parseInt(rawVal) || 0));
+                          setRemainingFireMinutes(val);
+                        }
+                      }}
+                      className="w-16 text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-purple-500 h-[26px] placeholder-gray-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="text-xs text-gray-600">{t('fire.minutes_suffix')}</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -1437,16 +1555,73 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 <span className="text-[10px] text-gray-400 mt-0.5 leading-none">
                   {(naturalStats.currentScoreVal).toFixed(1)} + {(naturalStats.earnedScore + (naturalStats.totalChallengeEP / 10000) + (naturalStats.totalMySekaiEP / 10000)).toFixed(1)}
                 </span>
-                {naturalStats.isWaitingForNextEvent && naturalStats.fireAtNextEvent !== null && (
-                  <div className="flex flex-col items-center mt-1 animate-pulse">
-                    <span className="text-[10px] text-pink-500 font-bold">
-                      {t('fire.next_event_fire', { count: naturalStats.fireAtNextEvent })}
-                    </span>
-                    <span className="text-[8px] text-pink-400">
-                      ({formatTargetTime(naturalStats.nextEventStartMs)})
-                    </span>
-                  </div>
-                )}
+              </div>
+            </div>
+          )}
+
+          {/* Next Event Fire Row - Separate from Natural Fire Score */}
+          {naturalStats && isNaturalFireOpen && naturalStats.isWaitingForNextEvent && naturalStats.fireAtNextEvent !== null && (
+            <div className="grid grid-cols-2 items-center mb-1 text-center border-b border-gray-100 pb-1 animate-fade-in">
+              <span className="text-gray-600">{t('fire.next_event_fire_row')}</span>
+              <div className="flex flex-col items-center">
+                {(() => {
+                  // Calculate how many fire to use to reach 50 within 30 min of event start
+                  const cur = parseInt(currentNaturalFire) || 0;
+                  const eventStartMs = naturalStats.nextEventStartMs;
+                  const targetTime30AfterStart = eventStartMs + 30 * 60 * 1000;
+
+                  // Time from now until 30 min after event start
+                  const msUntilTarget = targetTime30AfterStart - Date.now();
+                  if (msUntilTarget <= 0) {
+                    return (
+                      <>
+                        <span className="text-xs text-pink-400">
+                          {t('fire.event_started')}
+                        </span>
+                        <span className="text-[8px] text-pink-400">
+                          ({formatTargetTime(eventStartMs)} {t('fire.basis')})
+                        </span>
+                      </>
+                    );
+                  }
+
+                  // If we use fire now, timer resets to 30 min
+                  // Recovery from now with 30min timer: 1 + floor((msUntilTarget - 30min) / 30min)
+                  const recoveryFrom30 = Math.max(0, 1 + Math.floor((msUntilTarget - 30 * 60 * 1000) / (30 * 60 * 1000)));
+
+                  // To reach 50 at event+30min:
+                  // Final = (cur - X) + recoveryFrom30 = 50
+                  // X = cur + recoveryFrom30 - 50
+                  const optimalUse = Math.max(0, cur + recoveryFrom30 - 50);
+                  const afterUse = cur - optimalUse;
+
+                  // Calculate when exactly we reach 50 after using optimalUse
+                  const neededRecovery = 50 - afterUse;
+                  const msToReach50 = 30 * 60 * 1000 + Math.max(0, (neededRecovery - 1) * 30 * 60 * 1000);
+                  const timeAt50 = Date.now() + msToReach50;
+
+                  // Format time for target (either 50 or max reachable)
+                  const reach50Time = new Date(Math.min(timeAt50, targetTime30AfterStart));
+                  const timeStr = `${reach50Time.getHours().toString().padStart(2, '0')}:${reach50Time.getMinutes().toString().padStart(2, '0')}`;
+
+                  // Calculate actual fire at displayed time (if cannot reach 50)
+                  const finalFire = afterUse + recoveryFrom30;
+                  const displayFire = Math.min(50, finalFire);
+
+                  return (
+                    <>
+                      <span className="text-xs text-pink-600">
+                        <span className="font-bold">{optimalUse}{t('fire.fire_suffix')}</span> {t('fire.use_to_cap')}
+                      </span>
+                      <span className="text-xs text-pink-600">
+                        <span className="font-bold">{timeStr}</span>{t('fire.fire_cap_time').replace('50', displayFire.toString())}
+                      </span>
+                      <span className="text-[8px] text-pink-600">
+                        ({formatTargetTime(eventStartMs)} {t('fire.basis')})
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
