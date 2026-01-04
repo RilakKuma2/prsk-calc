@@ -22,6 +22,133 @@ const FIRE_MULTIPLIERS = {
   10: 35
 };
 
+const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDetailedInput }) => {
+  const [skills, setSkills] = useState(['100', '100', '100', '100', '100']);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [onClose]);
+
+  const updateSkill = (index, val) => {
+    let newValue = val;
+    if (parseFloat(val) > 160) {
+      newValue = '160';
+    }
+    const newSkills = [...skills];
+    newSkills[index] = newValue;
+    setSkills(newSkills);
+  };
+
+  const calculateResult = () => {
+    const leader = parseFloat(skills[0]) || 0;
+    const others = skills.slice(1).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+    const res = leader + others * 0.2;
+    return parseFloat(res.toFixed(2));
+  };
+
+  const result = calculateResult();
+
+  const handleApply = (res, target) => {
+    // Floor to nearest 10
+    const rounded = Math.floor(res / 10) * 10;
+    onApply(rounded, target);
+  };
+
+  return (
+    <div
+      ref={popoverRef}
+      className={`
+        z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-60 text-left font-bold
+        absolute top-full left-4 mt-1
+        md:left-12
+      `}
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex justify-end items-center mb-1">
+        <button onClick={(e) => { e.preventDefault(); onClose(); }} className="text-gray-400 hover:text-gray-600 font-bold px-1 text-xs">X</button>
+      </div>
+
+      <div className="space-y-1 mb-2">
+        <div className="flex items-center justify-center gap-3">
+          <span className="text-sm font-bold text-pink-500">{t('power.calc_leader')}</span>
+          <div className="flex items-center">
+            <input
+              type="number"
+              className="w-16 text-center border rounded p-0 text-sm"
+              value={skills[0]}
+              onChange={e => updateSkill(0, e.target.value)}
+              onFocus={e => e.target.select()}
+              onClick={e => e.stopPropagation()}
+            />
+            <span className="text-xs text-gray-500 ml-1 font-bold">%</span>
+          </div>
+        </div>
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="flex items-center justify-center gap-3">
+            <span className="text-sm text-gray-600">{t('power.calc_sub')} {i}</span>
+            <div className="flex items-center">
+              <input
+                type="number"
+                className="w-16 text-center border rounded p-0 text-sm"
+                value={skills[i]}
+                onChange={e => updateSkill(i, e.target.value)}
+                onFocus={e => e.target.select()}
+                onClick={e => e.stopPropagation()}
+              />
+              <span className="text-xs text-gray-500 ml-1 font-bold">%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-gray-50 p-1 rounded text-center mb-2">
+        <span className="text-xs text-gray-600 mr-2">{t('power.calc_result')}:</span>
+        <span className="font-bold text-base text-blue-600">{result}%</span>
+      </div>
+
+      <div className="text-[10px] text-red-500 font-bold mb-2 whitespace-pre-wrap leading-tight text-center">
+        {t('power.calc_guide_warning')}
+      </div>
+
+      {!isDetailedInput && (
+        <div className="flex gap-2">
+          {isComparisonMode ? (
+            <>
+              <button
+                onClick={() => handleApply(result, 'A')}
+                className="flex-1 bg-blue-500 text-white py-0.5 rounded hover:bg-blue-600 text-xs font-bold"
+              >
+                Apply A ({Math.floor(result / 10) * 10})
+              </button>
+              <button
+                onClick={() => handleApply(result, 'B')}
+                className="flex-1 bg-red-500 text-white py-0.5 rounded hover:bg-red-600 text-xs font-bold"
+              >
+                Apply B ({Math.floor(result / 10) * 10})
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => handleApply(result)}
+              className="w-full bg-purple-500 text-white py-1 rounded hover:bg-purple-600 font-bold text-xs"
+            >
+              {t('power.calc_apply')} ({Math.floor(result / 10) * 10})
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PowerTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
   const [power, setPower] = useState(surveyData.power || '');
@@ -38,6 +165,16 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
 
   // Detailed Input State
   const [isDetailedInput, setIsDetailedInput] = useState(surveyData.isDetailedInput || false);
+  const [showCalculator, setShowCalculator] = useState(false);
+
+  const handleCalculatorApply = (val, target) => {
+    if (target === 'B') {
+      setInternalValueB(val.toString());
+    } else {
+      setInternalValue(val.toString());
+    }
+    setShowCalculator(false);
+  };
   const [detailedSkills, setDetailedSkills] = useState(surveyData.detailedSkills || {
     encore: '',
     member1: '',
@@ -433,50 +570,123 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   };
 
   const checkboxElement = (
-    <div style={{ marginBottom: '15px', marginTop: '-5px' }}>
-      <label style={{ fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-        <input
-          type="checkbox"
-          checked={isDetailedInput}
-          onChange={(e) => setIsDetailedInput(e.target.checked)}
-          style={{ width: 'auto', margin: 0 }}
-        />
+    <div style={{
+      marginBottom: '15px',
+      marginTop: isComparisonMode ? '5px' : '-20px',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '8px'
+    }}>
+      {isDetailedInput && (
+        <div className="relative flex items-center">
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCalculator(!showCalculator); }}
+            className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 text-[10px] flex items-center justify-center hover:bg-gray-300 transition-colors"
+          >
+            i
+          </button>
+          {showCalculator && (
+            <InternalValueCalculator
+              t={t}
+              onClose={() => setShowCalculator(false)}
+              onApply={handleCalculatorApply}
+              isComparisonMode={isComparisonMode}
+              isDetailedInput={isDetailedInput}
+            />
+          )}
+        </div>
+      )}
+      <button
+        onClick={(e) => { e.preventDefault(); setIsDetailedInput(!isDetailedInput); }}
+        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${isDetailedInput
+          ? 'bg-purple-100 text-purple-700 border-purple-300'
+          : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'
+          }`}
+      >
         {t('power.detailed_input')}
-      </label >
+      </button>
     </div >
   );
 
-  const renderDetailedGrid = (skills, onChangeHandler, labelSuffix = "") => (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'center' }}>
-      <div style={{ gridColumn: '1 / -1' }}>
-        <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>
-          {t('power.encore')}
-          {labelSuffix && <span className="text-[10px] text-gray-400 ml-1">{labelSuffix}</span>}
-        </label>
-        <input
-          type="number"
-          value={skills.encore}
-          onChange={(e) => onChangeHandler('encore', e.target.value)}
-          onFocus={(e) => e.target.select()}
-          placeholder="200"
-          style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
-        />
-      </div>
-      {['member1', 'member2', 'member3', 'member4'].map((memberKey, idx) => (
-        <div key={memberKey}>
-          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t(`power.member_${idx + 1}`)}</label>
-          <input
-            type="number"
-            value={skills[memberKey]}
-            onChange={(e) => onChangeHandler(memberKey, e.target.value)}
-            onFocus={(e) => e.target.select()}
-            placeholder="200"
-            style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
-          />
+  const renderDetailedGrid = (skills, onChangeHandler, labelSuffix = "") => {
+    const isWarningValue = (val) => {
+      const num = parseFloat(val);
+      return num >= 100 && num <= 160;
+    };
+
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'center' }}>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>
+            {t('power.encore')}
+            {labelSuffix && <span className="text-[10px] text-gray-400 ml-1">{labelSuffix}</span>}
+          </label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="number"
+              value={skills.encore}
+              onChange={(e) => onChangeHandler('encore', e.target.value)}
+              onFocus={(e) => e.target.select()}
+              placeholder="200"
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                textAlign: 'center',
+                color: isWarningValue(skills.encore) ? '#dc2626' : undefined,
+                fontWeight: isWarningValue(skills.encore) ? 'bold' : undefined
+              }}
+            />
+            {isWarningValue(skills.encore) && (
+              <span style={{
+                position: 'absolute',
+                left: '50%',
+                marginLeft: '2.5ch',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#dc2626',
+                fontWeight: 'bold',
+                pointerEvents: 'none'
+              }}>(?)</span>
+            )}
+          </div>
         </div>
-      ))}
-    </div>
-  );
+        {['member1', 'member2', 'member3', 'member4'].map((memberKey, idx) => (
+          <div key={memberKey}>
+            <label style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{t(`power.member_${idx + 1}`)}</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="number"
+                value={skills[memberKey]}
+                onChange={(e) => onChangeHandler(memberKey, e.target.value)}
+                onFocus={(e) => e.target.select()}
+                placeholder="200"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  textAlign: 'center',
+                  color: isWarningValue(skills[memberKey]) ? '#dc2626' : undefined,
+                  fontWeight: isWarningValue(skills[memberKey]) ? 'bold' : undefined
+                }}
+              />
+              {isWarningValue(skills[memberKey]) && (
+                <span style={{
+                  position: 'absolute',
+                  left: '50%',
+                  marginLeft: '2.5ch',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#dc2626',
+                  fontWeight: 'bold',
+                  pointerEvents: 'none'
+                }}>(?)</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const detailedGridElement = (
     <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
@@ -494,6 +704,9 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
       ) : (
         renderDetailedGrid(detailedSkills, handleDetailedChange)
       )}
+      <div className="text-red-600 text-xs text-center font-bold whitespace-pre-line my-0">
+        {t('power.detailed_input_guide')}
+      </div>
     </div>
   );
 
@@ -554,7 +767,25 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           />
           {!isDetailedInput && (
             <InputRow
-              label={t('power.internal_value')}
+              label={
+                <div className="flex items-center justify-end gap-1 relative">
+                  <span>{t('power.internal_value')}</span>
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCalculator(!showCalculator); }}
+                    className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 text-[10px] flex items-center justify-center hover:bg-gray-300 transition-colors"
+                  >
+                    i
+                  </button>
+                  {showCalculator && (
+                    <InternalValueCalculator
+                      t={t}
+                      onClose={() => setShowCalculator(false)}
+                      onApply={handleCalculatorApply}
+                      isComparisonMode={isComparisonMode}
+                    />
+                  )}
+                </div>
+              }
               value={internalValue}
               onChange={e => {
                 const val = Math.min(288, parseInt(e.target.value) || 0);
@@ -574,6 +805,16 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
               tabIndexB={6}
             />
           )}
+          {!isDetailedInput && [internalValue, isComparisonMode ? internalValueB : null].some(val => {
+            const num = parseFloat(val);
+            return num >= 100 && num <= 140;
+          }) && (
+              <tr>
+                <td colSpan="2" className="text-center text-red-600 text-xs font-bold whitespace-pre-line pb-2">
+                  {t('power.internal_value_warning')}
+                </td>
+              </tr>
+            )}
         </InputTableWrapper>
         {isDetailedInput ? (
           <>
