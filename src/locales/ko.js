@@ -54,7 +54,9 @@ const ko = {
         calc_result: '계산 결과',
         calc_apply: '적용',
         calc_guide_warning: '해당 값이 아니라 들어갈 방의 실효치 조건 입력',
+        import_auto: '오토탭 입력값 불러오기',
         detailed_input: '실효치 상세 입력',
+        detailed_input_room: '방 실효치 상세 입력',
         detailed_input_guide: '자신 덱의 카드 각각의 스킬 입력 X\n주회방 멤버 각각의 실효치 입력 O',
         encore: '앵콜',
         member_1: '멤버 1',
@@ -106,6 +108,8 @@ const ko = {
         score_title: '오토 스코어',
         excluded_song_note: '0.034APD가 메모리아 보다 효율이 좋지만 계산기 오작동으로 추가하지 않음',
         recommend_0034: '* 0.0000034 APD로 대체 권장',
+        my_sekai: '마이세카이',
+        next_score: '다음',
     },
     fire: {
         current_score: '현재점수',

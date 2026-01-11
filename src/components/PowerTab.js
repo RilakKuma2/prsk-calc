@@ -22,9 +22,21 @@ const FIRE_MULTIPLIERS = {
   10: 35
 };
 
-const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDetailedInput }) => {
-  const [skills, setSkills] = useState(['100', '100', '100', '100', '100']);
+const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDetailedInput, autoDeck, onUpdateAutoDeck }) => {
+  // Initialize with autoDeck skill values (empty string if not set)
+  const initialSkills = [
+    autoDeck?.skillLeader ? String(autoDeck.skillLeader) : '',
+    autoDeck?.skillMember2 ? String(autoDeck.skillMember2) : '',
+    autoDeck?.skillMember3 ? String(autoDeck.skillMember3) : '',
+    autoDeck?.skillMember4 ? String(autoDeck.skillMember4) : '',
+    autoDeck?.skillMember5 ? String(autoDeck.skillMember5) : ''
+  ];
+
+  const [skills, setSkills] = useState(initialSkills);
   const popoverRef = useRef(null);
+
+  // Default placeholders: leader 120, others 100
+  const placeholders = ['120', '100', '100', '100', '100'];
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -40,17 +52,29 @@ const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDeta
 
   const updateSkill = (index, val) => {
     let newValue = val;
-    if (parseFloat(val) > 160) {
+    if (val !== '' && parseFloat(val) > 160) {
       newValue = '160';
     }
     const newSkills = [...skills];
     newSkills[index] = newValue;
     setSkills(newSkills);
+
+    // Sync with autoDeck
+    if (onUpdateAutoDeck) {
+      const keys = ['skillLeader', 'skillMember2', 'skillMember3', 'skillMember4', 'skillMember5'];
+      onUpdateAutoDeck(keys[index], newValue === '' ? '' : Number(newValue));
+    }
   };
 
   const calculateResult = () => {
-    const leader = parseFloat(skills[0]) || 0;
-    const others = skills.slice(1).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+    // Use placeholder value if field is empty
+    const getValue = (index) => {
+      const val = skills[index];
+      return val === '' ? parseFloat(placeholders[index]) : (parseFloat(val) || 0);
+    };
+
+    const leader = getValue(0);
+    const others = getValue(1) + getValue(2) + getValue(3) + getValue(4);
     const res = leader + others * 0.2;
     return parseFloat(res.toFixed(2));
   };
@@ -85,6 +109,7 @@ const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDeta
               type="number"
               className="w-16 text-center border rounded p-0 text-sm"
               value={skills[0]}
+              placeholder={placeholders[0]}
               onChange={e => updateSkill(0, e.target.value)}
               onFocus={e => e.target.select()}
               onClick={e => e.stopPropagation()}
@@ -100,6 +125,7 @@ const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDeta
                 type="number"
                 className="w-16 text-center border rounded p-0 text-sm"
                 value={skills[i]}
+                placeholder={placeholders[i]}
                 onChange={e => updateSkill(i, e.target.value)}
                 onFocus={e => e.target.select()}
                 onClick={e => e.stopPropagation()}
@@ -204,6 +230,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
   const [soloEff, setSoloEff] = useState(0);
   const [autoEff, setAutoEff] = useState(0);
   const [mySekaiScore, setMySekaiScore] = useState('N/A');
+  const [nextMySekaiOptions, setNextMySekaiOptions] = useState(null);
   // Removed mySekaiEP state
 
   // Scores now hold objects { min, max }
@@ -484,6 +511,33 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
         }
       }
       setMs(highestPossibleScore);
+
+      // Calculate next score options (only for main deck, not B)
+      if (calcEff && highestPossibleScore !== "N/A") {
+        const currentScoreIdx = scoreRowKeys.indexOf(highestPossibleScore);
+        if (currentScoreIdx < scoreRowKeys.length - 1) {
+          const nextScore = scoreRowKeys[currentScoreIdx + 1];
+
+          // Option 1: Keep power, increase effi
+          const effiNeededSamePower = mySekaiTableData[nextScore][columnIndex];
+
+          // Option 2: Increase power by one step
+          let effiNeededNextPower = null;
+          let nextPowerThreshold = null;
+          if (columnIndex < powerColumnThresholds.length - 1) {
+            nextPowerThreshold = powerColumnThresholds[columnIndex + 1];
+            effiNeededNextPower = mySekaiTableData[nextScore][columnIndex + 1];
+          }
+
+          setNextMySekaiOptions({
+            nextScore,
+            option1: effiNeededSamePower !== null ? { power: powerColumnThresholds[columnIndex], effi: effiNeededSamePower } : null,
+            option2: effiNeededNextPower !== null ? { power: nextPowerThreshold, effi: effiNeededNextPower } : null
+          });
+        } else {
+          setNextMySekaiOptions(null);
+        }
+      }
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -593,10 +647,47 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
               onApply={handleCalculatorApply}
               isComparisonMode={isComparisonMode}
               isDetailedInput={isDetailedInput}
+              autoDeck={surveyData.autoDeck}
+              onUpdateAutoDeck={(key, value) => {
+                setSurveyData(prev => ({
+                  ...prev,
+                  autoDeck: {
+                    ...prev.autoDeck,
+                    [key]: value
+                  }
+                }));
+              }}
             />
           )}
         </div>
       )}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          const autoDeck = surveyData.autoDeck || {};
+          const leader = Number(autoDeck.skillLeader || 120);
+          const m2 = Number(autoDeck.skillMember2 || 100);
+          const m3 = Number(autoDeck.skillMember3 || 100);
+          const m4 = Number(autoDeck.skillMember4 || 100);
+          const m5 = Number(autoDeck.skillMember5 || 100);
+          const totalPowerVal = Number(autoDeck.totalPower || 293231);
+          const eventBonusVal = Number(autoDeck.eventBonus || 250);
+
+          // Calculate internal value: leader + (others) * 0.2, then floor to nearest 10
+          const calculatedInternalValue = leader + (m2 + m3 + m4 + m5) * 0.2;
+          const roundedInternalValue = Math.floor(calculatedInternalValue / 10) * 10;
+
+          setSurveyData(prev => ({
+            ...prev,
+            power: String(totalPowerVal / 10000),
+            effi: String(eventBonusVal),
+            internalValue: String(roundedInternalValue)
+          }));
+        }}
+        className="px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+      >
+        {t('power.import_auto') || '오토탭 입력값 불러오기'}
+      </button>
       <button
         onClick={(e) => { e.preventDefault(); setIsDetailedInput(!isDetailedInput); }}
         className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${isDetailedInput
@@ -604,7 +695,7 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
           : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'
           }`}
       >
-        {t('power.detailed_input')}
+        {t('power.detailed_input_room') || '방 실효치 상세 입력'}
       </button>
     </div >
   );
@@ -782,6 +873,16 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                       onClose={() => setShowCalculator(false)}
                       onApply={handleCalculatorApply}
                       isComparisonMode={isComparisonMode}
+                      autoDeck={surveyData.autoDeck}
+                      onUpdateAutoDeck={(key, value) => {
+                        setSurveyData(prev => ({
+                          ...prev,
+                          autoDeck: {
+                            ...prev.autoDeck,
+                            [key]: value
+                          }
+                        }));
+                      }}
                     />
                   )}
                 </div>
@@ -1140,9 +1241,27 @@ const PowerTab = ({ surveyData, setSurveyData }) => {
                     </div>
                   </td>
                   <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
-                    <span className="text-green-600 text-base md:text-lg font-bold tracking-tight">
-                      {mySekaiScore > 0 ? mySekaiScore.toLocaleString() : 'N/A'}
-                    </span>
+                    <div className="flex flex-col items-center">
+                      {nextMySekaiOptions && (
+                        <div className="text-[9px] md:text-[10px] text-gray-500 mb-0.5">
+                          <span className="font-medium">{nextMySekaiOptions.nextScore.toLocaleString()}EP :</span>{' '}
+                          {nextMySekaiOptions.option1 && (
+                            <span className="text-blue-600 font-bold">
+                              {nextMySekaiOptions.option1.power}/{nextMySekaiOptions.option1.effi}
+                            </span>
+                          )}
+                          {nextMySekaiOptions.option1 && nextMySekaiOptions.option2 && ' or '}
+                          {nextMySekaiOptions.option2 && (
+                            <span className="text-pink-600 font-bold">
+                              {nextMySekaiOptions.option2.power}/{nextMySekaiOptions.option2.effi}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <span className="text-green-600 text-base md:text-lg font-bold tracking-tight">
+                        {mySekaiScore > 0 ? mySekaiScore.toLocaleString() : 'N/A'}
+                      </span>
+                    </div>
                   </td>
                   {isComparisonMode && (
                     <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">

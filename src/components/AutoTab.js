@@ -4,6 +4,7 @@ import { calculateScoreRange } from '../utils/calculator';
 import { getSongOptionsSync, getMusicMetasSync } from '../utils/dataLoader';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
+import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 
 const ENERGY_MULTIPLIERS = {
     0: 1,
@@ -28,8 +29,6 @@ const TARGET_SONGS = [
     { id: 488, difficulty: 'append', level: 31 },  // 메모리아
     { id: 48, difficulty: 'master', level: 24 },   // 월이마
     { id: 186, difficulty: 'master', level: 28 },  // 개벽 (Creation Myth)
-    { id: 610, difficulty: 'master', level: 24 },  // 개벽 (Creation Myth)
-    { id: 691, difficulty: 'append', level: 31 },  // 개벽 (Creation Myth)
 ];
 
 const calculateRank = (score, level) => {
@@ -301,7 +300,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                             <tbody className="divide-y divide-gray-100">
                                 {sortedBatchResults.map((res, idx) => (
                                     <tr key={`${res.songId}-${res.difficulty}-${idx}`} className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                                        <td className="px-1 py-2 md:p-4 font-bold text-gray-800 group-hover/row:text-pink-600 transition-colors text-xs md:text-base text-center">
+                                        <td className="px-1 py-2 md:py-1.5 md:px-4 font-bold text-gray-800 group-hover/row:text-pink-600 transition-colors text-xs md:text-base text-center">
                                             <div className="relative flex flex-col items-center justify-center">
                                                 <div className="flex items-center justify-center gap-1 md:gap-2">
                                                     {res.songName}
@@ -334,7 +333,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                     </span>
                                                 </div>
                                                 {res.songId === 488 && (
-                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-max">
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1.5 w-max">
                                                         <span className="text-[9px] text-gray-400 font-medium whitespace-nowrap">
                                                             {t('auto.recommend_0034')}
                                                         </span>
@@ -342,7 +341,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-1 py-2 md:p-4 text-center">
+                                        <td className="px-1 py-2 md:py-1.5 md:px-4 text-center">
                                             <div className="flex flex-col items-center justify-center">
                                                 {(() => {
                                                     const getNextRankCutoff = (score, level) => {
@@ -377,7 +376,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                 })()}
                                             </div>
                                         </td>
-                                        <td className="px-1 py-2 md:p-4 text-center">
+                                        <td className="px-1 py-2 md:py-1.5 md:px-4 text-center">
                                             <div className="flex flex-col items-center">
                                                 <span className="font-mono text-blue-500 text-sm md:text-base font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
                                                     {res.min.toLocaleString()}
@@ -387,7 +386,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-1 py-2 md:p-4 text-center">
+                                        <td className="px-1 py-2 md:py-1.5 md:px-4 text-center">
                                             <div className="flex flex-col items-center">
                                                 <span className="font-mono text-pink-500 text-sm md:text-base font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
                                                     {res.max.toLocaleString()}
@@ -399,6 +398,95 @@ function AutoTab({ surveyData, setSurveyData }) {
                                         </td>
                                     </tr>
                                 ))}
+                                {/* My Sekai Row */}
+                                {(() => {
+                                    const powerVal = Number(totalPower || '293231') / 10000;
+                                    const effiVal = Number(eventBonus || '250');
+
+                                    // Find current My Sekai score
+                                    let highestPossibleScore = null;
+                                    let columnIndex = -1;
+
+                                    if (powerVal >= 0) {
+                                        for (let j = powerColumnThresholds.length - 1; j >= 0; j--) {
+                                            if (powerColumnThresholds[j] <= powerVal) {
+                                                columnIndex = j;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (columnIndex !== -1) {
+                                        for (let i = scoreRowKeys.length - 1; i >= 0; i--) {
+                                            const currentScoreRow = scoreRowKeys[i];
+                                            const requiredEffiForThisScore = mySekaiTableData[currentScoreRow][columnIndex];
+                                            if (requiredEffiForThisScore !== null && effiVal >= requiredEffiForThisScore) {
+                                                highestPossibleScore = currentScoreRow;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // Calculate next score requirements (2 options)
+                                    let nextScoreOptions = null;
+                                    if (highestPossibleScore !== null) {
+                                        const currentScoreIdx = scoreRowKeys.indexOf(highestPossibleScore);
+                                        if (currentScoreIdx < scoreRowKeys.length - 1) {
+                                            const nextScore = scoreRowKeys[currentScoreIdx + 1];
+
+                                            // Option 1: Keep power, increase effi
+                                            const effiNeededSamePower = mySekaiTableData[nextScore][columnIndex];
+
+                                            // Option 2: Increase power by one step, get required effi
+                                            let effiNeededNextPower = null;
+                                            let nextPowerThreshold = null;
+                                            if (columnIndex < powerColumnThresholds.length - 1) {
+                                                nextPowerThreshold = powerColumnThresholds[columnIndex + 1];
+                                                effiNeededNextPower = mySekaiTableData[nextScore][columnIndex + 1];
+                                            }
+
+                                            nextScoreOptions = {
+                                                nextScore,
+                                                option1: effiNeededSamePower !== null ? { power: powerColumnThresholds[columnIndex], effi: effiNeededSamePower } : null,
+                                                option2: effiNeededNextPower !== null ? { power: nextPowerThreshold, effi: effiNeededNextPower } : null
+                                            };
+                                        }
+                                    }
+
+                                    // My Sekai score = EP (no multiplier)
+                                    const mySekaiEP = highestPossibleScore || 0;
+
+                                    return (
+                                        <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
+                                            <td className="px-1 py-2 md:py-1.5 md:px-4 text-center" colSpan={2}>
+                                                <span className="font-bold text-gray-800 text-xs md:text-base">{t('auto.my_sekai') || '마이세카이'}</span>
+                                            </td>
+                                            <td className="px-1 py-2 md:py-1.5 md:px-4 text-center" colSpan={2}>
+                                                <div className="flex flex-col items-center">
+                                                    {nextScoreOptions && (
+                                                        <div className="text-[9px] md:text-[10px] text-gray-500 mb-0.5">
+                                                            <span className="font-medium">{nextScoreOptions.nextScore.toLocaleString()}EP :</span>{' '}
+                                                            {nextScoreOptions.option1 && (
+                                                                <span className="text-blue-600 font-bold">
+                                                                    {nextScoreOptions.option1.power}/{nextScoreOptions.option1.effi}
+                                                                </span>
+                                                            )}
+                                                            {nextScoreOptions.option1 && nextScoreOptions.option2 && ' or '}
+                                                            {nextScoreOptions.option2 && (
+                                                                <span className="text-pink-600 font-bold">
+                                                                    {nextScoreOptions.option2.power}/{nextScoreOptions.option2.effi}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    <span className="font-mono text-green-600 text-sm md:text-base font-bold">
+                                                        {mySekaiEP.toLocaleString()} EP
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })()}
                             </tbody>
                         </table>
                     </div>

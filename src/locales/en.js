@@ -54,7 +54,9 @@ const en = {
         calc_result: 'Result',
         calc_apply: 'Apply',
         calc_guide_warning: "Enter the room's internal value condition, not this value",
+        import_auto: 'Import from Auto Tab',
         detailed_input: 'Detailed Input',
+        detailed_input_room: 'Room Skill Details',
         detailed_input_guide: 'Do NOT enter skill of each card in your deck\nEnter individual room member internal values',
         average: 'Average',
         encore: 'Encore',
@@ -106,6 +108,8 @@ const en = {
         score_title: 'Auto Live Score',
         excluded_song_note: '0.034APD is more efficient than Memoria but excluded due to calc errors',
         recommend_0034: '* Recommended: 0.0000034 APD',
+        my_sekai: 'My Sekai',
+        next_score: 'Next',
     },
     fire: {
         current_score: 'Current Score',
