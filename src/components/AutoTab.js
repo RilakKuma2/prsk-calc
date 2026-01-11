@@ -44,7 +44,7 @@ const calculateRank = (score, level) => {
     return 'D';
 };
 
-function AutoTab({ surveyData, setSurveyData }) {
+function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
     const { t, language } = useTranslation();
     // Initialize or read from surveyData
     const deck = surveyData.autoDeck || {
@@ -198,66 +198,64 @@ function AutoTab({ surveyData, setSurveyData }) {
 
     return (
         <div id="auto-tab-content">
-            <InputTableWrapper>
-                <InputRow
-                    label={t('auto.total_power')}
-                    value={totalPower}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        updateDeck('totalPower', val === '' ? '' : Number(val));
-                    }}
-                    placeholder="293231"
-                    spacer={true}
-                />
-                <SectionHeaderRow label={t('auto.member_skills')} spacer={true} />
-                <InputRow
-                    label={t('auto.leader')}
-                    value={skillLeader}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        updateDeck('skillLeader', val === '' ? '' : Number(val));
-                    }}
-                    suffix="%"
-                    placeholder="120"
-                    spacer={true}
-                />
-                {[
-                    { label: t('auto.member_2'), val: skillMember2, key: 'skillMember2' },
-                    { label: t('auto.member_3'), val: skillMember3, key: 'skillMember3' },
-                    { label: t('auto.member_4'), val: skillMember4, key: 'skillMember4' },
-                    { label: t('auto.member_5'), val: skillMember5, key: 'skillMember5' },
-                ].map((m, i) => (
+            {!hideInputs && (
+                <InputTableWrapper>
                     <InputRow
-                        key={i}
-                        label={m.label}
-                        value={m.val}
+                        label={t('auto.total_power')}
+                        value={totalPower}
                         onChange={(e) => {
                             const val = e.target.value;
-                            updateDeck(m.key, val === '' ? '' : Number(val));
+                            updateDeck('totalPower', val === '' ? '' : Number(val));
                         }}
-                        suffix="%"
-                        placeholder="100"
+                        placeholder="293231"
                         spacer={true}
                     />
-                ))}
-                <InputRow
-                    label={t('auto.event_bonus')}
-                    value={eventBonus}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        updateDeck('eventBonus', val === '' ? '' : Number(val));
-                    }}
-                    suffix="%"
-                    placeholder="250"
-                    spacer={true}
-                />
-            </InputTableWrapper>
+                    <SectionHeaderRow label={t('auto.member_skills')} spacer={true} />
+                    <InputRow
+                        label={t('auto.leader')}
+                        value={skillLeader}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            updateDeck('skillLeader', val === '' ? '' : Number(val));
+                        }}
+                        suffix="%"
+                        placeholder="120"
+                        spacer={true}
+                    />
+                    {[
+                        { label: t('auto.member_2'), val: skillMember2, key: 'skillMember2' },
+                        { label: t('auto.member_3'), val: skillMember3, key: 'skillMember3' },
+                        { label: t('auto.member_4'), val: skillMember4, key: 'skillMember4' },
+                        { label: t('auto.member_5'), val: skillMember5, key: 'skillMember5' },
+                    ].map((m, i) => (
+                        <InputRow
+                            key={i}
+                            label={m.label}
+                            value={m.val}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                updateDeck(m.key, val === '' ? '' : Number(val));
+                            }}
+                            suffix="%"
+                            placeholder="100"
+                            spacer={true}
+                        />
+                    ))}
+                    <InputRow
+                        label={t('auto.event_bonus')}
+                        value={eventBonus}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            updateDeck('eventBonus', val === '' ? '' : Number(val));
+                        }}
+                        suffix="%"
+                        placeholder="250"
+                        spacer={true}
+                    />
+                </InputTableWrapper>
+            )}
 
-            <div className="flex items-center justify-center mb-4 mt-8">
-                <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
-                    {t('auto.score_title')}
-                </h3>
-            </div>
+
 
             {/* Batch Calculation Results */}
             {sortedBatchResults && (
@@ -333,7 +331,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                     </span>
                                                 </div>
                                                 {res.songId === 488 && (
-                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1.5 w-max">
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 md:-mt-1.5 w-max">
                                                         <span className="text-[9px] text-gray-400 font-medium whitespace-nowrap">
                                                             {t('auto.recommend_0034')}
                                                         </span>
@@ -364,7 +362,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                                     {nextCutoff.toLocaleString()}
                                                                 </span>
                                                             )}
-                                                            <span className={`text-sm md:text-lg font-black ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
+                                                            <span className={`text-sm md:text-lg font-bold ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
                                                                 res.minRank === 'A' ? 'text-pink-500' :
                                                                     res.minRank === 'B' ? 'text-blue-500' :
                                                                         'text-gray-500'
@@ -378,20 +376,20 @@ function AutoTab({ surveyData, setSurveyData }) {
                                         </td>
                                         <td className="px-1 py-2 md:py-1.5 md:px-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className="font-mono text-blue-500 text-sm md:text-base font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
+                                                <span className="text-blue-600 text-base md:text-lg font-bold tracking-tight group-hover/row:text-blue-600 transition-colors">
                                                     {res.min.toLocaleString()}
                                                 </span>
-                                                <span className="font-mono text-green-600 text-xs md:text-base font-bold tracking-tight mt-0.5">
+                                                <span className="text-green-600 text-sm md:text-base font-bold tracking-tight mt-0.5">
                                                     {res.minEventPoint.toLocaleString()}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="px-1 py-2 md:py-1.5 md:px-4 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className="font-mono text-pink-500 text-sm md:text-base font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
+                                                <span className="text-pink-600 text-base md:text-lg font-bold tracking-tight group-hover/row:text-pink-600 transition-colors">
                                                     {res.max.toLocaleString()}
                                                 </span>
-                                                <span className="font-mono text-green-600 text-xs md:text-base font-bold tracking-tight mt-0.5">
+                                                <span className="text-green-600 text-sm md:text-base font-bold tracking-tight mt-0.5">
                                                     {res.maxEventPoint.toLocaleString()}
                                                 </span>
                                             </div>
@@ -464,7 +462,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                             <td className="px-1 py-2 md:py-1.5 md:px-4 text-center" colSpan={2}>
                                                 <div className="flex flex-col items-center">
                                                     {nextScoreOptions && (
-                                                        <div className="text-[9px] md:text-[10px] text-gray-500 mb-0.5">
+                                                        <div className="text-[10px] md:text-xs text-gray-500 mb-0.5">
                                                             <span className="font-medium">{nextScoreOptions.nextScore.toLocaleString()}EP :</span>{' '}
                                                             {nextScoreOptions.option1 && (
                                                                 <span className="text-blue-600 font-bold">
@@ -479,7 +477,7 @@ function AutoTab({ surveyData, setSurveyData }) {
                                                             )}
                                                         </div>
                                                     )}
-                                                    <span className="font-mono text-green-600 text-sm md:text-base font-bold">
+                                                    <span className="text-green-600 text-base md:text-lg font-bold">
                                                         {mySekaiEP.toLocaleString()} EP
                                                     </span>
                                                 </div>

@@ -4,13 +4,11 @@ import { useTranslation } from '../contexts/LanguageContext';
 const Tabs = ({ currentTab, setCurrentTab }) => {
   const { t } = useTranslation();
   const tabInfo = [
-    { id: 'internal', name: t('tabs.internal') },
-    { id: 'amatsuyu', name: t('tabs.amatsuyu') },
-    { id: 'challenge', name: t('tabs.challenge') },
-    { id: 'auto', name: t('tabs.auto') },
-    { id: 'power', name: t('tabs.power') },
+    { id: 'deck', name: t('tabs.deck') },
     { id: 'fire', name: t('tabs.fire') },
     { id: 'scoreArt', name: t('tabs.score_art') },
+    { id: 'amatsuyu', name: t('tabs.amatsuyu') },
+    { id: 'challenge', name: t('tabs.challenge') },
     { id: 'level', name: t('tabs.level') },
     { id: 'gacha', name: t('tabs.gacha') },
   ];

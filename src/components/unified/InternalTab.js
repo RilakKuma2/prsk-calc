@@ -143,9 +143,7 @@ const InternalTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
           </div>
           <div className="grid grid-cols-2 items-center pt-1 mt-1 text-center">
             <span className="text-gray-600">{t('internal.internal_sum')}</span>
-            <span className="font-bold text-blue-600 text-lg">
-              {Number(getValues().leaderVal)}% / {internalSum}%
-            </span>
+            <span className="font-bold text-blue-600 text-lg">{internalSum}%</span>
           </div>
         </div>
 

@@ -356,6 +356,20 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                         }
                         updateDeck('totalPower', val > 0 ? val : '');
                     }}
+                    onBlur={(e) => {
+                        const valStr = e.target.value;
+                        if (valStr === '') return;
+                        const val = Number(valStr);
+                        if (val > 0 && val <= 50) {
+                            updateDeck('totalPower', val * 10000);
+                        } else if (val >= 100 && val <= 500) {
+                            updateDeck('totalPower', val * 1000);
+                        } else if (val >= 1000 && val <= 5000) {
+                            updateDeck('totalPower', val * 100);
+                        } else if (val >= 10000 && val <= 47000) {
+                            updateDeck('totalPower', val * 10);
+                        }
+                    }}
                 />
                 <SectionHeaderRow label={t('challenge_score.member_skills')} />
                 <InputRow

@@ -177,111 +177,20 @@ const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDeta
 
 const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   const { t, language } = useTranslation();
-
-  // Comparison Mode State (Moved to top to avoid ReferenceError in initializers)
-  const [isComparisonMode, setIsComparisonMode] = useState(surveyData.isComparisonMode || false);
-  const [powerB, setPowerB] = useState(surveyData.powerB || '');
-  const [effiB, setEffiB] = useState(surveyData.effiB || '');
-  const [internalValueB, setInternalValueB] = useState(surveyData.internalValueB || '');
-
-  // Main State
   const [power, setPower] = useState(surveyData.power || '');
   const [effi, setEffi] = useState(surveyData.effi || '');
   const [internalValue, setInternalValue] = useState(surveyData.internalValue || '');
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
   const [showAllSongsTable, setShowAllSongsTable] = useState(false);
 
-  // Sync local state with surveyData when it changes externally (e.g., from DeckTab)
-  // Sync local state with surveyData when it changes externally (e.g., from DeckTab)
-  useEffect(() => {
-    if (hideInputs) {
-      if (isComparisonMode && surveyData.unifiedDecks?.deck1) {
-        const d1 = surveyData.unifiedDecks.deck1;
-        // Only override if mismatched. If d1 has a value, sync to it.
-        // If d1.totalPower is null (explicitly cleared), sync to empty string.
-        // If d1.totalPower is undefined (not set), likely default.
-        const deckVal = d1.totalPower !== undefined && d1.totalPower !== null && d1.totalPower !== ''
-          ? String(d1.totalPower / 10000)
-          : '';
-        setPower(deckVal);
-      } else if (surveyData.power !== undefined) {
-        setPower(surveyData.power);
-      }
-    }
-  }, [hideInputs, surveyData.power, isComparisonMode, surveyData.unifiedDecks?.deck1]);
-
-  useEffect(() => {
-    if (hideInputs) {
-      if (isComparisonMode && surveyData.unifiedDecks?.deck1) {
-        const d1 = surveyData.unifiedDecks.deck1;
-        const deckVal = d1.eventBonus !== undefined && d1.eventBonus !== null && d1.eventBonus !== ''
-          ? String(d1.eventBonus)
-          : '';
-        setEffi(deckVal);
-      } else if (surveyData.effi !== undefined) {
-        setEffi(surveyData.effi);
-      }
-    }
-  }, [hideInputs, surveyData.effi, isComparisonMode, surveyData.unifiedDecks?.deck1]);
-
-  useEffect(() => {
-    if (hideInputs) {
-      if (isComparisonMode && surveyData.unifiedDecks?.deck1) {
-        const d1 = surveyData.unifiedDecks.deck1;
-        // If explicitly cleared (null), show empty. If undefined, might show default if we wanted, but let's stick to empty is empty.
-        // Actually, for internalValue, if it's undefined, it usually means it hasn't been set?
-        // Let's rely on manualInternalValue logic from DeckTab generally, but here PowerTab acts as manual editor.
-        const deckVal = d1.internalValue !== undefined && d1.internalValue !== null && d1.internalValue !== ''
-          ? String(d1.internalValue)
-          : '';
-        setInternalValue(deckVal);
-      } else if (surveyData.internalValue !== undefined) {
-        setInternalValue(surveyData.internalValue || '');
-      }
-    }
-  }, [hideInputs, surveyData.internalValue, isComparisonMode, surveyData.unifiedDecks?.deck1]);
-
-  // Sync detailedSkills and isDetailedInput from DeckTab (or Deck 1 in VS Mode)
-  useEffect(() => {
-    if (hideInputs) {
-      if (isComparisonMode && surveyData.unifiedDecks?.deck1) {
-        setDetailedSkills(surveyData.unifiedDecks.deck1.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' });
-        setIsDetailedInput(Boolean(surveyData.unifiedDecks.deck1.isDetailedInput));
-      } else {
-        if (surveyData.detailedSkills) setDetailedSkills(surveyData.detailedSkills);
-        if (surveyData.isDetailedInput !== undefined) setIsDetailedInput(surveyData.isDetailedInput);
-      }
-    }
-  }, [hideInputs, surveyData.detailedSkills, surveyData.isDetailedInput, isComparisonMode, surveyData.unifiedDecks?.deck1]);
-
-
+  // Comparison Mode State
+  const [isComparisonMode, setIsComparisonMode] = useState(surveyData.isComparisonMode || false);
+  const [powerB, setPowerB] = useState(surveyData.powerB || '');
+  const [effiB, setEffiB] = useState(surveyData.effiB || '');
+  const [internalValueB, setInternalValueB] = useState(surveyData.internalValueB || '');
 
   // Detailed Input State
   const [isDetailedInput, setIsDetailedInput] = useState(surveyData.isDetailedInput || false);
-
-  // Auto-load Deck 2 data when VS mode enabled in hideInputs mode (Moved dependency logic here or kept below effects)
-  useEffect(() => {
-    if (hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck2) {
-      const deck2 = surveyData.unifiedDecks.deck2;
-      const deck2Leader = Number(deck2.skillLeader || 120);
-      const deck2M2 = Number(deck2.skillMember2 || 100);
-      const deck2M3 = Number(deck2.skillMember3 || 100);
-      const deck2M4 = Number(deck2.skillMember4 || 100);
-      const deck2M5 = Number(deck2.skillMember5 || 100);
-      const deck2InternalVal = Math.floor((deck2Leader + (deck2M2 + deck2M3 + deck2M4 + deck2M5) * 0.2) / 10) * 10;
-
-      setPowerB((deck2.totalPower !== undefined && deck2.totalPower !== null && deck2.totalPower !== '')
-        ? String(deck2.totalPower / 10000)
-        : '');
-      setEffiB((deck2.eventBonus !== undefined && deck2.eventBonus !== null && deck2.eventBonus !== '')
-        ? String(deck2.eventBonus)
-        : '');
-      setInternalValueB((deck2.internalValue !== undefined && deck2.internalValue !== null && deck2.internalValue !== '')
-        ? String(deck2.internalValue)
-        : '');
-    }
-  }, [hideInputs, isComparisonMode, surveyData.unifiedDecks?.deck2]);
-
   const [showCalculator, setShowCalculator] = useState(false);
 
   const handleCalculatorApply = (val, target) => {
@@ -337,7 +246,6 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   const [creationMythScoreB, setCreationMythScoreB] = useState({ min: 0, max: 0 });
   const [omakaseScoreB, setOmakaseScoreB] = useState({ min: 0, max: 0 });
   const [mySekaiScoreB, setMySekaiScoreB] = useState('N/A');
-  const [nextMySekaiOptionsB, setNextMySekaiOptionsB] = useState(null);
   const [customScoreB, setCustomScoreB] = useState({ min: 0, max: 0 });
 
   // Search State
@@ -462,7 +370,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     const inputsList = [
       {
         p: power, e: effi, i: internalValue, skills: detailedSkills,
-        setLo: setLoAndFoundScore, setEn: setEnvyScore, setOm: setOmakaseScore, setCr: setCreationMythScore, setMs: setMySekaiScore, setNextMs: setNextMySekaiOptions, setCust: setCustomScore,
+        setLo: setLoAndFoundScore, setEn: setEnvyScore, setOm: setOmakaseScore, setCr: setCreationMythScore, setMs: setMySekaiScore, setCust: setCustomScore,
         calcEff: true
       }
     ];
@@ -470,48 +378,15 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     if (isComparisonMode) {
       inputsList.push({
         p: powerB, e: effiB, i: internalValueB, skills: detailedSkillsB,
-        setLo: setLoAndFoundScoreB, setEn: setEnvyScoreB, setOm: setOmakaseScoreB, setCr: setCreationMythScoreB, setMs: setMySekaiScoreB, setNextMs: setNextMySekaiOptionsB, setCust: setCustomScoreB,
+        setLo: setLoAndFoundScoreB, setEn: setEnvyScoreB, setOm: setOmakaseScoreB, setCr: setCreationMythScoreB, setMs: setMySekaiScoreB, setCust: setCustomScoreB,
         calcEff: false
       });
     }
 
-    inputsList.forEach(({ p, e, i, skills, setLo, setEn, setOm, setCr, setMs, setNextMs, setCust, calcEff }) => {
-      // Logic for defaulting:
-      // If p, e, or i are empty strings, fallback to the deck's auto/saved values.
-      // We need to know if we are processing A or B (calcEff is true for A, false for B)
-
-      let defaultPower = '29.3231';
-      let defaultEffi = '250';
-      let defaultInternal = '200';
-
-      const deckForDefaults = calcEff
-        ? (isComparisonMode ? surveyData.unifiedDecks?.deck1 : surveyData.autoDeck)
-        : surveyData.unifiedDecks?.deck2;
-
-      if (deckForDefaults) {
-        defaultPower = (deckForDefaults.totalPower !== undefined && deckForDefaults.totalPower !== null && deckForDefaults.totalPower !== '')
-          ? String(deckForDefaults.totalPower / 10000)
-          : '29.3231';
-        defaultEffi = (deckForDefaults.eventBonus !== undefined && deckForDefaults.eventBonus !== null && deckForDefaults.eventBonus !== '')
-          ? String(deckForDefaults.eventBonus)
-          : '250';
-
-        const leader = Number(deckForDefaults.skillLeader || 120);
-        const m2 = Number(deckForDefaults.skillMember2 || 100);
-        const m3 = Number(deckForDefaults.skillMember3 || 100);
-        const m4 = Number(deckForDefaults.skillMember4 || 100);
-        const m5 = Number(deckForDefaults.skillMember5 || 100);
-        defaultInternal = String(Math.floor((leader + (m2 + m3 + m4 + m5) * 0.2) / 10) * 10);
-      }
-
-      const powerVal = parseFloat((p === '' ? defaultPower : p) || '29.3231');
-      const effiVal = parseInt((e === '' ? defaultEffi : e) || '250', 10);
-
-      // For Internal Value, getSkillsArray uses 'i' directly.
-      // We pass the defaulted 'i' instead.
-      const iVal = i === '' ? defaultInternal : i;
-
-      const skillsArray = getSkillsArray(isDetailedInput, skills, iVal);
+    inputsList.forEach(({ p, e, i, skills, setLo, setEn, setOm, setCr, setMs, setCust, calcEff }) => {
+      const powerVal = parseFloat(p || '25.5');
+      const effiVal = parseInt(e || '250', 10);
+      const skillsArray = getSkillsArray(isDetailedInput, skills, i);
 
       // Helper functions for score calculation
       const getScoreRange = (pVal, skillsArr, songId, difficulty, liveType, fireCount) => {
@@ -637,8 +512,8 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
       }
       setMs(highestPossibleScore);
 
-      // Calculate next score options for both decks
-      if (highestPossibleScore !== "N/A") {
+      // Calculate next score options (only for main deck, not B)
+      if (calcEff && highestPossibleScore !== "N/A") {
         const currentScoreIdx = scoreRowKeys.indexOf(highestPossibleScore);
         if (currentScoreIdx < scoreRowKeys.length - 1) {
           const nextScore = scoreRowKeys[currentScoreIdx + 1];
@@ -654,16 +529,14 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
             effiNeededNextPower = mySekaiTableData[nextScore][columnIndex + 1];
           }
 
-          setNextMs({
+          setNextMySekaiOptions({
             nextScore,
             option1: effiNeededSamePower !== null ? { power: powerColumnThresholds[columnIndex], effi: effiNeededSamePower } : null,
             option2: effiNeededNextPower !== null ? { power: nextPowerThreshold, effi: effiNeededNextPower } : null
           });
         } else {
-          setNextMs(null);
+          setNextMySekaiOptions(null);
         }
-      } else {
-        setNextMs(null);
       }
     });
 
@@ -673,45 +546,13 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   const handleDetailedChange = (key, value) => {
     const val = parseInt(value) || 0;
     const clamped = val > 288 ? '288' : value;
-    const newSkills = { ...detailedSkills, [key]: clamped };
-    setDetailedSkills(newSkills);
-
-    // In VS mode with hideInputs, also update deck1.detailedSkills to prevent useEffect from reverting
-    if (hideInputs && isComparisonMode) {
-      setSurveyData(prev => ({
-        ...prev,
-        unifiedDecks: {
-          ...prev.unifiedDecks,
-          deck1: {
-            ...prev.unifiedDecks?.deck1,
-            detailedSkills: newSkills
-          }
-        },
-        detailedSkills: newSkills
-      }));
-    }
+    setDetailedSkills(prev => ({ ...prev, [key]: clamped }));
   };
 
   const handleDetailedChangeB = (key, value) => {
     const val = parseInt(value) || 0;
     const clamped = val > 288 ? '288' : value;
-    const newSkills = { ...detailedSkillsB, [key]: clamped };
-    setDetailedSkillsB(newSkills);
-
-    // In VS mode with hideInputs, also update deck2.detailedSkills
-    if (hideInputs && isComparisonMode) {
-      setSurveyData(prev => ({
-        ...prev,
-        unifiedDecks: {
-          ...prev.unifiedDecks,
-          deck2: {
-            ...prev.unifiedDecks?.deck2,
-            detailedSkills: newSkills
-          }
-        },
-        detailedSkillsB: newSkills
-      }));
-    }
+    setDetailedSkillsB(prev => ({ ...prev, [key]: clamped }));
   };
 
   const handleFireChange = (key, value) => {
@@ -782,37 +623,73 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     );
   };
 
-  const handleDetailedInputToggle = () => {
-    const newValue = !isDetailedInput;
-    setIsDetailedInput(newValue);
-
-    // In VS mode with hideInputs, also update deck1.isDetailedInput to prevent useEffect from reverting
-    if (hideInputs && isComparisonMode) {
-      setSurveyData(prev => ({
-        ...prev,
-        unifiedDecks: {
-          ...prev.unifiedDecks,
-          deck1: {
-            ...prev.unifiedDecks?.deck1,
-            isDetailedInput: newValue
-          }
-        },
-        isDetailedInput: newValue
-      }));
-    }
-  };
-
   const checkboxElement = (
     <div style={{
       marginBottom: '15px',
-      marginTop: isComparisonMode ? '25px' : '-20px',
+      marginTop: isComparisonMode ? '5px' : '-20px',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
       gap: '8px'
     }}>
+      {isDetailedInput && (
+        <div className="relative flex items-center">
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCalculator(!showCalculator); }}
+            className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 text-[10px] flex items-center justify-center hover:bg-gray-300 transition-colors"
+          >
+            i
+          </button>
+          {showCalculator && (
+            <InternalValueCalculator
+              t={t}
+              onClose={() => setShowCalculator(false)}
+              onApply={handleCalculatorApply}
+              isComparisonMode={isComparisonMode}
+              isDetailedInput={isDetailedInput}
+              autoDeck={surveyData.autoDeck}
+              onUpdateAutoDeck={(key, value) => {
+                setSurveyData(prev => ({
+                  ...prev,
+                  autoDeck: {
+                    ...prev.autoDeck,
+                    [key]: value
+                  }
+                }));
+              }}
+            />
+          )}
+        </div>
+      )}
       <button
-        onClick={(e) => { e.preventDefault(); handleDetailedInputToggle(); }}
+        onClick={(e) => {
+          e.preventDefault();
+          const autoDeck = surveyData.autoDeck || {};
+          const leader = Number(autoDeck.skillLeader || 120);
+          const m2 = Number(autoDeck.skillMember2 || 100);
+          const m3 = Number(autoDeck.skillMember3 || 100);
+          const m4 = Number(autoDeck.skillMember4 || 100);
+          const m5 = Number(autoDeck.skillMember5 || 100);
+          const totalPowerVal = Number(autoDeck.totalPower || 293231);
+          const eventBonusVal = Number(autoDeck.eventBonus || 250);
+
+          // Calculate internal value: leader + (others) * 0.2, then floor to nearest 10
+          const calculatedInternalValue = leader + (m2 + m3 + m4 + m5) * 0.2;
+          const roundedInternalValue = Math.floor(calculatedInternalValue / 10) * 10;
+
+          setSurveyData(prev => ({
+            ...prev,
+            power: String(totalPowerVal / 10000),
+            effi: String(eventBonusVal),
+            internalValue: String(roundedInternalValue)
+          }));
+        }}
+        className="px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+      >
+        {t('power.import_auto') || '오토탭 입력값 불러오기'}
+      </button>
+      <button
+        onClick={(e) => { e.preventDefault(); setIsDetailedInput(!isDetailedInput); }}
         className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${isDetailedInput
           ? 'bg-purple-100 text-purple-700 border-purple-300'
           : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'
@@ -934,83 +811,35 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   );
 
 
-
-  // Helper to calculate defaults from deck data
-  const getDeckDefaults = (deck) => {
-    if (!deck) return { power: '29.3231', effi: '250', internal: '200' };
-
-    // Auto Internal Value
-    const leader = Number(deck.skillLeader || 120);
-    const m2 = Number(deck.skillMember2 || 100);
-    const m3 = Number(deck.skillMember3 || 100);
-    const m4 = Number(deck.skillMember4 || 100);
-    const m5 = Number(deck.skillMember5 || 100);
-    const autoInternal = Math.floor((leader + (m2 + m3 + m4 + m5) * 0.2) / 10) * 10;
-
-    return {
-      power: (deck.totalPower !== undefined && deck.totalPower !== null && deck.totalPower !== '') ? String(deck.totalPower / 10000) : '29.3231',
-      effi: (deck.eventBonus !== undefined && deck.eventBonus !== null && deck.eventBonus !== '') ? String(deck.eventBonus) : '250',
-      internal: String(autoInternal)
-    };
-  };
-
-  const defaultsA = getDeckDefaults(
-    isComparisonMode ? surveyData.unifiedDecks?.deck1 : surveyData.autoDeck
-  );
-
-  const defaultsB = getDeckDefaults(surveyData.unifiedDecks?.deck2);
-
   return (
     <div>
       <div id="power-tab-content">
-        {(!hideInputs || isComparisonMode) && (
-          <InputTableWrapper alignLeft={isComparisonMode}>
+        {!hideInputs && (
+          <InputTableWrapper>
             <InputRow
               label={t('power.total_power')}
               value={power}
               onChange={e => {
                 const val = parseFloat(e.target.value);
-                const newVal = val > 46 ? '46' : e.target.value;
-                setPower(newVal);
-                // Sync to unifiedDecks.deck1 if in hideInputs mode
-                if (hideInputs) {
-                  setSurveyData(prev => ({
-                    ...prev,
-                    unifiedDecks: {
-                      ...prev.unifiedDecks,
-                      deck1: {
-                        ...prev.unifiedDecks?.deck1,
-                        totalPower: e.target.value === '' ? null : parseFloat(newVal) * 10000
-                      }
-                    }
-                  }));
+                if (val > 46) {
+                  setPower('46');
+                } else {
+                  setPower(e.target.value);
                 }
               }}
               suffix={t('power.suffix_man')}
-              placeholder="29.3"
+              placeholder="25.5"
               max="46"
               comparisonMode={isComparisonMode}
               valueB={powerB}
               onChangeB={e => {
                 const val = parseFloat(e.target.value);
-                const newVal = val > 46 ? '46' : e.target.value;
-                setPowerB(newVal);
-                // Sync to unifiedDecks.deck2 if in hideInputs mode
-                if (hideInputs) {
-                  setSurveyData(prev => ({
-                    ...prev,
-                    unifiedDecks: {
-                      ...prev.unifiedDecks,
-                      deck2: {
-                        ...prev.unifiedDecks?.deck2,
-                        totalPower: e.target.value === '' ? null : parseFloat(newVal) * 10000
-                      }
-                    }
-                  }));
+                if (val > 46) {
+                  setPowerB('46');
+                } else {
+                  setPowerB(e.target.value);
                 }
               }}
-              suffixB={t('power.suffix_man')}
-              placeholderB="29.3"
               showLabels={false}
               tabIndexA={1}
               tabIndexB={4}
@@ -1018,183 +847,62 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
             <InputRow
               label={t('power.multiplier')}
               value={effi}
-              onChange={e => {
-                setEffi(e.target.value);
-                // Sync to unifiedDecks.deck1 if in hideInputs mode
-                if (hideInputs) {
-                  setSurveyData(prev => ({
-                    ...prev,
-                    unifiedDecks: {
-                      ...prev.unifiedDecks,
-                      deck1: {
-                        ...prev.unifiedDecks?.deck1,
-                        eventBonus: e.target.value === '' ? null : Number(e.target.value)
-                      }
-                    }
-                  }));
-                }
-              }}
+              onChange={e => setEffi(e.target.value)}
               suffix="%"
-              placeholder={defaultsA.effi}
+              placeholder="250"
               max="1000"
               comparisonMode={isComparisonMode}
               valueB={effiB}
-              onChangeB={e => {
-                setEffiB(e.target.value);
-                // Sync to unifiedDecks.deck2 if in hideInputs mode
-                if (hideInputs) {
-                  setSurveyData(prev => ({
-                    ...prev,
-                    unifiedDecks: {
-                      ...prev.unifiedDecks,
-                      deck2: {
-                        ...prev.unifiedDecks?.deck2,
-                        eventBonus: e.target.value === '' ? null : Number(e.target.value)
-                      }
-                    }
-                  }));
-                }
-              }}
-              suffixB="%"
-              placeholderB={defaultsB.effi}
-              showLabels={false}
+              onChangeB={e => setEffiB(e.target.value)}
+              showLabels={isDetailedInput}
               tabIndexA={2}
               tabIndexB={5}
             />
-            {/* Show calculated internal value for each deck in VS mode - ABOVE input */}
-            {!isDetailedInput && isComparisonMode && hideInputs && (
-              <tr>
-                <td></td>
-                <td className="pb-1">
-                  <div className="flex justify-center gap-4">
-                    <div className="text-center">
-                      <span className="text-xs text-gray-500">내 실효치: </span>
-                      <span className="text-xs text-blue-600 font-bold">
-                        {Math.floor((() => {
-                          const deck = surveyData.unifiedDecks?.deck1 || {};
-                          const leader = Number(deck.skillLeader || 120);
-                          const m2 = Number(deck.skillMember2 || 100);
-                          const m3 = Number(deck.skillMember3 || 100);
-                          const m4 = Number(deck.skillMember4 || 100);
-                          const m5 = Number(deck.skillMember5 || 100);
-                          return leader + (m2 + m3 + m4 + m5) * 0.2;
-                        })())}%
-                      </span>
-                    </div>
-                    <div className="text-center">
-                      <span className="text-xs text-gray-500">내 실효치: </span>
-                      <span className="text-xs text-red-600 font-bold">
-                        {Math.floor((() => {
-                          const deck = surveyData.unifiedDecks?.deck2 || {};
-                          const leader = Number(deck.skillLeader || 120);
-                          const m2 = Number(deck.skillMember2 || 100);
-                          const m3 = Number(deck.skillMember3 || 100);
-                          const m4 = Number(deck.skillMember4 || 100);
-                          const m5 = Number(deck.skillMember5 || 100);
-                          return leader + (m2 + m3 + m4 + m5) * 0.2;
-                        })())}%
-                      </span>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            )}
             {!isDetailedInput && (
               <InputRow
                 label={
                   <div className="flex items-center justify-end gap-1 relative">
                     <span>{t('power.internal_value')}</span>
-                    {!isComparisonMode && (
-                      <>
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCalculator(!showCalculator); }}
-                          className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 text-[10px] flex items-center justify-center hover:bg-gray-300 transition-colors"
-                        >
-                          i
-                        </button>
-                        {showCalculator && (
-                          <InternalValueCalculator
-                            t={t}
-                            onClose={() => setShowCalculator(false)}
-                            onApply={handleCalculatorApply}
-                            isComparisonMode={isComparisonMode}
-                            autoDeck={surveyData.autoDeck}
-                            onUpdateAutoDeck={(key, value) => {
-                              setSurveyData(prev => ({
-                                ...prev,
-                                autoDeck: {
-                                  ...prev.autoDeck,
-                                  [key]: value
-                                }
-                              }));
-                            }}
-                          />
-                        )}
-                      </>
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCalculator(!showCalculator); }}
+                      className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 text-[10px] flex items-center justify-center hover:bg-gray-300 transition-colors"
+                    >
+                      i
+                    </button>
+                    {showCalculator && (
+                      <InternalValueCalculator
+                        t={t}
+                        onClose={() => setShowCalculator(false)}
+                        onApply={handleCalculatorApply}
+                        isComparisonMode={isComparisonMode}
+                        autoDeck={surveyData.autoDeck}
+                        onUpdateAutoDeck={(key, value) => {
+                          setSurveyData(prev => ({
+                            ...prev,
+                            autoDeck: {
+                              ...prev.autoDeck,
+                              [key]: value
+                            }
+                          }));
+                        }}
+                      />
                     )}
                   </div>
                 }
                 value={internalValue}
                 onChange={e => {
                   const val = Math.min(288, parseInt(e.target.value) || 0);
-                  const newVal = val > 0 ? val.toString() : e.target.value;
-                  setInternalValue(newVal);
-                  // Sync to surveyData.internalValue
-                  if (hideInputs) {
-                    setSurveyData(prev => {
-                      const update = { ...prev };
-
-                      if (isComparisonMode) {
-                        // VS Mode: Update Deck 1 specifically
-                        update.unifiedDecks = {
-                          ...prev.unifiedDecks,
-                          deck1: {
-                            ...prev.unifiedDecks?.deck1,
-                            internalValue: newVal,
-                            isManualInternalEdit: true
-                          }
-                        };
-                      } else {
-                        // Normal Mode: Update top-level internalValue (which syncs to Active Deck)
-                        update.internalValue = newVal;
-                        update.isManualInternalEdit = true;
-                      }
-
-                      return update;
-                    });
-                  }
+                  setInternalValue(val > 0 ? val.toString() : e.target.value);
                 }}
                 suffix="%"
-                placeholder={defaultsA.internal}
+                placeholder="200"
                 max="288"
                 comparisonMode={isComparisonMode}
                 valueB={internalValueB}
                 onChangeB={e => {
                   const val = Math.min(288, parseInt(e.target.value) || 0);
-                  const newVal = val > 0 ? val.toString() : e.target.value;
-                  setInternalValueB(newVal);
-                  // Sync to surveyData.internalValueB (Deck 2)
-                  if (hideInputs) {
-                    setSurveyData(prev => ({
-                      ...prev,
-                      unifiedDecks: {
-                        ...prev.unifiedDecks,
-                        deck2: {
-                          ...prev.unifiedDecks?.deck2,
-                          internalValue: newVal,
-                          isManualInternalEdit: true
-                        }
-                      },
-                      // We also sync internalValueB for the PowerTab view itself,
-                      // though usually it reads from decks.
-                      // Let's keep it clean.
-                      // Note: DeckTab's unifiedDecks logic handles syncing back to top level keys if needed,
-                      // but 'internalValueB' is not a top level usage for DeckTab usually (only 'internalValue').
-                    }));
-                  }
+                  setInternalValueB(val > 0 ? val.toString() : e.target.value);
                 }}
-                suffixB="%"
-                placeholderB={defaultsB.internal}
                 showLabels={true}
                 tabIndexA={3}
                 tabIndexB={6}
@@ -1212,48 +920,21 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
               )}
           </InputTableWrapper>
         )}
-        {isDetailedInput ? (
-          <>
-            {checkboxElement}
-            {detailedGridElement}
-            {descriptionElement}
-          </>
-        ) : (
-          <>
-            {checkboxElement}
-            {descriptionElement}
-          </>
+        {!hideInputs && (
+          isDetailedInput ? (
+            <>
+              {checkboxElement}
+              {detailedGridElement}
+              {descriptionElement}
+            </>
+          ) : (
+            <>
+              {checkboxElement}
+              {descriptionElement}
+            </>
+          )
         )}
 
-
-
-        <div className="flex justify-center w-full mb-4 gap-2">
-          {/* Search Toggle Button */}
-          <button
-            className={`px-3 py-1.5 text-sm font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 flex items-center gap-1 ${isSearchOpen ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            {t || "Search"}
-          </button>
-
-          {/* Comparison Mode Toggle */}
-          <button
-            className={`px-3 py-1.5 text-sm font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 ${isComparisonMode ? 'bg-purple-500 text-white border-purple-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-            onClick={() => setIsComparisonMode(!isComparisonMode)}
-          >
-            {t('power.vs_mode')}
-          </button>
-
-          <button
-            className="px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200"
-            onClick={() => setShowMySekaiTable(!showMySekaiTable)}
-          >
-            {language === 'ko' ? '마이세카이 점수표' : t('power.mysekai_table')}
-          </button>
-        </div>
         {/* Search Bar */}
         <div className={`transition-all duration-300 ${isSearchOpen ? 'max-h-40 opacity-100 mb-4 overflow-visible' : 'max-h-0 opacity-0 overflow-hidden'}`}>
           <div ref={searchContainerRef} className="bg-white rounded-xl shadow-sm border border-indigo-100 p-4 mx-4">
@@ -1310,6 +991,41 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
             </div>
           </div>
         </div>
+
+        <div className="flex justify-center w-full mb-4 gap-2">
+          {/* Search Toggle Button */}
+          <button
+            className={`px-4 py-2 font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 flex items-center gap-1 ${isSearchOpen ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {t || "Search"}
+          </button>
+
+          {/* Comparison Mode Toggle */}
+          <button
+            className={`px-4 py-2 font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 flex items-center gap-1 ${isComparisonMode ? 'bg-purple-500 text-white border-purple-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+            onClick={() => setIsComparisonMode(!isComparisonMode)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+              <line x1="10" y1="9" x2="10" y2="13"></line>
+              <line x1="14" y1="9" x2="14" y2="13"></line>
+            </svg>
+            VS
+          </button>
+
+          <button
+            className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200"
+            onClick={() => setShowMySekaiTable(!showMySekaiTable)}
+          >
+            {t('power.mysekai_table')}
+          </button>
+        </div>
         <div className={`overflow-hidden transition-all duration-200 ease-in-out ${showMySekaiTable ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <MySekaiTable />
         </div>
@@ -1323,18 +1039,22 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                   <th className="px-1 py-1 md:px-4 md:py-2 font-bold text-center select-none">{t('power.fire')}</th>
                   {/* Result Header A */}
                   <th className={`px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-xs md:text-base ${isComparisonMode ? 'text-blue-600' : ''}`}>
-                    <div className="flex flex-col leading-tight">
-                      <span>{parseFloat(power || '29.3231').toFixed(1)}{t('power.suffix_man')}/{effi || '250'}%</span>
-                      <span className={`text-[10px] md:text-xs font-normal ${isComparisonMode ? 'text-blue-500' : 'text-gray-500'}`}>
-                        {t('power.internal_value')}:{isDetailedInput ? calculateAverage(detailedSkills) : (internalValue || '200')}%
-                        {isDetailedInput && `(${t('power.average')})`}
-                      </span>
-                    </div>
+                    {isComparisonMode ? (
+                      <div className="flex flex-col leading-tight">
+                        <span>{power || '25.5'}{t('power.suffix_man')}/{effi || '250'}%</span>
+                        <span className="text-[10px] md:text-xs text-blue-500 font-normal">
+                          {t('power.internal_value')}:{isDetailedInput ? calculateAverage(detailedSkills) : (internalValue || '200')}%
+                          {isDetailedInput && `(${t('power.average')})`}
+                        </span>
+                      </div>
+                    ) : (
+                      t('power.event_points')
+                    )}
                   </th>
                   {isComparisonMode && (
                     <th className="px-1 py-1 md:px-4 md:py-2 font-extrabold text-center select-none text-red-500 text-xs md:text-base">
                       <div className="flex flex-col leading-tight">
-                        <span>{parseFloat(powerB || '29.3231').toFixed(1)}{t('power.suffix_man')}/{effiB || '250'}%</span>
+                        <span>{powerB || '25.5'}{t('power.suffix_man')}/{effiB || '250'}%</span>
                         <span className="text-[10px] md:text-xs text-red-500 font-normal">
                           {t('power.internal_value')}:{isDetailedInput ? calculateAverage(detailedSkillsB) : (internalValueB || '200')}%
                           {isDetailedInput && `(${t('power.average')})`}
@@ -1389,7 +1109,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                       </div>
                     </td>
                     {isComparisonMode && (
-                      <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[100px]">
+                      <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                         <div className="flex flex-col items-center justify-center">
                           <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                             {renderScore(customScoreB, true)}
@@ -1421,7 +1141,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                     </div>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[100px]">
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                       <div className="flex flex-col items-center justify-center">
                         <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                           {renderScore(loAndFoundScoreB, true)}
@@ -1447,7 +1167,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                     </div>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[100px]">
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                       <div className="flex flex-col items-center justify-center">
                         <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                           {renderScore(omakaseScoreB, true)}
@@ -1478,7 +1198,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                     </div>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[100px]">
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                       <div className="flex flex-col items-center justify-center">
                         <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                           {renderScore(envyScoreB, true)}
@@ -1504,7 +1224,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                     </div>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[100px]">
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
                       <div className="flex flex-col items-center justify-center">
                         <span className="text-red-600 text-base md:text-lg font-bold tracking-tight">
                           {renderScore(creationMythScoreB, true)}
@@ -1528,9 +1248,8 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                   <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
                     <div className="flex flex-col items-center">
                       {nextMySekaiOptions && (
-                        <div className={`${isComparisonMode ? 'text-[9px] md:text-[10px] leading-tight' : 'text-xs md:text-sm'} text-gray-500 mb-0.5`}>
-                          <span className="font-medium">{nextMySekaiOptions.nextScore.toLocaleString()}EP :</span>
-                          {isComparisonMode ? <br /> : ' '}
+                        <div className="text-[9px] md:text-[10px] text-gray-500 mb-0.5">
+                          <span className="font-medium">{nextMySekaiOptions.nextScore.toLocaleString()}EP :</span>{' '}
                           {nextMySekaiOptions.option1 && (
                             <span className="text-blue-600 font-bold">
                               {nextMySekaiOptions.option1.power}/{nextMySekaiOptions.option1.effi}
@@ -1550,29 +1269,10 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                     </div>
                   </td>
                   {isComparisonMode && (
-                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[100px]">
-                      <div className="flex flex-col items-center">
-                        {nextMySekaiOptionsB && (
-                          <div className="text-[9px] md:text-[10px] leading-tight text-gray-500 mb-0.5">
-                            <span className="font-medium">{nextMySekaiOptionsB.nextScore.toLocaleString()}EP :</span>
-                            <br />
-                            {nextMySekaiOptionsB.option1 && (
-                              <span className="text-blue-600 font-bold">
-                                {nextMySekaiOptionsB.option1.power}/{nextMySekaiOptionsB.option1.effi}
-                              </span>
-                            )}
-                            {nextMySekaiOptionsB.option1 && nextMySekaiOptionsB.option2 && ' or '}
-                            {nextMySekaiOptionsB.option2 && (
-                              <span className="text-pink-600 font-bold">
-                                {nextMySekaiOptionsB.option2.power}/{nextMySekaiOptionsB.option2.effi}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        <span className="text-green-600 text-base md:text-lg font-bold tracking-tight">
-                          {mySekaiScoreB > 0 ? mySekaiScoreB.toLocaleString() : 'N/A'}
-                        </span>
-                      </div>
+                    <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle bg-red-50/30 whitespace-nowrap min-w-[80px] md:min-w-[140px]">
+                      <span className="text-green-600 text-base md:text-lg font-bold tracking-tight">
+                        {mySekaiScoreB > 0 ? mySekaiScoreB.toLocaleString() : 'N/A'}
+                      </span>
                     </td>
                   )}
                 </tr>
@@ -1606,7 +1306,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
           />
         </div>
 
-        <div className="w-[85%] max-w-[240px] mx-auto space-y-4 mb-4 -mt-3">
+        <div className="w-[85%] max-w-[240px] mx-auto space-y-4 mb-4">
           <div className="bg-white rounded-lg p-3">
             <h4 className="text-center font-bold text-gray-700 mb-3 text-sm">{t('power.efficiency.title')}</h4>
             {/* Multi */}
@@ -1640,9 +1340,9 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
         </div>
 
 
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '-20px', marginBottom: '-20px', whiteSpace: 'pre-line' }}>{t('power.desc_bottom')}</p>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px', whiteSpace: 'pre-line' }}><br></br>{t('power.desc_bottom')}</p>
       </div>
-    </div >
+    </div>
   );
 };
 

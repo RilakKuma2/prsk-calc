@@ -9,6 +9,7 @@ import FireTab from './components/FireTab';
 import ChallengeTab from './components/ChallengeTab';
 import AmatsuyuTab from './components/AmatsuyuTab';
 import AutoTab from './components/AutoTab';
+import DeckTab from './components/DeckTab';
 import ScoreArtTab from './components/ScoreArtTab';
 import UpcomingEvents from './components/UpcomingEvents';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
@@ -21,6 +22,7 @@ const TAB_PATHS = {
   amatsuyu: '/amatsuyu',
   challenge: '/chall',
   auto: '/auto',
+  deck: '/event',
   power: '/ep',
   fire: '/eventrun',
   scoreArt: '/scoreart',
@@ -52,8 +54,8 @@ function AppContent() {
         return { mainTab: tabId, subPath };
       }
     }
-    // Default to internal
-    return { mainTab: 'internal', subPath: null };
+    // Default to deck (Event Deck)
+    return { mainTab: 'deck', subPath: null };
   }, [location.pathname]);
 
   const { mainTab, subPath } = getTabFromPath();
@@ -120,6 +122,7 @@ function AppContent() {
     level: <LevelTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
     power: <PowerTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     auto: <AutoTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    deck: <DeckTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
     fire: <FireTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     challenge: <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
     amatsuyu: <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
@@ -147,7 +150,9 @@ function AppContent() {
   };
 
   const saveData = () => {
-    localStorage.setItem('surveyData', JSON.stringify(surveyData));
+    // Exclude UI state like active deck selection, view selection, and VS mode from save
+    const { activeDeckNum, activeResultView, isComparisonMode, ...dataToSave } = surveyData;
+    localStorage.setItem('surveyData', JSON.stringify(dataToSave));
     showToastMessage(t('app.toast.saved'));
   };
 
@@ -216,8 +221,6 @@ function AppContent() {
         >
           {t('app.chart_link')}
         </button>
-      </div>
-      <div className="button-container">
         <button
           className="link-button"
           onClick={() => window.open(language === 'ko' ? 'https://card.rilaksekai.com' : 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing', '_blank')}
