@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Main Page (Homepage) - Highest Priority -->
+  <url>
+    <loc>https://rilaksekai.com/</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Skill Tab -->
+  <url>
+    <loc>https://rilaksekai.com/skill</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/skill"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/skill"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/skill"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/skill"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- EP Calculator -->
+  <url>
+    <loc>https://rilaksekai.com/ep</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/ep"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/ep"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/ep"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/ep"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Event Run Calculator -->
+  <url>
+    <loc>https://rilaksekai.com/eventrun</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/eventrun"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/eventrun"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/eventrun"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/eventrun"/>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Auto Live Calculator -->
+  <url>
+    <loc>https://rilaksekai.com/auto</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/auto"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/auto"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/auto"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/auto"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Amatsuyu Calculator -->
+  <url>
+    <loc>https://rilaksekai.com/amatsuyu</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/amatsuyu"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/amatsuyu"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/amatsuyu"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/amatsuyu"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Challenge Tab -->
+  <url>
+    <loc>https://rilaksekai.com/chall</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/chall"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/chall"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/chall"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/chall"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Challenge Score -->
+  <url>
+    <loc>https://rilaksekai.com/chall/score</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/chall/score"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/chall/score"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/chall/score"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/chall/score"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Challenge Stage -->
+  <url>
+    <loc>https://rilaksekai.com/chall/stage</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/chall/stage"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/chall/stage"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/chall/stage"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/chall/stage"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Score Art -->
+  <url>
+    <loc>https://rilaksekai.com/scoreart</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/scoreart"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/scoreart"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/scoreart"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/scoreart"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Level Tab -->
+  <url>
+    <loc>https://rilaksekai.com/level</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/level"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/level"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/level"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/level"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Kizuna -->
+  <url>
+    <loc>https://rilaksekai.com/level/kizuna</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/level/kizuna"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/level/kizuna"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/level/kizuna"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/level/kizuna"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Card Level -->
+  <url>
+    <loc>https://rilaksekai.com/level/card</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/level/card"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/level/card"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/level/card"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/level/card"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Gacha -->
+  <url>
+    <loc>https://rilaksekai.com/gacha</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/gacha"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/gacha"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/gacha"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/gacha"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>

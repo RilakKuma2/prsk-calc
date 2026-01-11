@@ -223,9 +223,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         setStaleWarning(isStale);
 
         if (mergedEventInfo) {
-          // [추가] latest_event가 있으면 그 정보를 우선 사용 (배너 이미지, 종료 시간)
+          // [추가] latest_event가 있고, 이미 시작했으면 그 정보를 사용 (배너 이미지, 종료 시간)
           const latestEvent = mainData.latest_event;
-          if (latestEvent) {
+          const now = Date.now();
+          if (latestEvent && latestEvent.startAt && latestEvent.startAt <= now) {
             // asname은 latest_event의 assetbundleName 사용
             mergedEventInfo.asname = latestEvent.assetbundleName || mergedEventInfo.asname;
             // aggregateAt은 밀리초 단위, end는 초 단위라서 변환
@@ -233,12 +234,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               mergedEventInfo.end = latestEvent.aggregateAt / 1000;
             }
             // start도 업데이트 (진행률 계산용)
-            if (latestEvent.startAt) {
-              mergedEventInfo.start = latestEvent.startAt / 1000;
-            }
+            mergedEventInfo.start = latestEvent.startAt / 1000;
           }
+          // latest_event가 아직 시작 전이면 event_info 그대로 사용
           setEventInfo(mergedEventInfo);
-          const now = Date.now();
           const diff = mergedEventInfo.end ? (mergedEventInfo.end * 1000 - now) : 0; // Ensure end exists and convert to ms if needed (mainData has epoch seconds usually)
           // Wait, data.endsAt was used before. MainData usually provides endsAt (ms) or event_info.end (seconds). 
           // Previous code: const diff = data.endsAt - now; 
@@ -460,6 +459,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     const remainingMs = Math.max(0, end - now);
 
+    // 현재 이벤트 동안의 자연불 회복 (30분마다 1개)
     const recoveryFire = Math.floor(remainingMs / (30 * 60 * 1000));
 
     let loginFire = 0;
@@ -1456,7 +1456,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
-                      min="0"
+                      min="1"
                       max="30"
                       value={remainingFireMinutes === 30 ? '' : remainingFireMinutes}
                       placeholder="30"
@@ -1466,7 +1466,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         if (rawVal === '') {
                           setRemainingFireMinutes(30);
                         } else {
-                          const val = Math.min(30, Math.max(0, parseInt(rawVal) || 0));
+                          const val = Math.min(30, Math.max(1, parseInt(rawVal) || 1));
                           setRemainingFireMinutes(val);
                         }
                       }}
@@ -1585,19 +1585,26 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     );
                   }
 
-                  // If we use fire now, timer resets to 30 min
-                  // Recovery from now with 30min timer: 1 + floor((msUntilTarget - 30min) / 30min)
-                  const recoveryFrom30 = Math.max(0, 1 + Math.floor((msUntilTarget - 30 * 60 * 1000) / (30 * 60 * 1000)));
+                  // remainingFireMinutes: 첫 불 충전까지 남은 분
+                  // 불 사용하면 타이머가 remainingFireMinutes 후 첫 충전, 이후 30분마다 충전
+                  const firstFireMs = remainingFireMinutes * 60 * 1000;
+
+                  // msUntilTarget 동안 회복되는 불: 첫 불(remainingFireMinutes 후) + 이후 30분마다
+                  let recoveryFromNow = 0;
+                  if (msUntilTarget >= firstFireMs) {
+                    recoveryFromNow = 1 + Math.floor((msUntilTarget - firstFireMs) / (30 * 60 * 1000));
+                  }
 
                   // To reach 50 at event+30min:
-                  // Final = (cur - X) + recoveryFrom30 = 50
-                  // X = cur + recoveryFrom30 - 50
-                  const optimalUse = Math.max(0, cur + recoveryFrom30 - 50);
+                  // Final = (cur - X) + recoveryFromNow = 50
+                  // X = cur + recoveryFromNow - 50
+                  const optimalUse = Math.max(0, cur + recoveryFromNow - 50);
                   const afterUse = cur - optimalUse;
 
                   // Calculate when exactly we reach 50 after using optimalUse
                   const neededRecovery = 50 - afterUse;
-                  const msToReach50 = 30 * 60 * 1000 + Math.max(0, (neededRecovery - 1) * 30 * 60 * 1000);
+                  // 첫 불은 remainingFireMinutes 후, 이후로는 30분마다
+                  const msToReach50 = firstFireMs + Math.max(0, (neededRecovery - 1) * 30 * 60 * 1000);
                   const timeAt50 = Date.now() + msToReach50;
 
                   // Format time for target (either 50 or max reachable)
@@ -1605,7 +1612,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   const timeStr = `${reach50Time.getHours().toString().padStart(2, '0')}:${reach50Time.getMinutes().toString().padStart(2, '0')}`;
 
                   // Calculate actual fire at displayed time (if cannot reach 50)
-                  const finalFire = afterUse + recoveryFrom30;
+                  const finalFire = afterUse + recoveryFromNow;
                   const displayFire = Math.min(50, finalFire);
 
                   return (
