@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
+import { calculateRawInternalValue, calculateInternalValue } from '../utils/deckUtils';
 
-// Import result components (we'll create these from existing tabs)
+// Import result components
 import AutoTab from './AutoTab';
-import InternalTab from './InternalTab';
 import PowerTab from './PowerTab';
 
 function DeckTab({ surveyData, setSurveyData, subPath }) {
@@ -33,10 +33,6 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const [manualInternalValue, setManualInternalValue] = useState('');
     const activeDeckKey = `deck${activeDeckNum}`;
     const isManualInternalEdit = surveyData.unifiedDecks?.[activeDeckKey]?.isManualInternalEdit || false;
-    // VS Mode state
-    const [isVSMode, setIsVSMode] = useState(false);
-
-    // Detailed room skills input state
     // Detailed room skills input state
     const showDetailedInput = surveyData.unifiedDecks?.[activeDeckKey]?.isDetailedInput || false;
     const detailedRoomSkills = surveyData.unifiedDecks?.[activeDeckKey]?.detailedSkills || {
@@ -81,21 +77,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         }));
     };
 
-    // Calculate raw internal value (not floored)
-    const calculateRawInternalValue = () => {
-        const deck = surveyData.unifiedDecks?.[`deck${activeDeckNum}`] || {};
-        const leader = Number(deck.skillLeader || 120);
-        const m2 = Number(deck.skillMember2 || 100);
-        const m3 = Number(deck.skillMember3 || 100);
-        const m4 = Number(deck.skillMember4 || 100);
-        const m5 = Number(deck.skillMember5 || 100);
-        return leader + (m2 + m3 + m4 + m5) * 0.2;
-    };
-
-    // Calculate internal value (floored to 10)
-    const calculateInternalValue = () => {
-        return Math.floor(calculateRawInternalValue() / 10) * 10;
-    };
+    // Get current deck for calculations
+    const getActiveDeck = () => surveyData.unifiedDecks?.[`deck${activeDeckNum}`] || {};
 
     // Sync manualInternalValue with unifiedDecks internalValue
     useEffect(() => {
@@ -218,83 +201,35 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const wrappedSetSurveyData = (updater) => {
         setSurveyData(prev => {
             const next = typeof updater === 'function' ? updater(prev) : updater;
-
-            // Get current deck values
             const deck = next.unifiedDecks?.[`deck${activeDeckNum}`] || currentDeck;
-            const leader = Number(deck.skillLeader || 120);
-            const m2 = Number(deck.skillMember2 || 100);
-            const m3 = Number(deck.skillMember3 || 100);
-            const m4 = Number(deck.skillMember4 || 100);
-            const m5 = Number(deck.skillMember5 || 100);
-            const internalVal = Math.floor((leader + (m2 + m3 + m4 + m5) * 0.2) / 10) * 10;
+            const internalVal = calculateInternalValue(deck);
 
-            // Detect if the update specifically modified the INTERNAL VALUE of the active deck (e.g. from PowerTab Side B)
-            // If so, we must respect that value and sync top-level internalValue to it, unless isManualInternalEdit says otherwise?
-            // Actually, if it changed in 'next', it's a specific update we should keep.
             const activeDeckObjInNext = next.unifiedDecks?.[activeDeckKey];
             const activeDeckObjInPrev = prev.unifiedDecks?.[activeDeckKey];
-
-            // Re-define currentDeckData for usage below
             const currentDeckData = activeDeckObjInNext || currentDeck;
 
-            // Start building the result
-            const result = { ...next };
-
-            // Check if active deck changed between prev and next (reference check + internal value check)
-            const activeDeckChanged = activeDeckObjInNext !== activeDeckObjInPrev ||
-                (JSON.stringify(activeDeckObjInNext) !== JSON.stringify(activeDeckObjInPrev));
-
-            if (!activeDeckChanged && activeDeckObjInPrev) {
-                // Active deck was NOT touched by the update (e.g. Deck 1 update while Deck 2 is active).
-                // We should ensure top-level internalValue matches the active deck (which is unchanged).
-                // But we should NOT overwrite the active deck object itself or recalculate it, 
-                // to avoid inadvertently reverting manual edits or using stale data.
-
-                // Ensure top-level internalValue is synced to active deck
-                const currentActiveIV = activeDeckObjInNext.internalValue;
-                result.internalValue = currentActiveIV;
-                result.autoDeck = activeDeckObjInNext;
-
-                // Also ensure power/effi are synced for PowerTab
-                result.power = String((Number(activeDeckObjInNext.totalPower || 293231)) / 10000);
-                result.effi = String(activeDeckObjInNext.eventBonus || 250);
-
-                return result;
+            // Check if active deck changed (simple reference check)
+            if (activeDeckObjInNext === activeDeckObjInPrev && activeDeckObjInPrev) {
+                // Active deck unchanged - just sync top-level values
+                return {
+                    ...next,
+                    internalValue: activeDeckObjInNext.internalValue,
+                    autoDeck: activeDeckObjInNext,
+                    power: String((Number(activeDeckObjInNext.totalPower || 293231)) / 10000),
+                    effi: String(activeDeckObjInNext.eventBonus || 250)
+                };
             }
 
-            // ... Existing logic for when active deck CHANGED or we are initializing ...
-
+            // Determine internal value and manual edit flag
             const internalValueChanged = activeDeckObjInNext?.internalValue !== activeDeckObjInPrev?.internalValue;
-
-            let newInternalValue;
-            let newIsManualInternalEdit;
-            if (activeDeckObjInNext?.isManualInternalEdit !== undefined) {
-                newIsManualInternalEdit = activeDeckObjInNext.isManualInternalEdit;
-            } else {
-                newIsManualInternalEdit = (next.isManualInternalEdit ?? isManualInternalEdit);
-            }
-
-            if (internalValueChanged && activeDeckObjInNext) {
-                // Respect the direct update
-                newInternalValue = activeDeckObjInNext.internalValue;
-                // If it was changed, implied manual edit? Or just sync? 
-                // Let's assume if it came from PowerTab manual input, we treat it as manual.
-                // But PowerTab might not set isManualInternalEdit. We should probably force it if value implies manual override?
-                // For now, just ensuring we don't overwrite it is the key.
-                // We should also sync top-level if it's the active deck.
-                // Note: If the user changed skills in PowerTab, that is also a change to deck, but internal value might stay auto-calculated if PowerTab handles it.
-                // But PowerTab only sets internalValue directly in the manual input handler.
-                // If skills changed, that's a different handler.
-
-                // If the value matches the calc, maybe it's not manual? 
-                // But safer to just take the new value.
-            } else {
-                // Standard logic: derived from top-level internalValue OR calculated
-                newInternalValue = newIsManualInternalEdit ? next.internalValue : String(internalVal);
-            }
+            const newIsManualInternalEdit = activeDeckObjInNext?.isManualInternalEdit ??
+                (next.isManualInternalEdit ?? isManualInternalEdit);
+            const newInternalValue = internalValueChanged && activeDeckObjInNext
+                ? activeDeckObjInNext.internalValue
+                : (newIsManualInternalEdit ? next.internalValue : String(internalVal));
 
             return {
-                ...result, // Changed from ...next to ...result
+                ...next,
                 unifiedDecks: {
                     ...next.unifiedDecks,
                     [`deck${activeDeckNum}`]: {
@@ -305,12 +240,9 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         isDetailedInput: (next.isDetailedInput ?? showDetailedInput)
                     }
                 },
-                // For PowerTab compatibility
                 power: String((Number(deck.totalPower || 293231)) / 10000),
                 effi: String(deck.eventBonus || 250),
-                // Sync top-level internalValue to the selected one
                 internalValue: newInternalValue,
-                // Sync autoDeck
                 autoDeck: deck
             };
         });
@@ -426,9 +358,16 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     <button
                         key={view.key}
                         onClick={() => {
+                            const scrollY = window.scrollY;
                             setActiveResultView(view.key);
-                            // Update URL
-                            navigate(`/event/${view.urlPath}`);
+                            // Update URL without scroll reset
+                            navigate(`/event/${view.urlPath}`, { replace: true, preventScrollReset: true });
+                            // Restore scroll position after DOM fully updates (double rAF)
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    window.scrollTo(0, scrollY);
+                                });
+                            });
                         }}
                         className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${activeResultView === view.key
                             ? 'bg-indigo-500 text-white shadow-md'
@@ -447,7 +386,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         <div className="flex items-center gap-4 text-base font-medium">
                             <div>
                                 <span className="text-gray-500">{t('deck.my_internal_value')}: </span>
-                                <span className="text-blue-600 font-bold">{Math.floor(calculateRawInternalValue())}%</span>
+                                <span className="text-blue-600 font-bold">{Math.floor(calculateRawInternalValue(getActiveDeck()))}%</span>
                             </div>
                             <div>
                                 <span className="text-gray-500">{t('internal.internal_sum')}: </span>
@@ -499,30 +438,30 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             onFocus={(e) => e.target.select()}
                             className={`w-20 text-center border rounded px-2 py-1 text-sm font-bold ${isManualInternalEdit ? 'text-blue-600 border-blue-300' : 'text-gray-700 border-gray-300'
                                 }`}
-                            placeholder={String(calculateInternalValue())}
+                            placeholder={String(calculateInternalValue(getActiveDeck()))}
                         />
                         <span className="text-sm text-gray-500">%</span>
                     </div>
                 </div>
             )}
 
-            {/* Render Selected Result (hiding input sections of child tabs) */}
+            {/* Render Both Tabs, Toggle Visibility with CSS (prevents scroll jump on switch) */}
             <div className="deck-results-container">
-                {activeResultView === 'auto' && (
+                <div style={{ display: activeResultView === 'auto' ? 'block' : 'none' }}>
                     <AutoTab
                         surveyData={surveyData}
                         setSurveyData={wrappedSetSurveyData}
                         hideInputs={true}
                     />
-                )}
+                </div>
 
-                {activeResultView === 'power' && (
+                <div style={{ display: activeResultView === 'power' ? 'block' : 'none' }}>
                     <PowerTab
                         surveyData={surveyData}
                         setSurveyData={wrappedSetSurveyData}
                         hideInputs={true}
                     />
-                )}
+                </div>
             </div>
         </div>
     );

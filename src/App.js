@@ -2,13 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Tabs from './components/Tabs';
-import InternalTab from './components/InternalTab';
 import LevelTab from './components/LevelTab';
-import PowerTab from './components/PowerTab';
 import FireTab from './components/FireTab';
 import ChallengeTab from './components/ChallengeTab';
 import AmatsuyuTab from './components/AmatsuyuTab';
-import AutoTab from './components/AutoTab';
 import DeckTab from './components/DeckTab';
 import ScoreArtTab from './components/ScoreArtTab';
 import UpcomingEvents from './components/UpcomingEvents';
@@ -21,9 +18,7 @@ const TAB_PATHS = {
   internal: '/skill',
   amatsuyu: '/amatsuyu',
   challenge: '/chall',
-  auto: '/auto',
   deck: '/event',
-  power: '/ep',
   fire: '/eventrun',
   scoreArt: '/scoreart',
   level: '/level',
@@ -72,7 +67,7 @@ function AppContent() {
   // Handle tab change - update URL
   const handleTabChange = useCallback((tabId) => {
     setCurrentTab(tabId);
-    const path = TAB_PATHS[tabId] || '/internal';
+    const path = TAB_PATHS[tabId] || '/event';
     navigate(path);
   }, [navigate]);
   const [surveyData, setSurveyData] = useState({});
@@ -118,10 +113,7 @@ function AppContent() {
   };
 
   const tabComponents = {
-    internal: <InternalTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     level: <LevelTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
-    power: <PowerTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
-    auto: <AutoTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     deck: <DeckTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
     fire: <FireTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     challenge: <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,

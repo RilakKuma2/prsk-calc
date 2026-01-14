@@ -1914,7 +1914,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           )}
           <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 text-[10px] text-gray-400 flex flex-col sm:flex-row justify-between items-center gap-1">
             <span>
-              {t('fire.data_provided')} <a href="https://jiiku.dev/" target="_blank" rel="noopener noreferrer" className="hover:underline text-indigo-500">Jiiku</a>
+              {t('fire.data_provided')} <a href="https://jiiku831.github.io/sekarun.html" target="_blank" rel="noopener noreferrer" className="hover:underline text-indigo-500">Jiiku</a>
             </span>
             <span>
               {t('fire.predictions_disclaimer')}

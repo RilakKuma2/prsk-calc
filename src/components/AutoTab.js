@@ -44,6 +44,19 @@ const calculateRank = (score, level) => {
     return 'D';
 };
 
+const getNextRankCutoff = (score, level) => {
+    const sRank = 1040000 + 5200 * (level - 5);
+    const aRank = 840000 + 4200 * (level - 5);
+    const bRank = 400000 + 2000 * (level - 5);
+    const cRank = 20000 + 100 * (level - 5);
+
+    if (score < cRank) return cRank;
+    if (score < bRank) return bRank;
+    if (score < aRank) return aRank;
+    if (score < sRank) return sRank;
+    return null;
+};
+
 function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
     const { t, language } = useTranslation();
     // Initialize or read from surveyData
@@ -71,24 +84,6 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
 
     const [batchResults, setBatchResults] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'eventPoint', direction: 'desc' });
-
-    // Ensure default data exists
-    useEffect(() => {
-        if (!surveyData.autoDeck) {
-            setSurveyData(prev => ({
-                ...prev,
-                autoDeck: {
-                    totalPower: '',
-                    skillLeader: '',
-                    skillMember2: '',
-                    skillMember3: '',
-                    skillMember4: '',
-                    skillMember5: '',
-                    eventBonus: ''
-                }
-            }));
-        }
-    }, []);
 
     // Auto-calculate batch results whenever inputs change
     useEffect(() => {
@@ -255,8 +250,6 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                 </InputTableWrapper>
             )}
 
-
-
             {/* Batch Calculation Results */}
             {sortedBatchResults && (
                 <div className="w-full mt-4">
@@ -342,18 +335,6 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                                         <td className="px-1 py-2 md:py-1.5 md:px-4 text-center">
                                             <div className="flex flex-col items-center justify-center">
                                                 {(() => {
-                                                    const getNextRankCutoff = (score, level) => {
-                                                        const sRank = 1040000 + 5200 * (level - 5);
-                                                        const aRank = 840000 + 4200 * (level - 5);
-                                                        const bRank = 400000 + 2000 * (level - 5);
-                                                        const cRank = 20000 + 100 * (level - 5);
-
-                                                        if (score < cRank) return cRank;
-                                                        if (score < bRank) return bRank;
-                                                        if (score < aRank) return aRank;
-                                                        if (score < sRank) return sRank;
-                                                        return null;
-                                                    };
                                                     const nextCutoff = getNextRankCutoff(res.min, res.level);
                                                     return (
                                                         <>

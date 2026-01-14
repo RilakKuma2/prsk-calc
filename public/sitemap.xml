@@ -12,27 +12,6 @@
     <priority>1.0</priority>
   </url>
 
-  <!-- Skill Tab -->
-  <url>
-    <loc>https://rilaksekai.com/skill</loc>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/skill"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/skill"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/skill"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/skill"/>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- EP Calculator -->
-  <url>
-    <loc>https://rilaksekai.com/ep</loc>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/ep"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/ep"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/ep"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/ep"/>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
 
   <!-- Event Run Calculator -->
   <url>
@@ -43,17 +22,6 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/eventrun"/>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
-  </url>
-
-  <!-- Auto Live Calculator -->
-  <url>
-    <loc>https://rilaksekai.com/auto</loc>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/auto"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/auto"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/auto"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/auto"/>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>
 
   <!-- Event Deck Tab -->
@@ -67,27 +35,7 @@
     <priority>0.9</priority>
   </url>
 
-  <!-- Event Deck - EP Calculator -->
-  <url>
-    <loc>https://rilaksekai.com/event/ep</loc>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/event/ep"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/event/ep"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/event/ep"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/event/ep"/>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
 
-  <!-- Event Deck - Auto Calculator -->
-  <url>
-    <loc>https://rilaksekai.com/event/auto</loc>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/event/auto"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/event/auto"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/event/auto"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/event/auto"/>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
 
   <!-- Amatsuyu Calculator -->
   <url>
