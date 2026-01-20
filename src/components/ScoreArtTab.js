@@ -230,7 +230,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
 
                 <div className="text-center">
                     <div
-                        className="text-sm text-rose-500 mb-4 leading-relaxed bg-rose-50 py-2 px-4 rounded-lg inline-block"
+                        className="text-sm text-rose-500 mb-4 leading-relaxed bg-rose-50 py-2 px-4 rounded-lg inline-block text-left"
                         dangerouslySetInnerHTML={{ __html: t('score_art.warning_text') }}
                     />
                     <div className="mb-6">

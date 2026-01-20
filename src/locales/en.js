@@ -311,7 +311,7 @@ const en = {
         zero_score_only: 'Envy 0 Score Only (Don\'t tap)',
         zero_score_desc: 'Only gain base EP (multiple of 5)',
         allow_non_mod5: 'Allow non-mod-5 results',
-        warning_text: 'Avoid decimal multipliers<br />(Use WL Support or specific Master Ranks)<br />Check score with 1 Energy MySekai before proceeding',
+        warning_text: '▸ Avoid decimal multipliers<br />&nbsp;&nbsp;&nbsp;(WL Support Deck or 1,3 MR causes this)<br />▸ Check score with 1 Energy MySekai before proceeding<br />&nbsp;&nbsp;&nbsp;Only mine stones and wood to prevent errors',
         envy_table: 'Envy Score Table',
         calculating: 'Calculating...',
         calculate: 'Calculate',

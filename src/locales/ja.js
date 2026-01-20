@@ -307,7 +307,7 @@ const ja = {
         zero_score_only: 'エビ0点 (放置)',
         zero_score_desc: '5の倍数Pのみ獲得',
         allow_non_mod5: '非5倍数も計算',
-        warning_text: '倍率に小数が出ないよう注意<br />(ワールドリンク編成 or 1,3マスラン)<br />マイセカ1炊きでスコア確認推奨',
+        warning_text: '▸ 倍率に小数が出ないよう注意<br />&nbsp;&nbsp;&nbsp;(WLサポ編成 or 1,3マスラン時)<br />▸ マイセカ1炊きでスコア確認推奨<br />&nbsp;&nbsp;&nbsp;石と木だけ採取して炊き計算ミス防止',
         envy_table: 'エビ表',
         calculating: '計算中...',
         calculate: '計算',

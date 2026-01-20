@@ -320,7 +320,7 @@ const ko = {
         zero_score_only: '엔비 0점만 사용 (노트 치지 않기)',
         zero_score_desc: '5의 배수 이벤포만 획득 가능',
         allow_non_mod5: '배수가 5의 배수가 아닌 경우도 계산',
-        warning_text: '배수에 소수점이 생기지 않도록 주의<br />(월링 서폿덱 or 1,3 마랭)<br />마이세카이 1불만 사용 후 점수 확인 후 진행',
+        warning_text: '▸ 배수에 소수점이 생기지 않도록 주의<br />&nbsp;&nbsp;&nbsp;(월링 서폿덱 or 1,3 마랭)<br />▸ 마이세카이 1불만 사용 후 점수 확인 후 진행<br />&nbsp;&nbsp;&nbsp;돌과 나무만 캐서 불 계산 실수방지',
         envy_table: '엔비 점수표',
         calculating: '계산 중...',
         calculate: '계산하기',
