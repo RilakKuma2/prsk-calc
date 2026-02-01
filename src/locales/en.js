@@ -66,8 +66,8 @@ const en = {
             cumulative: 'Cumulative',
             req_per_lvl: 'Req per Lvl',
             req_increase: 'Req Increase',
-            req_increase: 'Req Increase',
             exp_gain: 'Exp Gain',
+            kakera: 'Kakera',
         },
         cycle: 'Cycle {{count}}',
     },
@@ -125,7 +125,6 @@ const en = {
         song: 'Song',
         fire: 'Energy',
         event_points: 'EP',
-        average: 'Average',
         score: 'Score',
         result_title: 'EP Calculation Result',
         songs: {

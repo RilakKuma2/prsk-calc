@@ -217,14 +217,11 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
 
                     let remaining = totalExVal;
                     let currentSeq = 1;
-                    let accumulatedExp = 0;
 
-                    // Simulate leveling up
+                    // Simulate leveling up step by step
                     while (true) {
-                        // Find the requirement for the current sequence
-                        // The params defined 'start' of a range. e.g. Seq 1 -> Req 500. Seq 4 -> Req 600.
-                        // So for Seq 1, 2, 3 we use Req 500.
-                        // param s.t. param.seq <= currentSeq. We want the largest such param.
+                        // Find the parameter entry that applies to the current sequence
+                        // (Entry with param.seq <= currentSeq. We use the largest such seq)
                         let activeParam = sortedParams[0];
                         for (let i = 0; i < sortedParams.length; i++) {
                             if (sortedParams[i].seq <= currentSeq) {
@@ -234,20 +231,19 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                             }
                         }
 
-                        if (!activeParam) break; // Should not happen if params exist
+                        if (!activeParam) break;
 
                         const req = activeParam.requirement;
 
                         if (remaining >= req) {
                             remaining -= req;
-                            // accumulatedExp += Math.max(0, currentSeq - 1); // Removed: EXP is not cumulative sum of sequences
+                            // Add EXP from the parameter data (+1 for normal steps, 0 for kakera steps)
+                            totalExp += (activeParam.exp || 0);
                             currentSeq++;
                         } else {
                             break;
                         }
                     }
-                    // EXP is simply (Current Seq - 1), capped at 30.
-                    totalExp += Math.min(30, Math.max(0, currentSeq - 1));
                 }
             }
         });
@@ -362,26 +358,46 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
             const sortedParams = [...params].sort((a, b) => a.seq - b.seq);
             const groupedLevels = [];
             let currentGroup = null;
-
+            let runningExCumulative = 0;
             sortedParams.forEach((lvl, idx) => {
-                const prevReq = idx === 0 ? 0 : sortedParams[idx - 1].requirement;
-                const delta = lvl.requirement - prevReq;
-
-                // Adjust EXP display for EX types in Modal
                 const isExType = t === 'play_live_ex' || t === 'waiting_room_ex';
-                const effectiveExp = isExType ? Math.max(0, lvl.seq - 1) : lvl.exp;
 
-                if (currentGroup && currentGroup.delta === delta && currentGroup.exp === effectiveExp) {
-                    currentGroup.levels.push(lvl.seq);
-                    currentGroup.requirements.push(lvl.requirement);
+                if (!isExType) {
+                    const prevReq = idx === 0 ? 0 : sortedParams[idx - 1].requirement;
+                    const delta = lvl.requirement - prevReq;
+                    if (currentGroup && !currentGroup.isEx && currentGroup.delta === delta && currentGroup.exp === lvl.exp) {
+                        currentGroup.levels.push(lvl.seq);
+                        currentGroup.requirements.push(lvl.requirement);
+                    } else {
+                        if (currentGroup) groupedLevels.push(currentGroup);
+                        currentGroup = {
+                            isEx: false,
+                            delta: delta,
+                            exp: lvl.exp,
+                            levels: [lvl.seq],
+                            requirements: [lvl.requirement]
+                        };
+                    }
                 } else {
                     if (currentGroup) groupedLevels.push(currentGroup);
-                    currentGroup = {
-                        delta: delta,
-                        exp: effectiveExp,
-                        levels: [lvl.seq],
-                        requirements: [lvl.requirement]
-                    };
+                    currentGroup = null;
+
+                    const nextSeq = idx < sortedParams.length - 1 ? sortedParams[idx + 1].seq : lvl.seq + 1;
+                    const stepCount = nextSeq - lvl.seq;
+                    const stepCumulatives = [];
+                    const stepRequirements = [];
+                    for (let s = 0; s < stepCount; s++) {
+                        runningExCumulative += lvl.requirement;
+                        stepCumulatives.push(runningExCumulative);
+                        stepRequirements.push(lvl.requirement);
+                    }
+                    groupedLevels.push({
+                        isEx: true,
+                        exp: lvl.exp,
+                        quantity: lvl.quantity || 0,
+                        cumulatives: stepCumulatives,
+                        requirements: stepRequirements
+                    });
                 }
             });
             if (currentGroup) groupedLevels.push(currentGroup);
@@ -461,7 +477,6 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         const getChallengeExp = (val) => Math.max(0, Math.min(val, 151) - 1);
         const currentExp = isChallenge ? getChallengeExp(currentVal) : currentVal;
         const addTotalExp = isChallenge ? getChallengeExp(currentVal + addVal) : (currentVal + addVal);
-        const addedExpOnly = Math.max(0, addTotalExp - currentExp);
 
         // EX Mode variables
         const hasExMode = !!config.exType;
@@ -683,7 +698,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
     const rankDiff = expectedRankInfo.rank - currentRankInfo.rank;
 
     return (
-        <div className="px-4 pt-2 max-w-4xl mx-auto pb-0">
+        <div className="px-4 pt-2 max-w-4xl mx-auto">
             {modalConfig && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setModalConfig(null)}>
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
@@ -709,31 +724,48 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                             <table className="w-full text-xs text-center whitespace-nowrap">
                                                 <thead className="bg-gray-50 text-gray-500 font-medium">
                                                     <tr>
-                                                        <th className="px-3 py-2 border-b border-r border-gray-200">{detail.isEx ? t('rank.modal.req_per_lvl') : t('rank.modal.cumulative')}</th>
-                                                        <th className="px-3 py-2 border-b border-r border-gray-200">{detail.isEx ? t('rank.modal.req_increase') : t('rank.modal.req_per_lvl')}</th>
+                                                        <th className="px-3 py-2 border-b border-r border-gray-200">
+                                                            {t('rank.modal.cumulative')}
+                                                        </th>
+                                                        <th className="px-3 py-2 border-b border-r border-gray-200">
+                                                            {t('rank.modal.req_per_lvl')}
+                                                        </th>
                                                         <th className="px-3 py-2 border-b border-gray-200">{t('rank.modal.exp_gain')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-100">
                                                     {detail.groupedLevels.map((group, gIdx) => {
-                                                        let rangeText = group.requirements[0].toLocaleString();
-                                                        if (group.requirements.length > 1) {
-                                                            if (group.requirements.length <= 4) {
-                                                                rangeText = group.requirements.map(r => r.toLocaleString()).join('/');
-                                                            } else {
-                                                                const start = group.requirements.slice(0, 2).map(r => r.toLocaleString()).join('/');
-                                                                const end = group.requirements.slice(-2).map(r => r.toLocaleString()).join('/');
-                                                                rangeText = `${start}...${end}`;
+                                                        let cumulativeText = "";
+                                                        let perLevelText = "";
+
+                                                        if (group.isEx) {
+                                                            cumulativeText = group.cumulatives.map(v => v.toLocaleString()).join('/');
+                                                            perLevelText = group.requirements[0].toLocaleString();
+                                                        } else {
+                                                            // Standard range formatting for Cumulative column
+                                                            cumulativeText = group.requirements[0].toLocaleString();
+                                                            if (group.requirements.length > 1) {
+                                                                if (group.requirements.length <= 4) {
+                                                                    cumulativeText = group.requirements.map(r => r.toLocaleString()).join('/');
+                                                                } else {
+                                                                    const start = group.requirements.slice(0, 2).map(r => r.toLocaleString()).join('/');
+                                                                    const end = group.requirements.slice(-2).map(r => r.toLocaleString()).join('/');
+                                                                    cumulativeText = `${start}...${end}`;
+                                                                }
                                                             }
+                                                            perLevelText = group.delta > 0 ? group.delta.toLocaleString() : '-';
                                                         }
+
                                                         return (
                                                             <tr key={gIdx} className="hover:bg-gray-50/50">
-                                                                <td className="px-3 py-2 border-r border-gray-100">{rangeText}</td>
+                                                                <td className="px-3 py-2 border-r border-gray-100">{cumulativeText}</td>
                                                                 <td className="px-3 py-2 border-r border-gray-100 text-gray-500">
-                                                                    {group.delta > 0 ? group.delta.toLocaleString() : '-'}
+                                                                    {perLevelText}
                                                                 </td>
-                                                                <td className="px-3 py-2 text-emerald-600 font-medium">
-                                                                    {group.exp === 0 ? '100카게라' : `+${group.exp}`}
+                                                                <td className={`px-3 py-2 font-medium ${group.exp === 0 && group.quantity > 0 ? 'text-pink-600' : 'text-emerald-600'}`}>
+                                                                    {group.exp === 0 && group.quantity > 0
+                                                                        ? `+${group.quantity}${t('rank.modal.kakera')}`
+                                                                        : `+${group.exp}`}
                                                                 </td>
                                                             </tr>
                                                         );
@@ -788,7 +820,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                 {t('rank.missions.etc_note')}
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 border-t border-gray-200 z-50 safe-area-bottom">
+            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 border-t border-gray-200 z-[100] safe-area-bottom">
                 <div className="max-w-4xl mx-auto flex items-center justify-between px-4">
                     <div className="flex flex-col">
                         <span className="text-xs text-gray-500">{t('rank.current_rank')}</span>
