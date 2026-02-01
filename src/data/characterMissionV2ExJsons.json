@@ -1,0 +1,14 @@
+[
+  {
+    "characterMissionExType": "play_live_ex",
+    "characterMissionType": "play_live",
+    "id": 1,
+    "resourceType": "material"
+  },
+  {
+    "characterMissionExType": "waiting_room_ex",
+    "characterMissionType": "waiting_room",
+    "id": 2,
+    "resourceType": "material"
+  }
+]

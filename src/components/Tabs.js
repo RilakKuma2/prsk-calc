@@ -10,6 +10,7 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     { id: 'amatsuyu', name: t('tabs.amatsuyu') },
     { id: 'challenge', name: t('tabs.challenge') },
     { id: 'level', name: t('tabs.level') },
+    { id: 'rank', name: t('tabs.rank') },
     { id: 'gacha', name: t('tabs.gacha') },
   ];
 

@@ -1,0 +1,322 @@
+[
+  {
+    "areaItemId": 1,
+    "characterId": 1,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 1
+  },
+  {
+    "areaItemId": 2,
+    "characterId": 2,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 2
+  },
+  {
+    "areaItemId": 3,
+    "characterId": 3,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 3
+  },
+  {
+    "areaItemId": 4,
+    "characterId": 4,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 4
+  },
+  {
+    "areaItemId": 5,
+    "characterId": 5,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 5
+  },
+  {
+    "areaItemId": 6,
+    "characterId": 6,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 6
+  },
+  {
+    "areaItemId": 7,
+    "characterId": 7,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 7
+  },
+  {
+    "areaItemId": 8,
+    "characterId": 8,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 8
+  },
+  {
+    "areaItemId": 9,
+    "characterId": 9,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 9
+  },
+  {
+    "areaItemId": 10,
+    "characterId": 10,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 10
+  },
+  {
+    "areaItemId": 11,
+    "characterId": 11,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 11
+  },
+  {
+    "areaItemId": 12,
+    "characterId": 12,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 12
+  },
+  {
+    "areaItemId": 13,
+    "characterId": 13,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 13
+  },
+  {
+    "areaItemId": 14,
+    "characterId": 14,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 14
+  },
+  {
+    "areaItemId": 15,
+    "characterId": 15,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 15
+  },
+  {
+    "areaItemId": 16,
+    "characterId": 16,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 16
+  },
+  {
+    "areaItemId": 17,
+    "characterId": 17,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 17
+  },
+  {
+    "areaItemId": 18,
+    "characterId": 18,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 18
+  },
+  {
+    "areaItemId": 19,
+    "characterId": 19,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 19
+  },
+  {
+    "areaItemId": 20,
+    "characterId": 20,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 20
+  },
+  {
+    "areaItemId": 21,
+    "characterId": 21,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 21
+  },
+  {
+    "areaItemId": 22,
+    "characterId": 21,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 22
+  },
+  {
+    "areaItemId": 23,
+    "characterId": 21,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 23
+  },
+  {
+    "areaItemId": 24,
+    "characterId": 21,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 24
+  },
+  {
+    "areaItemId": 25,
+    "characterId": 21,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 25
+  },
+  {
+    "areaItemId": 26,
+    "characterId": 22,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 26
+  },
+  {
+    "areaItemId": 27,
+    "characterId": 23,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 27
+  },
+  {
+    "areaItemId": 28,
+    "characterId": 24,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 28
+  },
+  {
+    "areaItemId": 29,
+    "characterId": 26,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 29
+  },
+  {
+    "areaItemId": 30,
+    "characterId": 25,
+    "characterMissionType": "area_item_level_up_character",
+    "id": 30
+  },
+  {
+    "areaItemId": 31,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 31,
+    "unit": "light_sound"
+  },
+  {
+    "areaItemId": 32,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 32,
+    "unit": "light_sound"
+  },
+  {
+    "areaItemId": 33,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 33,
+    "unit": "idol"
+  },
+  {
+    "areaItemId": 34,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 34,
+    "unit": "idol"
+  },
+  {
+    "areaItemId": 35,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 35,
+    "unit": "street"
+  },
+  {
+    "areaItemId": 36,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 36,
+    "unit": "street"
+  },
+  {
+    "areaItemId": 37,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 37,
+    "unit": "theme_park"
+  },
+  {
+    "areaItemId": 38,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 38,
+    "unit": "theme_park"
+  },
+  {
+    "areaItemId": 39,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 39,
+    "unit": "school_refusal"
+  },
+  {
+    "areaItemId": 40,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 40,
+    "unit": "school_refusal"
+  },
+  {
+    "areaItemId": 41,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 41,
+    "unit": "piapro"
+  },
+  {
+    "areaItemId": 42,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 42,
+    "unit": "piapro"
+  },
+  {
+    "areaItemId": 43,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 43,
+    "unit": "piapro"
+  },
+  {
+    "areaItemId": 44,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 44,
+    "unit": "piapro"
+  },
+  {
+    "areaItemId": 45,
+    "characterMissionType": "area_item_level_up_unit",
+    "id": 45,
+    "unit": "piapro"
+  },
+  {
+    "areaItemId": 46,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 46
+  },
+  {
+    "areaItemId": 47,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 47
+  },
+  {
+    "areaItemId": 48,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 48
+  },
+  {
+    "areaItemId": 49,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 49
+  },
+  {
+    "areaItemId": 50,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 50
+  },
+  {
+    "areaItemId": 51,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 51
+  },
+  {
+    "areaItemId": 52,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 52
+  },
+  {
+    "areaItemId": 53,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 53
+  },
+  {
+    "areaItemId": 54,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 54
+  },
+  {
+    "areaItemId": 55,
+    "characterMissionType": "area_item_level_up_reality_world",
+    "id": 55
+  }
+]

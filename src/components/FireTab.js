@@ -26,6 +26,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [predictionData, setPredictionData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [currentScoreLastUpdated, setCurrentScoreLastUpdated] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [eventInfo, setEventInfo] = useState(null);
   const [showTop50, setShowTop50] = useState(false);
@@ -135,6 +136,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         }
 
         const assetData = assetJson?.data?.eventRankings || [];
+        if (assetData.length > 0) {
+          setCurrentScoreLastUpdated(new Date(assetData[0].timestamp).getTime());
+        }
 
         // 1. Determine Event IDs
         const mainEventId = mainData.event_info?.id || 0;
@@ -218,8 +222,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
         finalData = finalData.filter(item => allowedRanks.has(item.rank));
 
+        setLastUpdated(mainData.updatedAt);
         setPredictionData(finalData);
-        setLastUpdated(mergedUpdatedAt);
         setStaleWarning(isStale);
 
         if (mergedEventInfo) {
@@ -261,9 +265,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const formatTime = (ms) => {
     if (!ms) return "-";
     const date = new Date(ms);
-    return date.toLocaleString('ko-KR', {
-      month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
-    });
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${m}. ${d}. ${h}:${min}`;
   };
 
   const getFireaValue = (firea) => {
@@ -1736,13 +1742,25 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 {/* Top Row: Last Updated | Event Name | Ends In */}
                 <div className="flex justify-between items-center mb-2 gap-1 sm:gap-2">
                   {/* Last Updated (Left) */}
-                  <div className="flex flex-col items-start min-w-max">
-                    <span className="text-[9px] sm:text-[10px] text-gray-400 font-medium leading-none mb-0.5 sm:mb-1">
-                      {t('fire.last_updated')}
-                    </span>
-                    <span className="text-[10px] sm:text-xs text-gray-700 font-extrabold tracking-tight">
-                      {lastUpdated ? formatTime(lastUpdated) : "-"}
-                    </span>
+                  <div className="flex flex-col items-start min-w-max gap-1">
+                    <div className="flex flex-col w-full">
+                      <span className="text-[9px] sm:text-[10px] text-gray-400 font-medium leading-none mb-0.5">
+                        {t('fire.last_updated')}
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-black font-extrabold tabular-nums">
+                        {lastUpdated ? formatTime(lastUpdated) : "-"}
+                      </span>
+                    </div>
+                    {currentScoreLastUpdated && (
+                      <div className="flex flex-col pt-1 border-t border-gray-100 w-full">
+                        <span className="text-[9px] sm:text-[10px] text-gray-400 font-medium leading-none mb-0.5">
+                          {t('fire.current_score_updated')}
+                        </span>
+                        <span className="text-[10px] sm:text-xs text-black font-extrabold tabular-nums">
+                          {formatTime(currentScoreLastUpdated)}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Event Name (Center) - Replaced with Banner */}
@@ -1778,7 +1796,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
                 {/* Progress Bar */}
                 {(() => {
-                  const currentTs = lastUpdated ? lastUpdated / 1000 : Date.now() / 1000;
+                  const maxTs = Math.max(lastUpdated || 0, currentScoreLastUpdated || 0);
+                  const currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
                   const elapsedHours = Math.max(0, (currentTs - eventInfo.start) / 3600);
                   const totalHours = eventInfo.len;
                   const progress = Math.min(100, Math.max(0, (elapsedHours / totalHours) * 100));
@@ -1814,7 +1833,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             {!eventInfo && (
               <div className="flex justify-between items-center text-xs mt-2 text-gray-500 px-1">
                 <span>
-                  {lastUpdated && `${t('fire.last_updated')}: ${formatTime(lastUpdated)} `}
+                  <div className="text-[10px] text-black font-medium tabular-nums">
+                    {lastUpdated && <div>{`${t('fire.last_updated')}: ${formatTime(lastUpdated)}`}</div>}
+                    {currentScoreLastUpdated && <div>{`${t('fire.current_score_updated')}: ${formatTime(currentScoreLastUpdated)}`}</div>}
+                  </div>
                 </span>
                 <span>
                   {timeRemaining !== null && `${t('fire.ends_in')}: ${formatDuration(timeRemaining)} `}

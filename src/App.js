@@ -12,6 +12,7 @@ import UpcomingEvents from './components/UpcomingEvents';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
 import GachaTab from './components/GachaTab';
+import CharacterRankTab from './components/CharacterRankTab';
 
 // Main tab to path mapping
 const TAB_PATHS = {
@@ -23,6 +24,7 @@ const TAB_PATHS = {
   scoreArt: '/scoreart',
   level: '/level',
   gacha: '/gacha',
+  rank: '/CR',
 };
 
 const PATH_TO_TAB = Object.entries(TAB_PATHS).reduce((acc, [tab, path]) => {
@@ -38,6 +40,7 @@ function AppContent() {
   // Determine current tab from URL path
   const getTabFromPath = useCallback(() => {
     const path = location.pathname;
+
     // Check for exact match first
     if (PATH_TO_TAB[path]) {
       return { mainTab: PATH_TO_TAB[path], subPath: null };
@@ -120,6 +123,7 @@ function AppContent() {
     amatsuyu: <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     scoreArt: <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     gacha: <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
+    rank: <CharacterRankTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
   };
 
   const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });

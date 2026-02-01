@@ -1,0 +1,6902 @@
+[
+  {
+    "id": 1,
+    "level": 1,
+    "levelType": "card_skill_1",
+    "totalExp": 0
+  },
+  {
+    "id": 2,
+    "level": 2,
+    "levelType": "card_skill_1",
+    "totalExp": 1
+  },
+  {
+    "id": 3,
+    "level": 3,
+    "levelType": "card_skill_1",
+    "totalExp": 3
+  },
+  {
+    "id": 4,
+    "level": 4,
+    "levelType": "card_skill_1",
+    "totalExp": 5
+  },
+  {
+    "id": 5,
+    "level": 1,
+    "levelType": "card_skill_2",
+    "totalExp": 0
+  },
+  {
+    "id": 6,
+    "level": 2,
+    "levelType": "card_skill_2",
+    "totalExp": 5
+  },
+  {
+    "id": 7,
+    "level": 3,
+    "levelType": "card_skill_2",
+    "totalExp": 15
+  },
+  {
+    "id": 8,
+    "level": 4,
+    "levelType": "card_skill_2",
+    "totalExp": 25
+  },
+  {
+    "id": 9,
+    "level": 1,
+    "levelType": "card_skill_3",
+    "totalExp": 0
+  },
+  {
+    "id": 10,
+    "level": 2,
+    "levelType": "card_skill_3",
+    "totalExp": 25
+  },
+  {
+    "id": 11,
+    "level": 3,
+    "levelType": "card_skill_3",
+    "totalExp": 100
+  },
+  {
+    "id": 12,
+    "level": 4,
+    "levelType": "card_skill_3",
+    "totalExp": 250
+  },
+  {
+    "id": 13,
+    "level": 1,
+    "levelType": "card_skill_4",
+    "totalExp": 0
+  },
+  {
+    "id": 14,
+    "level": 2,
+    "levelType": "card_skill_4",
+    "totalExp": 1000
+  },
+  {
+    "id": 15,
+    "level": 3,
+    "levelType": "card_skill_4",
+    "totalExp": 4000
+  },
+  {
+    "id": 16,
+    "level": 4,
+    "levelType": "card_skill_4",
+    "totalExp": 10000
+  },
+  {
+    "id": 17,
+    "level": 1,
+    "levelType": "card",
+    "totalExp": 0
+  },
+  {
+    "id": 18,
+    "level": 2,
+    "levelType": "card",
+    "totalExp": 3000
+  },
+  {
+    "id": 19,
+    "level": 3,
+    "levelType": "card",
+    "totalExp": 7000
+  },
+  {
+    "id": 20,
+    "level": 4,
+    "levelType": "card",
+    "totalExp": 12000
+  },
+  {
+    "id": 21,
+    "level": 5,
+    "levelType": "card",
+    "totalExp": 17400
+  },
+  {
+    "id": 22,
+    "level": 6,
+    "levelType": "card",
+    "totalExp": 23200
+  },
+  {
+    "id": 23,
+    "level": 7,
+    "levelType": "card",
+    "totalExp": 29400
+  },
+  {
+    "id": 24,
+    "level": 8,
+    "levelType": "card",
+    "totalExp": 36000
+  },
+  {
+    "id": 25,
+    "level": 9,
+    "levelType": "card",
+    "totalExp": 43000
+  },
+  {
+    "id": 26,
+    "level": 10,
+    "levelType": "card",
+    "totalExp": 50400
+  },
+  {
+    "id": 27,
+    "level": 11,
+    "levelType": "card",
+    "totalExp": 58200
+  },
+  {
+    "id": 28,
+    "level": 12,
+    "levelType": "card",
+    "totalExp": 66400
+  },
+  {
+    "id": 29,
+    "level": 13,
+    "levelType": "card",
+    "totalExp": 75000
+  },
+  {
+    "id": 30,
+    "level": 14,
+    "levelType": "card",
+    "totalExp": 84000
+  },
+  {
+    "id": 31,
+    "level": 15,
+    "levelType": "card",
+    "totalExp": 93400
+  },
+  {
+    "id": 32,
+    "level": 16,
+    "levelType": "card",
+    "totalExp": 103200
+  },
+  {
+    "id": 33,
+    "level": 17,
+    "levelType": "card",
+    "totalExp": 113400
+  },
+  {
+    "id": 34,
+    "level": 18,
+    "levelType": "card",
+    "totalExp": 124000
+  },
+  {
+    "id": 35,
+    "level": 19,
+    "levelType": "card",
+    "totalExp": 135000
+  },
+  {
+    "id": 36,
+    "level": 20,
+    "levelType": "card",
+    "totalExp": 146400
+  },
+  {
+    "id": 37,
+    "level": 21,
+    "levelType": "card",
+    "totalExp": 158200
+  },
+  {
+    "id": 38,
+    "level": 22,
+    "levelType": "card",
+    "totalExp": 170400
+  },
+  {
+    "id": 39,
+    "level": 23,
+    "levelType": "card",
+    "totalExp": 183000
+  },
+  {
+    "id": 40,
+    "level": 24,
+    "levelType": "card",
+    "totalExp": 196000
+  },
+  {
+    "id": 41,
+    "level": 25,
+    "levelType": "card",
+    "totalExp": 209400
+  },
+  {
+    "id": 42,
+    "level": 26,
+    "levelType": "card",
+    "totalExp": 223200
+  },
+  {
+    "id": 43,
+    "level": 27,
+    "levelType": "card",
+    "totalExp": 237400
+  },
+  {
+    "id": 44,
+    "level": 28,
+    "levelType": "card",
+    "totalExp": 252000
+  },
+  {
+    "id": 45,
+    "level": 29,
+    "levelType": "card",
+    "totalExp": 267000
+  },
+  {
+    "id": 46,
+    "level": 30,
+    "levelType": "card",
+    "totalExp": 282400
+  },
+  {
+    "id": 47,
+    "level": 31,
+    "levelType": "card",
+    "totalExp": 298200
+  },
+  {
+    "id": 48,
+    "level": 32,
+    "levelType": "card",
+    "totalExp": 314400
+  },
+  {
+    "id": 49,
+    "level": 33,
+    "levelType": "card",
+    "totalExp": 331000
+  },
+  {
+    "id": 50,
+    "level": 34,
+    "levelType": "card",
+    "totalExp": 348000
+  },
+  {
+    "id": 51,
+    "level": 35,
+    "levelType": "card",
+    "totalExp": 365400
+  },
+  {
+    "id": 52,
+    "level": 36,
+    "levelType": "card",
+    "totalExp": 383200
+  },
+  {
+    "id": 53,
+    "level": 37,
+    "levelType": "card",
+    "totalExp": 401400
+  },
+  {
+    "id": 54,
+    "level": 38,
+    "levelType": "card",
+    "totalExp": 420000
+  },
+  {
+    "id": 55,
+    "level": 39,
+    "levelType": "card",
+    "totalExp": 439000
+  },
+  {
+    "id": 56,
+    "level": 40,
+    "levelType": "card",
+    "totalExp": 458400
+  },
+  {
+    "id": 57,
+    "level": 41,
+    "levelType": "card",
+    "totalExp": 478200
+  },
+  {
+    "id": 58,
+    "level": 42,
+    "levelType": "card",
+    "totalExp": 498400
+  },
+  {
+    "id": 59,
+    "level": 43,
+    "levelType": "card",
+    "totalExp": 519000
+  },
+  {
+    "id": 60,
+    "level": 44,
+    "levelType": "card",
+    "totalExp": 540000
+  },
+  {
+    "id": 61,
+    "level": 45,
+    "levelType": "card",
+    "totalExp": 561400
+  },
+  {
+    "id": 62,
+    "level": 46,
+    "levelType": "card",
+    "totalExp": 583200
+  },
+  {
+    "id": 63,
+    "level": 47,
+    "levelType": "card",
+    "totalExp": 605400
+  },
+  {
+    "id": 64,
+    "level": 48,
+    "levelType": "card",
+    "totalExp": 628000
+  },
+  {
+    "id": 65,
+    "level": 49,
+    "levelType": "card",
+    "totalExp": 651000
+  },
+  {
+    "id": 66,
+    "level": 50,
+    "levelType": "card",
+    "totalExp": 674400
+  },
+  {
+    "id": 67,
+    "level": 51,
+    "levelType": "card",
+    "totalExp": 698200
+  },
+  {
+    "id": 68,
+    "level": 52,
+    "levelType": "card",
+    "totalExp": 722400
+  },
+  {
+    "id": 69,
+    "level": 53,
+    "levelType": "card",
+    "totalExp": 747000
+  },
+  {
+    "id": 70,
+    "level": 54,
+    "levelType": "card",
+    "totalExp": 772000
+  },
+  {
+    "id": 71,
+    "level": 55,
+    "levelType": "card",
+    "totalExp": 797400
+  },
+  {
+    "id": 72,
+    "level": 56,
+    "levelType": "card",
+    "totalExp": 823200
+  },
+  {
+    "id": 73,
+    "level": 57,
+    "levelType": "card",
+    "totalExp": 849400
+  },
+  {
+    "id": 74,
+    "level": 58,
+    "levelType": "card",
+    "totalExp": 876000
+  },
+  {
+    "id": 75,
+    "level": 59,
+    "levelType": "card",
+    "totalExp": 903000
+  },
+  {
+    "id": 76,
+    "level": 60,
+    "levelType": "card",
+    "totalExp": 930400
+  },
+  {
+    "id": 101,
+    "level": 1,
+    "levelType": "user",
+    "totalExp": 0
+  },
+  {
+    "id": 102,
+    "level": 2,
+    "levelType": "user",
+    "totalExp": 10
+  },
+  {
+    "id": 103,
+    "level": 3,
+    "levelType": "user",
+    "totalExp": 8020
+  },
+  {
+    "id": 104,
+    "level": 4,
+    "levelType": "user",
+    "totalExp": 16520
+  },
+  {
+    "id": 105,
+    "level": 5,
+    "levelType": "user",
+    "totalExp": 25520
+  },
+  {
+    "id": 106,
+    "level": 6,
+    "levelType": "user",
+    "totalExp": 35020
+  },
+  {
+    "id": 107,
+    "level": 7,
+    "levelType": "user",
+    "totalExp": 45020
+  },
+  {
+    "id": 108,
+    "level": 8,
+    "levelType": "user",
+    "totalExp": 55520
+  },
+  {
+    "id": 109,
+    "level": 9,
+    "levelType": "user",
+    "totalExp": 66520
+  },
+  {
+    "id": 110,
+    "level": 10,
+    "levelType": "user",
+    "totalExp": 78020
+  },
+  {
+    "id": 111,
+    "level": 11,
+    "levelType": "user",
+    "totalExp": 90020
+  },
+  {
+    "id": 112,
+    "level": 12,
+    "levelType": "user",
+    "totalExp": 102520
+  },
+  {
+    "id": 113,
+    "level": 13,
+    "levelType": "user",
+    "totalExp": 115520
+  },
+  {
+    "id": 114,
+    "level": 14,
+    "levelType": "user",
+    "totalExp": 129520
+  },
+  {
+    "id": 115,
+    "level": 15,
+    "levelType": "user",
+    "totalExp": 144520
+  },
+  {
+    "id": 116,
+    "level": 16,
+    "levelType": "user",
+    "totalExp": 160520
+  },
+  {
+    "id": 117,
+    "level": 17,
+    "levelType": "user",
+    "totalExp": 177000
+  },
+  {
+    "id": 118,
+    "level": 18,
+    "levelType": "user",
+    "totalExp": 193960
+  },
+  {
+    "id": 119,
+    "level": 19,
+    "levelType": "user",
+    "totalExp": 211400
+  },
+  {
+    "id": 120,
+    "level": 20,
+    "levelType": "user",
+    "totalExp": 229320
+  },
+  {
+    "id": 121,
+    "level": 21,
+    "levelType": "user",
+    "totalExp": 247720
+  },
+  {
+    "id": 122,
+    "level": 22,
+    "levelType": "user",
+    "totalExp": 266600
+  },
+  {
+    "id": 123,
+    "level": 23,
+    "levelType": "user",
+    "totalExp": 285960
+  },
+  {
+    "id": 124,
+    "level": 24,
+    "levelType": "user",
+    "totalExp": 305800
+  },
+  {
+    "id": 125,
+    "level": 25,
+    "levelType": "user",
+    "totalExp": 326120
+  },
+  {
+    "id": 126,
+    "level": 26,
+    "levelType": "user",
+    "totalExp": 346920
+  },
+  {
+    "id": 127,
+    "level": 27,
+    "levelType": "user",
+    "totalExp": 368200
+  },
+  {
+    "id": 128,
+    "level": 28,
+    "levelType": "user",
+    "totalExp": 389960
+  },
+  {
+    "id": 129,
+    "level": 29,
+    "levelType": "user",
+    "totalExp": 412200
+  },
+  {
+    "id": 130,
+    "level": 30,
+    "levelType": "user",
+    "totalExp": 434920
+  },
+  {
+    "id": 131,
+    "level": 31,
+    "levelType": "user",
+    "totalExp": 458120
+  },
+  {
+    "id": 132,
+    "level": 32,
+    "levelType": "user",
+    "totalExp": 481800
+  },
+  {
+    "id": 133,
+    "level": 33,
+    "levelType": "user",
+    "totalExp": 505960
+  },
+  {
+    "id": 134,
+    "level": 34,
+    "levelType": "user",
+    "totalExp": 530600
+  },
+  {
+    "id": 135,
+    "level": 35,
+    "levelType": "user",
+    "totalExp": 555720
+  },
+  {
+    "id": 136,
+    "level": 36,
+    "levelType": "user",
+    "totalExp": 581320
+  },
+  {
+    "id": 137,
+    "level": 37,
+    "levelType": "user",
+    "totalExp": 607400
+  },
+  {
+    "id": 138,
+    "level": 38,
+    "levelType": "user",
+    "totalExp": 633960
+  },
+  {
+    "id": 139,
+    "level": 39,
+    "levelType": "user",
+    "totalExp": 661000
+  },
+  {
+    "id": 140,
+    "level": 40,
+    "levelType": "user",
+    "totalExp": 688520
+  },
+  {
+    "id": 141,
+    "level": 41,
+    "levelType": "user",
+    "totalExp": 716520
+  },
+  {
+    "id": 142,
+    "level": 42,
+    "levelType": "user",
+    "totalExp": 745000
+  },
+  {
+    "id": 143,
+    "level": 43,
+    "levelType": "user",
+    "totalExp": 773960
+  },
+  {
+    "id": 144,
+    "level": 44,
+    "levelType": "user",
+    "totalExp": 803400
+  },
+  {
+    "id": 145,
+    "level": 45,
+    "levelType": "user",
+    "totalExp": 833320
+  },
+  {
+    "id": 146,
+    "level": 46,
+    "levelType": "user",
+    "totalExp": 863720
+  },
+  {
+    "id": 147,
+    "level": 47,
+    "levelType": "user",
+    "totalExp": 894600
+  },
+  {
+    "id": 148,
+    "level": 48,
+    "levelType": "user",
+    "totalExp": 925960
+  },
+  {
+    "id": 149,
+    "level": 49,
+    "levelType": "user",
+    "totalExp": 957800
+  },
+  {
+    "id": 150,
+    "level": 50,
+    "levelType": "user",
+    "totalExp": 990120
+  },
+  {
+    "id": 151,
+    "level": 51,
+    "levelType": "user",
+    "totalExp": 1022920
+  },
+  {
+    "id": 152,
+    "level": 52,
+    "levelType": "user",
+    "totalExp": 1056200
+  },
+  {
+    "id": 153,
+    "level": 53,
+    "levelType": "user",
+    "totalExp": 1089960
+  },
+  {
+    "id": 154,
+    "level": 54,
+    "levelType": "user",
+    "totalExp": 1124200
+  },
+  {
+    "id": 155,
+    "level": 55,
+    "levelType": "user",
+    "totalExp": 1158920
+  },
+  {
+    "id": 156,
+    "level": 56,
+    "levelType": "user",
+    "totalExp": 1194120
+  },
+  {
+    "id": 157,
+    "level": 57,
+    "levelType": "user",
+    "totalExp": 1229800
+  },
+  {
+    "id": 158,
+    "level": 58,
+    "levelType": "user",
+    "totalExp": 1265960
+  },
+  {
+    "id": 159,
+    "level": 59,
+    "levelType": "user",
+    "totalExp": 1302600
+  },
+  {
+    "id": 160,
+    "level": 60,
+    "levelType": "user",
+    "totalExp": 1339720
+  },
+  {
+    "id": 161,
+    "level": 61,
+    "levelType": "user",
+    "totalExp": 1377320
+  },
+  {
+    "id": 162,
+    "level": 62,
+    "levelType": "user",
+    "totalExp": 1415400
+  },
+  {
+    "id": 163,
+    "level": 63,
+    "levelType": "user",
+    "totalExp": 1453960
+  },
+  {
+    "id": 164,
+    "level": 64,
+    "levelType": "user",
+    "totalExp": 1493000
+  },
+  {
+    "id": 165,
+    "level": 65,
+    "levelType": "user",
+    "totalExp": 1532520
+  },
+  {
+    "id": 166,
+    "level": 66,
+    "levelType": "user",
+    "totalExp": 1572520
+  },
+  {
+    "id": 167,
+    "level": 67,
+    "levelType": "user",
+    "totalExp": 1613000
+  },
+  {
+    "id": 168,
+    "level": 68,
+    "levelType": "user",
+    "totalExp": 1653960
+  },
+  {
+    "id": 169,
+    "level": 69,
+    "levelType": "user",
+    "totalExp": 1695400
+  },
+  {
+    "id": 170,
+    "level": 70,
+    "levelType": "user",
+    "totalExp": 1737320
+  },
+  {
+    "id": 171,
+    "level": 71,
+    "levelType": "user",
+    "totalExp": 1779720
+  },
+  {
+    "id": 172,
+    "level": 72,
+    "levelType": "user",
+    "totalExp": 1822600
+  },
+  {
+    "id": 173,
+    "level": 73,
+    "levelType": "user",
+    "totalExp": 1865960
+  },
+  {
+    "id": 174,
+    "level": 74,
+    "levelType": "user",
+    "totalExp": 1909800
+  },
+  {
+    "id": 175,
+    "level": 75,
+    "levelType": "user",
+    "totalExp": 1954120
+  },
+  {
+    "id": 176,
+    "level": 76,
+    "levelType": "user",
+    "totalExp": 1998920
+  },
+  {
+    "id": 177,
+    "level": 77,
+    "levelType": "user",
+    "totalExp": 2044200
+  },
+  {
+    "id": 178,
+    "level": 78,
+    "levelType": "user",
+    "totalExp": 2089960
+  },
+  {
+    "id": 179,
+    "level": 79,
+    "levelType": "user",
+    "totalExp": 2136200
+  },
+  {
+    "id": 180,
+    "level": 80,
+    "levelType": "user",
+    "totalExp": 2182920
+  },
+  {
+    "id": 181,
+    "level": 81,
+    "levelType": "user",
+    "totalExp": 2230120
+  },
+  {
+    "id": 182,
+    "level": 82,
+    "levelType": "user",
+    "totalExp": 2277800
+  },
+  {
+    "id": 183,
+    "level": 83,
+    "levelType": "user",
+    "totalExp": 2325960
+  },
+  {
+    "id": 184,
+    "level": 84,
+    "levelType": "user",
+    "totalExp": 2374600
+  },
+  {
+    "id": 185,
+    "level": 85,
+    "levelType": "user",
+    "totalExp": 2423720
+  },
+  {
+    "id": 186,
+    "level": 86,
+    "levelType": "user",
+    "totalExp": 2473320
+  },
+  {
+    "id": 187,
+    "level": 87,
+    "levelType": "user",
+    "totalExp": 2523400
+  },
+  {
+    "id": 188,
+    "level": 88,
+    "levelType": "user",
+    "totalExp": 2573960
+  },
+  {
+    "id": 189,
+    "level": 89,
+    "levelType": "user",
+    "totalExp": 2625000
+  },
+  {
+    "id": 190,
+    "level": 90,
+    "levelType": "user",
+    "totalExp": 2676520
+  },
+  {
+    "id": 191,
+    "level": 91,
+    "levelType": "user",
+    "totalExp": 2728520
+  },
+  {
+    "id": 192,
+    "level": 92,
+    "levelType": "user",
+    "totalExp": 2781000
+  },
+  {
+    "id": 193,
+    "level": 93,
+    "levelType": "user",
+    "totalExp": 2833960
+  },
+  {
+    "id": 194,
+    "level": 94,
+    "levelType": "user",
+    "totalExp": 2887400
+  },
+  {
+    "id": 195,
+    "level": 95,
+    "levelType": "user",
+    "totalExp": 2941320
+  },
+  {
+    "id": 196,
+    "level": 96,
+    "levelType": "user",
+    "totalExp": 2995720
+  },
+  {
+    "id": 197,
+    "level": 97,
+    "levelType": "user",
+    "totalExp": 3050600
+  },
+  {
+    "id": 198,
+    "level": 98,
+    "levelType": "user",
+    "totalExp": 3105960
+  },
+  {
+    "id": 199,
+    "level": 99,
+    "levelType": "user",
+    "totalExp": 3161800
+  },
+  {
+    "id": 200,
+    "level": 100,
+    "levelType": "user",
+    "totalExp": 3218120
+  },
+  {
+    "id": 201,
+    "level": 1,
+    "levelType": "unit",
+    "totalExp": 0
+  },
+  {
+    "id": 202,
+    "level": 2,
+    "levelType": "unit",
+    "totalExp": 2000
+  },
+  {
+    "id": 203,
+    "level": 3,
+    "levelType": "unit",
+    "totalExp": 4500
+  },
+  {
+    "id": 204,
+    "level": 4,
+    "levelType": "unit",
+    "totalExp": 7500
+  },
+  {
+    "id": 205,
+    "level": 5,
+    "levelType": "unit",
+    "totalExp": 11000
+  },
+  {
+    "id": 206,
+    "level": 6,
+    "levelType": "unit",
+    "totalExp": 15000
+  },
+  {
+    "id": 207,
+    "level": 7,
+    "levelType": "unit",
+    "totalExp": 19500
+  },
+  {
+    "id": 208,
+    "level": 8,
+    "levelType": "unit",
+    "totalExp": 24500
+  },
+  {
+    "id": 209,
+    "level": 9,
+    "levelType": "unit",
+    "totalExp": 30000
+  },
+  {
+    "id": 210,
+    "level": 10,
+    "levelType": "unit",
+    "totalExp": 36000
+  },
+  {
+    "id": 211,
+    "level": 11,
+    "levelType": "unit",
+    "totalExp": 42500
+  },
+  {
+    "id": 212,
+    "level": 12,
+    "levelType": "unit",
+    "totalExp": 49500
+  },
+  {
+    "id": 213,
+    "level": 13,
+    "levelType": "unit",
+    "totalExp": 57000
+  },
+  {
+    "id": 214,
+    "level": 14,
+    "levelType": "unit",
+    "totalExp": 65000
+  },
+  {
+    "id": 215,
+    "level": 15,
+    "levelType": "unit",
+    "totalExp": 73500
+  },
+  {
+    "id": 216,
+    "level": 16,
+    "levelType": "unit",
+    "totalExp": 82500
+  },
+  {
+    "id": 217,
+    "level": 17,
+    "levelType": "unit",
+    "totalExp": 92000
+  },
+  {
+    "id": 218,
+    "level": 18,
+    "levelType": "unit",
+    "totalExp": 102000
+  },
+  {
+    "id": 219,
+    "level": 19,
+    "levelType": "unit",
+    "totalExp": 112500
+  },
+  {
+    "id": 220,
+    "level": 20,
+    "levelType": "unit",
+    "totalExp": 123500
+  },
+  {
+    "id": 221,
+    "level": 1,
+    "levelType": "character",
+    "totalExp": 0
+  },
+  {
+    "id": 222,
+    "level": 2,
+    "levelType": "character",
+    "totalExp": 1
+  },
+  {
+    "id": 223,
+    "level": 3,
+    "levelType": "character",
+    "totalExp": 2
+  },
+  {
+    "id": 224,
+    "level": 4,
+    "levelType": "character",
+    "totalExp": 4
+  },
+  {
+    "id": 225,
+    "level": 5,
+    "levelType": "character",
+    "totalExp": 7
+  },
+  {
+    "id": 226,
+    "level": 6,
+    "levelType": "character",
+    "totalExp": 10
+  },
+  {
+    "id": 227,
+    "level": 7,
+    "levelType": "character",
+    "totalExp": 14
+  },
+  {
+    "id": 228,
+    "level": 8,
+    "levelType": "character",
+    "totalExp": 18
+  },
+  {
+    "id": 229,
+    "level": 9,
+    "levelType": "character",
+    "totalExp": 22
+  },
+  {
+    "id": 230,
+    "level": 10,
+    "levelType": "character",
+    "totalExp": 26
+  },
+  {
+    "id": 231,
+    "level": 11,
+    "levelType": "character",
+    "totalExp": 30
+  },
+  {
+    "id": 232,
+    "level": 12,
+    "levelType": "character",
+    "totalExp": 35
+  },
+  {
+    "id": 233,
+    "level": 13,
+    "levelType": "character",
+    "totalExp": 40
+  },
+  {
+    "id": 234,
+    "level": 14,
+    "levelType": "character",
+    "totalExp": 45
+  },
+  {
+    "id": 235,
+    "level": 15,
+    "levelType": "character",
+    "totalExp": 50
+  },
+  {
+    "id": 236,
+    "level": 16,
+    "levelType": "character",
+    "totalExp": 55
+  },
+  {
+    "id": 237,
+    "level": 17,
+    "levelType": "character",
+    "totalExp": 61
+  },
+  {
+    "id": 238,
+    "level": 18,
+    "levelType": "character",
+    "totalExp": 67
+  },
+  {
+    "id": 239,
+    "level": 19,
+    "levelType": "character",
+    "totalExp": 73
+  },
+  {
+    "id": 240,
+    "level": 20,
+    "levelType": "character",
+    "totalExp": 79
+  },
+  {
+    "id": 241,
+    "level": 21,
+    "levelType": "character",
+    "totalExp": 85
+  },
+  {
+    "id": 242,
+    "level": 22,
+    "levelType": "character",
+    "totalExp": 92
+  },
+  {
+    "id": 243,
+    "level": 23,
+    "levelType": "character",
+    "totalExp": 99
+  },
+  {
+    "id": 244,
+    "level": 24,
+    "levelType": "character",
+    "totalExp": 106
+  },
+  {
+    "id": 245,
+    "level": 25,
+    "levelType": "character",
+    "totalExp": 113
+  },
+  {
+    "id": 246,
+    "level": 26,
+    "levelType": "character",
+    "totalExp": 120
+  },
+  {
+    "id": 247,
+    "level": 27,
+    "levelType": "character",
+    "totalExp": 128
+  },
+  {
+    "id": 248,
+    "level": 28,
+    "levelType": "character",
+    "totalExp": 136
+  },
+  {
+    "id": 249,
+    "level": 29,
+    "levelType": "character",
+    "totalExp": 144
+  },
+  {
+    "id": 250,
+    "level": 30,
+    "levelType": "character",
+    "totalExp": 152
+  },
+  {
+    "id": 251,
+    "level": 31,
+    "levelType": "character",
+    "totalExp": 160
+  },
+  {
+    "id": 252,
+    "level": 32,
+    "levelType": "character",
+    "totalExp": 169
+  },
+  {
+    "id": 253,
+    "level": 33,
+    "levelType": "character",
+    "totalExp": 178
+  },
+  {
+    "id": 254,
+    "level": 34,
+    "levelType": "character",
+    "totalExp": 187
+  },
+  {
+    "id": 255,
+    "level": 35,
+    "levelType": "character",
+    "totalExp": 196
+  },
+  {
+    "id": 256,
+    "level": 36,
+    "levelType": "character",
+    "totalExp": 205
+  },
+  {
+    "id": 257,
+    "level": 37,
+    "levelType": "character",
+    "totalExp": 215
+  },
+  {
+    "id": 258,
+    "level": 38,
+    "levelType": "character",
+    "totalExp": 225
+  },
+  {
+    "id": 259,
+    "level": 39,
+    "levelType": "character",
+    "totalExp": 235
+  },
+  {
+    "id": 260,
+    "level": 40,
+    "levelType": "character",
+    "totalExp": 245
+  },
+  {
+    "id": 261,
+    "level": 41,
+    "levelType": "character",
+    "totalExp": 255
+  },
+  {
+    "id": 262,
+    "level": 42,
+    "levelType": "character",
+    "totalExp": 265
+  },
+  {
+    "id": 263,
+    "level": 43,
+    "levelType": "character",
+    "totalExp": 275
+  },
+  {
+    "id": 264,
+    "level": 44,
+    "levelType": "character",
+    "totalExp": 285
+  },
+  {
+    "id": 265,
+    "level": 45,
+    "levelType": "character",
+    "totalExp": 295
+  },
+  {
+    "id": 266,
+    "level": 46,
+    "levelType": "character",
+    "totalExp": 305
+  },
+  {
+    "id": 267,
+    "level": 47,
+    "levelType": "character",
+    "totalExp": 315
+  },
+  {
+    "id": 268,
+    "level": 48,
+    "levelType": "character",
+    "totalExp": 325
+  },
+  {
+    "id": 269,
+    "level": 49,
+    "levelType": "character",
+    "totalExp": 335
+  },
+  {
+    "id": 270,
+    "level": 50,
+    "levelType": "character",
+    "totalExp": 345
+  },
+  {
+    "id": 271,
+    "level": 101,
+    "levelType": "user",
+    "totalExp": 3274922
+  },
+  {
+    "id": 272,
+    "level": 102,
+    "levelType": "user",
+    "totalExp": 3332208
+  },
+  {
+    "id": 273,
+    "level": 103,
+    "levelType": "user",
+    "totalExp": 3389980
+  },
+  {
+    "id": 274,
+    "level": 104,
+    "levelType": "user",
+    "totalExp": 3448240
+  },
+  {
+    "id": 275,
+    "level": 105,
+    "levelType": "user",
+    "totalExp": 3506990
+  },
+  {
+    "id": 276,
+    "level": 106,
+    "levelType": "user",
+    "totalExp": 3566235
+  },
+  {
+    "id": 277,
+    "level": 107,
+    "levelType": "user",
+    "totalExp": 3625980
+  },
+  {
+    "id": 278,
+    "level": 108,
+    "levelType": "user",
+    "totalExp": 3686230
+  },
+  {
+    "id": 279,
+    "level": 109,
+    "levelType": "user",
+    "totalExp": 3746990
+  },
+  {
+    "id": 280,
+    "level": 110,
+    "levelType": "user",
+    "totalExp": 3808265
+  },
+  {
+    "id": 281,
+    "level": 111,
+    "levelType": "user",
+    "totalExp": 3870060
+  },
+  {
+    "id": 282,
+    "level": 112,
+    "levelType": "user",
+    "totalExp": 3932380
+  },
+  {
+    "id": 283,
+    "level": 113,
+    "levelType": "user",
+    "totalExp": 3995230
+  },
+  {
+    "id": 284,
+    "level": 114,
+    "levelType": "user",
+    "totalExp": 4058615
+  },
+  {
+    "id": 285,
+    "level": 115,
+    "levelType": "user",
+    "totalExp": 4122540
+  },
+  {
+    "id": 286,
+    "level": 116,
+    "levelType": "user",
+    "totalExp": 4187010
+  },
+  {
+    "id": 287,
+    "level": 117,
+    "levelType": "user",
+    "totalExp": 4252030
+  },
+  {
+    "id": 288,
+    "level": 118,
+    "levelType": "user",
+    "totalExp": 4317605
+  },
+  {
+    "id": 289,
+    "level": 119,
+    "levelType": "user",
+    "totalExp": 4383740
+  },
+  {
+    "id": 290,
+    "level": 120,
+    "levelType": "user",
+    "totalExp": 4450440
+  },
+  {
+    "id": 291,
+    "level": 121,
+    "levelType": "user",
+    "totalExp": 4517710
+  },
+  {
+    "id": 292,
+    "level": 122,
+    "levelType": "user",
+    "totalExp": 4585555
+  },
+  {
+    "id": 293,
+    "level": 123,
+    "levelType": "user",
+    "totalExp": 4653980
+  },
+  {
+    "id": 294,
+    "level": 124,
+    "levelType": "user",
+    "totalExp": 4722990
+  },
+  {
+    "id": 295,
+    "level": 125,
+    "levelType": "user",
+    "totalExp": 4792590
+  },
+  {
+    "id": 296,
+    "level": 126,
+    "levelType": "user",
+    "totalExp": 4862785
+  },
+  {
+    "id": 297,
+    "level": 127,
+    "levelType": "user",
+    "totalExp": 4933580
+  },
+  {
+    "id": 298,
+    "level": 128,
+    "levelType": "user",
+    "totalExp": 5004980
+  },
+  {
+    "id": 299,
+    "level": 129,
+    "levelType": "user",
+    "totalExp": 5076990
+  },
+  {
+    "id": 300,
+    "level": 130,
+    "levelType": "user",
+    "totalExp": 5149615
+  },
+  {
+    "id": 301,
+    "level": 131,
+    "levelType": "user",
+    "totalExp": 5222860
+  },
+  {
+    "id": 302,
+    "level": 132,
+    "levelType": "user",
+    "totalExp": 5296730
+  },
+  {
+    "id": 303,
+    "level": 133,
+    "levelType": "user",
+    "totalExp": 5371230
+  },
+  {
+    "id": 304,
+    "level": 134,
+    "levelType": "user",
+    "totalExp": 5446365
+  },
+  {
+    "id": 305,
+    "level": 135,
+    "levelType": "user",
+    "totalExp": 5522140
+  },
+  {
+    "id": 306,
+    "level": 136,
+    "levelType": "user",
+    "totalExp": 5598560
+  },
+  {
+    "id": 307,
+    "level": 137,
+    "levelType": "user",
+    "totalExp": 5675630
+  },
+  {
+    "id": 308,
+    "level": 138,
+    "levelType": "user",
+    "totalExp": 5753355
+  },
+  {
+    "id": 309,
+    "level": 139,
+    "levelType": "user",
+    "totalExp": 5831740
+  },
+  {
+    "id": 310,
+    "level": 140,
+    "levelType": "user",
+    "totalExp": 5910790
+  },
+  {
+    "id": 311,
+    "level": 141,
+    "levelType": "user",
+    "totalExp": 5990510
+  },
+  {
+    "id": 312,
+    "level": 142,
+    "levelType": "user",
+    "totalExp": 6070905
+  },
+  {
+    "id": 313,
+    "level": 143,
+    "levelType": "user",
+    "totalExp": 6151980
+  },
+  {
+    "id": 314,
+    "level": 144,
+    "levelType": "user",
+    "totalExp": 6233740
+  },
+  {
+    "id": 315,
+    "level": 145,
+    "levelType": "user",
+    "totalExp": 6316190
+  },
+  {
+    "id": 316,
+    "level": 146,
+    "levelType": "user",
+    "totalExp": 6399335
+  },
+  {
+    "id": 317,
+    "level": 147,
+    "levelType": "user",
+    "totalExp": 6483180
+  },
+  {
+    "id": 318,
+    "level": 148,
+    "levelType": "user",
+    "totalExp": 6567730
+  },
+  {
+    "id": 319,
+    "level": 149,
+    "levelType": "user",
+    "totalExp": 6652990
+  },
+  {
+    "id": 320,
+    "level": 150,
+    "levelType": "user",
+    "totalExp": 6738965
+  },
+  {
+    "id": 321,
+    "level": 151,
+    "levelType": "user",
+    "totalExp": 6825660
+  },
+  {
+    "id": 322,
+    "level": 152,
+    "levelType": "user",
+    "totalExp": 6913080
+  },
+  {
+    "id": 323,
+    "level": 153,
+    "levelType": "user",
+    "totalExp": 7001230
+  },
+  {
+    "id": 324,
+    "level": 154,
+    "levelType": "user",
+    "totalExp": 7090115
+  },
+  {
+    "id": 325,
+    "level": 155,
+    "levelType": "user",
+    "totalExp": 7179740
+  },
+  {
+    "id": 326,
+    "level": 156,
+    "levelType": "user",
+    "totalExp": 7270110
+  },
+  {
+    "id": 327,
+    "level": 157,
+    "levelType": "user",
+    "totalExp": 7361230
+  },
+  {
+    "id": 328,
+    "level": 158,
+    "levelType": "user",
+    "totalExp": 7453105
+  },
+  {
+    "id": 329,
+    "level": 159,
+    "levelType": "user",
+    "totalExp": 7545740
+  },
+  {
+    "id": 330,
+    "level": 160,
+    "levelType": "user",
+    "totalExp": 7639140
+  },
+  {
+    "id": 331,
+    "level": 161,
+    "levelType": "user",
+    "totalExp": 7733310
+  },
+  {
+    "id": 332,
+    "level": 162,
+    "levelType": "user",
+    "totalExp": 7828255
+  },
+  {
+    "id": 333,
+    "level": 163,
+    "levelType": "user",
+    "totalExp": 7923980
+  },
+  {
+    "id": 334,
+    "level": 164,
+    "levelType": "user",
+    "totalExp": 8020490
+  },
+  {
+    "id": 335,
+    "level": 165,
+    "levelType": "user",
+    "totalExp": 8117790
+  },
+  {
+    "id": 336,
+    "level": 166,
+    "levelType": "user",
+    "totalExp": 8215885
+  },
+  {
+    "id": 337,
+    "level": 167,
+    "levelType": "user",
+    "totalExp": 8314780
+  },
+  {
+    "id": 338,
+    "level": 168,
+    "levelType": "user",
+    "totalExp": 8414480
+  },
+  {
+    "id": 339,
+    "level": 169,
+    "levelType": "user",
+    "totalExp": 8514990
+  },
+  {
+    "id": 340,
+    "level": 170,
+    "levelType": "user",
+    "totalExp": 8616315
+  },
+  {
+    "id": 341,
+    "level": 171,
+    "levelType": "user",
+    "totalExp": 8718460
+  },
+  {
+    "id": 342,
+    "level": 172,
+    "levelType": "user",
+    "totalExp": 8821430
+  },
+  {
+    "id": 343,
+    "level": 173,
+    "levelType": "user",
+    "totalExp": 8925230
+  },
+  {
+    "id": 344,
+    "level": 174,
+    "levelType": "user",
+    "totalExp": 9029865
+  },
+  {
+    "id": 345,
+    "level": 175,
+    "levelType": "user",
+    "totalExp": 9135340
+  },
+  {
+    "id": 346,
+    "level": 176,
+    "levelType": "user",
+    "totalExp": 9241660
+  },
+  {
+    "id": 347,
+    "level": 177,
+    "levelType": "user",
+    "totalExp": 9348830
+  },
+  {
+    "id": 348,
+    "level": 178,
+    "levelType": "user",
+    "totalExp": 9456855
+  },
+  {
+    "id": 349,
+    "level": 179,
+    "levelType": "user",
+    "totalExp": 9565740
+  },
+  {
+    "id": 350,
+    "level": 180,
+    "levelType": "user",
+    "totalExp": 9675490
+  },
+  {
+    "id": 351,
+    "level": 181,
+    "levelType": "user",
+    "totalExp": 9786110
+  },
+  {
+    "id": 352,
+    "level": 182,
+    "levelType": "user",
+    "totalExp": 9897605
+  },
+  {
+    "id": 353,
+    "level": 183,
+    "levelType": "user",
+    "totalExp": 10009980
+  },
+  {
+    "id": 354,
+    "level": 184,
+    "levelType": "user",
+    "totalExp": 10123240
+  },
+  {
+    "id": 355,
+    "level": 185,
+    "levelType": "user",
+    "totalExp": 10237390
+  },
+  {
+    "id": 356,
+    "level": 186,
+    "levelType": "user",
+    "totalExp": 10352435
+  },
+  {
+    "id": 357,
+    "level": 187,
+    "levelType": "user",
+    "totalExp": 10468380
+  },
+  {
+    "id": 358,
+    "level": 188,
+    "levelType": "user",
+    "totalExp": 10585230
+  },
+  {
+    "id": 359,
+    "level": 189,
+    "levelType": "user",
+    "totalExp": 10702990
+  },
+  {
+    "id": 360,
+    "level": 190,
+    "levelType": "user",
+    "totalExp": 10821665
+  },
+  {
+    "id": 361,
+    "level": 191,
+    "levelType": "user",
+    "totalExp": 10941260
+  },
+  {
+    "id": 362,
+    "level": 192,
+    "levelType": "user",
+    "totalExp": 11061780
+  },
+  {
+    "id": 363,
+    "level": 193,
+    "levelType": "user",
+    "totalExp": 11183230
+  },
+  {
+    "id": 364,
+    "level": 194,
+    "levelType": "user",
+    "totalExp": 11305615
+  },
+  {
+    "id": 365,
+    "level": 195,
+    "levelType": "user",
+    "totalExp": 11428940
+  },
+  {
+    "id": 366,
+    "level": 196,
+    "levelType": "user",
+    "totalExp": 11553210
+  },
+  {
+    "id": 367,
+    "level": 197,
+    "levelType": "user",
+    "totalExp": 11678430
+  },
+  {
+    "id": 368,
+    "level": 198,
+    "levelType": "user",
+    "totalExp": 11804605
+  },
+  {
+    "id": 369,
+    "level": 199,
+    "levelType": "user",
+    "totalExp": 11931740
+  },
+  {
+    "id": 370,
+    "level": 200,
+    "levelType": "user",
+    "totalExp": 12059835
+  },
+  {
+    "id": 371,
+    "level": 201,
+    "levelType": "user",
+    "totalExp": 12188890
+  },
+  {
+    "id": 372,
+    "level": 202,
+    "levelType": "user",
+    "totalExp": 12318905
+  },
+  {
+    "id": 373,
+    "level": 203,
+    "levelType": "user",
+    "totalExp": 12449880
+  },
+  {
+    "id": 374,
+    "level": 204,
+    "levelType": "user",
+    "totalExp": 12581815
+  },
+  {
+    "id": 375,
+    "level": 205,
+    "levelType": "user",
+    "totalExp": 12714710
+  },
+  {
+    "id": 376,
+    "level": 206,
+    "levelType": "user",
+    "totalExp": 12848565
+  },
+  {
+    "id": 377,
+    "level": 207,
+    "levelType": "user",
+    "totalExp": 12983380
+  },
+  {
+    "id": 378,
+    "level": 208,
+    "levelType": "user",
+    "totalExp": 13119155
+  },
+  {
+    "id": 379,
+    "level": 209,
+    "levelType": "user",
+    "totalExp": 13255890
+  },
+  {
+    "id": 380,
+    "level": 210,
+    "levelType": "user",
+    "totalExp": 13393585
+  },
+  {
+    "id": 381,
+    "level": 211,
+    "levelType": "user",
+    "totalExp": 13532250
+  },
+  {
+    "id": 382,
+    "level": 212,
+    "levelType": "user",
+    "totalExp": 13671885
+  },
+  {
+    "id": 383,
+    "level": 213,
+    "levelType": "user",
+    "totalExp": 13812490
+  },
+  {
+    "id": 384,
+    "level": 214,
+    "levelType": "user",
+    "totalExp": 13954065
+  },
+  {
+    "id": 385,
+    "level": 215,
+    "levelType": "user",
+    "totalExp": 14096610
+  },
+  {
+    "id": 386,
+    "level": 216,
+    "levelType": "user",
+    "totalExp": 14240125
+  },
+  {
+    "id": 387,
+    "level": 217,
+    "levelType": "user",
+    "totalExp": 14384610
+  },
+  {
+    "id": 388,
+    "level": 218,
+    "levelType": "user",
+    "totalExp": 14530065
+  },
+  {
+    "id": 389,
+    "level": 219,
+    "levelType": "user",
+    "totalExp": 14676490
+  },
+  {
+    "id": 390,
+    "level": 220,
+    "levelType": "user",
+    "totalExp": 14823885
+  },
+  {
+    "id": 391,
+    "level": 221,
+    "levelType": "user",
+    "totalExp": 14972260
+  },
+  {
+    "id": 392,
+    "level": 222,
+    "levelType": "user",
+    "totalExp": 15121615
+  },
+  {
+    "id": 393,
+    "level": 223,
+    "levelType": "user",
+    "totalExp": 15271950
+  },
+  {
+    "id": 394,
+    "level": 224,
+    "levelType": "user",
+    "totalExp": 15423265
+  },
+  {
+    "id": 395,
+    "level": 225,
+    "levelType": "user",
+    "totalExp": 15575560
+  },
+  {
+    "id": 396,
+    "level": 226,
+    "levelType": "user",
+    "totalExp": 15728835
+  },
+  {
+    "id": 397,
+    "level": 227,
+    "levelType": "user",
+    "totalExp": 15883090
+  },
+  {
+    "id": 398,
+    "level": 228,
+    "levelType": "user",
+    "totalExp": 16038325
+  },
+  {
+    "id": 399,
+    "level": 229,
+    "levelType": "user",
+    "totalExp": 16194540
+  },
+  {
+    "id": 400,
+    "level": 230,
+    "levelType": "user",
+    "totalExp": 16351735
+  },
+  {
+    "id": 401,
+    "level": 231,
+    "levelType": "user",
+    "totalExp": 16509920
+  },
+  {
+    "id": 402,
+    "level": 232,
+    "levelType": "user",
+    "totalExp": 16669095
+  },
+  {
+    "id": 403,
+    "level": 233,
+    "levelType": "user",
+    "totalExp": 16829260
+  },
+  {
+    "id": 404,
+    "level": 234,
+    "levelType": "user",
+    "totalExp": 16990415
+  },
+  {
+    "id": 405,
+    "level": 235,
+    "levelType": "user",
+    "totalExp": 17152560
+  },
+  {
+    "id": 406,
+    "level": 236,
+    "levelType": "user",
+    "totalExp": 17315695
+  },
+  {
+    "id": 407,
+    "level": 237,
+    "levelType": "user",
+    "totalExp": 17479820
+  },
+  {
+    "id": 408,
+    "level": 238,
+    "levelType": "user",
+    "totalExp": 17644935
+  },
+  {
+    "id": 409,
+    "level": 239,
+    "levelType": "user",
+    "totalExp": 17811040
+  },
+  {
+    "id": 410,
+    "level": 240,
+    "levelType": "user",
+    "totalExp": 17978135
+  },
+  {
+    "id": 411,
+    "level": 241,
+    "levelType": "user",
+    "totalExp": 18146230
+  },
+  {
+    "id": 412,
+    "level": 242,
+    "levelType": "user",
+    "totalExp": 18315325
+  },
+  {
+    "id": 413,
+    "level": 243,
+    "levelType": "user",
+    "totalExp": 18485420
+  },
+  {
+    "id": 414,
+    "level": 244,
+    "levelType": "user",
+    "totalExp": 18656515
+  },
+  {
+    "id": 415,
+    "level": 245,
+    "levelType": "user",
+    "totalExp": 18828610
+  },
+  {
+    "id": 416,
+    "level": 246,
+    "levelType": "user",
+    "totalExp": 19001705
+  },
+  {
+    "id": 417,
+    "level": 247,
+    "levelType": "user",
+    "totalExp": 19175800
+  },
+  {
+    "id": 418,
+    "level": 248,
+    "levelType": "user",
+    "totalExp": 19350895
+  },
+  {
+    "id": 419,
+    "level": 249,
+    "levelType": "user",
+    "totalExp": 19526990
+  },
+  {
+    "id": 420,
+    "level": 250,
+    "levelType": "user",
+    "totalExp": 19704085
+  },
+  {
+    "id": 421,
+    "level": 251,
+    "levelType": "user",
+    "totalExp": 19882190
+  },
+  {
+    "id": 422,
+    "level": 252,
+    "levelType": "user",
+    "totalExp": 20061305
+  },
+  {
+    "id": 423,
+    "level": 253,
+    "levelType": "user",
+    "totalExp": 20241430
+  },
+  {
+    "id": 424,
+    "level": 254,
+    "levelType": "user",
+    "totalExp": 20422565
+  },
+  {
+    "id": 425,
+    "level": 255,
+    "levelType": "user",
+    "totalExp": 20604710
+  },
+  {
+    "id": 426,
+    "level": 256,
+    "levelType": "user",
+    "totalExp": 20787865
+  },
+  {
+    "id": 427,
+    "level": 257,
+    "levelType": "user",
+    "totalExp": 20972030
+  },
+  {
+    "id": 428,
+    "level": 258,
+    "levelType": "user",
+    "totalExp": 21157205
+  },
+  {
+    "id": 429,
+    "level": 259,
+    "levelType": "user",
+    "totalExp": 21343390
+  },
+  {
+    "id": 430,
+    "level": 260,
+    "levelType": "user",
+    "totalExp": 21530585
+  },
+  {
+    "id": 431,
+    "level": 261,
+    "levelType": "user",
+    "totalExp": 21718800
+  },
+  {
+    "id": 432,
+    "level": 262,
+    "levelType": "user",
+    "totalExp": 21908035
+  },
+  {
+    "id": 433,
+    "level": 263,
+    "levelType": "user",
+    "totalExp": 22098290
+  },
+  {
+    "id": 434,
+    "level": 264,
+    "levelType": "user",
+    "totalExp": 22289565
+  },
+  {
+    "id": 435,
+    "level": 265,
+    "levelType": "user",
+    "totalExp": 22481860
+  },
+  {
+    "id": 436,
+    "level": 266,
+    "levelType": "user",
+    "totalExp": 22675175
+  },
+  {
+    "id": 437,
+    "level": 267,
+    "levelType": "user",
+    "totalExp": 22869510
+  },
+  {
+    "id": 438,
+    "level": 268,
+    "levelType": "user",
+    "totalExp": 23064865
+  },
+  {
+    "id": 439,
+    "level": 269,
+    "levelType": "user",
+    "totalExp": 23261240
+  },
+  {
+    "id": 440,
+    "level": 270,
+    "levelType": "user",
+    "totalExp": 23458635
+  },
+  {
+    "id": 441,
+    "level": 271,
+    "levelType": "user",
+    "totalExp": 23657060
+  },
+  {
+    "id": 442,
+    "level": 272,
+    "levelType": "user",
+    "totalExp": 23856515
+  },
+  {
+    "id": 443,
+    "level": 273,
+    "levelType": "user",
+    "totalExp": 24057000
+  },
+  {
+    "id": 444,
+    "level": 274,
+    "levelType": "user",
+    "totalExp": 24258515
+  },
+  {
+    "id": 445,
+    "level": 275,
+    "levelType": "user",
+    "totalExp": 24461060
+  },
+  {
+    "id": 446,
+    "level": 276,
+    "levelType": "user",
+    "totalExp": 24664635
+  },
+  {
+    "id": 447,
+    "level": 277,
+    "levelType": "user",
+    "totalExp": 24869240
+  },
+  {
+    "id": 448,
+    "level": 278,
+    "levelType": "user",
+    "totalExp": 25074875
+  },
+  {
+    "id": 449,
+    "level": 279,
+    "levelType": "user",
+    "totalExp": 25281540
+  },
+  {
+    "id": 450,
+    "level": 280,
+    "levelType": "user",
+    "totalExp": 25489235
+  },
+  {
+    "id": 451,
+    "level": 281,
+    "levelType": "user",
+    "totalExp": 25697970
+  },
+  {
+    "id": 452,
+    "level": 282,
+    "levelType": "user",
+    "totalExp": 25907745
+  },
+  {
+    "id": 453,
+    "level": 283,
+    "levelType": "user",
+    "totalExp": 26118560
+  },
+  {
+    "id": 454,
+    "level": 284,
+    "levelType": "user",
+    "totalExp": 26330415
+  },
+  {
+    "id": 455,
+    "level": 285,
+    "levelType": "user",
+    "totalExp": 26543310
+  },
+  {
+    "id": 456,
+    "level": 286,
+    "levelType": "user",
+    "totalExp": 26757245
+  },
+  {
+    "id": 457,
+    "level": 287,
+    "levelType": "user",
+    "totalExp": 26972220
+  },
+  {
+    "id": 458,
+    "level": 288,
+    "levelType": "user",
+    "totalExp": 27188235
+  },
+  {
+    "id": 459,
+    "level": 289,
+    "levelType": "user",
+    "totalExp": 27405290
+  },
+  {
+    "id": 460,
+    "level": 290,
+    "levelType": "user",
+    "totalExp": 27623385
+  },
+  {
+    "id": 461,
+    "level": 291,
+    "levelType": "user",
+    "totalExp": 27842530
+  },
+  {
+    "id": 462,
+    "level": 292,
+    "levelType": "user",
+    "totalExp": 28062725
+  },
+  {
+    "id": 463,
+    "level": 293,
+    "levelType": "user",
+    "totalExp": 28283970
+  },
+  {
+    "id": 464,
+    "level": 294,
+    "levelType": "user",
+    "totalExp": 28506265
+  },
+  {
+    "id": 465,
+    "level": 295,
+    "levelType": "user",
+    "totalExp": 28729610
+  },
+  {
+    "id": 466,
+    "level": 296,
+    "levelType": "user",
+    "totalExp": 28954005
+  },
+  {
+    "id": 467,
+    "level": 297,
+    "levelType": "user",
+    "totalExp": 29179450
+  },
+  {
+    "id": 468,
+    "level": 298,
+    "levelType": "user",
+    "totalExp": 29405945
+  },
+  {
+    "id": 469,
+    "level": 299,
+    "levelType": "user",
+    "totalExp": 29633490
+  },
+  {
+    "id": 470,
+    "level": 300,
+    "levelType": "user",
+    "totalExp": 29862085
+  },
+  {
+    "id": 471,
+    "level": 301,
+    "levelType": "user",
+    "totalExp": 30091750
+  },
+  {
+    "id": 472,
+    "level": 302,
+    "levelType": "user",
+    "totalExp": 30322505
+  },
+  {
+    "id": 473,
+    "level": 303,
+    "levelType": "user",
+    "totalExp": 30554370
+  },
+  {
+    "id": 474,
+    "level": 304,
+    "levelType": "user",
+    "totalExp": 30787365
+  },
+  {
+    "id": 475,
+    "level": 305,
+    "levelType": "user",
+    "totalExp": 31021510
+  },
+  {
+    "id": 476,
+    "level": 306,
+    "levelType": "user",
+    "totalExp": 31256825
+  },
+  {
+    "id": 477,
+    "level": 307,
+    "levelType": "user",
+    "totalExp": 31493330
+  },
+  {
+    "id": 478,
+    "level": 308,
+    "levelType": "user",
+    "totalExp": 31731045
+  },
+  {
+    "id": 479,
+    "level": 309,
+    "levelType": "user",
+    "totalExp": 31969990
+  },
+  {
+    "id": 480,
+    "level": 310,
+    "levelType": "user",
+    "totalExp": 32210185
+  },
+  {
+    "id": 481,
+    "level": 311,
+    "levelType": "user",
+    "totalExp": 32451660
+  },
+  {
+    "id": 482,
+    "level": 312,
+    "levelType": "user",
+    "totalExp": 32694445
+  },
+  {
+    "id": 483,
+    "level": 313,
+    "levelType": "user",
+    "totalExp": 32938570
+  },
+  {
+    "id": 484,
+    "level": 314,
+    "levelType": "user",
+    "totalExp": 33184065
+  },
+  {
+    "id": 485,
+    "level": 315,
+    "levelType": "user",
+    "totalExp": 33430960
+  },
+  {
+    "id": 486,
+    "level": 316,
+    "levelType": "user",
+    "totalExp": 33679285
+  },
+  {
+    "id": 487,
+    "level": 317,
+    "levelType": "user",
+    "totalExp": 33929070
+  },
+  {
+    "id": 488,
+    "level": 318,
+    "levelType": "user",
+    "totalExp": 34180345
+  },
+  {
+    "id": 489,
+    "level": 319,
+    "levelType": "user",
+    "totalExp": 34433140
+  },
+  {
+    "id": 490,
+    "level": 320,
+    "levelType": "user",
+    "totalExp": 34687485
+  },
+  {
+    "id": 491,
+    "level": 321,
+    "levelType": "user",
+    "totalExp": 34943420
+  },
+  {
+    "id": 492,
+    "level": 322,
+    "levelType": "user",
+    "totalExp": 35200985
+  },
+  {
+    "id": 493,
+    "level": 323,
+    "levelType": "user",
+    "totalExp": 35460220
+  },
+  {
+    "id": 494,
+    "level": 324,
+    "levelType": "user",
+    "totalExp": 35721165
+  },
+  {
+    "id": 495,
+    "level": 325,
+    "levelType": "user",
+    "totalExp": 35983860
+  },
+  {
+    "id": 496,
+    "level": 326,
+    "levelType": "user",
+    "totalExp": 36248345
+  },
+  {
+    "id": 497,
+    "level": 327,
+    "levelType": "user",
+    "totalExp": 36514660
+  },
+  {
+    "id": 498,
+    "level": 328,
+    "levelType": "user",
+    "totalExp": 36782845
+  },
+  {
+    "id": 499,
+    "level": 329,
+    "levelType": "user",
+    "totalExp": 37052940
+  },
+  {
+    "id": 500,
+    "level": 330,
+    "levelType": "user",
+    "totalExp": 37324985
+  },
+  {
+    "id": 501,
+    "level": 331,
+    "levelType": "user",
+    "totalExp": 37599030
+  },
+  {
+    "id": 502,
+    "level": 332,
+    "levelType": "user",
+    "totalExp": 37875125
+  },
+  {
+    "id": 503,
+    "level": 333,
+    "levelType": "user",
+    "totalExp": 38153320
+  },
+  {
+    "id": 504,
+    "level": 334,
+    "levelType": "user",
+    "totalExp": 38433665
+  },
+  {
+    "id": 505,
+    "level": 335,
+    "levelType": "user",
+    "totalExp": 38716210
+  },
+  {
+    "id": 506,
+    "level": 336,
+    "levelType": "user",
+    "totalExp": 39001005
+  },
+  {
+    "id": 507,
+    "level": 337,
+    "levelType": "user",
+    "totalExp": 39288100
+  },
+  {
+    "id": 508,
+    "level": 338,
+    "levelType": "user",
+    "totalExp": 39577545
+  },
+  {
+    "id": 509,
+    "level": 339,
+    "levelType": "user",
+    "totalExp": 39869390
+  },
+  {
+    "id": 510,
+    "level": 340,
+    "levelType": "user",
+    "totalExp": 40163685
+  },
+  {
+    "id": 511,
+    "level": 341,
+    "levelType": "user",
+    "totalExp": 40460490
+  },
+  {
+    "id": 512,
+    "level": 342,
+    "levelType": "user",
+    "totalExp": 40759865
+  },
+  {
+    "id": 513,
+    "level": 343,
+    "levelType": "user",
+    "totalExp": 41061870
+  },
+  {
+    "id": 514,
+    "level": 344,
+    "levelType": "user",
+    "totalExp": 41366565
+  },
+  {
+    "id": 515,
+    "level": 345,
+    "levelType": "user",
+    "totalExp": 41674010
+  },
+  {
+    "id": 516,
+    "level": 346,
+    "levelType": "user",
+    "totalExp": 41984265
+  },
+  {
+    "id": 517,
+    "level": 347,
+    "levelType": "user",
+    "totalExp": 42297390
+  },
+  {
+    "id": 518,
+    "level": 348,
+    "levelType": "user",
+    "totalExp": 42613445
+  },
+  {
+    "id": 519,
+    "level": 349,
+    "levelType": "user",
+    "totalExp": 42932490
+  },
+  {
+    "id": 520,
+    "level": 350,
+    "levelType": "user",
+    "totalExp": 43254585
+  },
+  {
+    "id": 521,
+    "level": 351,
+    "levelType": "user",
+    "totalExp": 43579800
+  },
+  {
+    "id": 522,
+    "level": 352,
+    "levelType": "user",
+    "totalExp": 43908205
+  },
+  {
+    "id": 523,
+    "level": 353,
+    "levelType": "user",
+    "totalExp": 44239870
+  },
+  {
+    "id": 524,
+    "level": 354,
+    "levelType": "user",
+    "totalExp": 44574865
+  },
+  {
+    "id": 525,
+    "level": 355,
+    "levelType": "user",
+    "totalExp": 44913260
+  },
+  {
+    "id": 526,
+    "level": 356,
+    "levelType": "user",
+    "totalExp": 45255125
+  },
+  {
+    "id": 527,
+    "level": 357,
+    "levelType": "user",
+    "totalExp": 45600530
+  },
+  {
+    "id": 528,
+    "level": 358,
+    "levelType": "user",
+    "totalExp": 45949545
+  },
+  {
+    "id": 529,
+    "level": 359,
+    "levelType": "user",
+    "totalExp": 46302240
+  },
+  {
+    "id": 530,
+    "level": 360,
+    "levelType": "user",
+    "totalExp": 46658685
+  },
+  {
+    "id": 531,
+    "level": 361,
+    "levelType": "user",
+    "totalExp": 47018960
+  },
+  {
+    "id": 532,
+    "level": 362,
+    "levelType": "user",
+    "totalExp": 47383145
+  },
+  {
+    "id": 533,
+    "level": 363,
+    "levelType": "user",
+    "totalExp": 47751320
+  },
+  {
+    "id": 534,
+    "level": 364,
+    "levelType": "user",
+    "totalExp": 48123565
+  },
+  {
+    "id": 535,
+    "level": 365,
+    "levelType": "user",
+    "totalExp": 48499960
+  },
+  {
+    "id": 536,
+    "level": 366,
+    "levelType": "user",
+    "totalExp": 48880585
+  },
+  {
+    "id": 537,
+    "level": 367,
+    "levelType": "user",
+    "totalExp": 49265520
+  },
+  {
+    "id": 538,
+    "level": 368,
+    "levelType": "user",
+    "totalExp": 49654845
+  },
+  {
+    "id": 539,
+    "level": 369,
+    "levelType": "user",
+    "totalExp": 50048640
+  },
+  {
+    "id": 540,
+    "level": 370,
+    "levelType": "user",
+    "totalExp": 50446985
+  },
+  {
+    "id": 541,
+    "level": 371,
+    "levelType": "user",
+    "totalExp": 50849970
+  },
+  {
+    "id": 542,
+    "level": 372,
+    "levelType": "user",
+    "totalExp": 51257685
+  },
+  {
+    "id": 543,
+    "level": 373,
+    "levelType": "user",
+    "totalExp": 51670220
+  },
+  {
+    "id": 544,
+    "level": 374,
+    "levelType": "user",
+    "totalExp": 52087665
+  },
+  {
+    "id": 545,
+    "level": 375,
+    "levelType": "user",
+    "totalExp": 52510110
+  },
+  {
+    "id": 546,
+    "level": 376,
+    "levelType": "user",
+    "totalExp": 52937645
+  },
+  {
+    "id": 547,
+    "level": 377,
+    "levelType": "user",
+    "totalExp": 53370360
+  },
+  {
+    "id": 548,
+    "level": 378,
+    "levelType": "user",
+    "totalExp": 53808345
+  },
+  {
+    "id": 549,
+    "level": 379,
+    "levelType": "user",
+    "totalExp": 54251690
+  },
+  {
+    "id": 550,
+    "level": 380,
+    "levelType": "user",
+    "totalExp": 54700485
+  },
+  {
+    "id": 551,
+    "level": 381,
+    "levelType": "user",
+    "totalExp": 55154830
+  },
+  {
+    "id": 552,
+    "level": 382,
+    "levelType": "user",
+    "totalExp": 55614825
+  },
+  {
+    "id": 553,
+    "level": 383,
+    "levelType": "user",
+    "totalExp": 56080570
+  },
+  {
+    "id": 554,
+    "level": 384,
+    "levelType": "user",
+    "totalExp": 56552165
+  },
+  {
+    "id": 555,
+    "level": 385,
+    "levelType": "user",
+    "totalExp": 57029710
+  },
+  {
+    "id": 556,
+    "level": 386,
+    "levelType": "user",
+    "totalExp": 57513305
+  },
+  {
+    "id": 557,
+    "level": 387,
+    "levelType": "user",
+    "totalExp": 58003050
+  },
+  {
+    "id": 558,
+    "level": 388,
+    "levelType": "user",
+    "totalExp": 58499045
+  },
+  {
+    "id": 559,
+    "level": 389,
+    "levelType": "user",
+    "totalExp": 59001390
+  },
+  {
+    "id": 560,
+    "level": 390,
+    "levelType": "user",
+    "totalExp": 59510185
+  },
+  {
+    "id": 561,
+    "level": 391,
+    "levelType": "user",
+    "totalExp": 60025530
+  },
+  {
+    "id": 562,
+    "level": 392,
+    "levelType": "user",
+    "totalExp": 60547525
+  },
+  {
+    "id": 563,
+    "level": 393,
+    "levelType": "user",
+    "totalExp": 61076270
+  },
+  {
+    "id": 564,
+    "level": 394,
+    "levelType": "user",
+    "totalExp": 61611865
+  },
+  {
+    "id": 565,
+    "level": 395,
+    "levelType": "user",
+    "totalExp": 62154410
+  },
+  {
+    "id": 566,
+    "level": 396,
+    "levelType": "user",
+    "totalExp": 62704005
+  },
+  {
+    "id": 567,
+    "level": 397,
+    "levelType": "user",
+    "totalExp": 63260750
+  },
+  {
+    "id": 568,
+    "level": 398,
+    "levelType": "user",
+    "totalExp": 63824745
+  },
+  {
+    "id": 569,
+    "level": 399,
+    "levelType": "user",
+    "totalExp": 64396090
+  },
+  {
+    "id": 570,
+    "level": 400,
+    "levelType": "user",
+    "totalExp": 64974885
+  },
+  {
+    "id": 571,
+    "level": 1,
+    "levelType": "card_skill_birthday",
+    "totalExp": 0
+  },
+  {
+    "id": 572,
+    "level": 2,
+    "levelType": "card_skill_birthday",
+    "totalExp": 500
+  },
+  {
+    "id": 573,
+    "level": 3,
+    "levelType": "card_skill_birthday",
+    "totalExp": 2000
+  },
+  {
+    "id": 574,
+    "level": 4,
+    "levelType": "card_skill_birthday",
+    "totalExp": 5000
+  },
+  {
+    "id": 575,
+    "level": 1,
+    "levelType": "bonds",
+    "totalExp": 0
+  },
+  {
+    "id": 576,
+    "level": 2,
+    "levelType": "bonds",
+    "totalExp": 7224
+  },
+  {
+    "id": 577,
+    "level": 3,
+    "levelType": "bonds",
+    "totalExp": 14448
+  },
+  {
+    "id": 578,
+    "level": 4,
+    "levelType": "bonds",
+    "totalExp": 21672
+  },
+  {
+    "id": 579,
+    "level": 5,
+    "levelType": "bonds",
+    "totalExp": 28896
+  },
+  {
+    "id": 580,
+    "level": 6,
+    "levelType": "bonds",
+    "totalExp": 36120
+  },
+  {
+    "id": 581,
+    "level": 7,
+    "levelType": "bonds",
+    "totalExp": 64214
+  },
+  {
+    "id": 582,
+    "level": 8,
+    "levelType": "bonds",
+    "totalExp": 92308
+  },
+  {
+    "id": 583,
+    "level": 9,
+    "levelType": "bonds",
+    "totalExp": 120400
+  },
+  {
+    "id": 584,
+    "level": 10,
+    "levelType": "bonds",
+    "totalExp": 180600
+  },
+  {
+    "id": 585,
+    "level": 11,
+    "levelType": "bonds",
+    "totalExp": 240800
+  },
+  {
+    "id": 586,
+    "level": 12,
+    "levelType": "bonds",
+    "totalExp": 301000
+  },
+  {
+    "id": 587,
+    "level": 13,
+    "levelType": "bonds",
+    "totalExp": 371234
+  },
+  {
+    "id": 588,
+    "level": 14,
+    "levelType": "bonds",
+    "totalExp": 441468
+  },
+  {
+    "id": 589,
+    "level": 15,
+    "levelType": "bonds",
+    "totalExp": 511700
+  },
+  {
+    "id": 590,
+    "level": 16,
+    "levelType": "bonds",
+    "totalExp": 612034
+  },
+  {
+    "id": 591,
+    "level": 17,
+    "levelType": "bonds",
+    "totalExp": 712368
+  },
+  {
+    "id": 592,
+    "level": 18,
+    "levelType": "bonds",
+    "totalExp": 812700
+  },
+  {
+    "id": 593,
+    "level": 19,
+    "levelType": "bonds",
+    "totalExp": 943134
+  },
+  {
+    "id": 594,
+    "level": 20,
+    "levelType": "bonds",
+    "totalExp": 1073568
+  },
+  {
+    "id": 595,
+    "level": 21,
+    "levelType": "bonds",
+    "totalExp": 1204000
+  },
+  {
+    "id": 596,
+    "level": 22,
+    "levelType": "bonds",
+    "totalExp": 1364534
+  },
+  {
+    "id": 597,
+    "level": 23,
+    "levelType": "bonds",
+    "totalExp": 1525068
+  },
+  {
+    "id": 598,
+    "level": 24,
+    "levelType": "bonds",
+    "totalExp": 1685600
+  },
+  {
+    "id": 599,
+    "level": 25,
+    "levelType": "bonds",
+    "totalExp": 1896300
+  },
+  {
+    "id": 600,
+    "level": 26,
+    "levelType": "bonds",
+    "totalExp": 2107000
+  },
+  {
+    "id": 601,
+    "level": 27,
+    "levelType": "bonds",
+    "totalExp": 2317700
+  },
+  {
+    "id": 602,
+    "level": 28,
+    "levelType": "bonds",
+    "totalExp": 2568534
+  },
+  {
+    "id": 603,
+    "level": 29,
+    "levelType": "bonds",
+    "totalExp": 2819368
+  },
+  {
+    "id": 604,
+    "level": 30,
+    "levelType": "bonds",
+    "totalExp": 3070200
+  },
+  {
+    "id": 605,
+    "level": 31,
+    "levelType": "bonds",
+    "totalExp": 3351134
+  },
+  {
+    "id": 606,
+    "level": 32,
+    "levelType": "bonds",
+    "totalExp": 3632068
+  },
+  {
+    "id": 607,
+    "level": 33,
+    "levelType": "bonds",
+    "totalExp": 3913000
+  },
+  {
+    "id": 608,
+    "level": 34,
+    "levelType": "bonds",
+    "totalExp": 4214000
+  },
+  {
+    "id": 609,
+    "level": 35,
+    "levelType": "bonds",
+    "totalExp": 4515000
+  },
+  {
+    "id": 610,
+    "level": 36,
+    "levelType": "bonds",
+    "totalExp": 4816000
+  },
+  {
+    "id": 611,
+    "level": 37,
+    "levelType": "bonds",
+    "totalExp": 5117000
+  },
+  {
+    "id": 612,
+    "level": 38,
+    "levelType": "bonds",
+    "totalExp": 5418000
+  },
+  {
+    "id": 613,
+    "level": 39,
+    "levelType": "bonds",
+    "totalExp": 5719000
+  },
+  {
+    "id": 614,
+    "level": 40,
+    "levelType": "bonds",
+    "totalExp": 6020000
+  },
+  {
+    "id": 615,
+    "level": 41,
+    "levelType": "bonds",
+    "totalExp": 6321000
+  },
+  {
+    "id": 616,
+    "level": 42,
+    "levelType": "bonds",
+    "totalExp": 6622000
+  },
+  {
+    "id": 617,
+    "level": 43,
+    "levelType": "bonds",
+    "totalExp": 6923000
+  },
+  {
+    "id": 618,
+    "level": 44,
+    "levelType": "bonds",
+    "totalExp": 7224000
+  },
+  {
+    "id": 619,
+    "level": 45,
+    "levelType": "bonds",
+    "totalExp": 7525000
+  },
+  {
+    "id": 620,
+    "level": 46,
+    "levelType": "bonds",
+    "totalExp": 7826000
+  },
+  {
+    "id": 621,
+    "level": 47,
+    "levelType": "bonds",
+    "totalExp": 8127000
+  },
+  {
+    "id": 622,
+    "level": 48,
+    "levelType": "bonds",
+    "totalExp": 8428000
+  },
+  {
+    "id": 623,
+    "level": 49,
+    "levelType": "bonds",
+    "totalExp": 8729000
+  },
+  {
+    "id": 624,
+    "level": 50,
+    "levelType": "bonds",
+    "totalExp": 9030000
+  },
+  {
+    "id": 625,
+    "level": 51,
+    "levelType": "bonds",
+    "totalExp": 9331000
+  },
+  {
+    "id": 626,
+    "level": 52,
+    "levelType": "bonds",
+    "totalExp": 9632000
+  },
+  {
+    "id": 627,
+    "level": 53,
+    "levelType": "bonds",
+    "totalExp": 9933000
+  },
+  {
+    "id": 628,
+    "level": 54,
+    "levelType": "bonds",
+    "totalExp": 10234000
+  },
+  {
+    "id": 629,
+    "level": 55,
+    "levelType": "bonds",
+    "totalExp": 10535000
+  },
+  {
+    "id": 630,
+    "level": 56,
+    "levelType": "bonds",
+    "totalExp": 10836000
+  },
+  {
+    "id": 631,
+    "level": 57,
+    "levelType": "bonds",
+    "totalExp": 11137000
+  },
+  {
+    "id": 632,
+    "level": 58,
+    "levelType": "bonds",
+    "totalExp": 11438000
+  },
+  {
+    "id": 633,
+    "level": 59,
+    "levelType": "bonds",
+    "totalExp": 11739000
+  },
+  {
+    "id": 634,
+    "level": 60,
+    "levelType": "bonds",
+    "totalExp": 12040000
+  },
+  {
+    "id": 635,
+    "level": 51,
+    "levelType": "character",
+    "totalExp": 355
+  },
+  {
+    "id": 636,
+    "level": 52,
+    "levelType": "character",
+    "totalExp": 365
+  },
+  {
+    "id": 637,
+    "level": 53,
+    "levelType": "character",
+    "totalExp": 375
+  },
+  {
+    "id": 638,
+    "level": 54,
+    "levelType": "character",
+    "totalExp": 385
+  },
+  {
+    "id": 639,
+    "level": 55,
+    "levelType": "character",
+    "totalExp": 395
+  },
+  {
+    "id": 640,
+    "level": 56,
+    "levelType": "character",
+    "totalExp": 405
+  },
+  {
+    "id": 641,
+    "level": 57,
+    "levelType": "character",
+    "totalExp": 415
+  },
+  {
+    "id": 642,
+    "level": 58,
+    "levelType": "character",
+    "totalExp": 425
+  },
+  {
+    "id": 643,
+    "level": 59,
+    "levelType": "character",
+    "totalExp": 435
+  },
+  {
+    "id": 644,
+    "level": 60,
+    "levelType": "character",
+    "totalExp": 445
+  },
+  {
+    "id": 645,
+    "level": 61,
+    "levelType": "character",
+    "totalExp": 455
+  },
+  {
+    "id": 646,
+    "level": 62,
+    "levelType": "character",
+    "totalExp": 465
+  },
+  {
+    "id": 647,
+    "level": 63,
+    "levelType": "character",
+    "totalExp": 475
+  },
+  {
+    "id": 648,
+    "level": 64,
+    "levelType": "character",
+    "totalExp": 485
+  },
+  {
+    "id": 649,
+    "level": 65,
+    "levelType": "character",
+    "totalExp": 495
+  },
+  {
+    "id": 650,
+    "level": 66,
+    "levelType": "character",
+    "totalExp": 505
+  },
+  {
+    "id": 651,
+    "level": 67,
+    "levelType": "character",
+    "totalExp": 515
+  },
+  {
+    "id": 652,
+    "level": 68,
+    "levelType": "character",
+    "totalExp": 525
+  },
+  {
+    "id": 653,
+    "level": 69,
+    "levelType": "character",
+    "totalExp": 535
+  },
+  {
+    "id": 654,
+    "level": 70,
+    "levelType": "character",
+    "totalExp": 545
+  },
+  {
+    "id": 655,
+    "level": 71,
+    "levelType": "character",
+    "totalExp": 555
+  },
+  {
+    "id": 656,
+    "level": 72,
+    "levelType": "character",
+    "totalExp": 565
+  },
+  {
+    "id": 657,
+    "level": 73,
+    "levelType": "character",
+    "totalExp": 575
+  },
+  {
+    "id": 658,
+    "level": 74,
+    "levelType": "character",
+    "totalExp": 585
+  },
+  {
+    "id": 659,
+    "level": 75,
+    "levelType": "character",
+    "totalExp": 595
+  },
+  {
+    "id": 660,
+    "level": 76,
+    "levelType": "character",
+    "totalExp": 605
+  },
+  {
+    "id": 661,
+    "level": 77,
+    "levelType": "character",
+    "totalExp": 615
+  },
+  {
+    "id": 662,
+    "level": 78,
+    "levelType": "character",
+    "totalExp": 625
+  },
+  {
+    "id": 663,
+    "level": 79,
+    "levelType": "character",
+    "totalExp": 635
+  },
+  {
+    "id": 664,
+    "level": 80,
+    "levelType": "character",
+    "totalExp": 645
+  },
+  {
+    "id": 665,
+    "level": 81,
+    "levelType": "character",
+    "totalExp": 655
+  },
+  {
+    "id": 666,
+    "level": 82,
+    "levelType": "character",
+    "totalExp": 665
+  },
+  {
+    "id": 667,
+    "level": 83,
+    "levelType": "character",
+    "totalExp": 675
+  },
+  {
+    "id": 668,
+    "level": 84,
+    "levelType": "character",
+    "totalExp": 685
+  },
+  {
+    "id": 669,
+    "level": 85,
+    "levelType": "character",
+    "totalExp": 695
+  },
+  {
+    "id": 670,
+    "level": 86,
+    "levelType": "character",
+    "totalExp": 705
+  },
+  {
+    "id": 671,
+    "level": 87,
+    "levelType": "character",
+    "totalExp": 715
+  },
+  {
+    "id": 672,
+    "level": 88,
+    "levelType": "character",
+    "totalExp": 725
+  },
+  {
+    "id": 673,
+    "level": 89,
+    "levelType": "character",
+    "totalExp": 735
+  },
+  {
+    "id": 674,
+    "level": 90,
+    "levelType": "character",
+    "totalExp": 745
+  },
+  {
+    "id": 675,
+    "level": 91,
+    "levelType": "character",
+    "totalExp": 755
+  },
+  {
+    "id": 676,
+    "level": 92,
+    "levelType": "character",
+    "totalExp": 765
+  },
+  {
+    "id": 677,
+    "level": 93,
+    "levelType": "character",
+    "totalExp": 775
+  },
+  {
+    "id": 678,
+    "level": 94,
+    "levelType": "character",
+    "totalExp": 785
+  },
+  {
+    "id": 679,
+    "level": 95,
+    "levelType": "character",
+    "totalExp": 795
+  },
+  {
+    "id": 680,
+    "level": 96,
+    "levelType": "character",
+    "totalExp": 805
+  },
+  {
+    "id": 681,
+    "level": 97,
+    "levelType": "character",
+    "totalExp": 815
+  },
+  {
+    "id": 682,
+    "level": 98,
+    "levelType": "character",
+    "totalExp": 825
+  },
+  {
+    "id": 683,
+    "level": 99,
+    "levelType": "character",
+    "totalExp": 835
+  },
+  {
+    "id": 684,
+    "level": 100,
+    "levelType": "character",
+    "totalExp": 845
+  },
+  {
+    "id": 685,
+    "level": 101,
+    "levelType": "character",
+    "totalExp": 855
+  },
+  {
+    "id": 686,
+    "level": 102,
+    "levelType": "character",
+    "totalExp": 865
+  },
+  {
+    "id": 687,
+    "level": 103,
+    "levelType": "character",
+    "totalExp": 875
+  },
+  {
+    "id": 688,
+    "level": 104,
+    "levelType": "character",
+    "totalExp": 885
+  },
+  {
+    "id": 689,
+    "level": 105,
+    "levelType": "character",
+    "totalExp": 895
+  },
+  {
+    "id": 690,
+    "level": 106,
+    "levelType": "character",
+    "totalExp": 905
+  },
+  {
+    "id": 691,
+    "level": 107,
+    "levelType": "character",
+    "totalExp": 915
+  },
+  {
+    "id": 692,
+    "level": 108,
+    "levelType": "character",
+    "totalExp": 925
+  },
+  {
+    "id": 693,
+    "level": 109,
+    "levelType": "character",
+    "totalExp": 935
+  },
+  {
+    "id": 694,
+    "level": 110,
+    "levelType": "character",
+    "totalExp": 945
+  },
+  {
+    "id": 695,
+    "level": 401,
+    "levelType": "user",
+    "totalExp": 65561180
+  },
+  {
+    "id": 696,
+    "level": 402,
+    "levelType": "user",
+    "totalExp": 66147475
+  },
+  {
+    "id": 697,
+    "level": 403,
+    "levelType": "user",
+    "totalExp": 66733770
+  },
+  {
+    "id": 698,
+    "level": 404,
+    "levelType": "user",
+    "totalExp": 67320065
+  },
+  {
+    "id": 699,
+    "level": 405,
+    "levelType": "user",
+    "totalExp": 67906360
+  },
+  {
+    "id": 700,
+    "level": 406,
+    "levelType": "user",
+    "totalExp": 68492655
+  },
+  {
+    "id": 701,
+    "level": 407,
+    "levelType": "user",
+    "totalExp": 69078950
+  },
+  {
+    "id": 702,
+    "level": 408,
+    "levelType": "user",
+    "totalExp": 69665245
+  },
+  {
+    "id": 703,
+    "level": 409,
+    "levelType": "user",
+    "totalExp": 70251540
+  },
+  {
+    "id": 704,
+    "level": 410,
+    "levelType": "user",
+    "totalExp": 70837835
+  },
+  {
+    "id": 705,
+    "level": 411,
+    "levelType": "user",
+    "totalExp": 71424130
+  },
+  {
+    "id": 706,
+    "level": 412,
+    "levelType": "user",
+    "totalExp": 72010425
+  },
+  {
+    "id": 707,
+    "level": 413,
+    "levelType": "user",
+    "totalExp": 72596720
+  },
+  {
+    "id": 708,
+    "level": 414,
+    "levelType": "user",
+    "totalExp": 73183015
+  },
+  {
+    "id": 709,
+    "level": 415,
+    "levelType": "user",
+    "totalExp": 73769310
+  },
+  {
+    "id": 710,
+    "level": 416,
+    "levelType": "user",
+    "totalExp": 74355605
+  },
+  {
+    "id": 711,
+    "level": 417,
+    "levelType": "user",
+    "totalExp": 74941900
+  },
+  {
+    "id": 712,
+    "level": 418,
+    "levelType": "user",
+    "totalExp": 75528195
+  },
+  {
+    "id": 713,
+    "level": 419,
+    "levelType": "user",
+    "totalExp": 76114490
+  },
+  {
+    "id": 714,
+    "level": 420,
+    "levelType": "user",
+    "totalExp": 76700785
+  },
+  {
+    "id": 715,
+    "level": 421,
+    "levelType": "user",
+    "totalExp": 77287080
+  },
+  {
+    "id": 716,
+    "level": 422,
+    "levelType": "user",
+    "totalExp": 77873375
+  },
+  {
+    "id": 717,
+    "level": 423,
+    "levelType": "user",
+    "totalExp": 78459670
+  },
+  {
+    "id": 718,
+    "level": 424,
+    "levelType": "user",
+    "totalExp": 79045965
+  },
+  {
+    "id": 719,
+    "level": 425,
+    "levelType": "user",
+    "totalExp": 79632260
+  },
+  {
+    "id": 720,
+    "level": 426,
+    "levelType": "user",
+    "totalExp": 80218555
+  },
+  {
+    "id": 721,
+    "level": 427,
+    "levelType": "user",
+    "totalExp": 80804850
+  },
+  {
+    "id": 722,
+    "level": 428,
+    "levelType": "user",
+    "totalExp": 81391145
+  },
+  {
+    "id": 723,
+    "level": 429,
+    "levelType": "user",
+    "totalExp": 81977440
+  },
+  {
+    "id": 724,
+    "level": 430,
+    "levelType": "user",
+    "totalExp": 82563735
+  },
+  {
+    "id": 725,
+    "level": 431,
+    "levelType": "user",
+    "totalExp": 83150030
+  },
+  {
+    "id": 726,
+    "level": 432,
+    "levelType": "user",
+    "totalExp": 83736325
+  },
+  {
+    "id": 727,
+    "level": 433,
+    "levelType": "user",
+    "totalExp": 84322620
+  },
+  {
+    "id": 728,
+    "level": 434,
+    "levelType": "user",
+    "totalExp": 84908915
+  },
+  {
+    "id": 729,
+    "level": 435,
+    "levelType": "user",
+    "totalExp": 85495210
+  },
+  {
+    "id": 730,
+    "level": 436,
+    "levelType": "user",
+    "totalExp": 86081505
+  },
+  {
+    "id": 731,
+    "level": 437,
+    "levelType": "user",
+    "totalExp": 86667800
+  },
+  {
+    "id": 732,
+    "level": 438,
+    "levelType": "user",
+    "totalExp": 87254095
+  },
+  {
+    "id": 733,
+    "level": 439,
+    "levelType": "user",
+    "totalExp": 87840390
+  },
+  {
+    "id": 734,
+    "level": 440,
+    "levelType": "user",
+    "totalExp": 88426685
+  },
+  {
+    "id": 735,
+    "level": 441,
+    "levelType": "user",
+    "totalExp": 89012980
+  },
+  {
+    "id": 736,
+    "level": 442,
+    "levelType": "user",
+    "totalExp": 89599275
+  },
+  {
+    "id": 737,
+    "level": 443,
+    "levelType": "user",
+    "totalExp": 90185570
+  },
+  {
+    "id": 738,
+    "level": 444,
+    "levelType": "user",
+    "totalExp": 90771865
+  },
+  {
+    "id": 739,
+    "level": 445,
+    "levelType": "user",
+    "totalExp": 91358160
+  },
+  {
+    "id": 740,
+    "level": 446,
+    "levelType": "user",
+    "totalExp": 91944455
+  },
+  {
+    "id": 741,
+    "level": 447,
+    "levelType": "user",
+    "totalExp": 92530750
+  },
+  {
+    "id": 742,
+    "level": 448,
+    "levelType": "user",
+    "totalExp": 93117045
+  },
+  {
+    "id": 743,
+    "level": 449,
+    "levelType": "user",
+    "totalExp": 93703340
+  },
+  {
+    "id": 744,
+    "level": 450,
+    "levelType": "user",
+    "totalExp": 94289635
+  },
+  {
+    "id": 745,
+    "level": 451,
+    "levelType": "user",
+    "totalExp": 94875930
+  },
+  {
+    "id": 746,
+    "level": 452,
+    "levelType": "user",
+    "totalExp": 95462225
+  },
+  {
+    "id": 747,
+    "level": 453,
+    "levelType": "user",
+    "totalExp": 96048520
+  },
+  {
+    "id": 748,
+    "level": 454,
+    "levelType": "user",
+    "totalExp": 96634815
+  },
+  {
+    "id": 749,
+    "level": 455,
+    "levelType": "user",
+    "totalExp": 97221110
+  },
+  {
+    "id": 750,
+    "level": 456,
+    "levelType": "user",
+    "totalExp": 97807405
+  },
+  {
+    "id": 751,
+    "level": 457,
+    "levelType": "user",
+    "totalExp": 98393700
+  },
+  {
+    "id": 752,
+    "level": 458,
+    "levelType": "user",
+    "totalExp": 98979995
+  },
+  {
+    "id": 753,
+    "level": 459,
+    "levelType": "user",
+    "totalExp": 99566290
+  },
+  {
+    "id": 754,
+    "level": 460,
+    "levelType": "user",
+    "totalExp": 100152585
+  },
+  {
+    "id": 755,
+    "level": 461,
+    "levelType": "user",
+    "totalExp": 100738880
+  },
+  {
+    "id": 756,
+    "level": 462,
+    "levelType": "user",
+    "totalExp": 101325175
+  },
+  {
+    "id": 757,
+    "level": 463,
+    "levelType": "user",
+    "totalExp": 101911470
+  },
+  {
+    "id": 758,
+    "level": 464,
+    "levelType": "user",
+    "totalExp": 102497765
+  },
+  {
+    "id": 759,
+    "level": 465,
+    "levelType": "user",
+    "totalExp": 103084060
+  },
+  {
+    "id": 760,
+    "level": 466,
+    "levelType": "user",
+    "totalExp": 103670355
+  },
+  {
+    "id": 761,
+    "level": 467,
+    "levelType": "user",
+    "totalExp": 104256650
+  },
+  {
+    "id": 762,
+    "level": 468,
+    "levelType": "user",
+    "totalExp": 104842945
+  },
+  {
+    "id": 763,
+    "level": 469,
+    "levelType": "user",
+    "totalExp": 105429240
+  },
+  {
+    "id": 764,
+    "level": 470,
+    "levelType": "user",
+    "totalExp": 106015535
+  },
+  {
+    "id": 765,
+    "level": 471,
+    "levelType": "user",
+    "totalExp": 106601830
+  },
+  {
+    "id": 766,
+    "level": 472,
+    "levelType": "user",
+    "totalExp": 107188125
+  },
+  {
+    "id": 767,
+    "level": 473,
+    "levelType": "user",
+    "totalExp": 107774420
+  },
+  {
+    "id": 768,
+    "level": 474,
+    "levelType": "user",
+    "totalExp": 108360715
+  },
+  {
+    "id": 769,
+    "level": 475,
+    "levelType": "user",
+    "totalExp": 108947010
+  },
+  {
+    "id": 770,
+    "level": 476,
+    "levelType": "user",
+    "totalExp": 109533305
+  },
+  {
+    "id": 771,
+    "level": 477,
+    "levelType": "user",
+    "totalExp": 110119600
+  },
+  {
+    "id": 772,
+    "level": 478,
+    "levelType": "user",
+    "totalExp": 110705895
+  },
+  {
+    "id": 773,
+    "level": 479,
+    "levelType": "user",
+    "totalExp": 111292190
+  },
+  {
+    "id": 774,
+    "level": 480,
+    "levelType": "user",
+    "totalExp": 111878485
+  },
+  {
+    "id": 775,
+    "level": 481,
+    "levelType": "user",
+    "totalExp": 112464780
+  },
+  {
+    "id": 776,
+    "level": 482,
+    "levelType": "user",
+    "totalExp": 113051075
+  },
+  {
+    "id": 777,
+    "level": 483,
+    "levelType": "user",
+    "totalExp": 113637370
+  },
+  {
+    "id": 778,
+    "level": 484,
+    "levelType": "user",
+    "totalExp": 114223665
+  },
+  {
+    "id": 779,
+    "level": 485,
+    "levelType": "user",
+    "totalExp": 114809960
+  },
+  {
+    "id": 780,
+    "level": 486,
+    "levelType": "user",
+    "totalExp": 115396255
+  },
+  {
+    "id": 781,
+    "level": 487,
+    "levelType": "user",
+    "totalExp": 115982550
+  },
+  {
+    "id": 782,
+    "level": 488,
+    "levelType": "user",
+    "totalExp": 116568845
+  },
+  {
+    "id": 783,
+    "level": 489,
+    "levelType": "user",
+    "totalExp": 117155140
+  },
+  {
+    "id": 784,
+    "level": 490,
+    "levelType": "user",
+    "totalExp": 117741435
+  },
+  {
+    "id": 785,
+    "level": 491,
+    "levelType": "user",
+    "totalExp": 118327730
+  },
+  {
+    "id": 786,
+    "level": 492,
+    "levelType": "user",
+    "totalExp": 118914025
+  },
+  {
+    "id": 787,
+    "level": 493,
+    "levelType": "user",
+    "totalExp": 119500320
+  },
+  {
+    "id": 788,
+    "level": 494,
+    "levelType": "user",
+    "totalExp": 120086615
+  },
+  {
+    "id": 789,
+    "level": 495,
+    "levelType": "user",
+    "totalExp": 120672910
+  },
+  {
+    "id": 790,
+    "level": 496,
+    "levelType": "user",
+    "totalExp": 121259205
+  },
+  {
+    "id": 791,
+    "level": 497,
+    "levelType": "user",
+    "totalExp": 121845500
+  },
+  {
+    "id": 792,
+    "level": 498,
+    "levelType": "user",
+    "totalExp": 122431795
+  },
+  {
+    "id": 793,
+    "level": 499,
+    "levelType": "user",
+    "totalExp": 123018090
+  },
+  {
+    "id": 794,
+    "level": 500,
+    "levelType": "user",
+    "totalExp": 123604385
+  },
+  {
+    "id": 795,
+    "level": 61,
+    "levelType": "bonds",
+    "totalExp": 12341000
+  },
+  {
+    "id": 796,
+    "level": 62,
+    "levelType": "bonds",
+    "totalExp": 12642000
+  },
+  {
+    "id": 797,
+    "level": 63,
+    "levelType": "bonds",
+    "totalExp": 12943000
+  },
+  {
+    "id": 798,
+    "level": 64,
+    "levelType": "bonds",
+    "totalExp": 13244000
+  },
+  {
+    "id": 799,
+    "level": 65,
+    "levelType": "bonds",
+    "totalExp": 13545000
+  },
+  {
+    "id": 800,
+    "level": 66,
+    "levelType": "bonds",
+    "totalExp": 13846000
+  },
+  {
+    "id": 801,
+    "level": 67,
+    "levelType": "bonds",
+    "totalExp": 14147000
+  },
+  {
+    "id": 802,
+    "level": 68,
+    "levelType": "bonds",
+    "totalExp": 14448000
+  },
+  {
+    "id": 803,
+    "level": 69,
+    "levelType": "bonds",
+    "totalExp": 14749000
+  },
+  {
+    "id": 804,
+    "level": 70,
+    "levelType": "bonds",
+    "totalExp": 15050000
+  },
+  {
+    "id": 805,
+    "level": 71,
+    "levelType": "bonds",
+    "totalExp": 15351000
+  },
+  {
+    "id": 806,
+    "level": 72,
+    "levelType": "bonds",
+    "totalExp": 15652000
+  },
+  {
+    "id": 807,
+    "level": 73,
+    "levelType": "bonds",
+    "totalExp": 15953000
+  },
+  {
+    "id": 808,
+    "level": 74,
+    "levelType": "bonds",
+    "totalExp": 16254000
+  },
+  {
+    "id": 809,
+    "level": 75,
+    "levelType": "bonds",
+    "totalExp": 16555000
+  },
+  {
+    "id": 810,
+    "level": 111,
+    "levelType": "character",
+    "totalExp": 955
+  },
+  {
+    "id": 811,
+    "level": 112,
+    "levelType": "character",
+    "totalExp": 965
+  },
+  {
+    "id": 812,
+    "level": 113,
+    "levelType": "character",
+    "totalExp": 975
+  },
+  {
+    "id": 813,
+    "level": 114,
+    "levelType": "character",
+    "totalExp": 985
+  },
+  {
+    "id": 814,
+    "level": 115,
+    "levelType": "character",
+    "totalExp": 995
+  },
+  {
+    "id": 815,
+    "level": 116,
+    "levelType": "character",
+    "totalExp": 1005
+  },
+  {
+    "id": 816,
+    "level": 117,
+    "levelType": "character",
+    "totalExp": 1015
+  },
+  {
+    "id": 817,
+    "level": 118,
+    "levelType": "character",
+    "totalExp": 1025
+  },
+  {
+    "id": 818,
+    "level": 119,
+    "levelType": "character",
+    "totalExp": 1035
+  },
+  {
+    "id": 819,
+    "level": 120,
+    "levelType": "character",
+    "totalExp": 1045
+  },
+  {
+    "id": 820,
+    "level": 121,
+    "levelType": "character",
+    "totalExp": 1055
+  },
+  {
+    "id": 821,
+    "level": 122,
+    "levelType": "character",
+    "totalExp": 1065
+  },
+  {
+    "id": 822,
+    "level": 123,
+    "levelType": "character",
+    "totalExp": 1075
+  },
+  {
+    "id": 823,
+    "level": 124,
+    "levelType": "character",
+    "totalExp": 1085
+  },
+  {
+    "id": 824,
+    "level": 125,
+    "levelType": "character",
+    "totalExp": 1095
+  },
+  {
+    "id": 825,
+    "level": 126,
+    "levelType": "character",
+    "totalExp": 1105
+  },
+  {
+    "id": 826,
+    "level": 127,
+    "levelType": "character",
+    "totalExp": 1115
+  },
+  {
+    "id": 827,
+    "level": 128,
+    "levelType": "character",
+    "totalExp": 1125
+  },
+  {
+    "id": 828,
+    "level": 129,
+    "levelType": "character",
+    "totalExp": 1135
+  },
+  {
+    "id": 829,
+    "level": 130,
+    "levelType": "character",
+    "totalExp": 1145
+  },
+  {
+    "id": 830,
+    "level": 131,
+    "levelType": "character",
+    "totalExp": 1155
+  },
+  {
+    "id": 831,
+    "level": 132,
+    "levelType": "character",
+    "totalExp": 1165
+  },
+  {
+    "id": 832,
+    "level": 133,
+    "levelType": "character",
+    "totalExp": 1175
+  },
+  {
+    "id": 833,
+    "level": 134,
+    "levelType": "character",
+    "totalExp": 1185
+  },
+  {
+    "id": 834,
+    "level": 135,
+    "levelType": "character",
+    "totalExp": 1195
+  },
+  {
+    "id": 835,
+    "level": 501,
+    "levelType": "user",
+    "totalExp": 124190680
+  },
+  {
+    "id": 836,
+    "level": 502,
+    "levelType": "user",
+    "totalExp": 124776975
+  },
+  {
+    "id": 837,
+    "level": 503,
+    "levelType": "user",
+    "totalExp": 125363270
+  },
+  {
+    "id": 838,
+    "level": 504,
+    "levelType": "user",
+    "totalExp": 125949565
+  },
+  {
+    "id": 839,
+    "level": 505,
+    "levelType": "user",
+    "totalExp": 126535860
+  },
+  {
+    "id": 840,
+    "level": 506,
+    "levelType": "user",
+    "totalExp": 127122155
+  },
+  {
+    "id": 841,
+    "level": 507,
+    "levelType": "user",
+    "totalExp": 127708450
+  },
+  {
+    "id": 842,
+    "level": 508,
+    "levelType": "user",
+    "totalExp": 128294745
+  },
+  {
+    "id": 843,
+    "level": 509,
+    "levelType": "user",
+    "totalExp": 128881040
+  },
+  {
+    "id": 844,
+    "level": 510,
+    "levelType": "user",
+    "totalExp": 129467335
+  },
+  {
+    "id": 845,
+    "level": 511,
+    "levelType": "user",
+    "totalExp": 130053630
+  },
+  {
+    "id": 846,
+    "level": 512,
+    "levelType": "user",
+    "totalExp": 130639925
+  },
+  {
+    "id": 847,
+    "level": 513,
+    "levelType": "user",
+    "totalExp": 131226220
+  },
+  {
+    "id": 848,
+    "level": 514,
+    "levelType": "user",
+    "totalExp": 131812515
+  },
+  {
+    "id": 849,
+    "level": 515,
+    "levelType": "user",
+    "totalExp": 132398810
+  },
+  {
+    "id": 850,
+    "level": 516,
+    "levelType": "user",
+    "totalExp": 132985105
+  },
+  {
+    "id": 851,
+    "level": 517,
+    "levelType": "user",
+    "totalExp": 133571400
+  },
+  {
+    "id": 852,
+    "level": 518,
+    "levelType": "user",
+    "totalExp": 134157695
+  },
+  {
+    "id": 853,
+    "level": 519,
+    "levelType": "user",
+    "totalExp": 134743990
+  },
+  {
+    "id": 854,
+    "level": 520,
+    "levelType": "user",
+    "totalExp": 135330285
+  },
+  {
+    "id": 855,
+    "level": 521,
+    "levelType": "user",
+    "totalExp": 135916580
+  },
+  {
+    "id": 856,
+    "level": 522,
+    "levelType": "user",
+    "totalExp": 136502875
+  },
+  {
+    "id": 857,
+    "level": 523,
+    "levelType": "user",
+    "totalExp": 137089170
+  },
+  {
+    "id": 858,
+    "level": 524,
+    "levelType": "user",
+    "totalExp": 137675465
+  },
+  {
+    "id": 859,
+    "level": 525,
+    "levelType": "user",
+    "totalExp": 138261760
+  },
+  {
+    "id": 860,
+    "level": 526,
+    "levelType": "user",
+    "totalExp": 138848055
+  },
+  {
+    "id": 861,
+    "level": 527,
+    "levelType": "user",
+    "totalExp": 139434350
+  },
+  {
+    "id": 862,
+    "level": 528,
+    "levelType": "user",
+    "totalExp": 140020645
+  },
+  {
+    "id": 863,
+    "level": 529,
+    "levelType": "user",
+    "totalExp": 140606940
+  },
+  {
+    "id": 864,
+    "level": 530,
+    "levelType": "user",
+    "totalExp": 141193235
+  },
+  {
+    "id": 865,
+    "level": 531,
+    "levelType": "user",
+    "totalExp": 141779530
+  },
+  {
+    "id": 866,
+    "level": 532,
+    "levelType": "user",
+    "totalExp": 142365825
+  },
+  {
+    "id": 867,
+    "level": 533,
+    "levelType": "user",
+    "totalExp": 142952120
+  },
+  {
+    "id": 868,
+    "level": 534,
+    "levelType": "user",
+    "totalExp": 143538415
+  },
+  {
+    "id": 869,
+    "level": 535,
+    "levelType": "user",
+    "totalExp": 144124710
+  },
+  {
+    "id": 870,
+    "level": 536,
+    "levelType": "user",
+    "totalExp": 144711005
+  },
+  {
+    "id": 871,
+    "level": 537,
+    "levelType": "user",
+    "totalExp": 145297300
+  },
+  {
+    "id": 872,
+    "level": 538,
+    "levelType": "user",
+    "totalExp": 145883595
+  },
+  {
+    "id": 873,
+    "level": 539,
+    "levelType": "user",
+    "totalExp": 146469890
+  },
+  {
+    "id": 874,
+    "level": 540,
+    "levelType": "user",
+    "totalExp": 147056185
+  },
+  {
+    "id": 875,
+    "level": 541,
+    "levelType": "user",
+    "totalExp": 147642480
+  },
+  {
+    "id": 876,
+    "level": 542,
+    "levelType": "user",
+    "totalExp": 148228775
+  },
+  {
+    "id": 877,
+    "level": 543,
+    "levelType": "user",
+    "totalExp": 148815070
+  },
+  {
+    "id": 878,
+    "level": 544,
+    "levelType": "user",
+    "totalExp": 149401365
+  },
+  {
+    "id": 879,
+    "level": 545,
+    "levelType": "user",
+    "totalExp": 149987660
+  },
+  {
+    "id": 880,
+    "level": 546,
+    "levelType": "user",
+    "totalExp": 150573955
+  },
+  {
+    "id": 881,
+    "level": 547,
+    "levelType": "user",
+    "totalExp": 151160250
+  },
+  {
+    "id": 882,
+    "level": 548,
+    "levelType": "user",
+    "totalExp": 151746545
+  },
+  {
+    "id": 883,
+    "level": 549,
+    "levelType": "user",
+    "totalExp": 152332840
+  },
+  {
+    "id": 884,
+    "level": 550,
+    "levelType": "user",
+    "totalExp": 152919135
+  },
+  {
+    "id": 885,
+    "level": 551,
+    "levelType": "user",
+    "totalExp": 153505430
+  },
+  {
+    "id": 886,
+    "level": 552,
+    "levelType": "user",
+    "totalExp": 154091725
+  },
+  {
+    "id": 887,
+    "level": 553,
+    "levelType": "user",
+    "totalExp": 154678020
+  },
+  {
+    "id": 888,
+    "level": 554,
+    "levelType": "user",
+    "totalExp": 155264315
+  },
+  {
+    "id": 889,
+    "level": 555,
+    "levelType": "user",
+    "totalExp": 155850610
+  },
+  {
+    "id": 890,
+    "level": 556,
+    "levelType": "user",
+    "totalExp": 156436905
+  },
+  {
+    "id": 891,
+    "level": 557,
+    "levelType": "user",
+    "totalExp": 157023200
+  },
+  {
+    "id": 892,
+    "level": 558,
+    "levelType": "user",
+    "totalExp": 157609495
+  },
+  {
+    "id": 893,
+    "level": 559,
+    "levelType": "user",
+    "totalExp": 158195790
+  },
+  {
+    "id": 894,
+    "level": 560,
+    "levelType": "user",
+    "totalExp": 158782085
+  },
+  {
+    "id": 895,
+    "level": 561,
+    "levelType": "user",
+    "totalExp": 159368380
+  },
+  {
+    "id": 896,
+    "level": 562,
+    "levelType": "user",
+    "totalExp": 159954675
+  },
+  {
+    "id": 897,
+    "level": 563,
+    "levelType": "user",
+    "totalExp": 160540970
+  },
+  {
+    "id": 898,
+    "level": 564,
+    "levelType": "user",
+    "totalExp": 161127265
+  },
+  {
+    "id": 899,
+    "level": 565,
+    "levelType": "user",
+    "totalExp": 161713560
+  },
+  {
+    "id": 900,
+    "level": 566,
+    "levelType": "user",
+    "totalExp": 162299855
+  },
+  {
+    "id": 901,
+    "level": 567,
+    "levelType": "user",
+    "totalExp": 162886150
+  },
+  {
+    "id": 902,
+    "level": 568,
+    "levelType": "user",
+    "totalExp": 163472445
+  },
+  {
+    "id": 903,
+    "level": 569,
+    "levelType": "user",
+    "totalExp": 164058740
+  },
+  {
+    "id": 904,
+    "level": 570,
+    "levelType": "user",
+    "totalExp": 164645035
+  },
+  {
+    "id": 905,
+    "level": 571,
+    "levelType": "user",
+    "totalExp": 165231330
+  },
+  {
+    "id": 906,
+    "level": 572,
+    "levelType": "user",
+    "totalExp": 165817625
+  },
+  {
+    "id": 907,
+    "level": 573,
+    "levelType": "user",
+    "totalExp": 166403920
+  },
+  {
+    "id": 908,
+    "level": 574,
+    "levelType": "user",
+    "totalExp": 166990215
+  },
+  {
+    "id": 909,
+    "level": 575,
+    "levelType": "user",
+    "totalExp": 167576510
+  },
+  {
+    "id": 910,
+    "level": 576,
+    "levelType": "user",
+    "totalExp": 168162805
+  },
+  {
+    "id": 911,
+    "level": 577,
+    "levelType": "user",
+    "totalExp": 168749100
+  },
+  {
+    "id": 912,
+    "level": 578,
+    "levelType": "user",
+    "totalExp": 169335395
+  },
+  {
+    "id": 913,
+    "level": 579,
+    "levelType": "user",
+    "totalExp": 169921690
+  },
+  {
+    "id": 914,
+    "level": 580,
+    "levelType": "user",
+    "totalExp": 170507985
+  },
+  {
+    "id": 915,
+    "level": 581,
+    "levelType": "user",
+    "totalExp": 171094280
+  },
+  {
+    "id": 916,
+    "level": 582,
+    "levelType": "user",
+    "totalExp": 171680575
+  },
+  {
+    "id": 917,
+    "level": 583,
+    "levelType": "user",
+    "totalExp": 172266870
+  },
+  {
+    "id": 918,
+    "level": 584,
+    "levelType": "user",
+    "totalExp": 172853165
+  },
+  {
+    "id": 919,
+    "level": 585,
+    "levelType": "user",
+    "totalExp": 173439460
+  },
+  {
+    "id": 920,
+    "level": 586,
+    "levelType": "user",
+    "totalExp": 174025755
+  },
+  {
+    "id": 921,
+    "level": 587,
+    "levelType": "user",
+    "totalExp": 174612050
+  },
+  {
+    "id": 922,
+    "level": 588,
+    "levelType": "user",
+    "totalExp": 175198345
+  },
+  {
+    "id": 923,
+    "level": 589,
+    "levelType": "user",
+    "totalExp": 175784640
+  },
+  {
+    "id": 924,
+    "level": 590,
+    "levelType": "user",
+    "totalExp": 176370935
+  },
+  {
+    "id": 925,
+    "level": 591,
+    "levelType": "user",
+    "totalExp": 176957230
+  },
+  {
+    "id": 926,
+    "level": 592,
+    "levelType": "user",
+    "totalExp": 177543525
+  },
+  {
+    "id": 927,
+    "level": 593,
+    "levelType": "user",
+    "totalExp": 178129820
+  },
+  {
+    "id": 928,
+    "level": 594,
+    "levelType": "user",
+    "totalExp": 178716115
+  },
+  {
+    "id": 929,
+    "level": 595,
+    "levelType": "user",
+    "totalExp": 179302410
+  },
+  {
+    "id": 930,
+    "level": 596,
+    "levelType": "user",
+    "totalExp": 179888705
+  },
+  {
+    "id": 931,
+    "level": 597,
+    "levelType": "user",
+    "totalExp": 180475000
+  },
+  {
+    "id": 932,
+    "level": 598,
+    "levelType": "user",
+    "totalExp": 181061295
+  },
+  {
+    "id": 933,
+    "level": 599,
+    "levelType": "user",
+    "totalExp": 181647590
+  },
+  {
+    "id": 934,
+    "level": 600,
+    "levelType": "user",
+    "totalExp": 182233885
+  },
+  {
+    "id": 935,
+    "level": 601,
+    "levelType": "user",
+    "totalExp": 182820180
+  },
+  {
+    "id": 936,
+    "level": 602,
+    "levelType": "user",
+    "totalExp": 183406475
+  },
+  {
+    "id": 937,
+    "level": 603,
+    "levelType": "user",
+    "totalExp": 183992770
+  },
+  {
+    "id": 938,
+    "level": 604,
+    "levelType": "user",
+    "totalExp": 184579065
+  },
+  {
+    "id": 939,
+    "level": 605,
+    "levelType": "user",
+    "totalExp": 185165360
+  },
+  {
+    "id": 940,
+    "level": 606,
+    "levelType": "user",
+    "totalExp": 185751655
+  },
+  {
+    "id": 941,
+    "level": 607,
+    "levelType": "user",
+    "totalExp": 186337950
+  },
+  {
+    "id": 942,
+    "level": 608,
+    "levelType": "user",
+    "totalExp": 186924245
+  },
+  {
+    "id": 943,
+    "level": 609,
+    "levelType": "user",
+    "totalExp": 187510540
+  },
+  {
+    "id": 944,
+    "level": 610,
+    "levelType": "user",
+    "totalExp": 188096835
+  },
+  {
+    "id": 945,
+    "level": 611,
+    "levelType": "user",
+    "totalExp": 188683130
+  },
+  {
+    "id": 946,
+    "level": 612,
+    "levelType": "user",
+    "totalExp": 189269425
+  },
+  {
+    "id": 947,
+    "level": 613,
+    "levelType": "user",
+    "totalExp": 189855720
+  },
+  {
+    "id": 948,
+    "level": 614,
+    "levelType": "user",
+    "totalExp": 190442015
+  },
+  {
+    "id": 949,
+    "level": 615,
+    "levelType": "user",
+    "totalExp": 191028310
+  },
+  {
+    "id": 950,
+    "level": 616,
+    "levelType": "user",
+    "totalExp": 191614605
+  },
+  {
+    "id": 951,
+    "level": 617,
+    "levelType": "user",
+    "totalExp": 192200900
+  },
+  {
+    "id": 952,
+    "level": 618,
+    "levelType": "user",
+    "totalExp": 192787195
+  },
+  {
+    "id": 953,
+    "level": 619,
+    "levelType": "user",
+    "totalExp": 193373490
+  },
+  {
+    "id": 954,
+    "level": 620,
+    "levelType": "user",
+    "totalExp": 193959785
+  },
+  {
+    "id": 955,
+    "level": 621,
+    "levelType": "user",
+    "totalExp": 194546080
+  },
+  {
+    "id": 956,
+    "level": 622,
+    "levelType": "user",
+    "totalExp": 195132375
+  },
+  {
+    "id": 957,
+    "level": 623,
+    "levelType": "user",
+    "totalExp": 195718670
+  },
+  {
+    "id": 958,
+    "level": 624,
+    "levelType": "user",
+    "totalExp": 196304965
+  },
+  {
+    "id": 959,
+    "level": 625,
+    "levelType": "user",
+    "totalExp": 196891260
+  },
+  {
+    "id": 960,
+    "level": 626,
+    "levelType": "user",
+    "totalExp": 197477555
+  },
+  {
+    "id": 961,
+    "level": 627,
+    "levelType": "user",
+    "totalExp": 198063850
+  },
+  {
+    "id": 962,
+    "level": 628,
+    "levelType": "user",
+    "totalExp": 198650145
+  },
+  {
+    "id": 963,
+    "level": 629,
+    "levelType": "user",
+    "totalExp": 199236440
+  },
+  {
+    "id": 964,
+    "level": 630,
+    "levelType": "user",
+    "totalExp": 199822735
+  },
+  {
+    "id": 965,
+    "level": 631,
+    "levelType": "user",
+    "totalExp": 200409030
+  },
+  {
+    "id": 966,
+    "level": 632,
+    "levelType": "user",
+    "totalExp": 200995325
+  },
+  {
+    "id": 967,
+    "level": 633,
+    "levelType": "user",
+    "totalExp": 201581620
+  },
+  {
+    "id": 968,
+    "level": 634,
+    "levelType": "user",
+    "totalExp": 202167915
+  },
+  {
+    "id": 969,
+    "level": 635,
+    "levelType": "user",
+    "totalExp": 202754210
+  },
+  {
+    "id": 970,
+    "level": 636,
+    "levelType": "user",
+    "totalExp": 203340505
+  },
+  {
+    "id": 971,
+    "level": 637,
+    "levelType": "user",
+    "totalExp": 203926800
+  },
+  {
+    "id": 972,
+    "level": 638,
+    "levelType": "user",
+    "totalExp": 204513095
+  },
+  {
+    "id": 973,
+    "level": 639,
+    "levelType": "user",
+    "totalExp": 205099390
+  },
+  {
+    "id": 974,
+    "level": 640,
+    "levelType": "user",
+    "totalExp": 205685685
+  },
+  {
+    "id": 975,
+    "level": 641,
+    "levelType": "user",
+    "totalExp": 206271980
+  },
+  {
+    "id": 976,
+    "level": 642,
+    "levelType": "user",
+    "totalExp": 206858275
+  },
+  {
+    "id": 977,
+    "level": 643,
+    "levelType": "user",
+    "totalExp": 207444570
+  },
+  {
+    "id": 978,
+    "level": 644,
+    "levelType": "user",
+    "totalExp": 208030865
+  },
+  {
+    "id": 979,
+    "level": 645,
+    "levelType": "user",
+    "totalExp": 208617160
+  },
+  {
+    "id": 980,
+    "level": 646,
+    "levelType": "user",
+    "totalExp": 209203455
+  },
+  {
+    "id": 981,
+    "level": 647,
+    "levelType": "user",
+    "totalExp": 209789750
+  },
+  {
+    "id": 982,
+    "level": 648,
+    "levelType": "user",
+    "totalExp": 210376045
+  },
+  {
+    "id": 983,
+    "level": 649,
+    "levelType": "user",
+    "totalExp": 210962340
+  },
+  {
+    "id": 984,
+    "level": 650,
+    "levelType": "user",
+    "totalExp": 211548635
+  },
+  {
+    "id": 985,
+    "level": 651,
+    "levelType": "user",
+    "totalExp": 212134930
+  },
+  {
+    "id": 986,
+    "level": 652,
+    "levelType": "user",
+    "totalExp": 212721225
+  },
+  {
+    "id": 987,
+    "level": 653,
+    "levelType": "user",
+    "totalExp": 213307520
+  },
+  {
+    "id": 988,
+    "level": 654,
+    "levelType": "user",
+    "totalExp": 213893815
+  },
+  {
+    "id": 989,
+    "level": 655,
+    "levelType": "user",
+    "totalExp": 214480110
+  },
+  {
+    "id": 990,
+    "level": 656,
+    "levelType": "user",
+    "totalExp": 215066405
+  },
+  {
+    "id": 991,
+    "level": 657,
+    "levelType": "user",
+    "totalExp": 215652700
+  },
+  {
+    "id": 992,
+    "level": 658,
+    "levelType": "user",
+    "totalExp": 216238995
+  },
+  {
+    "id": 993,
+    "level": 659,
+    "levelType": "user",
+    "totalExp": 216825290
+  },
+  {
+    "id": 994,
+    "level": 660,
+    "levelType": "user",
+    "totalExp": 217411585
+  },
+  {
+    "id": 995,
+    "level": 661,
+    "levelType": "user",
+    "totalExp": 217997880
+  },
+  {
+    "id": 996,
+    "level": 662,
+    "levelType": "user",
+    "totalExp": 218584175
+  },
+  {
+    "id": 997,
+    "level": 663,
+    "levelType": "user",
+    "totalExp": 219170470
+  },
+  {
+    "id": 998,
+    "level": 664,
+    "levelType": "user",
+    "totalExp": 219756765
+  },
+  {
+    "id": 999,
+    "level": 665,
+    "levelType": "user",
+    "totalExp": 220343060
+  },
+  {
+    "id": 1000,
+    "level": 666,
+    "levelType": "user",
+    "totalExp": 220929355
+  },
+  {
+    "id": 1001,
+    "level": 667,
+    "levelType": "user",
+    "totalExp": 221515650
+  },
+  {
+    "id": 1002,
+    "level": 668,
+    "levelType": "user",
+    "totalExp": 222101945
+  },
+  {
+    "id": 1003,
+    "level": 669,
+    "levelType": "user",
+    "totalExp": 222688240
+  },
+  {
+    "id": 1004,
+    "level": 670,
+    "levelType": "user",
+    "totalExp": 223274535
+  },
+  {
+    "id": 1005,
+    "level": 671,
+    "levelType": "user",
+    "totalExp": 223860830
+  },
+  {
+    "id": 1006,
+    "level": 672,
+    "levelType": "user",
+    "totalExp": 224447125
+  },
+  {
+    "id": 1007,
+    "level": 673,
+    "levelType": "user",
+    "totalExp": 225033420
+  },
+  {
+    "id": 1008,
+    "level": 674,
+    "levelType": "user",
+    "totalExp": 225619715
+  },
+  {
+    "id": 1009,
+    "level": 675,
+    "levelType": "user",
+    "totalExp": 226206010
+  },
+  {
+    "id": 1010,
+    "level": 676,
+    "levelType": "user",
+    "totalExp": 226792305
+  },
+  {
+    "id": 1011,
+    "level": 677,
+    "levelType": "user",
+    "totalExp": 227378600
+  },
+  {
+    "id": 1012,
+    "level": 678,
+    "levelType": "user",
+    "totalExp": 227964895
+  },
+  {
+    "id": 1013,
+    "level": 679,
+    "levelType": "user",
+    "totalExp": 228551190
+  },
+  {
+    "id": 1014,
+    "level": 680,
+    "levelType": "user",
+    "totalExp": 229137485
+  },
+  {
+    "id": 1015,
+    "level": 681,
+    "levelType": "user",
+    "totalExp": 229723780
+  },
+  {
+    "id": 1016,
+    "level": 682,
+    "levelType": "user",
+    "totalExp": 230310075
+  },
+  {
+    "id": 1017,
+    "level": 683,
+    "levelType": "user",
+    "totalExp": 230896370
+  },
+  {
+    "id": 1018,
+    "level": 684,
+    "levelType": "user",
+    "totalExp": 231482665
+  },
+  {
+    "id": 1019,
+    "level": 685,
+    "levelType": "user",
+    "totalExp": 232068960
+  },
+  {
+    "id": 1020,
+    "level": 686,
+    "levelType": "user",
+    "totalExp": 232655255
+  },
+  {
+    "id": 1021,
+    "level": 687,
+    "levelType": "user",
+    "totalExp": 233241550
+  },
+  {
+    "id": 1022,
+    "level": 688,
+    "levelType": "user",
+    "totalExp": 233827845
+  },
+  {
+    "id": 1023,
+    "level": 689,
+    "levelType": "user",
+    "totalExp": 234414140
+  },
+  {
+    "id": 1024,
+    "level": 690,
+    "levelType": "user",
+    "totalExp": 235000435
+  },
+  {
+    "id": 1025,
+    "level": 691,
+    "levelType": "user",
+    "totalExp": 235586730
+  },
+  {
+    "id": 1026,
+    "level": 692,
+    "levelType": "user",
+    "totalExp": 236173025
+  },
+  {
+    "id": 1027,
+    "level": 693,
+    "levelType": "user",
+    "totalExp": 236759320
+  },
+  {
+    "id": 1028,
+    "level": 694,
+    "levelType": "user",
+    "totalExp": 237345615
+  },
+  {
+    "id": 1029,
+    "level": 695,
+    "levelType": "user",
+    "totalExp": 237931910
+  },
+  {
+    "id": 1030,
+    "level": 696,
+    "levelType": "user",
+    "totalExp": 238518205
+  },
+  {
+    "id": 1031,
+    "level": 697,
+    "levelType": "user",
+    "totalExp": 239104500
+  },
+  {
+    "id": 1032,
+    "level": 698,
+    "levelType": "user",
+    "totalExp": 239690795
+  },
+  {
+    "id": 1033,
+    "level": 699,
+    "levelType": "user",
+    "totalExp": 240277090
+  },
+  {
+    "id": 1034,
+    "level": 700,
+    "levelType": "user",
+    "totalExp": 240863385
+  },
+  {
+    "id": 1035,
+    "level": 136,
+    "levelType": "character",
+    "totalExp": 1205
+  },
+  {
+    "id": 1036,
+    "level": 137,
+    "levelType": "character",
+    "totalExp": 1215
+  },
+  {
+    "id": 1037,
+    "level": 138,
+    "levelType": "character",
+    "totalExp": 1225
+  },
+  {
+    "id": 1038,
+    "level": 139,
+    "levelType": "character",
+    "totalExp": 1235
+  },
+  {
+    "id": 1039,
+    "level": 140,
+    "levelType": "character",
+    "totalExp": 1245
+  },
+  {
+    "id": 1040,
+    "level": 141,
+    "levelType": "character",
+    "totalExp": 1255
+  },
+  {
+    "id": 1041,
+    "level": 142,
+    "levelType": "character",
+    "totalExp": 1265
+  },
+  {
+    "id": 1042,
+    "level": 143,
+    "levelType": "character",
+    "totalExp": 1275
+  },
+  {
+    "id": 1043,
+    "level": 144,
+    "levelType": "character",
+    "totalExp": 1285
+  },
+  {
+    "id": 1044,
+    "level": 145,
+    "levelType": "character",
+    "totalExp": 1295
+  },
+  {
+    "id": 1045,
+    "level": 146,
+    "levelType": "character",
+    "totalExp": 1305
+  },
+  {
+    "id": 1046,
+    "level": 147,
+    "levelType": "character",
+    "totalExp": 1315
+  },
+  {
+    "id": 1047,
+    "level": 148,
+    "levelType": "character",
+    "totalExp": 1325
+  },
+  {
+    "id": 1048,
+    "level": 149,
+    "levelType": "character",
+    "totalExp": 1335
+  },
+  {
+    "id": 1049,
+    "level": 150,
+    "levelType": "character",
+    "totalExp": 1345
+  },
+  {
+    "id": 1050,
+    "level": 151,
+    "levelType": "character",
+    "totalExp": 1355
+  },
+  {
+    "id": 1051,
+    "level": 152,
+    "levelType": "character",
+    "totalExp": 1365
+  },
+  {
+    "id": 1052,
+    "level": 153,
+    "levelType": "character",
+    "totalExp": 1375
+  },
+  {
+    "id": 1053,
+    "level": 154,
+    "levelType": "character",
+    "totalExp": 1385
+  },
+  {
+    "id": 1054,
+    "level": 155,
+    "levelType": "character",
+    "totalExp": 1395
+  },
+  {
+    "id": 1055,
+    "level": 156,
+    "levelType": "character",
+    "totalExp": 1405
+  },
+  {
+    "id": 1056,
+    "level": 157,
+    "levelType": "character",
+    "totalExp": 1415
+  },
+  {
+    "id": 1057,
+    "level": 158,
+    "levelType": "character",
+    "totalExp": 1425
+  },
+  {
+    "id": 1058,
+    "level": 159,
+    "levelType": "character",
+    "totalExp": 1435
+  },
+  {
+    "id": 1059,
+    "level": 160,
+    "levelType": "character",
+    "totalExp": 1445
+  },
+  {
+    "id": 1060,
+    "level": 701,
+    "levelType": "user",
+    "totalExp": 241449680
+  },
+  {
+    "id": 1061,
+    "level": 702,
+    "levelType": "user",
+    "totalExp": 242035975
+  },
+  {
+    "id": 1062,
+    "level": 703,
+    "levelType": "user",
+    "totalExp": 242622270
+  },
+  {
+    "id": 1063,
+    "level": 704,
+    "levelType": "user",
+    "totalExp": 243208565
+  },
+  {
+    "id": 1064,
+    "level": 705,
+    "levelType": "user",
+    "totalExp": 243794860
+  },
+  {
+    "id": 1065,
+    "level": 706,
+    "levelType": "user",
+    "totalExp": 244381155
+  },
+  {
+    "id": 1066,
+    "level": 707,
+    "levelType": "user",
+    "totalExp": 244967450
+  },
+  {
+    "id": 1067,
+    "level": 708,
+    "levelType": "user",
+    "totalExp": 245553745
+  },
+  {
+    "id": 1068,
+    "level": 709,
+    "levelType": "user",
+    "totalExp": 246140040
+  },
+  {
+    "id": 1069,
+    "level": 710,
+    "levelType": "user",
+    "totalExp": 246726335
+  },
+  {
+    "id": 1070,
+    "level": 711,
+    "levelType": "user",
+    "totalExp": 247312630
+  },
+  {
+    "id": 1071,
+    "level": 712,
+    "levelType": "user",
+    "totalExp": 247898925
+  },
+  {
+    "id": 1072,
+    "level": 713,
+    "levelType": "user",
+    "totalExp": 248485220
+  },
+  {
+    "id": 1073,
+    "level": 714,
+    "levelType": "user",
+    "totalExp": 249071515
+  },
+  {
+    "id": 1074,
+    "level": 715,
+    "levelType": "user",
+    "totalExp": 249657810
+  },
+  {
+    "id": 1075,
+    "level": 716,
+    "levelType": "user",
+    "totalExp": 250244105
+  },
+  {
+    "id": 1076,
+    "level": 717,
+    "levelType": "user",
+    "totalExp": 250830400
+  },
+  {
+    "id": 1077,
+    "level": 718,
+    "levelType": "user",
+    "totalExp": 251416695
+  },
+  {
+    "id": 1078,
+    "level": 719,
+    "levelType": "user",
+    "totalExp": 252002990
+  },
+  {
+    "id": 1079,
+    "level": 720,
+    "levelType": "user",
+    "totalExp": 252589285
+  },
+  {
+    "id": 1080,
+    "level": 721,
+    "levelType": "user",
+    "totalExp": 253175580
+  },
+  {
+    "id": 1081,
+    "level": 722,
+    "levelType": "user",
+    "totalExp": 253761875
+  },
+  {
+    "id": 1082,
+    "level": 723,
+    "levelType": "user",
+    "totalExp": 254348170
+  },
+  {
+    "id": 1083,
+    "level": 724,
+    "levelType": "user",
+    "totalExp": 254934465
+  },
+  {
+    "id": 1084,
+    "level": 725,
+    "levelType": "user",
+    "totalExp": 255520760
+  },
+  {
+    "id": 1085,
+    "level": 726,
+    "levelType": "user",
+    "totalExp": 256107055
+  },
+  {
+    "id": 1086,
+    "level": 727,
+    "levelType": "user",
+    "totalExp": 256693350
+  },
+  {
+    "id": 1087,
+    "level": 728,
+    "levelType": "user",
+    "totalExp": 257279645
+  },
+  {
+    "id": 1088,
+    "level": 729,
+    "levelType": "user",
+    "totalExp": 257865940
+  },
+  {
+    "id": 1089,
+    "level": 730,
+    "levelType": "user",
+    "totalExp": 258452235
+  },
+  {
+    "id": 1090,
+    "level": 731,
+    "levelType": "user",
+    "totalExp": 259038530
+  },
+  {
+    "id": 1091,
+    "level": 732,
+    "levelType": "user",
+    "totalExp": 259624825
+  },
+  {
+    "id": 1092,
+    "level": 733,
+    "levelType": "user",
+    "totalExp": 260211120
+  },
+  {
+    "id": 1093,
+    "level": 734,
+    "levelType": "user",
+    "totalExp": 260797415
+  },
+  {
+    "id": 1094,
+    "level": 735,
+    "levelType": "user",
+    "totalExp": 261383710
+  },
+  {
+    "id": 1095,
+    "level": 736,
+    "levelType": "user",
+    "totalExp": 261970005
+  },
+  {
+    "id": 1096,
+    "level": 737,
+    "levelType": "user",
+    "totalExp": 262556300
+  },
+  {
+    "id": 1097,
+    "level": 738,
+    "levelType": "user",
+    "totalExp": 263142595
+  },
+  {
+    "id": 1098,
+    "level": 739,
+    "levelType": "user",
+    "totalExp": 263728890
+  },
+  {
+    "id": 1099,
+    "level": 740,
+    "levelType": "user",
+    "totalExp": 264315185
+  },
+  {
+    "id": 1100,
+    "level": 741,
+    "levelType": "user",
+    "totalExp": 264901480
+  },
+  {
+    "id": 1101,
+    "level": 742,
+    "levelType": "user",
+    "totalExp": 265487775
+  },
+  {
+    "id": 1102,
+    "level": 743,
+    "levelType": "user",
+    "totalExp": 266074070
+  },
+  {
+    "id": 1103,
+    "level": 744,
+    "levelType": "user",
+    "totalExp": 266660365
+  },
+  {
+    "id": 1104,
+    "level": 745,
+    "levelType": "user",
+    "totalExp": 267246660
+  },
+  {
+    "id": 1105,
+    "level": 746,
+    "levelType": "user",
+    "totalExp": 267832955
+  },
+  {
+    "id": 1106,
+    "level": 747,
+    "levelType": "user",
+    "totalExp": 268419250
+  },
+  {
+    "id": 1107,
+    "level": 748,
+    "levelType": "user",
+    "totalExp": 269005545
+  },
+  {
+    "id": 1108,
+    "level": 749,
+    "levelType": "user",
+    "totalExp": 269591840
+  },
+  {
+    "id": 1109,
+    "level": 750,
+    "levelType": "user",
+    "totalExp": 270178135
+  },
+  {
+    "id": 1110,
+    "level": 751,
+    "levelType": "user",
+    "totalExp": 270764430
+  },
+  {
+    "id": 1111,
+    "level": 752,
+    "levelType": "user",
+    "totalExp": 271350725
+  },
+  {
+    "id": 1112,
+    "level": 753,
+    "levelType": "user",
+    "totalExp": 271937020
+  },
+  {
+    "id": 1113,
+    "level": 754,
+    "levelType": "user",
+    "totalExp": 272523315
+  },
+  {
+    "id": 1114,
+    "level": 755,
+    "levelType": "user",
+    "totalExp": 273109610
+  },
+  {
+    "id": 1115,
+    "level": 756,
+    "levelType": "user",
+    "totalExp": 273695905
+  },
+  {
+    "id": 1116,
+    "level": 757,
+    "levelType": "user",
+    "totalExp": 274282200
+  },
+  {
+    "id": 1117,
+    "level": 758,
+    "levelType": "user",
+    "totalExp": 274868495
+  },
+  {
+    "id": 1118,
+    "level": 759,
+    "levelType": "user",
+    "totalExp": 275454790
+  },
+  {
+    "id": 1119,
+    "level": 760,
+    "levelType": "user",
+    "totalExp": 276041085
+  },
+  {
+    "id": 1120,
+    "level": 761,
+    "levelType": "user",
+    "totalExp": 276627380
+  },
+  {
+    "id": 1121,
+    "level": 762,
+    "levelType": "user",
+    "totalExp": 277213675
+  },
+  {
+    "id": 1122,
+    "level": 763,
+    "levelType": "user",
+    "totalExp": 277799970
+  },
+  {
+    "id": 1123,
+    "level": 764,
+    "levelType": "user",
+    "totalExp": 278386265
+  },
+  {
+    "id": 1124,
+    "level": 765,
+    "levelType": "user",
+    "totalExp": 278972560
+  },
+  {
+    "id": 1125,
+    "level": 766,
+    "levelType": "user",
+    "totalExp": 279558855
+  },
+  {
+    "id": 1126,
+    "level": 767,
+    "levelType": "user",
+    "totalExp": 280145150
+  },
+  {
+    "id": 1127,
+    "level": 768,
+    "levelType": "user",
+    "totalExp": 280731445
+  },
+  {
+    "id": 1128,
+    "level": 769,
+    "levelType": "user",
+    "totalExp": 281317740
+  },
+  {
+    "id": 1129,
+    "level": 770,
+    "levelType": "user",
+    "totalExp": 281904035
+  },
+  {
+    "id": 1130,
+    "level": 771,
+    "levelType": "user",
+    "totalExp": 282490330
+  },
+  {
+    "id": 1131,
+    "level": 772,
+    "levelType": "user",
+    "totalExp": 283076625
+  },
+  {
+    "id": 1132,
+    "level": 773,
+    "levelType": "user",
+    "totalExp": 283662920
+  },
+  {
+    "id": 1133,
+    "level": 774,
+    "levelType": "user",
+    "totalExp": 284249215
+  },
+  {
+    "id": 1134,
+    "level": 775,
+    "levelType": "user",
+    "totalExp": 284835510
+  },
+  {
+    "id": 1135,
+    "level": 776,
+    "levelType": "user",
+    "totalExp": 285421805
+  },
+  {
+    "id": 1136,
+    "level": 777,
+    "levelType": "user",
+    "totalExp": 286008100
+  },
+  {
+    "id": 1137,
+    "level": 778,
+    "levelType": "user",
+    "totalExp": 286594395
+  },
+  {
+    "id": 1138,
+    "level": 779,
+    "levelType": "user",
+    "totalExp": 287180690
+  },
+  {
+    "id": 1139,
+    "level": 780,
+    "levelType": "user",
+    "totalExp": 287766985
+  },
+  {
+    "id": 1140,
+    "level": 781,
+    "levelType": "user",
+    "totalExp": 288353280
+  },
+  {
+    "id": 1141,
+    "level": 782,
+    "levelType": "user",
+    "totalExp": 288939575
+  },
+  {
+    "id": 1142,
+    "level": 783,
+    "levelType": "user",
+    "totalExp": 289525870
+  },
+  {
+    "id": 1143,
+    "level": 784,
+    "levelType": "user",
+    "totalExp": 290112165
+  },
+  {
+    "id": 1144,
+    "level": 785,
+    "levelType": "user",
+    "totalExp": 290698460
+  },
+  {
+    "id": 1145,
+    "level": 786,
+    "levelType": "user",
+    "totalExp": 291284755
+  },
+  {
+    "id": 1146,
+    "level": 787,
+    "levelType": "user",
+    "totalExp": 291871050
+  },
+  {
+    "id": 1147,
+    "level": 788,
+    "levelType": "user",
+    "totalExp": 292457345
+  },
+  {
+    "id": 1148,
+    "level": 789,
+    "levelType": "user",
+    "totalExp": 293043640
+  },
+  {
+    "id": 1149,
+    "level": 790,
+    "levelType": "user",
+    "totalExp": 293629935
+  },
+  {
+    "id": 1150,
+    "level": 791,
+    "levelType": "user",
+    "totalExp": 294216230
+  },
+  {
+    "id": 1151,
+    "level": 792,
+    "levelType": "user",
+    "totalExp": 294802525
+  },
+  {
+    "id": 1152,
+    "level": 793,
+    "levelType": "user",
+    "totalExp": 295388820
+  },
+  {
+    "id": 1153,
+    "level": 794,
+    "levelType": "user",
+    "totalExp": 295975115
+  },
+  {
+    "id": 1154,
+    "level": 795,
+    "levelType": "user",
+    "totalExp": 296561410
+  },
+  {
+    "id": 1155,
+    "level": 796,
+    "levelType": "user",
+    "totalExp": 297147705
+  },
+  {
+    "id": 1156,
+    "level": 797,
+    "levelType": "user",
+    "totalExp": 297734000
+  },
+  {
+    "id": 1157,
+    "level": 798,
+    "levelType": "user",
+    "totalExp": 298320295
+  },
+  {
+    "id": 1158,
+    "level": 799,
+    "levelType": "user",
+    "totalExp": 298906590
+  },
+  {
+    "id": 1159,
+    "level": 800,
+    "levelType": "user",
+    "totalExp": 299492885
+  },
+  {
+    "id": 1160,
+    "level": 161,
+    "levelType": "character",
+    "totalExp": 1455
+  },
+  {
+    "id": 1161,
+    "level": 162,
+    "levelType": "character",
+    "totalExp": 1465
+  },
+  {
+    "id": 1162,
+    "level": 163,
+    "levelType": "character",
+    "totalExp": 1475
+  },
+  {
+    "id": 1163,
+    "level": 164,
+    "levelType": "character",
+    "totalExp": 1485
+  },
+  {
+    "id": 1164,
+    "level": 165,
+    "levelType": "character",
+    "totalExp": 1495
+  },
+  {
+    "id": 1165,
+    "level": 166,
+    "levelType": "character",
+    "totalExp": 1505
+  },
+  {
+    "id": 1166,
+    "level": 167,
+    "levelType": "character",
+    "totalExp": 1515
+  },
+  {
+    "id": 1167,
+    "level": 168,
+    "levelType": "character",
+    "totalExp": 1525
+  },
+  {
+    "id": 1168,
+    "level": 169,
+    "levelType": "character",
+    "totalExp": 1535
+  },
+  {
+    "id": 1169,
+    "level": 170,
+    "levelType": "character",
+    "totalExp": 1545
+  },
+  {
+    "id": 1170,
+    "level": 171,
+    "levelType": "character",
+    "totalExp": 1555
+  },
+  {
+    "id": 1171,
+    "level": 172,
+    "levelType": "character",
+    "totalExp": 1565
+  },
+  {
+    "id": 1172,
+    "level": 173,
+    "levelType": "character",
+    "totalExp": 1575
+  },
+  {
+    "id": 1173,
+    "level": 174,
+    "levelType": "character",
+    "totalExp": 1585
+  },
+  {
+    "id": 1174,
+    "level": 175,
+    "levelType": "character",
+    "totalExp": 1595
+  }
+]
