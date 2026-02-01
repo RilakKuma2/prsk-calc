@@ -1,11 +1,16 @@
 import React from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 
-export const SectionHeaderRow = ({ label, spacer }) => (
+export const SectionHeaderRow = ({ label, spacer, extraHeader }) => (
     <tr>
         <td colSpan={spacer ? 3 : 2} className="text-center pt-1 pb-2">
             <span className="font-bold text-gray-700">{label}</span>
         </td>
+        {extraHeader && (
+            <td className="text-center pt-1 pb-2 pl-2">
+                <span className="font-bold text-xs text-indigo-600">{extraHeader}</span>
+            </td>
+        )}
     </tr>
 );
 
