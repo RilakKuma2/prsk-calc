@@ -12,6 +12,9 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const [pastCardsOwned, setPastCardsOwned] = useState(surveyData.pastCardsOwned || '0');
   const [currentLevel, setCurrentLevel] = useState(surveyData.amatsuyuCurrentLevel || '0');
   const [targetLevel, setTargetLevel] = useState(surveyData.amatsuyuTargetLevel || '400');
+  const [currentPoints, setCurrentPoints] = useState(surveyData.amatsuyuCurrentPoints || '0');
+  const [gachaSealCount, setGachaSealCount] = useState(surveyData.gachaSealCount || '0');
+  const [totalNeeded, setTotalNeeded] = useState(0);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
 
@@ -89,7 +92,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const [highestBirthdayTitle, setHighestBirthdayTitle] = useState('');
 
   useEffect(() => {
-    const newSurveyData = { ...surveyData, hasCurrentYearCard, pastCardsOwned, amatsuyuCurrentLevel: currentLevel, amatsuyuTargetLevel: targetLevel };
+    const newSurveyData = { ...surveyData, hasCurrentYearCard, pastCardsOwned, amatsuyuCurrentLevel: currentLevel, amatsuyuTargetLevel: targetLevel, amatsuyuCurrentPoints: currentPoints, gachaSealCount };
     setSurveyData(newSurveyData);
 
     // Calculate Birthday Card Bonus
@@ -110,8 +113,13 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
     const targetLvl = parseInt(targetLevel || '400');
     const pointsPerLevel = 10000;
 
+    // Store original total points needed
+    const tNeeded = Math.ceil(((targetLvl - currentLvl) * pointsPerLevel - parseInt(currentPoints || '0')) / pointsPerItem);
+    setTotalNeeded(tNeeded);
+
     if (targetLvl <= currentLvl) {
       setNeededAmatsuyu(0);
+      setTotalNeeded(0);
       setMySekaiStones(0);
       setMySekaiLaps(0);
       setFiveFireStones(0);
@@ -121,8 +129,13 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
       return;
     }
 
-    const totalPointsNeeded = (targetLvl - currentLvl) * pointsPerLevel;
-    const needed = Math.ceil(totalPointsNeeded / pointsPerItem);
+    const totalPointsNeeded = (targetLvl - currentLvl) * pointsPerLevel - parseInt(currentPoints || '0');
+    let needed = Math.ceil(totalPointsNeeded / pointsPerItem);
+
+    // Subtract Gacha Seals (1 Seal = 150 Amatsuyu)
+    const sealPoints = parseInt(gachaSealCount || '0') * 150;
+    needed = Math.max(0, needed - sealPoints);
+
     setNeededAmatsuyu(needed);
 
     // My Sekai Calculations
@@ -165,7 +178,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
     setHighestBirthdayTitle(currentHighestTitle);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasCurrentYearCard, pastCardsOwned, currentLevel, targetLevel, t]);
+  }, [hasCurrentYearCard, pastCardsOwned, currentLevel, targetLevel, currentPoints, gachaSealCount, t]);
 
   return (
     <div id="amatsuyu-tab-content" className="p-4 space-y-4">
@@ -191,15 +204,59 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
         <InputRow
           label={t('amatsuyu.current_level')}
           value={currentLevel}
-          onChange={e => setCurrentLevel(e.target.value)}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 400) {
+              setCurrentLevel('400');
+            } else {
+              setCurrentLevel(e.target.value);
+            }
+          }}
           placeholder="0"
           spacer={true}
         />
         <InputRow
           label={t('amatsuyu.target_level')}
           value={targetLevel}
-          onChange={e => { const value = parseInt(e.target.value); setTargetLevel(isNaN(value) ? 0 : Math.min(400, Math.max(0, value))); }}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 400) {
+              setTargetLevel('400');
+            } else {
+              setTargetLevel(e.target.value);
+            }
+          }}
           placeholder="400"
+          spacer={true}
+        />
+        <InputRow
+          label={t('amatsuyu.current_points')}
+          value={currentPoints}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 10000) {
+              setCurrentPoints('10000');
+            } else if (val < 0) {
+              setCurrentPoints('0');
+            } else {
+              setCurrentPoints(e.target.value);
+            }
+          }}
+          placeholder="0"
+          spacer={true}
+        />
+        <InputRow
+          label={t('amatsuyu.gacha_seal')}
+          value={gachaSealCount}
+          onChange={e => {
+            const val = parseInt(e.target.value);
+            if (val > 200) {
+              setGachaSealCount('200');
+            } else {
+              setGachaSealCount(e.target.value);
+            }
+          }}
+          placeholder="0"
           spacer={true}
         />
       </InputTableWrapper>
@@ -238,9 +295,25 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
             <span className="text-gray-600">{t('amatsuyu.points_per_item')}</span>
             <span className="font-bold text-purple-600 ">{Math.floor(amatsuyuPointsPerItem).toLocaleString()}pt</span>
           </div>
-          <div className="grid grid-cols-2 items-center pt-1 border-t mt-1 text-center">
-            <span className="text-gray-900 font-bold">{t('amatsuyu.needed_amatsuyu')}</span>
-            <span className="font-bold text-lg text-purple-600">{neededAmatsuyu.toLocaleString()}{t('amatsuyu.suffix_count')}</span>
+          <div className="pt-1 border-t mt-1 text-center space-y-1">
+            {parseInt(gachaSealCount || '0') > 0 && (
+              <>
+                {/* Line 1: Total Needed */}
+                <div className="grid grid-cols-2 items-center text-center">
+                  <span className="text-gray-600 text-xs">{t('amatsuyu.total_needed')}</span>
+                  <span className="font-semibold text-xs text-purple-600">{totalNeeded.toLocaleString()}{t('amatsuyu.suffix_count')}</span>
+                </div>
+                {/* Line 2: Seals Obtained */}
+                <div className="grid grid-cols-2 items-center text-center">
+                  <span className="text-gray-600 text-xs">{t('amatsuyu.seal_obtained')}</span>
+                  <span className="font-semibold text-xs text-purple-600">-{(parseInt(gachaSealCount || '0') * 150).toLocaleString()}{t('amatsuyu.suffix_count')}</span>
+                </div>
+              </>
+            )}
+            <div className="grid grid-cols-2 items-center">
+              <span className="text-gray-900 font-bold">{t('amatsuyu.needed_amatsuyu')}</span>
+              <span className="font-bold text-lg text-purple-600">{neededAmatsuyu.toLocaleString()}{t('amatsuyu.suffix_count')}</span>
+            </div>
           </div>
         </div>
 
@@ -261,6 +334,22 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
                 <span className="font-bold text-green-900">{mySekaiLaps.toLocaleString()}{t('amatsuyu.suffix_laps')}</span>
               </div>
             </div>
+            {parseInt(gachaSealCount || '0') > 0 && (
+              <div className="mt-2 pt-1 border-t border-green-200 text-[10px] text-green-800 leading-tight space-y-0.5">
+                <div className="flex justify-between">
+                  <span className="opacity-75">{t('amatsuyu.seal_exchange')}</span>
+                  <span className="font-bold">{(parseInt(gachaSealCount || '0') * 300).toLocaleString()}{t('amatsuyu.crystals')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="opacity-75">{t('amatsuyu.farming')}</span>
+                  <span className="font-bold">{(mySekaiStones * 10).toLocaleString()}{t('amatsuyu.crystals')}</span>
+                </div>
+                <div className="mt-0.5 pt-0.5 border-t border-green-200 flex justify-between">
+                  <span className="font-bold opacity-75">{t('amatsuyu.total')}</span>
+                  <span className="font-bold text-green-900">{(parseInt(gachaSealCount || '0') * 300 + mySekaiStones * 10).toLocaleString()}{t('amatsuyu.crystals')}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 5-Fire Card */}
@@ -278,6 +367,22 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
                 <span className="font-bold text-blue-900">{fiveFireHours}{t('amatsuyu.time')}</span>
               </div>
             </div>
+            {parseInt(gachaSealCount || '0') > 0 && (
+              <div className="mt-2 pt-1 border-t border-blue-200 text-[10px] text-blue-800 leading-tight space-y-0.5">
+                <div className="flex justify-between">
+                  <span className="opacity-75">{t('amatsuyu.seal_exchange')}</span>
+                  <span className="font-bold">{(parseInt(gachaSealCount || '0') * 300).toLocaleString()}{t('amatsuyu.crystals')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="opacity-75">{t('amatsuyu.farming')}</span>
+                  <span className="font-bold">{(fiveFireStones * 10).toLocaleString()}{t('amatsuyu.crystals')}</span>
+                </div>
+                <div className="mt-0.5 pt-0.5 border-t border-blue-200 flex justify-between">
+                  <span className="font-bold opacity-75">{t('amatsuyu.total')}</span>
+                  <span className="font-bold text-blue-900">{(parseInt(gachaSealCount || '0') * 300 + fiveFireStones * 10).toLocaleString()}{t('amatsuyu.crystals')}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

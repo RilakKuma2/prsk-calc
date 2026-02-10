@@ -29,6 +29,7 @@ const TARGET_SONGS = [
     { id: 488, difficulty: 'append', level: 31 },  // 메모리아
     { id: 48, difficulty: 'master', level: 24 },   // 월이마
     { id: 186, difficulty: 'master', level: 28 },  // 개벽 (Creation Myth)
+    { id: 691, difficulty: 'append', level: 31 },  // 개벽 (Creation Myth)
 ];
 
 const calculateRank = (score, level) => {
@@ -323,13 +324,13 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                                                         {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty}
                                                     </span>
                                                 </div>
-                                                {res.songId === 488 && (
+                                                {/* {res.songId === 488 && (
                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 md:-mt-1.5 w-max">
                                                         <span className="text-[9px] text-gray-400 font-medium whitespace-nowrap">
                                                             {t('auto.recommend_0034')}
                                                         </span>
                                                     </div>
-                                                )}
+                                                )} */}
                                             </div>
                                         </td>
                                         <td className="px-1 py-2 md:py-1.5 md:px-4 text-center">
@@ -469,9 +470,9 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                             </tbody>
                         </table>
                     </div>
-                    <div className="mt-2 text-[11px] text-gray-500 text-right px-1">
+                    {/* <div className="mt-2 text-[11px] text-gray-500 text-right px-1">
                         * {t('auto.excluded_song_note')}
-                    </div>
+                    </div> */}
                 </div>
             )}
         </div>

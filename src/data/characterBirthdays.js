@@ -17,7 +17,7 @@ export const characterBirthdays = [
     { date: '08.11', nameKo: '이치카', nameJa: '一歌', nameEn: 'Ichika', color: '#33aaee', image: '01' },
     { date: '08.27', nameKo: '미즈키', nameJa: '瑞希', nameEn: 'Mizuki', color: '#ddaacc', image: '20' },
     { date: '08.31', nameKo: '미쿠', nameJa: 'ミク', nameEn: 'Miku', color: '#33ccbb', image: '21' },
-    { date: '09.09', nameKo: '에무', nameJa: '笑夢', nameEn: 'Emu', color: '#ff66bb', image: '14' },
+    { date: '09.09', nameKo: '에무', nameJa: 'えむ', nameEn: 'Emu', color: '#ff66bb', image: '14' },
     { date: '10.05', nameKo: '하루카', nameJa: '遥', nameEn: 'Haruka', color: '#99ccff', image: '06' },
     { date: '10.27', nameKo: '호나미', nameJa: '穂波', nameEn: 'Honami', color: '#ee6666', image: '03' },
     { date: '11.05', nameKo: '메이코', nameJa: 'MEIKO', nameEn: 'MEIKO', color: '#dd4444', image: '25' },

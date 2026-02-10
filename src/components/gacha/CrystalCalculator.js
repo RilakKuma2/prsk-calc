@@ -66,7 +66,7 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
     useEffect(() => {
         const fetchEventData = async () => {
             try {
-                const response = await fetch('https://api.rilaksekai.com/api/ranking');
+                const response = await fetch('https://api.rilaksekai.com/api/ranking', { cache: 'reload' });
                 const data = await response.json();
                 if (data && data.latest_event) {
                     setEventData(data.latest_event);

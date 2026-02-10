@@ -140,7 +140,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             const updatedDeck = {
                 ...currentDeck,
                 useBloomFes: checked,
-                bloomLevels: checked ? (currentDeck?.bloomLevels || { leader: 0, member2: 0, member3: 0, member4: 0, member5: 0 }) : { leader: 0, member2: 0, member3: 0, member4: 0, member5: 0 }
+                bloomLevels: currentDeck?.bloomLevels || { leader: 0, member2: 0, member3: 0, member4: 0, member5: 0 }
             };
 
             // Recalculate internal value when toggling bloom fes
@@ -205,6 +205,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     // For min: use base only (random member could have 0 contribution)
     // For max: base + 50% of highest other member's skill (use bloom max if they have bloom)
     const getBloomSkillRange = (memberKey) => {
+        if (!useBloomFes) return null;
         const level = bloomLevels[memberKey];
         if (!level || !BLOOM_LEVELS[level]) return null;
         const [base, maxCap] = BLOOM_LEVELS[level];

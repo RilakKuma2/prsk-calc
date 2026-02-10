@@ -35,19 +35,22 @@ function normalizeSong(apiSong) {
 
 /**
  * music_metas.json 가져오기
- * 외부 URL에서 fetch 시도 후 실패 시 로컬 파일 사용
+ * 1. 외부 URL (Remote)
+ * 2. Public 폴더 (Fallback 1)
+ * 3. 로컬 번들 파일 (Fallback 2)
  */
 export async function getMusicMetas() {
     if (cachedMusicMetas) return cachedMusicMetas;
 
     try {
-        const response = await fetch('https://asset.rilaksekai.com/music_metas.json');
-        if (!response.ok) throw new Error('Fetch failed');
-        cachedMusicMetas = await response.json();
-        console.log('Loaded music_metas from external API');
+        // 1. Try Remote
+        const responseReference = await fetch('https://asset.rilaksekai.com/music_metas.json');
+        if (!responseReference.ok) throw new Error('Remote fetch failed');
+        cachedMusicMetas = await responseReference.json();
+        console.log('Loaded music_metas from REMOTE API');
         return cachedMusicMetas;
-    } catch (error) {
-        console.warn('Failed to fetch music_metas from API, using local fallback:', error.message);
+    } catch (remoteError) {
+        console.warn('Failed to fetch music_metas from REMOTE, using LOCAL IMPORT fallback:', remoteError.message);
         cachedMusicMetas = localMusicMetas;
         return cachedMusicMetas;
     }

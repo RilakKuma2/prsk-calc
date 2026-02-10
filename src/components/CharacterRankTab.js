@@ -6,6 +6,9 @@ import missionsEN from '../data/characterMissionV2s_en.json';
 import parameterGroups from '../data/characterMissionV2ParameterGroups.json';
 import levels from '../data/levels.json';
 import { useTranslation } from '../contexts/LanguageContext';
+import { characterBirthdays } from '../data/characterBirthdays';
+import ConfirmModal from './common/ConfirmModal';
+import CharacterSelector from './common/CharacterSelector';
 
 const CHARACTER_NAMES_KR = [
     "호시노 이치카", "텐마 사키", "모치즈키 호나미", "히노모리 시호",
@@ -90,6 +93,53 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
     const [addInputs, setAddInputs] = useState({}); // { charId: { missionType: value } }
     const [isLoaded, setIsLoaded] = useState(false);
     const [expandedEx, setExpandedEx] = useState({}); // { type: boolean }
+    const [etcPopup, setEtcPopup] = useState(false); // Amatsuyu etc popup state
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        type: null, // 'all' or 'added'
+        title: '',
+        message: ''
+    });
+
+    // Reset handlers
+    const openResetModal = (type) => {
+        setConfirmModal({
+            isOpen: true,
+            type,
+            title: t('rank.reset_confirm_title'),
+            message: type === 'all'
+                ? (
+                    <span>
+                        {t('rank.reset_all_confirm_msg_prefix')}
+                        <strong className="text-red-500">{t('rank.reset_all_confirm_msg_highlight')}</strong>
+                        {t('rank.reset_all_confirm_msg_suffix')}
+                    </span>
+                )
+                : t('rank.reset_added_confirm_msg')
+        });
+    };
+
+    const handleConfirmReset = () => {
+        if (confirmModal.type === 'all') {
+            setInputs(prev => {
+                const newInputs = { ...prev };
+                delete newInputs[selectedCharId];
+                return newInputs;
+            });
+            setAddInputs(prev => {
+                const newAddInputs = { ...prev };
+                delete newAddInputs[selectedCharId];
+                return newAddInputs;
+            });
+        } else if (confirmModal.type === 'added') {
+            setAddInputs(prev => {
+                const newAddInputs = { ...prev };
+                delete newAddInputs[selectedCharId];
+                return newAddInputs;
+            });
+        }
+        setConfirmModal({ ...confirmModal, isOpen: false });
+    };
 
     // Load saved state from localStorage
     useEffect(() => {
@@ -98,11 +148,10 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
             const savedAddInputs = JSON.parse(localStorage.getItem('charRankAddInputs') || '{}');
             const savedCharId = JSON.parse(localStorage.getItem('charRankSelectedId') || '1');
 
-            const savedExpandedEx = JSON.parse(localStorage.getItem('charRankExpandedEx') || '{}');
             setInputs(savedInputs);
             setAddInputs(savedAddInputs);
             setSelectedCharId(Number(savedCharId) || 1);
-            setExpandedEx(savedExpandedEx);
+            setExpandedEx({});
         } catch (e) {
             console.error("Failed to load character rank data", e);
         } finally {
@@ -117,17 +166,41 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
             localStorage.setItem('charRankInputs', JSON.stringify(inputs));
             localStorage.setItem('charRankAddInputs', JSON.stringify(addInputs));
             localStorage.setItem('charRankSelectedId', JSON.stringify(selectedCharId));
-            localStorage.setItem('charRankExpandedEx', JSON.stringify(expandedEx));
         } catch (e) {
             console.error("Failed to save character rank data", e);
         }
     }, [inputs, addInputs, selectedCharId, expandedEx, isLoaded]);
 
     const toggleEx = (type) => {
-        setExpandedEx(prev => ({
-            ...prev,
-            [type]: !prev[type]
-        }));
+        setExpandedEx(prev => {
+            const charState = prev[selectedCharId] || {};
+            const currentVal = charState[type];
+
+            // If currently undefined, calculate default state (auto-open) and invert it for toggle
+            let nextVal;
+            if (currentVal === undefined) {
+                const config = MISSION_CONFIG.find(c => c.type === type);
+                const exType = config?.exType;
+                // Check if data exists
+                const exCurrentVal = (inputs[selectedCharId] || {})[exType] || 0;
+                const exAddVal = (addInputs[selectedCharId] || {})[exType] || 0;
+                const hasData = exCurrentVal > 0 || exAddVal > 0;
+
+                // If hasData is true (auto-open), user wants to toggle -> close (false)
+                // If hasData is false (auto-close), user wants to toggle -> open (true)
+                nextVal = !hasData;
+            } else {
+                nextVal = !currentVal;
+            }
+
+            return {
+                ...prev,
+                [selectedCharId]: {
+                    ...charState,
+                    [type]: nextVal
+                }
+            };
+        });
     };
 
     // Character names for current language
@@ -447,6 +520,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         const currentVal = (inputs[selectedCharId] || {})[config.type] || 0;
         const addVal = (addInputs[selectedCharId] || {})[config.type] || 0;
         let nextReq = getNextRequirement(selectedCharId, config.type, currentVal);
+        let totalNextReq = getNextRequirement(selectedCharId, config.type, currentVal + addVal);
 
         // If Maxed (no next param), use the last param's requirement to allow overflow display
         if (!nextReq && !config.isDirectExp) {
@@ -458,15 +532,29 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
             }
         }
 
+        // Similar max check for totalNextReq
+        if (!totalNextReq && !config.isDirectExp) {
+            const mission = activeMissions.find(m => m.characterId === selectedCharId && m.characterMissionType === config.type);
+            const params = mission ? (parameterMap[mission.parameterGroupId] || []) : [];
+            if (params.length > 0) {
+                const lastParam = params[params.length - 1];
+                totalNextReq = { requirement: lastParam.requirement };
+            }
+        }
+
         let percent = 0;
         let addedPercent = 0;
 
         if (nextReq) {
-            const totalVal = currentVal + addVal;
             percent = Math.min(100, (currentVal / nextReq.requirement) * 100);
-            addedPercent = Math.min(100, (totalVal / nextReq.requirement) * 100);
         } else {
             percent = 100;
+        }
+
+        if (totalNextReq) {
+            const totalVal = currentVal + addVal;
+            addedPercent = Math.min(100, (totalVal / totalNextReq.requirement) * 100);
+        } else {
             addedPercent = 100;
         }
 
@@ -480,7 +568,17 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
 
         // EX Mode variables
         const hasExMode = !!config.exType;
-        const isExExpanded = expandedEx[config.type];
+
+        let isExExpanded = (expandedEx[selectedCharId] || {})[config.type];
+        if (isExExpanded === undefined && hasExMode) {
+            const exCurrentVal = (inputs[selectedCharId] || {})[config.exType] || 0;
+            const exAddVal = (addInputs[selectedCharId] || {})[config.exType] || 0;
+            if (exCurrentVal > 0 || exAddVal > 0) {
+                isExExpanded = true;
+            } else {
+                isExExpanded = false; // Default closed if no data and no user interaction
+            }
+        }
 
         let exCurrentVal = 0, exAddVal = 0, exNextReq = null, exPercent = 0, exAddedPercent = 0;
         let exCurrentSeq = 0;
@@ -512,17 +610,32 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                     <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-1.5">
                             <h3 className="font-bold text-gray-700 text-sm">{t(`rank.missions.${config.tKey}`)}</h3>
-                            <button
-                                onClick={() => openMissionInfo(config.type)}
-                                className="text-gray-400 hover:text-indigo-500 transition-colors focus:outline-none"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                            </button>
+                            {config.type === 'etc' ? (
+                                <button
+                                    onClick={() => setEtcPopup(true)}
+                                    className="text-amber-500 hover:text-amber-600 transition-colors focus:outline-none"
+                                    title={t('rank.etc_rank_data')}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => openMissionInfo(config.type)}
+                                    className="text-gray-400 hover:text-indigo-500 transition-colors focus:outline-none"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                </button>
+                            )}
                         </div>
+
                         {hasExMode && (
                             <button
                                 onClick={() => toggleEx(config.type)}
@@ -606,7 +719,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                             })()}
                                         </div>
                                         <div className="text-[10px] text-right text-indigo-500 font-medium">
-                                            {currentVal + addVal} / {nextReq.requirement}
+                                            {currentVal + addVal} / {totalNextReq ? totalNextReq.requirement : (nextReq ? nextReq.requirement : 0)}
                                         </div>
                                     </div>
                                 )}
@@ -780,18 +893,178 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                     </div>
                 </div>
             )}
-            <div className="mb-2 flex justify-center">
-                <select
-                    className="p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-lg font-medium min-w-[200px]"
-                    value={selectedCharId}
-                    onChange={(e) => setSelectedCharId(parseInt(e.target.value))}
-                >
-                    {activeCharNames.map((name, index) => (
-                        <option key={index + 1} value={index + 1}>
-                            {name}
-                        </option>
-                    ))}
-                </select>
+            {/* Amatsuyu Data Popup */}
+            {etcPopup && (() => {
+                // Birthday logic: Check if selected character's birthday is after today in the Amatsuyu period (25/10~26/9)
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = now.getMonth() + 1;
+                const currentDay = now.getDate();
+
+                // Character ID to birthday mapping (based on characterBirthdays order sorted by date)
+                // Map selectedCharId to characterBirthdays entry
+                const charIdToBirthdayIndex = {
+                    4: 0,   // 시호 01.08
+                    18: 1,  // 마후유 01.27
+                    24: 2,  // 루카 01.30
+                    17: 3,  // 카나데 02.10
+                    26: 4,  // 카이토 02.17
+                    9: 5,   // 코하네 03.02
+                    7: 6,   // 아이리 03.19
+                    5: 7,   // 미노리 04.14
+                    19: 8,  // 에나 04.30
+                    2: 9,   // 사키 05.09
+                    13: 10, // 츠카사 05.17
+                    12: 11, // 토우야 05.25
+                    16: 12, // 루이 06.24
+                    15: 13, // 네네 07.20
+                    10: 14, // 안 07.26
+                    1: 15,  // 이치카 08.11
+                    20: 16, // 미즈키 08.27
+                    21: 17, // 미쿠 08.31
+                    14: 18, // 에무 09.09
+                    6: 19,  // 하루카 10.05
+                    3: 20,  // 호나미 10.27
+                    25: 21, // 메이코 11.05
+                    11: 22, // 아키토 11.12
+                    8: 23,  // 시즈쿠 12.06
+                    22: 24, // 린 12.27
+                    23: 25, // 렌 12.27
+                };
+
+                const birthdayIndex = charIdToBirthdayIndex[selectedCharId];
+                const charBirthday = birthdayIndex !== undefined ? characterBirthdays[birthdayIndex] : null;
+
+                let isBirthdayPassed = true; // Default: birthday has passed
+                if (charBirthday) {
+                    const [bdMonth, bdDay] = charBirthday.date.split('.').map(Number);
+                    // Amatsuyu period: 25/10 ~ 26/9
+                    // For current period ending Sep 2026:
+                    // - Birthdays from Oct-Dec: previous year (2025), always passed by now (Feb 2026)
+                    // - Birthdays from Jan-Sep: current year (2026)
+
+                    if (bdMonth >= 10) {
+                        // Oct-Dec birthdays are in the previous year (2025), so they have passed
+                        isBirthdayPassed = true;
+                    } else {
+                        // Jan-Sep birthdays are in 2026
+                        // Compare with current date
+                        const bdDate = new Date(currentYear, bdMonth - 1, bdDay);
+                        const today = new Date(currentYear, currentMonth - 1, currentDay);
+                        isBirthdayPassed = today >= bdDate;
+                    }
+                }
+
+                // Etc rank acquisition items (based on user's image)
+                const etcRankItems = [
+                    { nameKey: 'etc_items.birthday_26', value: 1, isBirthday: true },
+                    { nameKey: 'etc_items.newyear_gacha', value: 3, isBirthday: false },
+                    { nameKey: 'etc_items.memorial_5th_error', value: 1, isBirthday: false },
+                    { nameKey: 'etc_items.memorial_5th', value: 1, isBirthday: false },
+                    { nameKey: 'etc_items.exchange_5th', value: 2, isBirthday: false },
+                    { nameKey: 'etc_items.wl_2', value: 2, isBirthday: false },
+                    { nameKey: 'etc_items.exchange_4_5th', value: 2, isBirthday: false },
+                    { nameKey: 'etc_items.movie_stamp', value: 2, isBirthday: false },
+                    { nameKey: 'etc_items.exchange_4th', value: 2, isBirthday: false },
+                    { nameKey: 'etc_items.memorial_4th', value: 1, isBirthday: false, isBlue: true },
+                    { nameKey: 'etc_items.wl_1', value: 2, isBirthday: false },
+                    { nameKey: 'etc_items.stamp_3rd', value: 3, isBirthday: false },
+                    { nameKey: 'etc_items.stamp_2nd', value: 3, isBirthday: false },
+                ];
+
+                // Calculate max value
+                const maxValue = etcRankItems.reduce((sum, item) => {
+                    if (!isBirthdayPassed && item.isBirthday) return sum;
+                    return sum + item.value;
+                }, 0);
+
+                const totalValue = etcRankItems.reduce((sum, item) => sum + item.value, 0);
+
+                return (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setEtcPopup(false)}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-amber-50/50">
+                                <h3 className="font-bold text-gray-800 text-lg">{t('rank.etc_rank_data')}</h3>
+                                <button onClick={() => setEtcPopup(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div className="p-4">
+                                {/* Maximum value display */}
+                                <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                    <div className="text-center">
+                                        <span className="text-sm font-bold text-amber-700">
+                                            {isBirthdayPassed ? t('rank.max_value') : t('rank.max_value_no_bd')}
+                                        </span>
+                                        <span className="text-2xl font-black text-amber-600 ml-3">{maxValue}</span>
+                                    </div>
+                                </div>
+
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-50 text-gray-500 text-xs">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left border-b border-gray-200">{t('rank.item_name')}</th>
+                                            <th className="px-3 py-2 text-right border-b border-gray-200">{t('rank.amount')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {etcRankItems.map((item, idx) => {
+                                            const shouldStrike = !isBirthdayPassed && item.isBirthday;
+                                            return (
+                                                <tr key={idx} className={`${shouldStrike ? 'bg-gray-50 text-gray-400' : 'hover:bg-gray-50/50'}`}>
+                                                    <td className={`px-3 py-2 ${shouldStrike ? 'line-through' : ''} ${item.isBlue ? 'text-blue-700 font-medium' : ''}`}>
+                                                        {t(`rank.${item.nameKey}`)}
+                                                        {shouldStrike && <span className="text-xs text-red-400 ml-1">{t('rank.before_birthday')}</span>}
+                                                    </td>
+                                                    <td className={`px-3 py-2 text-right font-medium ${shouldStrike ? 'line-through' : ''}`}>{item.value}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+            {/* Reset Confirmation Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={handleConfirmReset}
+                onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                confirmText={t('rank.confirm', '확인')}
+                cancelText={t('rank.cancel', '취소')}
+                confirmColor="red"
+            />
+
+            <div className="mb-4 flex flex-row justify-center items-center gap-2 sm:gap-3 relative">
+                <CharacterSelector
+                    selectedId={selectedCharId}
+                    onSelect={setSelectedCharId}
+                    language={language}
+                />
+
+                <div className="flex gap-1 sm:gap-2">
+                    <button
+                        onClick={() => openResetModal('all')}
+                        className="px-2 py-2 bg-red-100 text-red-600 rounded-lg shadow-sm hover:bg-red-200 transition-colors text-xs font-bold whitespace-nowrap"
+                        title={t('rank.reset_all_confirm_msg_prefix') + t('rank.reset_all_confirm_msg_highlight') + t('rank.reset_all_confirm_msg_suffix')}
+                    >
+                        {t('rank.reset_all', '전체 초기화')}
+                    </button>
+                    <button
+                        onClick={() => openResetModal('added')}
+                        className="px-2 py-2 bg-orange-100 text-orange-600 rounded-lg shadow-sm hover:bg-orange-200 transition-colors text-xs font-bold whitespace-nowrap"
+                        title={t('rank.reset_added_confirm_msg')}
+                    >
+                        {t('rank.reset_added', '추가 초기화')}
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-6">

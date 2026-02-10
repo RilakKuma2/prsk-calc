@@ -32,10 +32,29 @@ const PATH_TO_TAB = Object.entries(TAB_PATHS).reduce((acc, [tab, path]) => {
   return acc;
 }, {});
 
-function AppContent() {
+const AppContent = () => {
   const { t, language } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Preload Data
+  useEffect(() => {
+    const preload = async () => {
+      try {
+        await Promise.all([
+          import('./utils/dataLoader').then(m => m.getMusicMetas()),
+          import('./utils/dataLoader').then(m => m.getSongOptions())
+        ]);
+      } catch (e) {
+        console.error("Data preload failed", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    preload();
+  }, []);
 
   // Determine current tab from URL path
   const getTabFromPath = useCallback(() => {
@@ -191,9 +210,17 @@ function AppContent() {
       <UpcomingEvents>
         <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
       </UpcomingEvents>
-      <Tabs currentTab={currentTab} setCurrentTab={handleTabChange} />
 
-      {tabComponents[currentTab]}
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+        </div>
+      ) : (
+        <>
+          <Tabs currentTab={currentTab} setCurrentTab={handleTabChange} />
+          {tabComponents[currentTab]}
+        </>
+      )}
 
       <div className="button-container relative">
         <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={saveData}>{t('app.save')}</button>

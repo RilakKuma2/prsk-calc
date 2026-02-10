@@ -124,7 +124,7 @@ const UpcomingEvents = ({ children }) => {
                                             {/* Amatsuyu Date */}
                                             <div className={`${isMultiple ? '' : 'flex flex-col sm:flex-row sm:justify-between sm:items-center'}`}>
                                                 <p className={`text-gray-500 leading-tight ${isMultiple ? 'text-[9px] hidden' : 'text-[10px] sm:text-xs sm:font-semibold sm:w-20'}`}>
-                                                    {language === 'ja' ? 'Amatsuyu' : '아마츠유 기간'}
+                                                    {language === 'ja' ? 'あまつゆ' : '아마츠유 기간'}
                                                 </p>
                                                 <div className={`font-bold text-gray-800 ${isMultiple ? 'text-[10px] sm:text-xs text-right leading-tight' : 'text-xs sm:text-sm whitespace-nowrap'}`}>
                                                     {isMultiple ? (

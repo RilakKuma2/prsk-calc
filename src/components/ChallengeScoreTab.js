@@ -57,6 +57,7 @@ const TARGET_SONGS = [
     { id: 11, difficulty: 'expert' },
     { id: 374, difficulty: 'master' },
     { id: 366, difficulty: 'append' },
+    { id: 11, difficulty: 'append' },
 ];
 
 function ChallengeScoreTab({ surveyData, setSurveyData }) {

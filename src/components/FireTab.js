@@ -124,7 +124,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       try {
         const [mainResponse, assetResponse] = await Promise.all([
           fetch(`${process.env.REACT_APP_API_BASE_URL}/api/ranking`),
-          fetch('https://api.rilaksekai.com/api/eventlivejp').catch(e => null) // Allow asset fetch to fail gently
+          fetch('https://api.rilaksekai.com/api/eventlivejp', { cache: 'reload' }).catch(e => null) // Allow asset fetch to fail gently
         ]);
 
         const mainData = await mainResponse.json();

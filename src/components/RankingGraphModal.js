@@ -210,7 +210,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t }) => {
         setError(null);
 
         // Fetch from custom API
-        fetch("https://api.rilaksekai.com/api/ranking")
+        fetch("https://api.rilaksekai.com/api/ranking", { cache: 'reload' })
             .then(res => {
                 if (!res.ok) throw new Error("Failed to fetch ranking data");
                 return res.json();
