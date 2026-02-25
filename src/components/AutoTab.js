@@ -22,7 +22,7 @@ const ENERGY_MULTIPLIERS = {
 
 // Fixed configuration for batch calculation with levels
 const TARGET_SONGS = [
-    { id: 11, difficulty: 'master', level: 24 },   // 비바
+    { id: 11, difficulty: 'append', level: 24 },   // 비바
     { id: 104, difficulty: 'master', level: 25 },  // 샹드
     { id: 74, difficulty: 'master', level: 22 },   // 엔비
     { id: 448, difficulty: 'master', level: 29 },  // 사게 (Sage)

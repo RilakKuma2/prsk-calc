@@ -178,11 +178,26 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           const mainMap = new Map((mainData.data || []).map(i => [i.rank, i]));
           const assetMap = new Map(assetData.map(i => [i.rank, i]));
 
-          const allRanks = new Set([...mainMap.keys(), ...assetMap.keys()]);
+          // Map to store latest range from mainData.ranks
+          const rankRangeMap = new Map();
+          if (mainData.ranks) {
+            mainData.ranks.forEach(rankObj => {
+              const r = rankObj.rank;
+              // Find the latest point with type 'p' (prediction)
+              const predictionPoints = (rankObj.points || []).filter(p => p.type === 'p');
+              if (predictionPoints.length > 0) {
+                const latest = predictionPoints.reduce((prev, current) => (prev.ts > current.ts) ? prev : current);
+                rankRangeMap.set(r, { l: latest.l || 0, u: latest.u || 0 });
+              }
+            });
+          }
+
+          const allRanks = new Set([...mainMap.keys(), ...assetMap.keys(), ...rankRangeMap.keys()]);
 
           finalData = Array.from(allRanks).map(rank => {
             const mainItem = mainMap.get(rank);
             const assetItem = assetMap.get(rank);
+            const rangeItem = rankRangeMap.get(rank);
 
             let currentScore = 0;
             let predictedScore = 0;
@@ -197,7 +212,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               currentScore = assetItem.score;
             }
 
-            return { rank, currentScore, predictedScore };
+            return {
+              rank,
+              currentScore,
+              predictedScore,
+              l: rangeItem?.l || (mainItem?.l) || 0,
+              u: rangeItem?.u || (mainItem?.u) || 0
+            };
           }).sort((a, b) => a.rank - b.rank);
 
           // Check Stale
@@ -713,37 +734,15 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     setActiveRank(null);
   };
 
-  const renderTargetButton = (rank, score) => {
-    if (activeRank !== rank) return null;
-    return (
-      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 flex gap-1">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleSetTarget(score);
-          }}
-          className="bg-indigo-600 text-white text-[10px] px-2 py-1.5 rounded shadow-lg whitespace-nowrap hover:bg-indigo-700 active:scale-95 transition-all animate-fade-in flex items-center gap-1"
-        >
-          {t('fire.set_target')}
-        </button>
-        {language === 'ko' && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setGraphRank(rank);
-            }}
-            className="bg-pink-500 text-white text-[10px] px-2 py-1.5 rounded shadow-lg whitespace-nowrap hover:bg-pink-600 active:scale-95 transition-all animate-fade-in flex items-center justify-center"
-            title="View Graph"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-          </button>
-        )}
-      </div>
-    );
+  const formatKoreanScore = (score) => {
+    if (!score || score <= 0) return '';
+    const eok = Math.floor(score / 100000000);
+    const man = Math.floor((score % 100000000) / 10000);
+
+    if (eok > 0) {
+      return `${eok}억${man > 0 ? man.toLocaleString() + '만' : ''}`;
+    }
+    return `${man.toLocaleString()}만`;
   };
 
   // Import Calculation Logic
@@ -1884,22 +1883,61 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         <table className="w-full text-sm">
                           <tbody className="divide-y divide-gray-100">
                             {predictionData.filter(r => r.rank <= 50).map((row, index) => (
-                              <tr
-                                key={row.rank}
-                                className={`transition-colors cursor-pointer active:bg-indigo-100 ${index % 2 === 0 ? 'bg-indigo-50/10 hover:bg-indigo-50/60' : 'bg-indigo-50/40 hover:bg-indigo-50/80'}`}
-                                onClick={(e) => handleRowClick(e, row.rank)}
-                              >
-                                <td className="px-3 py-2 font-bold text-indigo-600 w-20 relative">
-                                  #{row.rank}
-                                  {renderTargetButton(row.rank, row.predictedScore)}
-                                </td>
-                                <td className="px-3 py-2 text-right tabular-nums text-gray-700">
-                                  {Math.floor(row.currentScore).toLocaleString()}
-                                </td>
-                                <td className="px-3 py-2 text-right tabular-nums font-bold text-gray-900">
-                                  {Math.floor(row.predictedScore).toLocaleString()}
-                                </td>
-                              </tr>
+                              <React.Fragment key={row.rank}>
+                                <tr
+                                  className={`transition-colors cursor-pointer active:bg-indigo-100 ${index % 2 === 0 ? 'bg-indigo-50/10 hover:bg-indigo-50/60' : 'bg-indigo-50/40 hover:bg-indigo-50/80'} ${activeRank === row.rank ? 'bg-indigo-100/70 hover:bg-indigo-100/70' : ''}`}
+                                  onClick={(e) => handleRowClick(e, row.rank)}
+                                >
+                                  <td className="px-3 py-2 font-bold text-indigo-600 w-20 relative">
+                                    #{row.rank}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-gray-700">
+                                    {Math.floor(row.currentScore).toLocaleString()}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums font-bold text-gray-900">
+                                    {Math.floor(row.predictedScore).toLocaleString()}
+                                  </td>
+                                </tr>
+                                {activeRank === row.rank && (
+                                  <tr className="bg-indigo-50/80 animate-fade-in shadow-inner">
+                                    <td colSpan="3" className="px-3 py-2">
+                                      <div className="flex items-center justify-between gap-4">
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleSetTarget(row.predictedScore);
+                                            }}
+                                            className="bg-indigo-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-all text-center whitespace-nowrap"
+                                          >
+                                            {t('fire.set_target')}
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setGraphRank(row.rank);
+                                            }}
+                                            className="bg-pink-500 text-white px-2 py-1 rounded-lg shadow-sm hover:bg-pink-600 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                                            title="View Graph"
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                              <line x1="18" y1="20" x2="18" y2="10"></line>
+                                              <line x1="12" y1="20" x2="12" y2="4"></line>
+                                              <line x1="6" y1="20" x2="6" y2="14"></line>
+                                            </svg>
+                                            <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.ranking_board')}</span>
+                                          </button>
+                                        </div>
+                                        {row.l > 0 && row.u > 0 && (
+                                          <div className="text-xs sm:text-sm text-indigo-700 font-bold pr-1">
+                                            예측범위: {formatKoreanScore(row.l)} ~ {formatKoreanScore(row.u)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
                             ))}
                           </tbody>
                         </table>
@@ -1909,22 +1947,61 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
                   {/* Rest of Rows */}
                   {predictionData.filter(r => r.rank > 50).map((row, index) => (
-                    <tr
-                      key={row.rank}
-                      className={`transition-colors cursor-pointer active:bg-gray-200 ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'}`}
-                      onClick={(e) => handleRowClick(e, row.rank)}
-                    >
-                      <td className="px-3 py-2 font-bold text-indigo-600 relative">
-                        #{row.rank}
-                        {renderTargetButton(row.rank, row.predictedScore)}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-gray-700">
-                        {Math.floor(row.currentScore).toLocaleString()}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums font-bold text-gray-900">
-                        {Math.floor(row.predictedScore).toLocaleString()}
-                      </td>
-                    </tr>
+                    <React.Fragment key={row.rank}>
+                      <tr
+                        className={`transition-colors cursor-pointer active:bg-gray-200 ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'} ${activeRank === row.rank ? 'bg-gray-200 hover:bg-gray-200' : ''}`}
+                        onClick={(e) => handleRowClick(e, row.rank)}
+                      >
+                        <td className="px-3 py-2 font-bold text-indigo-600 relative">
+                          #{row.rank}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums text-gray-700">
+                          {Math.floor(row.currentScore).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums font-bold text-gray-900">
+                          {Math.floor(row.predictedScore).toLocaleString()}
+                        </td>
+                      </tr>
+                      {activeRank === row.rank && (
+                        <tr className="bg-gray-100 animate-fade-in border-b border-gray-200 shadow-inner">
+                          <td colSpan="3" className="px-3 py-2">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSetTarget(row.predictedScore);
+                                  }}
+                                  className="bg-indigo-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-all text-center whitespace-nowrap"
+                                >
+                                  {t('fire.set_target')}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setGraphRank(row.rank);
+                                  }}
+                                  className="bg-pink-500 text-white px-2 py-1 rounded-lg shadow-sm hover:bg-pink-600 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                                  title="View Graph"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                  </svg>
+                                  <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.ranking_board')}</span>
+                                </button>
+                              </div>
+                              {row.l > 0 && row.u > 0 && (
+                                <div className="text-xs sm:text-sm text-gray-600 font-bold pr-1">
+                                  예측범위: {formatKoreanScore(row.l)} ~ {formatKoreanScore(row.u)}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

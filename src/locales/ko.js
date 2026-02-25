@@ -271,7 +271,7 @@ const ko = {
         my_sekai_ep: '마이세카이 P',
         prediction_disclaimer: '상단의 현재점수와 판 당 점수를 계산에 사용',
         prediction_disclaimer_note: '렙업불 무시, 오늘 마셐 챌라 완료했다 가정',
-        ranking_board: '랭킹판',
+        ranking_board: '그래프',
         // 렙업불 관련
         levelup_bonus: '렙업불',
         levelup_bonus_toggle: '렙업불',
@@ -408,7 +408,7 @@ const ko = {
         zero_score_only: '엔비 0점만 사용 (노트 치지 않기)',
         zero_score_desc: '5의 배수 이벤포만 획득 가능',
         allow_non_mod5: '배수가 5의 배수가 아닌 경우도 계산',
-        warning_text: '▪ <b>배수 조정</b><br />&nbsp;&nbsp;&nbsp;▸ 소수점 생기지 않도록 주의 (월링 서폿덱/1,3마랭)<br />▪ <b>마이세카이</b><br />&nbsp;&nbsp;&nbsp;▸ 1불만 사용해 본 후 점수 확인 후 진행<br />&nbsp;&nbsp;&nbsp;▸ 돌과 나무만 캐서 불 계산 실수 방지<br />&nbsp;&nbsp;&nbsp;▸ 월드패스 없는 기본불 사용 금지(파란색 스테미나)<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;월드패스 기본불 혹은 라이브 충전 불만 사용',
+        warning_text: '▪ <b>배수 조정</b><br />&nbsp;&nbsp;&nbsp;▸ 소수점 생기지 않도록 주의 (월링 서폿덱/1,3마랭/★1)<br />&nbsp;&nbsp;&nbsp;▸ 편성창에서는 소수점 배수가 보이지 않음<br />▪ <b>마이세카이</b><br />&nbsp;&nbsp;&nbsp;▸ 1불만 사용해 본 후 점수 확인 후 진행<br />&nbsp;&nbsp;&nbsp;▸ 돌과 나무만 캐서 불 계산 실수 방지<br />&nbsp;&nbsp;&nbsp;▸ 월드패스 없는 기본불 사용 금지(파란색 스테미나)<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;월드패스 기본불 혹은 라이브 충전 불만 사용',
         envy_table: '엔비 점수표',
         calculating: '계산 중...',
         calculate: '계산하기',

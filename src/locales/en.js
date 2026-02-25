@@ -289,7 +289,7 @@ const en = {
         my_sekai_ep: 'My Sekai EP',
         prediction_disclaimer: 'Calculated using current score and score per game above',
         prediction_disclaimer_note: 'Ignores level-up recovery, assumes daily My Sekai/Challenge Live completed',
-        ranking_board: 'Ranking Board',
+        ranking_board: 'Graph',
     },
     challenge: {
         score: 'Score',
@@ -401,7 +401,7 @@ const en = {
         zero_score_only: 'Envy 0 Score Only (Don\'t tap)',
         zero_score_desc: 'Only gain base EP (multiple of 5)',
         allow_non_mod5: 'Allow non-mod-5 results',
-        warning_text: '▪ <b>Multiplier Adjustment</b><br />&nbsp;&nbsp;&nbsp;▸ Avoid decimals (WL Support / 1,3 MR)<br />▪ <b>My Sekai</b><br />&nbsp;&nbsp;&nbsp;▸ Check score with 1E (mine Only)<br />&nbsp;&nbsp;&nbsp;▸ Based on Pass/Refill Energy<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;No Blue Energy allowed',
+        warning_text: '▪ <b>Multiplier Adjustment</b><br />&nbsp;&nbsp;&nbsp;▸ Avoid decimals (WL Support / 1,3 MR / ★1)<br />&nbsp;&nbsp;&nbsp;▸ Decimal multipliers are not visible in the deck screen<br />▪ <b>My Sekai</b><br />&nbsp;&nbsp;&nbsp;▸ Check score with 1E (mine Only)<br />&nbsp;&nbsp;&nbsp;▸ Based on Pass/Refill Energy<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;No Blue Energy allowed',
         envy_table: 'Envy Score Table',
         calculating: 'Calculating...',
         calculate: 'Calculate',

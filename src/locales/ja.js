@@ -278,7 +278,7 @@ const ja = {
         my_sekai_ep: 'マイセカイ P',
         prediction_disclaimer: '上段の現在ポイントと周回ptを計算に使用',
         prediction_disclaimer_note: 'レベルアップ回復無視、本日のマイセカイ・チャレライ完了済みと仮定',
-        ranking_board: 'ボーダー',
+        ranking_board: 'グラフ',
         // レベルアップ回復関連
         levelup_bonus: 'Lv回復',
         levelup_bonus_toggle: 'Lvアップ回復',
@@ -398,7 +398,7 @@ const ja = {
         zero_score_only: 'エビ0点 (放置)',
         zero_score_desc: '5の倍数Pのみ獲得',
         allow_non_mod5: '非5倍数も計算',
-        warning_text: '▪ <b>倍率調整</b><br />&nbsp;&nbsp;&nbsp;▸ 小数に注意 (WLサポ or 1,3マスラン)<br />▪ <b>マイセカイ</b><br />&nbsp;&nbsp;&nbsp;▸ 1炊きでスコア確認 (石/木のみ採取)<br />&nbsp;&nbsp;&nbsp;▸ ワールドパス/ボーナス火基準<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;通常火(青色)は使用禁止',
+        warning_text: '▪ <b>倍率調整</b><br />&nbsp;&nbsp;&nbsp;▸ 小数に注意 (WLサポ/1,3マスラン/★1)<br />&nbsp;&nbsp;&nbsp;▸ 編成画面では小数の倍率は表示されません<br />▪ <b>マイセカイ</b><br />&nbsp;&nbsp;&nbsp;▸ 1炊きでスコア確認 (石/木のみ採取)<br />&nbsp;&nbsp;&nbsp;▸ ワールドパス/ボーナス火基準<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;通常火(青色)は使用禁止',
         envy_table: 'エビ表',
         calculating: '計算中...',
         calculate: '計算',
