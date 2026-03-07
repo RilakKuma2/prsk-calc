@@ -48,7 +48,7 @@ const UNIT_COLORS = {
     'none': '#999999',                   // Other/Instrumental
 };
 
-const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
+const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = false }) => {
     const { t } = useTranslation();
     const [results, setResults] = useState([]);
     const [isCalculating, setIsCalculating] = useState(false);
@@ -163,8 +163,9 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
         // If it's simple mode, all skills are same.
         const skillLeader = finalSkills && finalSkills.length > 0 ? finalSkills[0] : 0; // Display purpose
 
-        // We assume 5 Fire for efficiency calculation as requested
-        const fireMultiplier = FIRE_MULTIPLIERS[5];
+        // We assume 5 Fire for Multi efficiency calculation, 1 Fire for Auto
+        const fireMultiplier = isAutoMode ? FIRE_MULTIPLIERS[1] : FIRE_MULTIPLIERS[5];
+        const currentLiveType = isAutoMode ? LiveType.AUTO : LiveType.MULTI;
 
         const calculatedResults = [];
         const diffsToCheck = targetDifficulty === 'best'
@@ -191,10 +192,10 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                         skillMember5: finalSkills[4],
                     };
 
-                    const range = calculateScoreRange(input, LiveType.MULTI);
+                    const range = calculateScoreRange(input, currentLiveType);
                     if (range) {
                         const minEP = EventCalculator.getEventPoint(
-                            LiveType.MULTI,
+                            currentLiveType,
                             EventType.MARATHON,
                             range.min,
                             meta.event_rate,
@@ -202,7 +203,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                             fireMultiplier
                         );
                         const maxEP = EventCalculator.getEventPoint(
-                            LiveType.MULTI,
+                            currentLiveType,
                             EventType.MARATHON,
                             range.max,
                             meta.event_rate,
@@ -210,11 +211,46 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                             fireMultiplier
                         );
 
+                        // Calculate min rank based on EXPERT level
+                        let minRank = null;
+                        let rankGap = 0; // The gap for sorting
+                        if (isAutoMode) {
+                            const expertLevel = (song.levels && song.levels['expert']) || 24;
+                            const sRank = 1040000 + 5200 * (expertLevel - 5);
+                            const aRank = 840000 + 4200 * (expertLevel - 5);
+                            const bRank = 400000 + 2000 * (expertLevel - 5);
+                            const cRank = 20000 + 100 * (expertLevel - 5);
+
+                            let currentCutoff = 0;
+
+                            if (range.min >= sRank) {
+                                minRank = 'S';
+                                currentCutoff = sRank;
+                            } else if (range.min >= aRank) {
+                                minRank = 'A';
+                                currentCutoff = aRank;
+                            } else if (range.min >= bRank) {
+                                minRank = 'B';
+                                currentCutoff = bRank;
+                            } else if (range.min >= cRank) {
+                                minRank = 'C';
+                                currentCutoff = cRank;
+                            } else {
+                                minRank = 'D';
+                                currentCutoff = 0;
+                            }
+
+                            // rankGap is how far the score exceeds the current rank's threshold
+                            rankGap = range.min - currentCutoff;
+                        }
+
                         songResults.push({
                             difficulty: diff,
                             minEP,
                             maxEP,
-                            range
+                            range,
+                            minRank,
+                            rankGap
                         });
                     }
                 } catch (e) {
@@ -225,8 +261,11 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
             if (songResults.length > 0) {
                 // Determine representation based on logic
                 // If specific diff, songResults has 1 item (or 0).
-                // If best, sort by maxEP desc.
-                songResults.sort((a, b) => b.maxEP - a.maxEP);
+                // If best, sort by maxEP desc, and if tied, minEP desc.
+                songResults.sort((a, b) => {
+                    if (b.maxEP !== a.maxEP) return b.maxEP - a.maxEP;
+                    return b.minEP - a.minEP;
+                });
                 const best = songResults[0];
 
                 // ... inside AllSongsTable component ...
@@ -260,6 +299,23 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
 
     const sortResults = (data, key, order) => {
         const sorted = [...data].sort((a, b) => {
+            if (key === 'rank') {
+                // Ranks are S, A, B, C, D (S is best/highest value logically).
+                // We'll map them to numeric values for easy comparison. Null/Undefined = -1.
+                const rankToNum = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+                const rankA = rankToNum[a.minRank] || -1;
+                const rankB = rankToNum[b.minRank] || -1;
+
+                if (rankA !== rankB) {
+                    if (order === 'desc') return rankB - rankA;
+                    return rankA - rankB;
+                }
+
+                // If same rank, sort by rankGap
+                if (order === 'desc') return b.rankGap - a.rankGap;
+                return a.rankGap - b.rankGap;
+            }
+
             let valA = key === 'length' ? a.length : a.maxEP;
             let valB = key === 'length' ? b.length : b.maxEP;
 
@@ -472,9 +528,11 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                                 <div className="text-sm md:text-base font-black text-blue-600 tracking-tighter" style={{ fontFamily: 'sans-serif' }}>
                                     {pDisplay}{suffix}/{effi}%
                                 </div>
-                                <div className="text-[10px] md:text-xs font-bold text-blue-500">
-                                    {internalLabel}:{displayedSkill}%{isAvg && <span className="text-[9px] font-normal ml-0.5">({language === 'ko' ? '평균' : 'avg'})</span>}
-                                </div>
+                                {!isAutoMode && (
+                                    <div className="text-[10px] md:text-xs font-bold text-blue-500">
+                                        {internalLabel}:{displayedSkill}%{isAvg && <span className="text-[9px] font-normal ml-0.5">({language === 'ko' ? '평균' : 'avg'})</span>}
+                                    </div>
+                                )}
                             </div>
                         );
                     })()}
@@ -492,13 +550,35 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                                 <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
                                     <th className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-8">#</th>
                                     <th className="px-1 py-1 md:px-2 md:py-2 font-bold text-left select-none w-auto">{language === 'ko' ? '곡명' : 'Song'}</th>
-                                    <th className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-[50px] min-w-[50px] md:w-[70px] md:min-w-[70px]">{language === 'ko' ? '난이도' : 'Diff'}</th>
                                     <th
-                                        className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-[50px] min-w-[50px] md:w-[60px] md:min-w-[60px] cursor-pointer hover:bg-gray-50 transition-colors group"
+                                        className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-[50px] min-w-[50px] md:w-[70px] md:min-w-[70px] cursor-pointer hover:bg-gray-50 transition-colors group"
+                                        onClick={() => handleSortToggle('rank')}
+                                    >
+                                        <div className="flex items-center justify-center gap-1">
+                                            {language === 'ko' ? '난이도' : 'Diff'}
+                                            {isAutoMode && (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${sortKey === 'rank' ? (sortOrder === 'asc' ? 'rotate-180' : '') : 'opacity-0 group-hover:opacity-50'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th
+                                        className="px-1 py-1 md:px-2 md:py-2 font-bold text-center select-none w-[60px] min-w-[60px] md:w-[80px] md:min-w-[80px] cursor-pointer hover:bg-gray-50 transition-colors group"
                                         onClick={() => handleSortToggle('length')}
                                     >
                                         <div className="flex items-center justify-center gap-1">
-                                            {language === 'ko' ? '길이' : 'Len'}
+                                            {language === 'ko' ? (
+                                                <div className="flex flex-col items-center">
+                                                    <span>길이</span>
+                                                    {isAutoMode && <span className="text-[9px] text-pink-500 font-bold leading-none">99오토</span>}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <span>Len</span>
+                                                    {isAutoMode && <span className="text-[9px] text-pink-500 font-bold leading-none">99Auto</span>}
+                                                </div>
+                                            )}
                                             <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${sortKey === 'length' ? (sortOrder === 'asc' ? 'rotate-180' : '') : 'opacity-0 group-hover:opacity-50'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                             </svg>
@@ -546,22 +626,45 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills }) => {
                                                     </div>
                                                 </td>
                                                 <td className="px-1 py-1 md:px-2 md:py-2 text-center align-middle">
-                                                    <span
-                                                        className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide leading-tight shadow-sm"
-                                                        style={DIFFICULTY_COLORS[res.difficulty]}
-                                                    >
-                                                        {DIFFICULTY_LABELS[res.difficulty]}
-                                                    </span>
+                                                    <div className="flex flex-col items-center justify-center gap-1">
+                                                        <span
+                                                            className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide leading-tight shadow-sm"
+                                                            style={DIFFICULTY_COLORS[res.difficulty]}
+                                                        >
+                                                            {DIFFICULTY_LABELS[res.difficulty]}
+                                                        </span>
+                                                        {isAutoMode && res.minRank && (
+                                                            <span className={`text-[10px] md:text-xs font-bold ${res.minRank === 'S' ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500' :
+                                                                res.minRank === 'A' ? 'text-pink-500' :
+                                                                    res.minRank === 'B' ? 'text-blue-500' :
+                                                                        'text-gray-500'
+                                                                }`}>
+                                                                {res.minRank}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-1 py-1 md:px-2 md:py-2 text-center align-middle">
-                                                    <span className="text-gray-500 text-xs font-medium">
-                                                        {(() => {
-                                                            if (!res.length) return '-';
-                                                            const min = Math.floor(res.length / 60);
-                                                            const sec = res.length % 60;
-                                                            return `${min}:${sec.toString().padStart(2, '0')}`;
-                                                        })()}
-                                                    </span>
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="text-gray-500 text-xs font-medium">
+                                                            {(() => {
+                                                                if (!res.length) return '-';
+                                                                const min = Math.floor(res.length / 60);
+                                                                const sec = res.length % 60;
+                                                                return `${min}:${sec.toString().padStart(2, '0')}`;
+                                                            })()}
+                                                        </span>
+                                                        {isAutoMode && res.length && (
+                                                            <span className="text-[10px] text-pink-500 font-bold mt-0.5 whitespace-nowrap">
+                                                                {(() => {
+                                                                    const totalAutoSecs = (res.length + 30) * 99;
+                                                                    const hours = Math.floor(totalAutoSecs / 3600);
+                                                                    const minutes = Math.floor((totalAutoSecs % 3600) / 60);
+                                                                    return language === 'ko' ? `${hours}시간 ${minutes}분` : `${hours}h ${minutes}m`;
+                                                                })()}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-1 py-1 md:px-2 md:py-2 text-center align-middle">
                                                     <span className="text-blue-600 text-sm md:text-lg font-bold tracking-tight">

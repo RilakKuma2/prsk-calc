@@ -271,7 +271,10 @@ const ko = {
         my_sekai_ep: '마이세카이 P',
         prediction_disclaimer: '상단의 현재점수와 판 당 점수를 계산에 사용',
         prediction_disclaimer_note: '렙업불 무시, 오늘 마셐 챌라 완료했다 가정',
-        ranking_board: '그래프',
+        ranking_board: '랭킹판',
+        graph: '그래프',
+        refresh: '리프레시',
+        prediction_cut_range: '예측컷범위',
         // 렙업불 관련
         levelup_bonus: '렙업불',
         levelup_bonus_toggle: '렙업불',

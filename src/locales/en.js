@@ -289,7 +289,10 @@ const en = {
         my_sekai_ep: 'My Sekai EP',
         prediction_disclaimer: 'Calculated using current score and score per game above',
         prediction_disclaimer_note: 'Ignores level-up recovery, assumes daily My Sekai/Challenge Live completed',
-        ranking_board: 'Graph',
+        ranking_board: 'Ranking Board',
+        graph: 'Graph',
+        refresh: 'Refresh',
+        prediction_cut_range: 'Prediction Cut Range',
     },
     challenge: {
         score: 'Score',

@@ -8,6 +8,9 @@ import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
+const ENVY_REFRESH_GAUGE = 0.146;
+const MY_SEKAI_1PERCENT_STAMINA = 94;
+
 const FIRE_MULTIPLIERS = {
   0: 1,
   1: 5,
@@ -291,6 +294,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   // Scores now hold objects { min, max }
   const [loAndFoundScore, setLoAndFoundScore] = useState({ min: 0, max: 0 });
   const [envyScore, setEnvyScore] = useState({ min: 0, max: 0 });
+  const [envy10FireScore, setEnvy10FireScore] = useState({ min: 0, max: 0 });
   const [creationMythScore, setCreationMythScore] = useState({ min: 0, max: 0 });
   const [omakaseScore, setOmakaseScore] = useState({ min: 0, max: 0 });
   const [customScore, setCustomScore] = useState({ min: 0, max: 0 });
@@ -298,6 +302,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   // Deck B Scores
   const [loAndFoundScoreB, setLoAndFoundScoreB] = useState({ min: 0, max: 0 });
   const [envyScoreB, setEnvyScoreB] = useState({ min: 0, max: 0 });
+  const [envy10FireScoreB, setEnvy10FireScoreB] = useState({ min: 0, max: 0 });
   const [creationMythScoreB, setCreationMythScoreB] = useState({ min: 0, max: 0 });
   const [omakaseScoreB, setOmakaseScoreB] = useState({ min: 0, max: 0 });
   const [mySekaiScoreB, setMySekaiScoreB] = useState('N/A');
@@ -426,7 +431,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     const inputsList = [
       {
         p: power, e: effi, i: internalValue, skills: detailedSkills,
-        setLo: setLoAndFoundScore, setEn: setEnvyScore, setOm: setOmakaseScore, setCr: setCreationMythScore, setMs: setMySekaiScore, setNextMs: setNextMySekaiOptions, setCust: setCustomScore,
+        setLo: setLoAndFoundScore, setEn: setEnvyScore, setOm: setOmakaseScore, setCr: setCreationMythScore, setMs: setMySekaiScore, setNextMs: setNextMySekaiOptions, setCust: setCustomScore, setEn10: setEnvy10FireScore,
         calcEff: true
       }
     ];
@@ -434,12 +439,12 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     if (isComparisonMode) {
       inputsList.push({
         p: powerB, e: effiB, i: internalValueB, skills: detailedSkillsB,
-        setLo: setLoAndFoundScoreB, setEn: setEnvyScoreB, setOm: setOmakaseScoreB, setCr: setCreationMythScoreB, setMs: setMySekaiScoreB, setNextMs: setNextMySekaiOptionsB, setCust: setCustomScoreB,
+        setLo: setLoAndFoundScoreB, setEn: setEnvyScoreB, setOm: setOmakaseScoreB, setCr: setCreationMythScoreB, setMs: setMySekaiScoreB, setNextMs: setNextMySekaiOptionsB, setCust: setCustomScoreB, setEn10: setEnvy10FireScoreB,
         calcEff: false
       });
     }
 
-    inputsList.forEach(({ p, e, i, skills, setLo, setEn, setOm, setCr, setMs, setNextMs, setCust, calcEff }) => {
+    inputsList.forEach(({ p, e, i, skills, setLo, setEn, setOm, setCr, setMs, setNextMs, setCust, setEn10, calcEff }) => {
       // Logic for defaulting:
       // If p, e, or i are empty strings, fallback to the deck's auto/saved values.
       // We need to know if we are processing A or B (calcEff is true for A, false for B)
@@ -530,6 +535,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
 
       // 2. Envy (ID 74, Expert, Multi)
       setEn(getScoreRange(powerVal, skillsArray, 74, 'expert', LiveType.MULTI, fireCounts.envy));
+      setEn10(getScoreRange(powerVal, skillsArray, 74, 'expert', LiveType.MULTI, 10));
 
       // 3. Omakase (ID 572, Master, Multi)
       setOm(getScoreRange(powerVal, skillsArray, 572, 'master', LiveType.MULTI, fireCounts.omakase));
@@ -1539,6 +1545,41 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                       </div>
                     </td>
                   )}
+                </tr>
+                <tr className="hover:bg-gray-50 transition-colors duration-200 group/row border-t border-gray-200">
+                  <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-sm md:text-base text-center align-middle bg-white">
+                    리프레시 1% 점수
+                  </td>
+                  <td colSpan={isComparisonMode ? 3 : 2} className="px-1 py-1 md:px-4 md:py-2 align-middle bg-white">
+                    <div className="flex flex-row w-full h-full">
+                      <div className="flex-1 flex flex-col items-center justify-center px-1 md:px-2 py-2">
+                        <span className="text-[10px] md:text-xs text-gray-500 font-bold mb-1">10불 엔비 기준</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-indigo-600 font-extrabold text-sm md:text-lg tabular-nums">
+                            {envy10FireScore?.max > 0 ? Math.floor(envy10FireScore.max * (1 / ENVY_REFRESH_GAUGE)).toLocaleString() : 'N/A'}
+                          </span>
+                          {isComparisonMode && envy10FireScoreB?.max > 0 && envy10FireScore?.max > 0 && (
+                            <span className="text-[10px] md:text-xs text-red-500 font-bold ml-1">
+                              ({Math.floor(envy10FireScoreB.max * (1 / ENVY_REFRESH_GAUGE)).toLocaleString()})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 flex flex-col items-center justify-center px-1 md:px-2 py-2">
+                        <span className="text-[10px] md:text-xs text-gray-500 font-bold mb-1">마이세카이 부스터 기준</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-teal-600 font-extrabold text-sm md:text-lg tabular-nums">
+                            {mySekaiScore > 0 ? Math.floor(Number(mySekaiScore) * MY_SEKAI_1PERCENT_STAMINA).toLocaleString() : 'N/A'}
+                          </span>
+                          {isComparisonMode && mySekaiScoreB > 0 && mySekaiScore > 0 && (
+                            <span className="text-[10px] md:text-xs text-red-500 font-bold ml-1">
+                              ({Math.floor(Number(mySekaiScoreB) * MY_SEKAI_1PERCENT_STAMINA).toLocaleString()})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
                 </tr>
               </tbody>
             </table>

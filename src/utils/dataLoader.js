@@ -30,6 +30,7 @@ function normalizeSong(apiSong) {
         length: lengthInSeconds,
         mv: mv,
         unit: apiSong.unit_code || apiSong.unit,
+        levels: apiSong.levels || {},
     };
 }
 

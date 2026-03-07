@@ -5,6 +5,7 @@ import { getSongOptionsSync, getMusicMetasSync } from '../utils/dataLoader';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
+import AllSongsTable from './AllSongsTable';
 
 const ENERGY_MULTIPLIERS = {
     0: 1,
@@ -85,6 +86,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
 
     const [batchResults, setBatchResults] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'eventPoint', direction: 'desc' });
+    const [showAllSongsTable, setShowAllSongsTable] = useState(false);
 
     // Auto-calculate batch results whenever inputs change
     useEffect(() => {
@@ -473,6 +475,38 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                     {/* <div className="mt-2 text-[11px] text-gray-500 text-right px-1">
                         * {t('auto.excluded_song_note')}
                     </div> */}
+                </div>
+            )}
+
+            {/* View All Songs Button */}
+            {batchResults && (
+                <div className="flex flex-col mt-4 mb-4">
+                    <div className="flex justify-end mb-2">
+                        <button
+                            onClick={() => setShowAllSongsTable(!showAllSongsTable)}
+                            className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                            </svg>
+                            {t('power.view_all_scores') || (language === 'ko' ? '전곡 점수 보기' : 'View All Scores')}
+                        </button>
+                    </div>
+
+                    <AllSongsTable
+                        isVisible={showAllSongsTable}
+                        language={language}
+                        power={totalPower || '293231'}
+                        effi={eventBonus || '250'}
+                        skills={[
+                            skillLeader || 120,
+                            skillMember2 || 100,
+                            skillMember3 || 100,
+                            skillMember4 || 100,
+                            skillMember5 || 100
+                        ]}
+                        isAutoMode={true}
+                    />
                 </div>
             )}
         </div>

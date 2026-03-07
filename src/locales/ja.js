@@ -278,7 +278,10 @@ const ja = {
         my_sekai_ep: 'マイセカイ P',
         prediction_disclaimer: '上段の現在ポイントと周回ptを計算に使用',
         prediction_disclaimer_note: 'レベルアップ回復無視、本日のマイセカイ・チャレライ完了済みと仮定',
-        ranking_board: 'グラフ',
+        ranking_board: 'ランキング板',
+        graph: 'グラフ',
+        refresh: '更新',
+        prediction_cut_range: '予測カット範囲',
         // レベルアップ回復関連
         levelup_bonus: 'Lv回復',
         levelup_bonus_toggle: 'Lvアップ回復',

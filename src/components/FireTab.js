@@ -1662,13 +1662,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       </div>
 
       {/* Room Search Dropdown (Below Result) - Minimal Margin */}
-      <div className={`w-[85%] max-w-[260px] mx-auto flex ${language === 'ko' ? 'justify-between' : 'justify-end'} mt-0.5 items-center gap-2`} ref={dropdownRef}>
-        {/* Ranking Board Button (Small Icon) */}
-        {/* Ranking Board Button (Small Icon) - Only for Korean */}
-        {language === 'ko' && (
+      <div className={`w-[95%] sm:w-[90%] max-w-[340px] mx-auto flex justify-between mt-0.5 items-center gap-2`} ref={dropdownRef}>
+        <div className="flex gap-1 sm:gap-1.5">
+          {/* Ranking Board Button */}
           <button
-            onClick={() => window.open('https://jp.seka.ing/', '_blank')}
-            className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1.5"
+            onClick={() => window.open('https://sekai.run/', '_blank')}
+            className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
             title={t('fire.ranking_board')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1678,8 +1677,20 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             </svg>
             <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')}</span>
           </button>
-        )}
-        <div className="flex gap-2 items-center">
+          {/* Refresh Button */}
+          <button
+            onClick={() => window.open('https://sekai.run/refresh', '_blank')}
+            className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 border border-blue-100 hover:border-blue-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
+            title={t('fire.refresh')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.refresh')}</span>
+          </button>
+        </div>
+        <div className="flex gap-1 sm:gap-2 items-center">
 
           {/* Engine Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-0.5 h-full items-center">
@@ -1925,12 +1936,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                               <line x1="12" y1="20" x2="12" y2="4"></line>
                                               <line x1="6" y1="20" x2="6" y2="14"></line>
                                             </svg>
-                                            <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.ranking_board')}</span>
+                                            <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.graph')}</span>
                                           </button>
                                         </div>
                                         {row.l > 0 && row.u > 0 && (
-                                          <div className="text-xs sm:text-sm text-indigo-700 font-bold pr-1">
-                                            예측범위: {formatKoreanScore(row.l)} ~ {formatKoreanScore(row.u)}
+                                          <div className="text-sm sm:text-base text-indigo-700 font-bold pr-1">
+                                            {t('fire.prediction_cut_range')}: {formatKoreanScore(row.l)} ~ {formatKoreanScore(row.u)}
                                           </div>
                                         )}
                                       </div>
@@ -1989,12 +2000,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                     <line x1="12" y1="20" x2="12" y2="4"></line>
                                     <line x1="6" y1="20" x2="6" y2="14"></line>
                                   </svg>
-                                  <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.ranking_board')}</span>
+                                  <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.graph')}</span>
                                 </button>
                               </div>
                               {row.l > 0 && row.u > 0 && (
-                                <div className="text-xs sm:text-sm text-gray-600 font-bold pr-1">
-                                  예측범위: {formatKoreanScore(row.l)} ~ {formatKoreanScore(row.u)}
+                                <div className="text-sm sm:text-base text-gray-600 font-bold pr-1">
+                                  {t('fire.prediction_cut_range')}: {formatKoreanScore(row.l)} ~ {formatKoreanScore(row.u)}
                                 </div>
                               )}
                             </div>
