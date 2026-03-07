@@ -207,6 +207,7 @@ const en = {
         // recommend_0034: '* Recommended: 0.0000034 APD',
         my_sekai: 'My Sekai',
         next_score: 'Next',
+        hide_inefficient: 'Hide Inefficient Songs',
     },
     fire: {
         current_score: 'Current Score',

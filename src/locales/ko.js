@@ -205,6 +205,7 @@ const ko = {
         // recommend_0034: '* 0.0000034 APD로 대체 권장',
         my_sekai: '마이세카이',
         next_score: '다음',
+        hide_inefficient: '비효율곡 가리기',
     },
     fire: {
         current_score: '현재점수',

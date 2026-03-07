@@ -61,6 +61,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isEfficiencyOrder, setIsEfficiencyOrder] = useState(true);
     const [songOptions, setSongOptions] = useState([]);
     const [musicMetas, setMusicMetas] = useState([]);
 
@@ -97,15 +98,61 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
     };
 
     const filteredResults = useMemo(() => {
-        if (!searchQuery) return results;
-        const term = normalize(searchQuery);
-        return results.filter(row =>
-            (row.name && normalize(row.name).includes(term)) ||
-            (row.title_jp && normalize(row.title_jp).includes(term)) ||
-            (row.title_hi && normalize(row.title_hi).includes(term)) ||
-            (row.title_hangul && normalize(row.title_hangul).includes(term))
-        );
-    }, [results, searchQuery]);
+        let finalResults = results;
+
+        if (searchQuery) {
+            const term = normalize(searchQuery);
+            finalResults = finalResults.filter(row =>
+                (row.name && normalize(row.name).includes(term)) ||
+                (row.title_jp && normalize(row.title_jp).includes(term)) ||
+                (row.title_hi && normalize(row.title_hi).includes(term)) ||
+                (row.title_hangul && normalize(row.title_hangul).includes(term))
+            );
+        }
+
+        if (isAutoMode && isEfficiencyOrder) {
+            // Sort by Max EP desc, then length asc to ensure best songs are at the top
+            const efficiencySorted = [...finalResults].sort((a, b) => {
+                if (b.maxEP !== a.maxEP) return b.maxEP - a.maxEP;
+                return a.length - b.length;
+            });
+
+            const topEfficiencyLimit = [];
+            let currentMinLength = Infinity;
+
+            for (const song of efficiencySorted) {
+                // If this song is at least as fast (or faster) than anything we've seen before, keep it
+                if (song.length <= currentMinLength) {
+                    topEfficiencyLimit.push(song);
+                    currentMinLength = song.length; // Update the min length threshold
+                }
+            }
+
+            // Re-apply current sorting requested by user (if they still want to sort by length instead of default maxEP)
+            topEfficiencyLimit.sort((a, b) => {
+                if (sortKey === 'rank') {
+                    const rankToNum = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+                    const rankA = rankToNum[a.minRank] || -1;
+                    const rankB = rankToNum[b.minRank] || -1;
+
+                    if (rankA !== rankB) {
+                        return sortOrder === 'desc' ? rankB - rankA : rankA - rankB;
+                    }
+                    return sortOrder === 'desc' ? b.rankGap - a.rankGap : a.rankGap - b.rankGap;
+                }
+
+                let valA = sortKey === 'length' ? a.length : a.maxEP;
+                let valB = sortKey === 'length' ? b.length : b.maxEP;
+
+                if (sortOrder === 'desc') return valB - valA;
+                return valA - valB;
+            });
+
+            return topEfficiencyLimit;
+        }
+
+        return finalResults;
+    }, [results, searchQuery, isEfficiencyOrder, isAutoMode, sortKey, sortOrder]);
 
     // Re-trigger calculation
     const handleRefresh = () => {
@@ -173,6 +220,8 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
             : [targetDifficulty];
 
         songOptions.forEach(song => {
+            if (!song.length || song.length === 0) return; // Skip songs with 0 length
+
             const songResults = [];
 
             diffsToCheck.forEach(diff => {
@@ -484,19 +533,32 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                         </button>
-                        {/* Refresh Label */}
-                        <span className="text-[10px] md:text-xs text-gray-500 font-medium ml-1">
-                            {(() => {
-                                if (!usedParams) return "조건 수정 후 새로고침"; // Fallback if t not available yet? Add t as prop or hook check.
-                                // Wait, AllSongsTable doesn't use t hook directly? Just language prop.
-                                const labels = {
-                                    ko: '조건 수정 후 새로고침',
-                                    en: 'Refresh after modifying',
-                                    ja: '条件変更後に更新'
-                                };
-                                return labels[language] || labels.ko;
-                            })()}
-                        </span>
+                        {/* Refresh Label and Efficiency Checkbox */}
+                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 ml-1">
+                            <span className="text-[10px] md:text-xs text-gray-500 font-medium whitespace-nowrap">
+                                {(() => {
+                                    if (!usedParams) return language === 'ko' ? '조건 수정 후 새로고침' : (language === 'ja' ? '条件変更後に更新' : 'Refresh after modifying');
+                                    const labels = {
+                                        ko: '조건 수정 후 새로고침',
+                                        en: 'Refresh after modifying',
+                                        ja: '条件変更後に更新'
+                                    };
+                                    return labels[language] || labels.ko;
+                                })()}
+                            </span>
+
+                            {isAutoMode && (
+                                <button
+                                    onClick={() => setIsEfficiencyOrder(!isEfficiencyOrder)}
+                                    className={`px-2 py-1 rounded-md text-[10px] md:text-xs font-bold transition-all whitespace-nowrap border ${isEfficiencyOrder
+                                        ? 'bg-indigo-50 text-indigo-600 border-indigo-200 shadow-sm'
+                                        : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {t('auto.hide_inefficient')}
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {usedParams && (() => {

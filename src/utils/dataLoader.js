@@ -5,6 +5,16 @@ import { SONG_OPTIONS as localSongOptions } from './songs';
 let cachedMusicMetas = null;
 let cachedSongOptions = null;
 
+function applyDateFilter(songs) {
+    if (!songs) return songs;
+    const now = new Date();
+    const filterDate = new Date('2026-04-22T23:59:59+09:00');
+    if (now > filterDate) {
+        return songs.filter(song => ![707, 708, 709].includes(song.id));
+    }
+    return songs;
+}
+
 /**
  * API 응답 형식을 로컬 파일 형식으로 변환
  */
@@ -62,7 +72,7 @@ export async function getMusicMetas() {
  * 외부 URL에서 fetch 시도 후 실패 시 로컬 파일 사용
  */
 export async function getSongOptions() {
-    if (cachedSongOptions) return cachedSongOptions;
+    if (cachedSongOptions) return applyDateFilter(cachedSongOptions);
 
     try {
         const response = await fetch('https://api.rilaksekai.com/api/songs');
@@ -71,11 +81,11 @@ export async function getSongOptions() {
         // API 응답을 로컬 형식으로 변환
         cachedSongOptions = apiData.map(normalizeSong);
         console.log('Loaded songs from external API');
-        return cachedSongOptions;
+        return applyDateFilter(cachedSongOptions);
     } catch (error) {
         console.warn('Failed to fetch songs from API, using local fallback:', error.message);
         cachedSongOptions = localSongOptions;
-        return cachedSongOptions;
+        return applyDateFilter(cachedSongOptions);
     }
 }
 
@@ -87,5 +97,5 @@ export function getMusicMetasSync() {
 }
 
 export function getSongOptionsSync() {
-    return cachedSongOptions || localSongOptions;
+    return applyDateFilter(cachedSongOptions || localSongOptions);
 }

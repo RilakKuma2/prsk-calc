@@ -207,6 +207,7 @@ const ja = {
         // recommend_0034: '* 0.0000034APDへ変更推奨',
         my_sekai: 'マイセカイ',
         next_score: '次',
+        hide_inefficient: '非効率曲を隠す',
     },
     fire: {
         current_score: '現在P',
