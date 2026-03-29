@@ -8,8 +8,8 @@ import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
-const ENVY_REFRESH_GAUGE = 0.146;
-const MY_SEKAI_1PERCENT_STAMINA = 94;
+const ENVY_REFRESH_GAUGE = 0.199818182;
+const MY_SEKAI_1PERCENT_STAMINA = 94.3;
 
 const FIRE_MULTIPLIERS = {
   0: 1,

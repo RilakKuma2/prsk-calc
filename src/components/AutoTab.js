@@ -30,7 +30,8 @@ const TARGET_SONGS = [
     { id: 488, difficulty: 'append', level: 31 },  // 메모리아
     { id: 48, difficulty: 'master', level: 24 },   // 월이마
     { id: 186, difficulty: 'master', level: 28 },  // 개벽 (Creation Myth)
-    { id: 691, difficulty: 'append', level: 31 },  // 개벽 (Creation Myth)
+    { id: 47, difficulty: 'master', level: 25 },  // 멜트
+    { id: 691, difficulty: 'append', level: 31 },  // 0.034
 ];
 
 const calculateRank = (score, level) => {
