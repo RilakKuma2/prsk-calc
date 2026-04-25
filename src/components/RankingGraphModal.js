@@ -10,7 +10,7 @@ const SUPPORTED_RANKS = [
     4000, 5000, 10000
 ];
 
-const RankingGraphModal = ({ isOpen, onClose, rank, t }) => {
+const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const modalRef = useRef(null);
@@ -26,7 +26,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t }) => {
         if (!isOpen) {
             setXDomain(null);
         }
-    }, [isOpen, rank]);
+    }, [isOpen, rank, selectedChapter]);
 
     // Initialize domain when data loads
     useEffect(() => {
@@ -209,35 +209,54 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t }) => {
         setLoading(true);
         setError(null);
 
+        const isChapter = selectedChapter && selectedChapter !== 'all';
+        const apiUrl = isChapter ? "https://api.rilaksekai.com/api/wlranking" : "https://api.rilaksekai.com/api/ranking";
+
         // Fetch from custom API
-        fetch("https://api.rilaksekai.com/api/ranking", { cache: 'reload' })
+        fetch(apiUrl, { cache: 'reload' })
             .then(res => {
                 if (!res.ok) throw new Error("Failed to fetch ranking data");
                 return res.json();
             })
             .then(apiData => {
                 try {
-                    const { event_info, ranks } = apiData;
+                    const { event_info } = apiData;
+                    
+                    let targetRanks = null;
+                    let targetEnd = event_info.end;
 
-                    if (!event_info || !ranks) {
+                    if (isChapter && apiData.chapters) {
+                        const chapter = apiData.chapters.find(c => c.chapter_id === selectedChapter);
+                        if (chapter) {
+                            targetRanks = chapter.ranks;
+                            targetEnd = chapter.end;
+                        } else {
+                            throw new Error("Chapter data not found");
+                        }
+                    } else {
+                        targetRanks = apiData.ranks;
+                    }
+
+                    if (!event_info || !targetRanks) {
                         throw new Error("Invalid data format");
                     }
 
                     window.now = new Date();
                     window.currentEvent = event_info.id;
-                    window.currentEventEnd = new Date(event_info.end * 1000);
+                    window.currentEventEnd = new Date(targetEnd * 1000);
                     window.timeToCurrentEventEnd = Math.min(0, (window.now - window.currentEventEnd) / 36e5);
 
                     // Transform structure
                     const flatData = [];
 
-                    ranks.forEach(rankObj => {
+                    targetRanks.forEach(rankObj => {
                         const r = rankObj.rank;
+                        if (!rankObj.points) return;
                         rankObj.points.forEach(p => {
                             flatData.push({
                                 eid: event_info.id,
                                 t: p.type, // 'r' or 'p'
-                                tfe: (p.ts - event_info.end) / 3600, // Calculated Time From End
+                                tfe: (p.ts - targetEnd) / 3600, // Calculated Time From End
                                 ep: p.ep,
                                 b: r,
                                 ts: new Date(p.ts * 1000),

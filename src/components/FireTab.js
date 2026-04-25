@@ -12,6 +12,14 @@ import { characterBirthdays } from '../data/characterBirthdays';
 
 const FireTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
+  
+  // 랭킹 표시 기준 정의 (1500, 2500 제외, 7000 추가)
+  const allowedRanksSet = new Set([
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    20, 30, 40, 50,
+    100, 200, 300, 400, 500,
+    1000, 2000, 3000, 4000, 5000, 7000, 10000
+  ]);
   const [score1, setScore1] = useState(surveyData.score1 || '');
   const [score2, setScore2] = useState(surveyData.score2 || '');
   const [score3, setScore3] = useState(surveyData.score3 || '');
@@ -30,6 +38,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [eventInfo, setEventInfo] = useState(null);
   const [showTop50, setShowTop50] = useState(false);
+  const [chaptersData, setChaptersData] = useState([]);
+  const [worldBloomsInfo, setWorldBloomsInfo] = useState([]);
+  const [selectedChapter, setSelectedChapter] = useState('all');
+  const [chapterLiveData, setChapterLiveData] = useState([]);
+  const [chapterScoreLastUpdated, setChapterScoreLastUpdated] = useState(null);
   const [isRoomSearchOpen, setIsRoomSearchOpen] = useState(false);
   const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('roomSearchEngine') || 'yahoo');
   const [currentNaturalFire, setCurrentNaturalFire] = useState(surveyData.currentNaturalFire || '');
@@ -94,11 +107,28 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   // Ref for tooltips
   const dropdownRef = useRef(null);
   const importMenuRef = useRef(null);
+  const hasAutoSelected = useRef(false);
 
   // Persist Search Engine Preference
   useEffect(() => {
     localStorage.setItem('roomSearchEngine', searchEngine);
   }, [searchEngine]);
+
+  // World Link Chapter Auto-selection
+  useEffect(() => {
+    if (chaptersData.length > 0 && !hasAutoSelected.current) {
+      const now = Date.now();
+      const currentChapter = chaptersData.find(ch => {
+        const start = (ch.start || 0) * 1000;
+        const end = (ch.end || 0) * 1000;
+        return now >= start && now < end;
+      });
+      if (currentChapter) {
+        setSelectedChapter(currentChapter.chapter_id);
+        hasAutoSelected.current = true;
+      }
+    }
+  }, [chaptersData]);
 
   // Click Outside Effect for Room Search
   useEffect(() => {
@@ -124,7 +154,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       try {
         const [mainResponse, assetResponse] = await Promise.all([
           fetch(`${process.env.REACT_APP_API_BASE_URL}/api/ranking`),
-          fetch('https://api.rilaksekai.com/api/eventlivejp', { cache: 'reload' }).catch(e => null) // Allow asset fetch to fail gently
+          fetch('https://api.rilaksekai.com/api/latest_ranking', { cache: 'reload' }).catch(e => null) // Allow asset fetch to fail gently
         ]);
 
         const mainData = await mainResponse.json();
@@ -135,14 +165,20 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           } catch (e) { console.error(e); }
         }
 
-        const assetData = assetJson?.data?.eventRankings || [];
-        if (assetData.length > 0) {
+        const assetTop100 = assetJson?.top100?.rankings || [];
+        const assetBorders = assetJson?.border?.borderRankings || [];
+        const assetData = [...assetTop100, ...assetBorders];
+
+        if (assetJson?.fetchedAt) {
+          const formattedDateStr = assetJson.fetchedAt.replace(' ', 'T') + '+09:00';
+          setCurrentScoreLastUpdated(new Date(formattedDateStr).getTime());
+        } else if (assetData.length > 0 && assetData[0].timestamp) {
           setCurrentScoreLastUpdated(new Date(assetData[0].timestamp).getTime());
         }
 
         // 1. Determine Event IDs
         const mainEventId = mainData.event_info?.id || 0;
-        const assetEventId = (assetData.length > 0 && assetData[0].eventId) ? assetData[0].eventId : 0;
+        const assetEventId = assetJson?.eventId ? parseInt(assetJson.eventId, 10) : ((assetData.length > 0 && assetData[0].eventId) ? assetData[0].eventId : 0);
 
         let finalData = [];
         let mergedEventInfo = mainData.event_info;
@@ -161,7 +197,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           // We'll keep mainData.event_info if available (might be old), or maybe we should just not show outdated event info?
           // Since we have no metadata for the new event, we might just have to live with old or empty metadata.
           // But we update timestamps.
-          if (assetData.length > 0) {
+          if (assetJson?.fetchedAt) {
+            mergedUpdatedAt = new Date(assetJson.fetchedAt.replace(' ', 'T') + '+09:00').getTime();
+          } else if (assetData.length > 0 && assetData[0].timestamp) {
             mergedUpdatedAt = new Date(assetData[0].timestamp).getTime();
           }
         } else if (mainEventId > assetEventId) {
@@ -207,9 +245,15 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               predictedScore = mainItem.predicted;
             }
 
-            // Overwrite/Max with asset current score
-            if (assetItem && assetItem.score > currentScore) {
-              currentScore = assetItem.score;
+            const mainTs = mainData.updatedAt || 0;
+            const assetTs = assetJson?.fetchedAt ? new Date(assetJson.fetchedAt.replace(' ', 'T') + '+09:00').getTime() : (assetData.length > 0 && assetData[0].timestamp ? new Date(assetData[0].timestamp).getTime() : 0);
+
+            if (assetItem) {
+              if (mainTs > assetTs) {
+                if (!currentScore) currentScore = assetItem.score;
+              } else {
+                if (assetItem.score > currentScore) currentScore = assetItem.score;
+              }
             }
 
             return {
@@ -223,7 +267,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
           // Check Stale
           if (assetData.length > 0 && mainData.updatedAt) {
-            const assetTime = new Date(assetData[0].timestamp).getTime();
+            const assetTime = assetJson?.fetchedAt ? new Date(assetJson.fetchedAt.replace(' ', 'T') + '+09:00').getTime() : new Date(assetData[0].timestamp).getTime();
             const mainTime = mainData.updatedAt;
             const diff = Math.abs(assetTime - mainTime);
             // 1 day = 24 * 60 * 60 * 1000 = 86400000
@@ -233,19 +277,70 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           }
         }
 
-        // Filter specific ranks (새 eventlivejp.json에 맞춤)
-        const allowedRanks = new Set([
-          1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-          20, 30, 40, 50,
-          100, 200, 300, 400, 500,
-          1000, 1500, 2000, 2500, 3000, 4000, 5000, 10000
-        ]);
-
-        finalData = finalData.filter(item => allowedRanks.has(item.rank));
+        finalData = finalData.filter(item => allowedRanksSet.has(item.rank));
 
         setLastUpdated(mainData.updatedAt);
         setPredictionData(finalData);
         setStaleWarning(isStale);
+
+        // [추가] World Link 챕터 데이터 처리
+        if (mergedEventInfo && mergedEventInfo.event_type === 'world_bloom') {
+          try {
+            const [wlResponse, wbResponse] = await Promise.all([
+              fetch(`${process.env.REACT_APP_API_BASE_URL}/api/wlranking`),
+              fetch(`https://asset.rilaksekai.com/suite/worldBlooms.json`).catch(() => null)
+            ]);
+            
+            if (wbResponse && wbResponse.ok) {
+              const wbData = await wbResponse.json();
+              setWorldBloomsInfo(Array.isArray(wbData) ? wbData : (wbData.data || []));
+            }
+
+            // 챕터 라이브 랭킹 (latest_ranking의 userWorldBloomChapterRankings 활용)
+            const top100Chapters = assetJson?.top100?.userWorldBloomChapterRankings || [];
+            const borderChapters = assetJson?.border?.userWorldBloomChapterRankings || [];
+            
+            const mergedChaptersMap = new Map();
+            for (const ch of top100Chapters) {
+              mergedChaptersMap.set(ch.gameCharacterId, {
+                ...ch,
+                rankings: ch.rankings || [],
+                borderRankings: []
+              });
+            }
+            for (const ch of borderChapters) {
+              if (mergedChaptersMap.has(ch.gameCharacterId)) {
+                mergedChaptersMap.get(ch.gameCharacterId).borderRankings = ch.borderRankings || [];
+              } else {
+                mergedChaptersMap.set(ch.gameCharacterId, {
+                  ...ch,
+                  rankings: [],
+                  borderRankings: ch.borderRankings || []
+                });
+              }
+            }
+            
+            const mergedChapters = Array.from(mergedChaptersMap.values());
+            if (mergedChapters.length > 0) {
+              setChapterLiveData(mergedChapters);
+              if (assetJson?.fetchedAt) {
+                const formattedDateStr = assetJson.fetchedAt.replace(' ', 'T') + '+09:00';
+                setChapterScoreLastUpdated(new Date(formattedDateStr).getTime());
+              }
+            }
+
+            if (wlResponse.ok) {
+              const wlData = await wlResponse.json();
+              if (wlData.chapters && wlData.chapters.length > 0) {
+                setChaptersData(wlData.chapters);
+              }
+            }
+          } catch (err) {
+            console.error("Failed to fetch world link ranking data:", err);
+          }
+        } else if (mainData.chapters && mainData.chapters.length > 0) {
+          setChaptersData(mainData.chapters);
+        }
 
         if (mergedEventInfo) {
           // [추가] latest_event가 있고, 이미 시작했으면 그 정보를 사용 (배너 이미지, 종료 시간)
@@ -341,7 +436,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     };
     setSurveyData(newSurveyData);
 
-    let currentScore = parseFloat(score1 || '217') || 0;
+    let currentScore = parseFloat(score1 || '0') || 0;
     let targetScore = parseFloat(score2 || '3000') || 0;
     let scorePerRound = parseFloat(score3 || '2.8') || 0;
     let roundsPerInterval = parseFloat(rounds1 || '28') || 0;
@@ -433,7 +528,25 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       }
     } else if (!isNextEventFireEnabled) {
       // Auto Mode Logic (Only if Manual Toggle is OFF)
-      if (now > end) {
+      let nextChapterStartMs = null;
+      if (eventInfo.event_type === 'world_bloom') {
+        let allChapters = [];
+        if (worldBloomsInfo && worldBloomsInfo.length > 0 && eventInfo.id) {
+          allChapters = worldBloomsInfo.filter(wb => wb.eventId == eventInfo.id).map(c => c.chapterStartAt);
+        }
+        if (allChapters.length === 0 && chaptersData && chaptersData.length > 0) {
+          allChapters = chaptersData.map(c => c.start * 1000);
+        }
+        const upcoming = allChapters.filter(t => t > now).sort((a, b) => a - b);
+        if (upcoming.length > 0) {
+          nextChapterStartMs = upcoming[0];
+        }
+      }
+
+      if (nextChapterStartMs) {
+        nextEventStartMs = nextChapterStartMs;
+        isWaitingForNextEvent = true;
+      } else if (now > end) {
         const endDate = new Date(end);
         endDate.setDate(endDate.getDate() + 2);
         endDate.setHours(15, 0, 0, 0);
@@ -505,7 +618,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     const userCurrentNatural = parseInt(currentNaturalFire) || 0;
     const baseNaturalFire = recoveryFire + loginFire + userCurrentNatural; // Base without level up
 
-    let currentScoreVal = parseFloat(score1 || '217') || 0;
+    let currentScoreVal = parseFloat(score1 || '0') || 0;
     let scPerRound = parseFloat(score3 || '2.8') || 0;
     let curFireBonus = parseInt(firea) || 0;
     let chgFireBonus = fires2;
@@ -920,6 +1033,94 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     }
   };
 
+  // [추가] 월드링크: 선택된 챕터에 따라 표시할 예측 데이터 결정
+  const activePredictionData = (() => {
+    if (selectedChapter === 'all' || chaptersData.length === 0) {
+      return predictionData;
+    }
+    const chapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
+    if (!chapter || !chapter.data) return [];
+    
+    const rankRangeMap = new Map();
+    if (chapter.ranks) {
+      chapter.ranks.forEach(rankObj => {
+        const r = rankObj.rank;
+        const predictionPoints = (rankObj.points || []).filter(p => p.type === 'p');
+        if (predictionPoints.length > 0) {
+          const latest = predictionPoints.reduce((prev, current) => (prev.ts > current.ts) ? prev : current);
+          rankRangeMap.set(r, { l: latest.l || 0, u: latest.u || 0 });
+        }
+      });
+    }
+
+    // live_chapter_rankings 데이터를 맵으로 변환 (종합의 eventlivejp와 동일한 역할)
+    let currentChapterRankings = [];
+    if (worldBloomsInfo && worldBloomsInfo.length > 0) {
+      const chNum = selectedChapter.split('-')[1];
+      const wbChapter = worldBloomsInfo.find(wb => wb.chapterNo == chNum);
+      if (wbChapter && wbChapter.gameCharacterId) {
+        const chapterLiveInfo = chapterLiveData.find(c => c.gameCharacterId == wbChapter.gameCharacterId);
+        if (chapterLiveInfo) {
+          const top100 = chapterLiveInfo.rankings || [];
+          const borders = chapterLiveInfo.borderRankings || [];
+          currentChapterRankings = [...top100, ...borders];
+        }
+      }
+    }
+    
+    // 만약 worldBloomsInfo를 불러오지 못했거나 매핑 실패시 순서대로 폴백 (chapterLiveData가 새로운 포맷인 경우)
+    if (currentChapterRankings.length === 0 && chapterLiveData.length > 0 && chapterLiveData[0].gameCharacterId) {
+      const chNumStr = selectedChapter.split('-')[1];
+      const chIndex = parseInt(chNumStr, 10) - 1;
+      if (!isNaN(chIndex) && chIndex >= 0 && chIndex < chapterLiveData.length) {
+        const fallbackInfo = chapterLiveData[chIndex];
+        const top100 = fallbackInfo.rankings || [];
+        const borders = fallbackInfo.borderRankings || [];
+        currentChapterRankings = [...top100, ...borders];
+      }
+    } else if (currentChapterRankings.length === 0 && chapterLiveData.length > 0 && !chapterLiveData[0].gameCharacterId) {
+      // 기존 포맷(단일 배열) 폴백
+      currentChapterRankings = chapterLiveData;
+    }
+    const chapterLiveMap = new Map(currentChapterRankings.map(i => [i.rank, i]));
+
+    // 챕터 데이터를 predictionData 형식으로 변환 및 필터링
+    const chapterDataMap = new Map(
+      chapter.data.filter(d => allowedRanksSet.has(d.rank)).map(d => [d.rank, d])
+    );
+
+    // 모든 rank 합치기 (예측 데이터 + 라이브 데이터)
+    const allRanks = new Set([...chapterDataMap.keys(), ...[...chapterLiveMap.keys()].filter(r => allowedRanksSet.has(r))]);
+
+    return Array.from(allRanks).map(rank => {
+      const chapterItem = chapterDataMap.get(rank);
+      const liveItem = chapterLiveMap.get(rank);
+      const rangeItem = rankRangeMap.get(rank);
+
+      let currentScore = chapterItem?.current || 0;
+      let predictedScore = chapterItem?.predicted || 0;
+
+      const liveTs = chapterScoreLastUpdated || 0;
+      const mainTs = lastUpdated || 0;
+
+      if (liveItem) {
+        if (mainTs > liveTs) {
+          if (!currentScore) currentScore = liveItem.score;
+        } else {
+          if (liveItem.score > currentScore) currentScore = liveItem.score;
+        }
+      }
+
+      return {
+        rank,
+        currentScore,
+        predictedScore,
+        l: rangeItem?.l || 0,
+        u: rangeItem?.u || 0
+      };
+    }).sort((a, b) => a.rank - b.rank);
+  })();
+
   return (
 
     <div id="fire-tab-content" className="p-4 space-y-4">
@@ -947,7 +1148,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 }
               }}
               onFocus={(e) => e.target.select()}
-              placeholder="217"
+              placeholder="0"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
             />
             <span className="text-xs text-gray-500 whitespace-nowrap">{t('fire.suffix_man')}</span>
@@ -1284,7 +1485,24 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         let targetMs = null;
                         const startMs = eventInfo.start ? eventInfo.start * 1000 : 0;
 
-                        if (now < startMs) {
+                        let nextChapterStartMs = null;
+                        if (eventInfo.event_type === 'world_bloom') {
+                          let allChapters = [];
+                          if (worldBloomsInfo && worldBloomsInfo.length > 0 && eventInfo.id) {
+                            allChapters = worldBloomsInfo.filter(wb => wb.eventId == eventInfo.id).map(c => c.chapterStartAt);
+                          }
+                          if (allChapters.length === 0 && chaptersData && chaptersData.length > 0) {
+                            allChapters = chaptersData.map(c => c.start * 1000);
+                          }
+                          const upcoming = allChapters.filter(t => t > now).sort((a, b) => a - b);
+                          if (upcoming.length > 0) {
+                            nextChapterStartMs = upcoming[0];
+                          }
+                        }
+
+                        if (nextChapterStartMs) {
+                          targetMs = nextChapterStartMs;
+                        } else if (now < startMs) {
                           // Before event - check if we should show amatsuyu start instead
                           const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
                           const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
@@ -1767,7 +1985,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           {t('fire.current_score_updated')}
                         </span>
                         <span className="text-[10px] sm:text-xs text-black font-extrabold tabular-nums">
-                          {formatTime(currentScoreLastUpdated)}
+                          {formatTime(
+                            selectedChapter !== 'all' && chapterScoreLastUpdated
+                              ? Math.max(chapterScoreLastUpdated, lastUpdated || 0)
+                              : Math.max(currentScoreLastUpdated, lastUpdated || 0)
+                          )}
                         </span>
                       </div>
                     )}
@@ -1792,34 +2014,121 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   {/* Ends In (Right) */}
                   <div className="flex flex-col items-end min-w-max">
                     <span className="text-[9px] sm:text-[10px] text-gray-400 font-medium leading-none mb-0.5 sm:mb-1">
-                      {t('fire.ends_in')}
+                      {(() => {
+                        if (selectedChapter !== 'all') {
+                          const now = Date.now();
+                          let chStartMs = null;
+                          let chEndMs = null;
+                          const selChapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
+                          if (selChapter && selChapter.start && selChapter.end) {
+                            chStartMs = selChapter.start * 1000;
+                            chEndMs = selChapter.end * 1000;
+                          } else if (eventInfo?.id) {
+                            const chNum = selectedChapter.split('-')[1];
+                            const wbChapter = worldBloomsInfo.find(wb => wb.eventId == eventInfo.id && wb.chapterNo == chNum);
+                            if (wbChapter) {
+                              chStartMs = wbChapter.chapterStartAt;
+                              chEndMs = wbChapter.chapterEndAt;
+                            }
+                          }
+                          
+                          if (chStartMs && now < chStartMs) return t('fire.chapter_starts_in');
+                          if (chEndMs && now >= chEndMs) return t('fire.chapter_ended');
+                          return t('fire.chapter_ends_in') || t('fire.ends_in');
+                        }
+                        return t('fire.ends_in');
+                      })()}
                     </span>
                     <span className="text-[10px] sm:text-xs text-indigo-600 font-extrabold tracking-tight">
-                      {eventInfo && lastUpdated ? (
-                        formatDuration((eventInfo.end * 1000) - lastUpdated)
-                      ) : (
-                        timeRemaining !== null && formatDuration(timeRemaining)
-                      )}
+                      {(() => {
+                        if (selectedChapter !== 'all') {
+                          const now = Date.now();
+                          let chStartMs = null;
+                          let chEndMs = null;
+                          const selChapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
+                          if (selChapter && selChapter.start && selChapter.end) {
+                            chStartMs = selChapter.start * 1000;
+                            chEndMs = selChapter.end * 1000;
+                          } else if (eventInfo?.id) {
+                            const chNum = selectedChapter.split('-')[1];
+                            const wbChapter = worldBloomsInfo.find(wb => wb.eventId == eventInfo.id && wb.chapterNo == chNum);
+                            if (wbChapter) {
+                              chStartMs = wbChapter.chapterStartAt;
+                              chEndMs = wbChapter.chapterEndAt;
+                            }
+                          }
+
+                          if (chStartMs && now < chStartMs) {
+                            return formatDuration(chStartMs - now);
+                          } else if (chEndMs && now < chEndMs) {
+                            const refTime = Math.max(lastUpdated || 0, chapterScoreLastUpdated || 0) || now;
+                            return formatDuration(chEndMs - refTime);
+                          } else if (chEndMs && now >= chEndMs) {
+                            return '-';
+                          }
+                        }
+                        // 종합 (기존 로직)
+                        if (eventInfo && lastUpdated) {
+                          return formatDuration((eventInfo.end * 1000) - lastUpdated);
+                        }
+                        return timeRemaining !== null ? formatDuration(timeRemaining) : null;
+                      })()}
                     </span>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
                 {(() => {
-                  const maxTs = Math.max(lastUpdated || 0, currentScoreLastUpdated || 0);
-                  const currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
-                  const elapsedHours = Math.max(0, (currentTs - eventInfo.start) / 3600);
-                  const totalHours = eventInfo.len;
-                  const progress = Math.min(100, Math.max(0, (elapsedHours / totalHours) * 100));
+                  let startSec, totalHours, currentTs;
+                  
+                  // 챕터 선택 시 해당 챕터의 시간 범위 사용
+                  if (selectedChapter !== 'all') {
+                    // 1) chaptersData에서 찾기
+                    const selChapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
+                    if (selChapter && selChapter.start && selChapter.end) {
+                      startSec = selChapter.start;
+                      totalHours = (selChapter.end - selChapter.start) / 3600;
+                      const maxTs = Math.max(lastUpdated || 0, chapterScoreLastUpdated || 0);
+                      currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
+                    }
+                    
+                    // 2) worldBloomsInfo에서 찾기 (fallback)
+                    if (!startSec && eventInfo?.id) {
+                      const chNum = selectedChapter.split('-')[1];
+                      const wbChapter = worldBloomsInfo.find(wb => wb.eventId == eventInfo.id && wb.chapterNo == chNum);
+                      if (wbChapter && wbChapter.chapterStartAt && wbChapter.chapterEndAt) {
+                        startSec = wbChapter.chapterStartAt / 1000;
+                        totalHours = (wbChapter.chapterEndAt - wbChapter.chapterStartAt) / 3600000;
+                        const maxTs = Math.max(lastUpdated || 0, chapterScoreLastUpdated || 0);
+                        currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
+                      }
+                    }
+                  }
+                  
+                  // 종합 (기존 로직)
+                  if (!startSec) {
+                    startSec = eventInfo.start;
+                    totalHours = eventInfo.len;
+                    const maxTs = Math.max(lastUpdated || 0, currentScoreLastUpdated || 0);
+                    currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
+                  }
+
+                  const rawElapsedHours = Math.max(0, (currentTs - startSec) / 3600);
+                  const elapsedHours = Math.min(rawElapsedHours, totalHours);
+                  const progress = totalHours > 0 ? Math.min(100, Math.max(0, (elapsedHours / totalHours) * 100)) : 0;
 
                   return (
                     <div className="relative w-full h-6 bg-gray-200 rounded-lg overflow-hidden shadow-inner mt-0">
                       <div
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all duration-500"
+                        className={`absolute top-0 left-0 h-full transition-all duration-500 ${
+                          selectedChapter !== 'all' 
+                            ? 'bg-gradient-to-r from-purple-400 to-fuchsia-500' 
+                            : 'bg-gradient-to-r from-blue-400 to-indigo-500'
+                        }`}
                         style={{ width: `${progress}% ` }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] z-10 leading-none pb-[1px]">
-                        {elapsedHours.toFixed(1)}h / {totalHours}h ({progress.toFixed(1)}%)
+                        {elapsedHours.toFixed(1)}h / {totalHours.toFixed(1)}h ({progress.toFixed(1)}%)
                       </div>
                     </div>
                   );
@@ -1856,11 +2165,176 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
           </div>
 
+          {/* [추가] World Link Chapter Selector */}
+          {/* [추가] World Link Chapter Selector — worldBloomsInfo 기반 전체 챕터 표시 */}
+          {(() => {
+            // worldBloomsInfo에서 현재 이벤트의 모든 챕터 추출
+            const eventChaptersFromWB = eventInfo?.id
+              ? worldBloomsInfo
+                  .filter(wb => wb.eventId == eventInfo.id)
+                  .sort((a, b) => a.chapterNo - b.chapterNo)
+              : [];
+
+            // 챕터 목록: worldBloomsInfo 우선, 없으면 chaptersData 사용
+            const hasWBChapters = eventChaptersFromWB.length > 0;
+            const showSelector = hasWBChapters || chaptersData.length > 0;
+
+            if (!showSelector) return null;
+
+            return (
+              <div className="px-4 py-3 border-b border-gray-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-bold text-purple-600">🌐 {t('fire.world_link_chapters')}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => setSelectedChapter('all')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                      selectedChapter === 'all'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {t('fire.chapter_all')}
+                  </button>
+
+                  {hasWBChapters ? (
+                    // worldBloomsInfo 기반: 이벤트의 모든 챕터 표시
+                    eventChaptersFromWB.map((wbChapter) => {
+                      const now = Date.now();
+                      const chStart = wbChapter.chapterStartAt || 0;
+                      const chEnd = wbChapter.chapterEndAt || 0;
+                      const isActive = now >= chStart && now < chEnd;
+                      const isEnded = now >= chEnd;
+                      const chapterNum = wbChapter.chapterNo;
+                      
+                      // chaptersData에서 매칭되는 챕터 찾기 (선택 시 데이터 표시용)
+                      const matchedChapter = chaptersData.find(ch => {
+                        const chNum = ch.chapter_id?.split('-')[1];
+                        return chNum == chapterNum;
+                      });
+                      const chapterId = matchedChapter?.chapter_id || `wl-${chapterNum}`;
+
+                      // gameCharacterId로 캐릭터 데이터 찾기
+                      let charData = null;
+                      if (wbChapter.gameCharacterId) {
+                        const charIdStr = String(wbChapter.gameCharacterId).padStart(2, '0');
+                        charData = characterBirthdays.find(b => b.image === charIdStr);
+                      }
+
+                      const displayName = charData
+                        ? (language === 'en' ? charData.nameEn : (language === 'ja' ? charData.nameJa : charData.nameKo))
+                        : `Ch.${chapterNum}`;
+
+                      return (
+                        <button
+                          key={wbChapter.id || chapterId}
+                          onClick={() => setSelectedChapter(chapterId)}
+                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-[3px] ${
+                            selectedChapter === chapterId
+                              ? 'text-white border-transparent translate-y-[3px]'
+                              : isActive
+                                ? 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50 shadow-sm ring-1 ring-purple-300'
+                                : isEnded
+                                  ? 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 shadow-sm opacity-60'
+                          }`}
+                          style={selectedChapter === chapterId ? { backgroundColor: charData?.color || '#9333ea', borderColor: charData?.color || '#9333ea' } : {}}
+                        >
+                          {charData && (
+                            <div className="w-5 h-5 -my-1 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+                              <img
+                                src={`/assets/characters/${charData.image}.webp`}
+                                alt={displayName}
+                                className={`w-full h-full object-contain ${
+                                  isEnded && selectedChapter !== chapterId ? 'opacity-50 grayscale' : ''
+                                }${!isActive && !isEnded ? 'opacity-40' : ''}`}
+                              />
+                            </div>
+                          )}
+                          <span>{displayName}</span>
+                          {isActive && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse ml-0.5" />}
+                          {!isActive && !isEnded && <span className="text-[9px] text-gray-400 ml-0.5">⏳</span>}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    // Fallback: chaptersData 기반 (기존 로직)
+                    chaptersData.map((ch, idx) => {
+                      const now = Date.now();
+                      const chStart = (ch.start || 0) * 1000;
+                      const chEnd = (ch.end || 0) * 1000;
+                      const isActive = now >= chStart && now < chEnd;
+                      const isEnded = now >= chEnd;
+                      const chapterNum = ch.chapter_id.split('-')[1] || (idx + 1);
+                      
+                      let charData = null;
+                      const eventWorldBloom = worldBloomsInfo.find(wb => wb.id == ch.world_bloom_id || wb.eventId == eventInfo?.id);
+                      if (eventWorldBloom && eventWorldBloom.worldBloomChapters) {
+                        const targetIdx = parseInt(chapterNum) - 1;
+                        const wbChapter = eventWorldBloom.worldBloomChapters.find(c => c.id == chapterNum) 
+                          || eventWorldBloom.worldBloomChapters[targetIdx];
+                        if (wbChapter && wbChapter.characterId) {
+                          const charIdStr = String(wbChapter.characterId).padStart(2, '0');
+                          charData = characterBirthdays.find(b => b.image === charIdStr);
+                        }
+                      }
+
+                      const charMatch = (ch.nick || '').match(/\(([^)]+)\)/);
+                      const fallbackName = charMatch ? charMatch[1] : `Ch.${chapterNum}`;
+                      if (!charData && fallbackName) {
+                        const charDataByName = characterBirthdays.find(b => 
+                          b.nameEn.toLowerCase() === fallbackName.toLowerCase() ||
+                          b.nameKo === fallbackName ||
+                          b.nameJa === fallbackName
+                        );
+                        if (charDataByName) charData = charDataByName;
+                      }
+                      
+                      const displayName = charData 
+                        ? (language === 'en' ? charData.nameEn : (language === 'ja' ? charData.nameJa : charData.nameKo)) 
+                        : fallbackName;
+
+                      return (
+                        <button
+                          key={ch.chapter_id}
+                          onClick={() => setSelectedChapter(ch.chapter_id)}
+                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-[3px] ${
+                            selectedChapter === ch.chapter_id
+                              ? 'text-white border-transparent translate-y-[3px]'
+                              : isActive
+                                ? 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50 shadow-sm ring-1 ring-purple-300'
+                                : isEnded
+                                  ? 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 shadow-sm'
+                          }`}
+                          style={selectedChapter === ch.chapter_id ? { backgroundColor: charData?.color || '#9333ea', borderColor: charData?.color || '#9333ea' } : {}}
+                        >
+                          {charData && (
+                            <div className="w-5 h-5 -my-1 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+                              <img
+                                src={`/assets/characters/${charData.image}.webp`}
+                                alt={displayName}
+                                className={`w-full h-full object-contain ${isEnded && selectedChapter !== ch.chapter_id ? 'opacity-50 grayscale' : ''}`}
+                              />
+                            </div>
+                          )}
+                          <span>{displayName}</span>
+                          {isActive && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse ml-0.5" />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {loading ? (
             <div className="p-8 text-center text-gray-500 animate-pulse">
               {t('fire.loading_prediction_data')}
             </div>
-          ) : predictionData.length > 0 ? (
+          ) : activePredictionData.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -1893,7 +2367,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       >
                         <table className="w-full text-sm">
                           <tbody className="divide-y divide-gray-100">
-                            {predictionData.filter(r => r.rank <= 50).map((row, index) => (
+                            {activePredictionData.filter(r => r.rank <= 50).map((row, index) => (
                               <React.Fragment key={row.rank}>
                                 <tr
                                   className={`transition-colors cursor-pointer active:bg-indigo-100 ${index % 2 === 0 ? 'bg-indigo-50/10 hover:bg-indigo-50/60' : 'bg-indigo-50/40 hover:bg-indigo-50/80'} ${activeRank === row.rank ? 'bg-indigo-100/70 hover:bg-indigo-100/70' : ''}`}
@@ -1957,7 +2431,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   </tr>
 
                   {/* Rest of Rows */}
-                  {predictionData.filter(r => r.rank > 50).map((row, index) => (
+                  {activePredictionData.filter(r => r.rank > 50).map((row, index) => (
                     <React.Fragment key={row.rank}>
                       <tr
                         className={`transition-colors cursor-pointer active:bg-gray-200 ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'} ${activeRank === row.rank ? 'bg-gray-200 hover:bg-gray-200' : ''}`}
@@ -2056,6 +2530,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         onClose={() => setGraphRank(null)}
         rank={graphRank}
         t={t}
+        selectedChapter={selectedChapter}
       />
     </div >
   );

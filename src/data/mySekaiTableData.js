@@ -12,10 +12,10 @@ export const mySekaiTableData = {
     6000: [null, null, null, 824, 758, 700, 650, 606, 567, 532],
     6500: [null, null, null, null, 829, 767, 713, 665, 623, 585],
     7000: [null, null, null, null, null, 834, 775, 724, 678, 637],
-    7500: [null, null, null, null, null, null, 838, 783, 734, 690],
-    8000: [null, null, null, null, null, null, null, 842, 789, 743],
-    8500: [null, null, null, null, null, null, null, null, 845, 795],
-    9000: [null, null, null, null, null, null, null, null, null, 848],
+    7500: [null, null, null, null, null, 900, 838, 783, 734, 690],
+    8000: [null, null, null, null, null, 967, 900, 842, 789, 743],
+    8500: [null, null, null, null, null, null, 963, 900, 845, 795],
+    9000: [null, null, null, null, null, null, null, 959, null, 848],
 };
 
 export const powerColumnThresholds = [
