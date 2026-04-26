@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateRawInternalValue, calculateInternalValue } from '../utils/deckUtils';
+import { fetchDeckAssets, parseDeckData } from '../utils/deckLoader';
 
 // Import result components
 import AutoTab from './AutoTab';
@@ -32,6 +33,17 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     // Result view selector - Sync with URL subPath
     const [activeResultView, setActiveResultView] = useState(getViewFromSubPath(subPath)); // 'auto', 'power'
+
+    // Load Friend Code Modal State
+    const [showLoadModal, setShowLoadModal] = useState(false);
+    const [friendCode, setFriendCode] = useState(() => {
+        return localStorage.getItem('savedFriendCode') || '';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('savedFriendCode', friendCode);
+    }, [friendCode]);
+    const [isLoadingFriend, setIsLoadingFriend] = useState(false);
 
     // Update activeResultView when subPath changes (e.g., browser back/forward)
     useEffect(() => {
@@ -200,6 +212,50 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         });
     };
 
+    // Update loaded deck skill level for a specific member
+    const updateDeckLoadedSkillLevel = (memberKey, level) => {
+        setSurveyData(prev => {
+            const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
+            
+            const updatedLoadedSkillLevels = {
+                ...(currentDeckData.loadedSkillLevels || {}),
+                [memberKey]: level
+            };
+            
+            let skillVal = currentDeckData[`skill${memberKey === 'leader' ? 'Leader' : memberKey.charAt(0).toUpperCase() + memberKey.slice(1)}`];
+            
+            if (level !== null && currentDeckData.loadedSkillRanges?.[memberKey]) {
+                skillVal = currentDeckData.loadedSkillRanges[memberKey][level];
+            }
+            
+            const skillKey = memberKey === 'leader' ? 'skillLeader' : `skill${memberKey.charAt(0).toUpperCase() + memberKey.slice(1)}`;
+            
+            const updatedDeck = {
+                ...currentDeckData,
+                loadedSkillLevels: updatedLoadedSkillLevels,
+                [skillKey]: skillVal
+            };
+            
+            const preciseInternalVal = calculateInternalValueFromDeck(updatedDeck);
+            const internalVal = Math.floor(preciseInternalVal / 10) * 10;
+            
+            return {
+                ...prev,
+                unifiedDecks: {
+                    ...prev.unifiedDecks,
+                    [`deck${activeDeckNum}`]: {
+                        ...updatedDeck,
+                        internalValue: String(internalVal),
+                        isManualInternalEdit: false
+                    }
+                },
+                autoDeck: updatedDeck,
+                internalValue: String(internalVal),
+                isManualInternalEdit: false
+            };
+        });
+    };
+
     // Calculate bloom skill range based on other members' skills
     // Logic: base% + up to 50% of another random member's max skill
     // For min: use base only (random member could have 0 contribution)
@@ -243,12 +299,94 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         return { min: minSkill, max: maxSkill };
     };
 
+    // Get bloom fes max cap from base skill value (for loaded bloom-fes-original cards)
+    // BLOOM_LEVELS: 1→[60,120], 2→[65,130], 3→[70,140], 4→[80,150]
+    const getBloomFesMaxCapFromBase = (base) => {
+        if (base >= 80) return 150;
+        if (base >= 70) return 140;
+        if (base >= 65) return 130;
+        return 120;
+    };
+
+    // Get bloom range for a loaded bloom-fes-original member (not using global useBloomFes)
+    const getLoadedBloomFesRange = (memberKey) => {
+        if (!currentDeck.loadedBloomFesOriginalMembers?.[memberKey]) return null;
+
+        const skillValues = {
+            leader: Number(skillLeader) || 0,
+            member2: Number(skillMember2) || 0,
+            member3: Number(skillMember3) || 0,
+            member4: Number(skillMember4) || 0,
+            member5: Number(skillMember5) || 0,
+        };
+
+        const baseVal = skillValues[memberKey];
+        if (!baseVal) return null;
+
+        const maxCap = getBloomFesMaxCapFromBase(baseVal);
+
+        let minOther = Infinity;
+        let maxOther = 0;
+        Object.entries(skillValues).forEach(([k, v]) => {
+            if (k === memberKey) return;
+            minOther = Math.min(minOther, v || 0);
+            maxOther = Math.max(maxOther, v || 0);
+        });
+        if (minOther === Infinity) minOther = 0;
+
+        const minSkill = Math.min(baseVal + Math.floor(minOther * 0.5), maxCap);
+        const maxSkill = Math.min(baseVal + Math.floor(maxOther * 0.5), maxCap);
+        return { min: minSkill, max: maxSkill };
+    };
+
+    // Get bloom range for a loaded VS bloom-fes-original member
+    // VS formula: base + 30 per different unit type (max 2 types) → range [base, base+unitBonus]
+    const getLoadedVSBloomFesRange = (memberKey) => {
+        const vsData = currentDeck.loadedVSBloomFesMembers?.[memberKey];
+        if (!vsData) return null;
+
+        const skillVals = {
+            leader: Number(skillLeader) || 0,
+            member2: Number(skillMember2) || 0,
+            member3: Number(skillMember3) || 0,
+            member4: Number(skillMember4) || 0,
+            member5: Number(skillMember5) || 0,
+        };
+        const baseVal = skillVals[memberKey];
+        if (!baseVal) return null;
+
+        const unitBonus = vsData.unitBonus ?? 0;
+        // VS bloom fes: deck composition is known at load time, so unitBonus is fixed
+        // Show base + unitBonus as a single determined value (no range uncertainty)
+        const fixedVal = Math.min(baseVal + unitBonus, baseVal + 60);
+        return { min: fixedVal, max: fixedVal };
+    };
+
+    // Helper to get skill range for UI display (either bloom range or loaded fixed value)
+    const getEffectiveSkillRange = (memberKey) => {
+        const r = getBloomSkillRange(memberKey) || getLoadedBloomFesRange(memberKey) || getLoadedVSBloomFesRange(memberKey);
+        if (r) return r;
+
+        if (currentDeck.loadedSkillLevels?.[memberKey]) {
+            const skillVals = {
+                leader: Number(skillLeader),
+                member2: Number(skillMember2),
+                member3: Number(skillMember3),
+                member4: Number(skillMember4),
+                member5: Number(skillMember5),
+            };
+            const val = skillVals[memberKey] || 0;
+            return { min: val, max: val, isLoaded: true };
+        }
+        return null;
+    };
+
     // Calculate effective value range based on bloom skills
     // Returns { minEffective, maxEffective, minInternalSum, maxInternalSum, leaderMin, leaderMax }
     const getBloomEffectiveValueRange = () => {
         // Get effective skill values for each member (min and max if bloom)
         const getSkillRange = (memberKey, baseValue, defaultVal) => {
-            const bloomRange = getBloomSkillRange(memberKey);
+            const bloomRange = getBloomSkillRange(memberKey) || getLoadedBloomFesRange(memberKey) || getLoadedVSBloomFesRange(memberKey);
             if (bloomRange) {
                 return { min: bloomRange.min, max: bloomRange.max };
             }
@@ -296,42 +434,59 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         const m4Val = Number(deckData.skillMember4 || 100);
         const m5Val = Number(deckData.skillMember5 || 100);
 
-        if (!useBloom) {
+        const loadedBloomFesOriginal = deckData.loadedBloomFesOriginalMembers || {};
+        const loadedVSBloomFes = deckData.loadedVSBloomFesMembers || {};
+        const hasLoadedBloomFes = Object.values(loadedBloomFesOriginal).some(Boolean) || Object.values(loadedVSBloomFes).some(Boolean);
+
+        if (!useBloom && !hasLoadedBloomFes) {
             // Standard formula: Leader + (Sum Others)*0.2
-            // No flooring here, allow precise value? Original code floored to 10.
-            // Wait, previous code: Math.floor((leader + (m2 + m3 + m4 + m5) * 0.2) / 10) * 10;
-            // But recent user request fixed effective val 1s digit. 
-            // So we should just floor to integer: Math.floor(...)
             return Math.floor(leaderVal + (m2Val + m3Val + m4Val + m5Val) * 0.2);
         }
 
-        // With Bloom Fes, we use MINIMUM effective value
+        // With Bloom Fes (global or per-member loaded), we use MINIMUM effective value
+        const allVals = { leader: leaderVal, member2: m2Val, member3: m3Val, member4: m4Val, member5: m5Val };
+
         const getSkillMin = (memberKey, baseVal) => {
-            const level = blooms[memberKey];
-            if (!level || !BLOOM_LEVELS[level]) return baseVal;
-
-            const [base, maxCap] = BLOOM_LEVELS[level];
-
-            // Calculate minOtherSkill
-            const memberSkills = {
-                leader: { val: leaderVal, bloomLevel: blooms.leader },
-                member2: { val: m2Val, bloomLevel: blooms.member2 },
-                member3: { val: m3Val, bloomLevel: blooms.member3 },
-                member4: { val: m4Val, bloomLevel: blooms.member4 },
-                member5: { val: m5Val, bloomLevel: blooms.member5 },
-            };
-
-            let minOtherSkill = Infinity;
-            Object.entries(memberSkills).forEach(([k, data]) => {
-                if (k === memberKey) return;
-                let effectiveSkill = data.val;
-                if (data.bloomLevel && BLOOM_LEVELS[data.bloomLevel]) {
-                    effectiveSkill = BLOOM_LEVELS[data.bloomLevel][1]; // Blooms reference max
+            // Global bloom fes check
+            if (useBloom) {
+                const level = blooms[memberKey];
+                if (level && BLOOM_LEVELS[level]) {
+                    const [base, maxCap] = BLOOM_LEVELS[level];
+                    const memberSkills = {
+                        leader: { val: leaderVal, bloomLevel: blooms.leader },
+                        member2: { val: m2Val, bloomLevel: blooms.member2 },
+                        member3: { val: m3Val, bloomLevel: blooms.member3 },
+                        member4: { val: m4Val, bloomLevel: blooms.member4 },
+                        member5: { val: m5Val, bloomLevel: blooms.member5 },
+                    };
+                    let minOtherSkill = Infinity;
+                    Object.entries(memberSkills).forEach(([k, data]) => {
+                        if (k === memberKey) return;
+                        let effectiveSkill = data.val;
+                        if (data.bloomLevel && BLOOM_LEVELS[data.bloomLevel]) {
+                            effectiveSkill = BLOOM_LEVELS[data.bloomLevel][1];
+                        }
+                        minOtherSkill = Math.min(minOtherSkill, effectiveSkill);
+                    });
+                    return Math.min(base + Math.floor(minOtherSkill * 0.5), maxCap);
                 }
-                minOtherSkill = Math.min(minOtherSkill, effectiveSkill);
-            });
-
-            return Math.min(base + Math.floor(minOtherSkill * 0.5), maxCap);
+            }
+            // Loaded bloom-fes-original card check
+            if (loadedBloomFesOriginal[memberKey] && baseVal) {
+                const maxCap = baseVal >= 80 ? 150 : baseVal >= 70 ? 140 : baseVal >= 65 ? 130 : 120;
+                let minOther = Infinity;
+                Object.entries(allVals).forEach(([k, v]) => {
+                    if (k !== memberKey) minOther = Math.min(minOther, v || 0);
+                });
+                if (minOther === Infinity) minOther = 0;
+                return Math.min(baseVal + Math.floor(minOther * 0.5), maxCap);
+            }
+            // Loaded VS bloom-fes-original card check
+            if (loadedVSBloomFes[memberKey] && baseVal) {
+                const unitBonus = loadedVSBloomFes[memberKey].unitBonus ?? 0;
+                return Math.min(baseVal + unitBonus, baseVal + 60);
+            }
+            return baseVal;
         };
 
         const lMin = getSkillMin('leader', leaderVal);
@@ -343,13 +498,95 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         return Math.floor(lMin + (m2Min + m3Min + m4Min + m5Min) * 0.2);
     };
 
-    // Update current deck and sync power/effi/internalValue for PowerTab
-    const updateDeck = (key, value) => {
+    // Switch a loaded bloom-fes-original member to manual input mode
+    // (removes the range display and clears the SLv dropdown for that member)
+    const switchBloomFesToManual = (memberKey) => {
+        setSurveyData(prev => {
+            const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
+            const updatedLoadedBloomFes = { ...(currentDeckData.loadedBloomFesOriginalMembers || {}) };
+            delete updatedLoadedBloomFes[memberKey];
+            const updatedLoadedVSBloomFes = { ...(currentDeckData.loadedVSBloomFesMembers || {}) };
+            delete updatedLoadedVSBloomFes[memberKey];
+            const updatedLoadedSkillLevels = { ...(currentDeckData.loadedSkillLevels || {}) };
+            delete updatedLoadedSkillLevels[memberKey];
+            const updatedDeck = {
+                ...currentDeckData,
+                loadedBloomFesOriginalMembers: updatedLoadedBloomFes,
+                loadedVSBloomFesMembers: updatedLoadedVSBloomFes,
+                loadedSkillLevels: updatedLoadedSkillLevels
+            };
+            const preciseInternalVal = calculateInternalValueFromDeck(updatedDeck);
+            const internalVal = Math.floor(preciseInternalVal / 10) * 10;
+            return {
+                ...prev,
+                unifiedDecks: {
+                    ...prev.unifiedDecks,
+                    [`deck${activeDeckNum}`]: {
+                        ...updatedDeck,
+                        internalValue: String(internalVal),
+                        isManualInternalEdit: false
+                    }
+                }
+            };
+        });
+    };
+
+    // Reset all loaded friend data for the active deck
+    const handleResetLoadedData = () => {
         setSurveyData(prev => {
             const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
             const updatedDeck = {
                 ...currentDeckData,
-                [key]: value
+                totalPower: '',
+                skillLeader: '',
+                skillMember2: '',
+                skillMember3: '',
+                skillMember4: '',
+                skillMember5: '',
+                eventBonus: '',
+                loadedSkillRanges: undefined,
+                loadedSkillLevels: undefined,
+                loadedBloomFesOriginalMembers: undefined,
+                loadedVSBloomFesMembers: undefined,
+                internalValue: '',
+                isManualInternalEdit: false
+            };
+            return {
+                ...prev,
+                unifiedDecks: {
+                    ...prev.unifiedDecks,
+                    [`deck${activeDeckNum}`]: updatedDeck
+                },
+                autoDeck: updatedDeck,
+                power: '',
+                effi: '',
+                internalValue: '',
+                isManualInternalEdit: false
+            };
+        });
+    };
+
+    // Check if any loaded data exists for the active deck
+    const hasLoadedData = !!(currentDeck.loadedSkillRanges && Object.keys(currentDeck.loadedSkillRanges).length > 0);
+    const updateDeck = (key, value) => {
+        console.log(`[updateDeck called] key: ${key}, value: ${value}`);
+        setSurveyData(prev => {
+            const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
+            
+            const isSkillUpdate = key.startsWith('skill') || key === 'skillLeader';
+            let updatedLoadedSkillLevels = currentDeckData.loadedSkillLevels;
+            
+            if (isSkillUpdate && updatedLoadedSkillLevels) {
+                const memberKey = key === 'skillLeader' ? 'leader' : key.replace('skill', '').toLowerCase();
+                if (currentDeckData[key] !== value && updatedLoadedSkillLevels[memberKey]) {
+                    updatedLoadedSkillLevels = { ...updatedLoadedSkillLevels, [memberKey]: null };
+                }
+            }
+
+            const updatedDeck = {
+                ...currentDeckData,
+                [key]: value,
+                ...(updatedLoadedSkillLevels ? { loadedSkillLevels: updatedLoadedSkillLevels } : {})
             };
 
             // Calculate internal value from skills
@@ -361,8 +598,6 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
             // If the updated key is one of the skill keys, we should force update the internal value
             // and reset the manual override flag.
-            const isSkillUpdate = key.startsWith('skill') || key === 'skillLeader';
-            // Actually 'skillLeader' starts with 'skill', so startsWith is enough.
 
             // Wait, we need to respect existing isManualInternalEdit if it's NOT a skill update (e.g. power update)
             // But 'isManualInternalEdit' comes from top scope?
@@ -468,10 +703,79 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         });
     };
 
+    const handleLoadFriendCode = async () => {
+        if (!friendCode) return;
+        setIsLoadingFriend(true);
+        try {
+            const res = await fetch(`https://api2.rilaksekai.com/api/${friendCode}`);
+            if (!res.ok) throw new Error(`API 응답 오류: ${res.status}`);
+            const data = await res.json();
+
+            const assets = await fetchDeckAssets();
+            const parsed = parseDeckData(data, assets);
+            const {
+                totalPower: fetchedTotalPower,
+                skillValues,
+                eventBonus,
+                loadedSkillRanges,
+                loadedSkillLevels,
+                loadedBloomFesOriginalMembers,
+                loadedVSBloomFesMembers,
+            } = parsed;
+
+            setSurveyData(prev => {
+                const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
+                const updatedDeck = {
+                    ...currentDeckData,
+                    totalPower: fetchedTotalPower ?? currentDeckData.totalPower,
+                    skillLeader:  skillValues[0],
+                    skillMember2: skillValues[1],
+                    skillMember3: skillValues[2],
+                    skillMember4: skillValues[3],
+                    skillMember5: skillValues[4],
+                    eventBonus,
+                    loadedSkillRanges,
+                    loadedSkillLevels,
+                    loadedBloomFesOriginalMembers,
+                    loadedVSBloomFesMembers,
+                };
+                console.log('Friend Code Loaded! updatedDeck:', updatedDeck);
+
+                const preciseInternalVal = calculateInternalValueFromDeck(updatedDeck);
+                const internalVal = Math.floor(preciseInternalVal / 10) * 10;
+
+                return {
+                    ...prev,
+                    unifiedDecks: {
+                        ...prev.unifiedDecks,
+                        [`deck${activeDeckNum}`]: {
+                            ...updatedDeck,
+                            internalValue: String(internalVal),
+                            isManualInternalEdit: false,
+                        },
+                    },
+                    autoDeck: updatedDeck,
+                    power: String((Number(updatedDeck.totalPower || 293231)) / 10000),
+                    effi: String(updatedDeck.eventBonus || 250),
+                    internalValue: String(internalVal),
+                    isManualInternalEdit: false,
+                };
+            });
+
+            setShowLoadModal(false);
+        } catch (err) {
+            console.error('Failed to load friend data', err);
+            alert('데이터를 불러오는데 실패했습니다: ' + err.message);
+        } finally {
+            setIsLoadingFriend(false);
+        }
+    };
+
+
     return (
         <div id="deck-tab-content">
             {/* Deck Selector */}
-            <div className="flex justify-center gap-2 mb-4">
+            <div className="flex justify-center gap-2 mb-4 items-center">
                 {[1, 2, 3].map(num => (
                     <button
                         key={num}
@@ -488,6 +792,33 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         {t('deck.deck_label') || '덱'} {num}
                     </button>
                 ))}
+                <div className="relative">
+                    <button
+                        onClick={() => setShowLoadModal(!showLoadModal)}
+                        className="px-4 py-2 text-sm font-medium rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all duration-200"
+                    >
+                        {t('app.load') || '불러오기'}
+                    </button>
+                    {showLoadModal && (
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                            <div className="mb-2 text-sm font-bold text-gray-700">친구코드 입력</div>
+                            <input
+                                type="text"
+                                value={friendCode}
+                                onChange={e => setFriendCode(e.target.value)}
+                                placeholder="예: 3939393939393939"
+                                className="w-full border border-gray-300 rounded px-2 py-1 mb-3 text-sm focus:outline-none focus:border-blue-500"
+                            />
+                            <button
+                                onClick={handleLoadFriendCode}
+                                disabled={isLoadingFriend}
+                                className="w-full bg-blue-500 text-white rounded py-1.5 text-sm font-medium hover:bg-blue-600 disabled:opacity-50"
+                            >
+                                {isLoadingFriend ? '불러오는 중...' : '불러오기'}
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Shared Input Section */}
@@ -532,34 +863,44 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     </td>
                     <td className="text-left py-0">
                         <div className="flex items-center gap-1">
-                            {/* Show input OR range based on bloom selection */}
-                            {getBloomSkillRange('leader') ? (
-                                <div className="w-28 text-center bg-indigo-50 rounded-lg px-2 py-1.5 text-indigo-700 font-medium">
-                                    {getBloomSkillRange('leader').min}~{getBloomSkillRange('leader').max}%
-                                </div>
-                            ) : (
-                                <>
-                                    <input
-                                        type="number"
-                                        value={skillLeader !== null && skillLeader !== undefined ? skillLeader : ''}
-                                        onChange={(e) => {
-                                            let val = e.target.value;
-                                            if (val !== '' && Number(val) > 160) {
-                                                val = '160';
-                                            }
-                                            updateDeck('skillLeader', val === '' ? '' : Number(val));
-                                        }}
-                                        onFocus={(e) => e.target.select()}
-                                        className="w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                        placeholder="120"
-                                    />
-                                    <span className="ml-1 text-gray-600">%</span>
-                                </>
-                            )}
+                            {/* Show blue box if range is present OR card is loaded */}
+                            {(() => {
+                                const r = getEffectiveSkillRange('leader');
+                                if (r) {
+                                    return (
+                                        <div
+                                            className="w-28 text-center bg-indigo-50 rounded-lg px-2 py-1.5 text-indigo-700 font-medium cursor-pointer hover:bg-indigo-100 transition-colors"
+                                            onClick={() => switchBloomFesToManual('leader')}
+                                            title="클릭하여 직접 입력"
+                                        >
+                                            {r.min === r.max ? `${r.min}%` : `${r.min}~${r.max}%`}
+                                        </div>
+                                    );
+                                }
+                                return (
+                                    <>
+                                        <input
+                                            type="number"
+                                            value={skillLeader !== null && skillLeader !== undefined ? skillLeader : ''}
+                                            onChange={(e) => {
+                                                let val = e.target.value;
+                                                if (val !== '' && Number(val) > 160) {
+                                                    val = '160';
+                                                }
+                                                updateDeck('skillLeader', val === '' ? '' : Number(val));
+                                            }}
+                                            onFocus={(e) => e.target.select()}
+                                            className="w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                            placeholder="120"
+                                        />
+                                        <span className="ml-1 text-gray-600">%</span>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </td>
-                    {useBloomFes && (
-                        <td className="pl-1">
+                    <td className="pl-1 flex gap-1">
+                        {useBloomFes && (
                             <select
                                 value={bloomLevels.leader || 0}
                                 onChange={(e) => updateBloomLevel('leader', Number(e.target.value))}
@@ -571,9 +912,21 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                 <option value={3}>{t('auto.bloom_level_3') || 'LV.3'}</option>
                                 <option value={4}>{t('auto.bloom_level_4') || 'LV.4'}</option>
                             </select>
-                        </td>
-                    )}
-                    {!useBloomFes && <td className="w-8"></td>}
+                        )}
+                        {currentDeck.loadedSkillLevels?.['leader'] && (
+                            <select
+                                value={currentDeck.loadedSkillLevels['leader']}
+                                onChange={(e) => updateDeckLoadedSkillLevel('leader', Number(e.target.value))}
+                                className="text-sm px-2 py-1 border border-blue-200 rounded-md bg-blue-50 focus:outline-none focus:ring-1 focus:ring-blue-300 min-w-[60px] text-blue-700"
+                            >
+                                <option value={1}>SLv.1</option>
+                                <option value={2}>SLv.2</option>
+                                <option value={3}>SLv.3</option>
+                                <option value={4}>SLv.4</option>
+                            </select>
+                        )}
+                    </td>
+                    {!useBloomFes && !currentDeck.loadedSkillLevels?.['leader'] && <td className="w-8"></td>}
                 </tr>
 
                 {/* Member skill inputs with bloom selectors */}
@@ -589,34 +942,44 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         </td>
                         <td className="text-left py-0">
                             <div className="flex items-center gap-1">
-                                {/* Show input OR range based on bloom selection */}
-                                {getBloomSkillRange(m.bloomKey) ? (
-                                    <div className="w-28 text-center bg-indigo-50 rounded-lg px-2 py-1.5 text-indigo-700 font-medium">
-                                        {getBloomSkillRange(m.bloomKey).min}~{getBloomSkillRange(m.bloomKey).max}%
-                                    </div>
-                                ) : (
-                                    <>
-                                        <input
-                                            type="number"
-                                            value={m.val !== null && m.val !== undefined ? m.val : ''}
-                                            onChange={(e) => {
-                                                let val = e.target.value;
-                                                if (val !== '' && Number(val) > 160) {
-                                                    val = '160';
-                                                }
-                                                updateDeck(m.key, val === '' ? '' : Number(val));
-                                            }}
-                                            onFocus={(e) => e.target.select()}
-                                            className="w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                            placeholder="100"
-                                        />
-                                        <span className="ml-1 text-gray-600">%</span>
-                                    </>
-                                )}
+                                {/* Show blue box if range is present OR card is loaded */}
+                                {(() => {
+                                    const r = getEffectiveSkillRange(m.bloomKey);
+                                    if (r) {
+                                        return (
+                                            <div
+                                                className="w-28 text-center bg-indigo-50 rounded-lg px-2 py-1.5 text-indigo-700 font-medium cursor-pointer hover:bg-indigo-100 transition-colors"
+                                                onClick={() => switchBloomFesToManual(m.bloomKey)}
+                                                title="클릭하여 직접 입력"
+                                            >
+                                                {r.min === r.max ? `${r.min}%` : `${r.min}~${r.max}%`}
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <>
+                                            <input
+                                                type="number"
+                                                value={m.val !== null && m.val !== undefined ? m.val : ''}
+                                                onChange={(e) => {
+                                                    let val = e.target.value;
+                                                    if (val !== '' && Number(val) > 160) {
+                                                        val = '160';
+                                                    }
+                                                    updateDeck(m.key, val === '' ? '' : Number(val));
+                                                }}
+                                                onFocus={(e) => e.target.select()}
+                                                className="w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                placeholder="100"
+                                            />
+                                            <span className="ml-1 text-gray-600">%</span>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </td>
-                        {useBloomFes && (
-                            <td className="pl-1">
+                        <td className="pl-1 flex gap-1">
+                            {useBloomFes && (
                                 <select
                                     value={bloomLevels[m.bloomKey] || 0}
                                     onChange={(e) => updateBloomLevel(m.bloomKey, Number(e.target.value))}
@@ -628,9 +991,21 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                     <option value={3}>{t('auto.bloom_level_3') || 'LV.3'}</option>
                                     <option value={4}>{t('auto.bloom_level_4') || 'LV.4'}</option>
                                 </select>
-                            </td>
-                        )}
-                        {!useBloomFes && <td className="w-8"></td>}
+                            )}
+                            {currentDeck.loadedSkillLevels?.[m.bloomKey] && (
+                                <select
+                                    value={currentDeck.loadedSkillLevels[m.bloomKey]}
+                                    onChange={(e) => updateDeckLoadedSkillLevel(m.bloomKey, Number(e.target.value))}
+                                    className="text-sm px-2 py-1 border border-blue-200 rounded-md bg-blue-50 focus:outline-none focus:ring-1 focus:ring-blue-300 min-w-[60px] text-blue-700"
+                                >
+                                    <option value={1}>SLv.1</option>
+                                    <option value={2}>SLv.2</option>
+                                    <option value={3}>SLv.3</option>
+                                    <option value={4}>SLv.4</option>
+                                </select>
+                            )}
+                        </td>
+                        {!useBloomFes && !currentDeck.loadedSkillLevels?.[m.bloomKey] && <td className="w-8"></td>}
                     </tr>
                 ))}
                 <InputRow
@@ -645,18 +1020,29 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     spacer={true}
                 />
 
-                {/* Bloom Fes Awakening Checkbox */}
+                {/* Bloom Fes Awakening Checkbox + Reset Button */}
                 <tr>
                     <td colSpan="3" className="pt-2 pb-0">
-                        <label className="flex items-center justify-center gap-2 cursor-pointer text-sm">
-                            <input
-                                type="checkbox"
-                                checked={useBloomFes}
-                                onChange={(e) => updateUseBloomFes(e.target.checked)}
-                                className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                            />
-                            <span className="text-gray-700">{t('auto.bloom_fes_awakening') || '블룸페스 각전 사용'}</span>
-                        </label>
+                        <div className="flex items-center justify-center gap-3">
+                            <label className="flex items-center gap-2 cursor-pointer text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={useBloomFes}
+                                    onChange={(e) => updateUseBloomFes(e.target.checked)}
+                                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                                />
+                                <span className="text-gray-700">{t('auto.bloom_fes_awakening') || '블룸페스 각전 사용'}</span>
+                            </label>
+                            {hasLoadedData && (
+                                <button
+                                    onClick={handleResetLoadedData}
+                                    title="불러온 값 초기화"
+                                    className="text-gray-400 hover:text-red-500 transition-colors text-base leading-none"
+                                >
+                                    ↺
+                                </button>
+                            )}
+                        </div>
                     </td>
                 </tr>
             </InputTableWrapper>

@@ -412,8 +412,8 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   };
 
   useEffect(() => {
-    const newSurveyData = {
-      ...surveyData,
+    setSurveyData(prev => ({
+      ...prev,
       power,
       effi,
       internalValue,
@@ -425,8 +425,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
       detailedSkills,
       detailedSkillsB,
       fireCounts
-    };
-    setSurveyData(newSurveyData);
+    }));
 
     const inputsList = [
       {
