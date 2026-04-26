@@ -35,9 +35,9 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
             <td className="text-left py-0">
                 <div className="flex items-center gap-1">
                     {loaded ? (
-                        // 불러온 값: 파란색 박스로 표시 (클릭하면 일반 입력 가능)
+                        // 불러온 값: 인디고색 박스로 표시 (클릭하면 일반 입력 가능)
                         <div
-                            className="w-28 text-center bg-blue-50 rounded-lg px-2 py-1.5 text-blue-700 font-medium cursor-pointer hover:bg-blue-100 transition-colors"
+                            className="w-28 text-center bg-indigo-50 rounded-lg px-2 py-1.5 text-indigo-700 font-medium cursor-pointer hover:bg-indigo-100 transition-colors"
                             onClick={loaded.onClear}
                             title="클릭하여 직접 입력"
                         >

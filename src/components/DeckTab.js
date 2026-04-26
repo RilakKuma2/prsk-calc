@@ -19,7 +19,7 @@ const BLOOM_LEVELS = {
 };
 
 function DeckTab({ surveyData, setSurveyData, subPath }) {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const navigate = useNavigate();
 
     // Map subPath to view key
@@ -793,33 +793,36 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         {t('deck.deck_label') || '덱'} {num}
                     </button>
                 ))}
-                <div className="relative">
-                    <button
-                        onClick={() => setShowLoadModal(!showLoadModal)}
-                        className="px-4 py-2 text-sm font-medium rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all duration-200"
-                    >
-                        {t('app.load') || '불러오기'}
-                    </button>
-                    {showLoadModal && (
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
-                            <div className="mb-2 text-sm font-bold text-gray-700">친구코드 입력</div>
-                            <input
-                                type="text"
-                                value={friendCode}
-                                onChange={e => setFriendCode(e.target.value)}
-                                placeholder="예: 3939393939393939"
-                                className="w-full border border-gray-300 rounded px-2 py-1 mb-3 text-sm focus:outline-none focus:border-blue-500"
-                            />
-                            <button
-                                onClick={handleLoadFriendCode}
-                                disabled={isLoadingFriend}
-                                className="w-full bg-blue-500 text-white rounded py-1.5 text-sm font-medium hover:bg-blue-600 disabled:opacity-50"
-                            >
-                                {isLoadingFriend ? '불러오는 중...' : '불러오기'}
-                            </button>
-                        </div>
-                    )}
-                </div>
+                {language === 'ko' && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowLoadModal(!showLoadModal)}
+                            className="px-4 py-2 text-sm font-medium rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all duration-200"
+                        >
+                            {t('app.load') || '불러오기'}
+                        </button>
+                        {showLoadModal && (
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                                <div className="mb-1 text-sm font-bold text-gray-700">친구코드 입력</div>
+                                <div className="mb-2 text-xs font-bold text-red-500">* 일본 서버에서만 동작</div>
+                                <input
+                                    type="text"
+                                    value={friendCode}
+                                    onChange={e => setFriendCode(e.target.value)}
+                                    placeholder="예: 3939393939393939"
+                                    className="w-full border border-gray-300 rounded px-2 py-1 mb-3 text-sm focus:outline-none focus:border-blue-500"
+                                />
+                                <button
+                                    onClick={handleLoadFriendCode}
+                                    disabled={isLoadingFriend}
+                                    className="w-full bg-blue-500 text-white rounded py-1.5 text-sm font-medium hover:bg-blue-600 disabled:opacity-50"
+                                >
+                                    {isLoadingFriend ? '불러오는 중...' : '불러오기'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Shared Input Section */}
