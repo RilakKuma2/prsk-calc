@@ -25,7 +25,7 @@ export const InputTableWrapper = ({ children, alignLeft = false }) => (
     </div>
 );
 
-export const InputRow = ({ label, value, onChange, type = "number", min, max, suffix, suffixB, className = "", onFocus, onBlur, spacer, placeholder, placeholderB, comparisonMode, valueB, onChangeB, showLabels, tabIndexA, tabIndexB }) => {
+export const InputRow = ({ label, value, onChange, type = "number", min, max, suffix, suffixB, className = "", onFocus, onBlur, spacer, placeholder, placeholderB, comparisonMode, valueB, onChangeB, showLabels, tabIndexA, tabIndexB, loaded }) => {
     const { t } = useTranslation();
     return (
         <tr>
@@ -34,7 +34,16 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
             </td>
             <td className="text-left py-0">
                 <div className="flex items-center gap-1">
-                    {comparisonMode ? (
+                    {loaded ? (
+                        // 불러온 값: 파란색 박스로 표시 (클릭하면 일반 입력 가능)
+                        <div
+                            className="w-28 text-center bg-blue-50 rounded-lg px-2 py-1.5 text-blue-700 font-medium cursor-pointer hover:bg-blue-100 transition-colors"
+                            onClick={loaded.onClear}
+                            title="클릭하여 직접 입력"
+                        >
+                            {value}{suffix && <span className="text-xs ml-0.5">{suffix}</span>}
+                        </div>
+                    ) : comparisonMode ? (
                         <>
                             {/* Input A */}
                             <div className="flex flex-col items-center">
@@ -105,6 +114,7 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
         </tr>
     );
 };
+
 
 export const SelectRow = ({ label, value, onChange, options, className = "", spacer }) => (
     <tr>

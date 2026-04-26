@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateRawInternalValue, calculateInternalValue } from '../utils/deckUtils';
-import { fetchDeckAssets, parseDeckData } from '../utils/deckLoader';
+import { loadDeckFromFriendCode } from '../utils/deckLoader';
 
 // Import result components
 import AutoTab from './AutoTab';
@@ -566,8 +566,17 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         });
     };
 
-    // Check if any loaded data exists for the active deck
+    // 불러온 데이터가 한 건이라도 있는지 (loadedSkillRanges 존재 여부)
     const hasLoadedData = !!(currentDeck.loadedSkillRanges && Object.keys(currentDeck.loadedSkillRanges).length > 0);
+
+    // 현재 파란색으로 표시 중인 항목이 하나라도 있는지 (리셋 버튼 표시 조건)
+    const hasAnyVisibleLoaded = hasLoadedData && (
+        !!(totalPower) ||
+        !!(eventBonus) ||
+        Object.values(currentDeck.loadedSkillLevels || {}).some(v => v != null) ||
+        Object.keys(currentDeck.loadedBloomFesOriginalMembers || {}).length > 0 ||
+        Object.keys(currentDeck.loadedVSBloomFesMembers || {}).length > 0
+    );
     const updateDeck = (key, value) => {
         console.log(`[updateDeck called] key: ${key}, value: ${value}`);
         setSurveyData(prev => {
@@ -707,12 +716,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         if (!friendCode) return;
         setIsLoadingFriend(true);
         try {
-            const res = await fetch(`https://api2.rilaksekai.com/api/${friendCode}`);
-            if (!res.ok) throw new Error(`API 응답 오류: ${res.status}`);
-            const data = await res.json();
-
-            const assets = await fetchDeckAssets();
-            const parsed = parseDeckData(data, assets);
+            const parsed = await loadDeckFromFriendCode(friendCode);
             const {
                 totalPower: fetchedTotalPower,
                 skillValues,
@@ -739,11 +743,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     loadedBloomFesOriginalMembers,
                     loadedVSBloomFesMembers,
                 };
-                console.log('Friend Code Loaded! updatedDeck:', updatedDeck);
-
                 const preciseInternalVal = calculateInternalValueFromDeck(updatedDeck);
                 const internalVal = Math.floor(preciseInternalVal / 10) * 10;
-
                 return {
                     ...prev,
                     unifiedDecks: {
@@ -761,7 +762,6 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     isManualInternalEdit: false,
                 };
             });
-
             setShowLoadModal(false);
         } catch (err) {
             console.error('Failed to load friend data', err);
@@ -770,6 +770,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             setIsLoadingFriend(false);
         }
     };
+
 
 
     return (
@@ -849,6 +850,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     }}
                     placeholder="293231"
                     spacer={true}
+                    loaded={hasLoadedData && totalPower ? { onClear: () => updateDeck('totalPower', '') } : undefined}
                 />
                 <SectionHeaderRow
                     label={t('auto.member_skills')}
@@ -863,15 +865,19 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     </td>
                     <td className="text-left py-0">
                         <div className="flex items-center gap-1">
-                            {/* Show blue box if range is present OR card is loaded */}
+                            {/* 불러오기: 파란색(indigo) / 블룸페스 수동 체크: 초록색으로 구분 */}
                             {(() => {
                                 const r = getEffectiveSkillRange('leader');
                                 if (r) {
+                                    const isLoaded = !!(currentDeck.loadedSkillLevels?.['leader'] || currentDeck.loadedBloomFesOriginalMembers?.['leader'] || currentDeck.loadedVSBloomFesMembers?.['leader']);
+                                    const colorClass = isLoaded
+                                        ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
                                     return (
                                         <div
-                                            className="w-28 text-center bg-indigo-50 rounded-lg px-2 py-1.5 text-indigo-700 font-medium cursor-pointer hover:bg-indigo-100 transition-colors"
-                                            onClick={() => switchBloomFesToManual('leader')}
-                                            title="클릭하여 직접 입력"
+                                            className={`w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors ${colorClass}`}
+                                            onClick={() => isLoaded && switchBloomFesToManual('leader')}
+                                            title={isLoaded ? '클릭하여 직접 입력' : undefined}
                                         >
                                             {r.min === r.max ? `${r.min}%` : `${r.min}~${r.max}%`}
                                         </div>
@@ -942,15 +948,19 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         </td>
                         <td className="text-left py-0">
                             <div className="flex items-center gap-1">
-                                {/* Show blue box if range is present OR card is loaded */}
+                                {/* 불러오기: 파란색(indigo) / 블룸페스 수동 체크: 초록색으로 구분 */}
                                 {(() => {
                                     const r = getEffectiveSkillRange(m.bloomKey);
                                     if (r) {
+                                        const isLoaded = !!(currentDeck.loadedSkillLevels?.[m.bloomKey] || currentDeck.loadedBloomFesOriginalMembers?.[m.bloomKey] || currentDeck.loadedVSBloomFesMembers?.[m.bloomKey]);
+                                        const colorClass = isLoaded
+                                            ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
                                         return (
                                             <div
-                                                className="w-28 text-center bg-indigo-50 rounded-lg px-2 py-1.5 text-indigo-700 font-medium cursor-pointer hover:bg-indigo-100 transition-colors"
-                                                onClick={() => switchBloomFesToManual(m.bloomKey)}
-                                                title="클릭하여 직접 입력"
+                                                className={`w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors ${colorClass}`}
+                                                onClick={() => isLoaded && switchBloomFesToManual(m.bloomKey)}
+                                                title={isLoaded ? '클릭하여 직접 입력' : undefined}
                                             >
                                                 {r.min === r.max ? `${r.min}%` : `${r.min}~${r.max}%`}
                                             </div>
@@ -1018,28 +1028,54 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     suffix="%"
                     placeholder="250"
                     spacer={true}
+                    loaded={hasLoadedData && eventBonus ? { onClear: () => updateDeck('eventBonus', '') } : undefined}
                 />
 
                 {/* Bloom Fes Awakening Checkbox + Reset Button */}
                 <tr>
                     <td colSpan="3" className="pt-2 pb-0">
                         <div className="flex items-center justify-center gap-3">
-                            <label className="flex items-center gap-2 cursor-pointer text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={useBloomFes}
-                                    onChange={(e) => updateUseBloomFes(e.target.checked)}
-                                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                                />
-                                <span className="text-gray-700">{t('auto.bloom_fes_awakening') || '블룸페스 각전 사용'}</span>
-                            </label>
-                            {hasLoadedData && (
+                            {/* 블룸페스 각전 토글 */}
+                            <div className="flex items-center gap-1.5">
+                                <span className={`text-xs font-medium transition-colors duration-200 ${useBloomFes ? 'text-indigo-600' : 'text-gray-400'}`}>
+                                    {t('auto.bloom_fes_awakening') || '블룸페스 각전'}
+                                </span>
+                                <button
+                                    role="switch"
+                                    aria-checked={useBloomFes}
+                                    onClick={() => updateUseBloomFes(!useBloomFes)}
+                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${
+                                        useBloomFes
+                                            ? 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                                            : 'bg-gray-200'
+                                    }`}
+                                >
+                                    <span
+                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
+                                            useBloomFes ? 'translate-x-4' : 'translate-x-0'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+                            {hasAnyVisibleLoaded && (
                                 <button
                                     onClick={handleResetLoadedData}
                                     title="불러온 값 초기화"
-                                    className="text-gray-400 hover:text-red-500 transition-colors text-base leading-none"
+                                    className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-600 transition-all duration-150 shadow-sm hover:shadow"
                                 >
-                                    ↺
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="w-3.5 h-3.5"
+                                    >
+                                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                        <path d="M3 3v5h5" />
+                                    </svg>
                                 </button>
                             )}
                         </div>
