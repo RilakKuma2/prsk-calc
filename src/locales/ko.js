@@ -299,7 +299,7 @@ const ko = {
         // 월드링크 챕터
         world_link_chapters: '챕터별 보더',
         chapter_label: '챕터 {{num}}',
-        chapter_all: '전체',
+        chapter_all: '종합',
         chapter_border_title: '{{name}} 보더',
         no_chapter_data: '챕터 데이터가 없습니다',
         event_ended: '이벤트 종료',

@@ -43,7 +43,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
 
     const currentLevelVal = parseInt(currentLevel || '30');
     const currentExpVal = parseInt(currentExp || '159027');
-    const targetLevelVal = parseInt(targetLevel || '75');
+    const targetLevelVal = parseInt(targetLevel || '125');
     const rankVal = parseInt(rank);
     const firesVal = parseInt(fires);
 
@@ -194,7 +194,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
           onChange={e => setCurrentLevel(e.target.value)}
           placeholder="30"
           min="1"
-          max="75"
+          max="125"
         />
         <InputRow
           label={t('kizuna.remaining_exp')}
@@ -207,9 +207,9 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
           label={t('kizuna.target_rank')}
           value={targetLevel}
           onChange={e => setTargetLevel(e.target.value)}
-          placeholder="75"
+          placeholder="125"
           min="2"
-          max="75"
+          max="125"
         />
         <SelectRow
           label={t('kizuna.live_rank')}
