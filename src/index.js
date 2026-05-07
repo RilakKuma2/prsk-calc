@@ -20,9 +20,35 @@ root.render(
 // Register Service Worker for PWA cache and Push
 if ('serviceWorker' in navigator) {
   const swUrl = `${process.env.PUBLIC_URL}/sw.js`;
-  navigator.serviceWorker.register(swUrl)
+  let refreshing = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
+  navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' })
     .then(registration => {
       console.log('SW registered: ', registration);
+
+      const activateWaitingWorker = () => {
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+      };
+
+      activateWaitingWorker();
+      registration.update();
+      registration.addEventListener('updatefound', () => {
+        const nextWorker = registration.installing;
+        if (!nextWorker) return;
+        nextWorker.addEventListener('statechange', () => {
+          if (nextWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            nextWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
     })
     .catch(registrationError => {
       console.log('SW registration failed: ', registrationError);

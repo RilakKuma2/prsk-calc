@@ -1,10 +1,10 @@
-const CACHE_NAME = 'prsk-calc-v1';
+const CACHE_NAME = 'prsk-calc-v2';
 const urlsToCache = [
-    '.',
-    'index.html',
     'manifest_ko.json',
     'manifest_ja.json',
+    'manifest_en.json',
     'icon192.png',
+    'icon.png',
     'icon2.png'
 ];
 
@@ -32,6 +32,12 @@ self.addEventListener('activate', (event) => {
             );
         }).then(() => self.clients.claim())
     );
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('push', function (event) {
@@ -62,28 +68,5 @@ self.addEventListener('notificationclick', function (event) {
     event.notification.close();
     event.waitUntil(
         clients.openWindow(event.notification.data.url)
-    );
-});
-
-self.addEventListener('fetch', (event) => {
-    // Check if the request is for an installed PWA start URL
-    if (event.request.mode === 'navigate') {
-        event.respondWith(
-            fetch(event.request).catch(() => {
-                return caches.match('index.html') || caches.match('.');
-            })
-        );
-        return;
-    }
-
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                // Cache hit - return response
-                if (response) {
-                    return response;
-                }
-                return fetch(event.request);
-            })
     );
 });

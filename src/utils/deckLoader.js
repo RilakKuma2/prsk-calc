@@ -13,9 +13,24 @@ const FALLBACK_WORKER_API = "https://api2.rilaksekai.com/api";
 // D01 = 서버 응답이 정상 HTTP 상태가 아님
 // D02 = 서버가 에러 JSON을 반환함
 // D03 = 네트워크 오류 또는 응답 파싱 실패
-async function fetchDeckFromApi(apiBase, friendCode) {
+function buildDeckUrl(apiBase, friendCode, eventOverride = {}) {
+    const params = new URLSearchParams();
+    if (eventOverride.attr) params.set('eventAttr', eventOverride.attr);
+    if (eventOverride.unit) params.set('eventUnit', eventOverride.unit);
+    if (eventOverride.characters) {
+        const chars = Object.entries(eventOverride.characters)
+            .filter(([, unit]) => unit)
+            .map(([charId, unit]) => Number(charId) >= 21 ? `${charId}:${unit}` : charId)
+            .join(',');
+        if (chars) params.set('eventCharacters', chars);
+    }
+    const query = params.toString();
+    return `${apiBase}/${friendCode}${query ? `?${query}` : ''}`;
+}
+
+async function fetchDeckFromApi(apiBase, friendCode, eventOverride) {
     try {
-        const res = await fetch(`${apiBase}/${friendCode}`);
+        const res = await fetch(buildDeckUrl(apiBase, friendCode, eventOverride));
         if (!res.ok) return { ok: false, code: 'D01' };
 
         const data = await res.json();
@@ -42,11 +57,11 @@ async function fetchDeckFromApi(apiBase, friendCode) {
  *   loadedVSBloomFesMembers: object,
  * }>}
  */
-export async function loadDeckFromFriendCode(friendCode) {
-    const primary = await fetchDeckFromApi(WORKER_API, friendCode);
+export async function loadDeckFromFriendCode(friendCode, eventOverride = {}) {
+    const primary = await fetchDeckFromApi(WORKER_API, friendCode, eventOverride);
     if (primary.ok) return primary.data;
 
-    const fallback = await fetchDeckFromApi(FALLBACK_WORKER_API, friendCode);
+    const fallback = await fetchDeckFromApi(FALLBACK_WORKER_API, friendCode, eventOverride);
     if (fallback.ok) return fallback.data;
 
     throw new Error(`${primary.code}/${fallback.code}`);

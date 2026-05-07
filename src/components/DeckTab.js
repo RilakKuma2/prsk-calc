@@ -4,6 +4,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateRawInternalValue, calculateInternalValue } from '../utils/deckUtils';
 import { loadDeckFromFriendCode } from '../utils/deckLoader';
+import { characterBirthdays } from '../data/characterBirthdays';
 
 // Import result components
 import AutoTab from './AutoTab';
@@ -19,6 +20,88 @@ const BLOOM_LEVELS = {
 };
 
 const SKILL_LEVEL_OPTIONS = [1, 2, 3, 4];
+const EVENT_ATTRS = [
+    { key: 'cute', label: '큐트', file: 'cute.webp', color: 'bg-pink-50 border-pink-200' },
+    { key: 'cool', label: '쿨', file: 'cool.webp', color: 'bg-blue-50 border-blue-200' },
+    { key: 'pure', label: '퓨어', file: 'pure.webp', color: 'bg-green-50 border-green-200' },
+    { key: 'happy', label: '해피', file: 'happy.webp', color: 'bg-orange-50 border-orange-200' },
+    { key: 'mysterious', label: '미스', file: 'mysterious.webp', color: 'bg-purple-50 border-purple-200' },
+];
+const EVENT_UNITS = [
+    { key: 'light_sound', label: 'L/n', file: 'Lnlogo.webp', chars: [1, 2, 3, 4] },
+    { key: 'idol', label: 'MMJ', file: 'MMJlogo.webp', chars: [5, 6, 7, 8] },
+    { key: 'street', label: 'VBS', file: 'VBSlogo.webp', chars: [9, 10, 11, 12] },
+    { key: 'theme_park', label: 'WxS', file: 'WxSlogo.webp', chars: [13, 14, 15, 16] },
+    { key: 'school_refusal', label: '25시', file: '25jilogo.webp', chars: [17, 18, 19, 20] },
+];
+const ORIGINAL_CHAR_UNIT = {
+    1: 'light_sound', 2: 'light_sound', 3: 'light_sound', 4: 'light_sound',
+    5: 'idol', 6: 'idol', 7: 'idol', 8: 'idol',
+    9: 'street', 10: 'street', 11: 'street', 12: 'street',
+    13: 'theme_park', 14: 'theme_park', 15: 'theme_park', 16: 'theme_park',
+    17: 'school_refusal', 18: 'school_refusal', 19: 'school_refusal', 20: 'school_refusal',
+};
+const VS_CHAR_IDS = [21, 22, 23, 24, 25, 26];
+const EVENT_ASSET_BASE = 'https://asset.rilaksekai.com/suite';
+let autoEventOverrideCache = null;
+let autoEventOverridePromise = null;
+
+const selectCurrentOrLatestEvent = (events, now = Date.now()) => {
+    const normalEvents = events.filter(event => event && event.eventType !== 'chapter');
+    const ongoingEvents = normalEvents.filter(event => (event.startAt || 0) <= now && now <= (event.aggregateAt || 0));
+    const candidates = ongoingEvents.length > 0 ? ongoingEvents : normalEvents;
+    return candidates
+        .slice()
+        .sort((a, b) => (b.startAt || 0) - (a.startAt || 0) || (b.id || 0) - (a.id || 0))[0];
+};
+
+const inferCurrentEventOverride = (events, eventBonuses, gameCharacterUnits) => {
+    const currentEvent = selectCurrentOrLatestEvent(events);
+    if (!currentEvent) return { attr: '', unit: '', isMix: false };
+
+    const rows = eventBonuses.filter(row => row.eventId === currentEvent.id);
+    const attr = rows.find(row => row.cardAttr)?.cardAttr || '';
+    const characterUnits = rows
+        .map(row => gameCharacterUnits.find(unit => unit.id === row.gameCharacterUnitId))
+        .filter(Boolean);
+    const originalUnits = new Set(
+        characterUnits
+            .map(unit => ORIGINAL_CHAR_UNIT[unit.gameCharacterId])
+            .filter(Boolean)
+    );
+    const virtualSingerUnits = new Set(
+        characterUnits
+            .filter(unit => unit.gameCharacterId >= 21 && EVENT_UNITS.some(eventUnit => eventUnit.key === unit.unit))
+            .map(unit => unit.unit)
+    );
+    const unit = originalUnits.size === 1
+        ? [...originalUnits][0]
+        : (originalUnits.size === 0 && virtualSingerUnits.size === 1 ? [...virtualSingerUnits][0] : '');
+
+    return {
+        attr,
+        unit,
+        isMix: !unit && characterUnits.length > 0,
+    };
+};
+
+const loadAutoEventOverride = async () => {
+    if (autoEventOverrideCache) return autoEventOverrideCache;
+    if (!autoEventOverridePromise) {
+        autoEventOverridePromise = Promise.all([
+            fetch(`${EVENT_ASSET_BASE}/events.json`).then(res => res.json()),
+            fetch(`${EVENT_ASSET_BASE}/eventDeckBonuses.json`).then(res => res.json()),
+            fetch(`${EVENT_ASSET_BASE}/gameCharacterUnits.json`).then(res => res.json()),
+        ]).then(([events, eventBonuses, gameCharacterUnits]) => {
+            autoEventOverrideCache = inferCurrentEventOverride(events, eventBonuses, gameCharacterUnits);
+            return autoEventOverrideCache;
+        }).catch(err => {
+            autoEventOverridePromise = null;
+            throw err;
+        });
+    }
+    return autoEventOverridePromise;
+};
 
 const SkillLevelDropdown = ({ value, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -83,6 +166,113 @@ const SkillLevelDropdown = ({ value, onChange }) => {
     );
 };
 
+const EventOverrideDropdown = ({ value, options, onChange, assetPath, iconOnly = false, extraOptions = [], autoOption = null }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef(null);
+    const allOptions = [...options, ...extraOptions];
+    const selected = allOptions.find(option => option.key === value);
+    const displayOption = selected || autoOption;
+    const isAutoSelected = !value;
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+
+    const handleSelect = (nextValue) => {
+        onChange(nextValue);
+        setIsOpen(false);
+    };
+
+    return (
+        <div className="relative" ref={containerRef}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(prev => !prev)}
+                className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-left shadow-sm transition-colors hover:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            >
+                <span className="flex min-w-0 items-center gap-1.5">
+                    {displayOption?.file ? (
+                        <img
+                            src={`${process.env.PUBLIC_URL}/assets/event/${assetPath}/${displayOption.file}`}
+                            alt={displayOption.label}
+                            className={`${iconOnly ? 'h-6 w-7' : 'h-5 w-5'} shrink-0 object-contain`}
+                        />
+                    ) : (
+                        <span className="truncate text-sm font-bold text-gray-700">{displayOption?.label || '자동'}</span>
+                    )}
+                    {displayOption?.file && !iconOnly && (
+                        <span className="truncate text-sm font-bold text-gray-700">{displayOption.label}</span>
+                    )}
+                    {isAutoSelected && displayOption && (
+                        <span className="shrink-0 text-[10px] font-bold text-gray-400">(자동)</span>
+                    )}
+                </span>
+                <svg className={`ml-1 h-3 w-3 shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            {isOpen && (
+                <div className="absolute left-0 top-full z-[60] mt-1 w-full overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-black/10">
+                    <div className={iconOnly ? 'grid grid-cols-3 gap-1 p-1.5' : ''}>
+                        <button
+                            type="button"
+                            onClick={() => handleSelect('')}
+                            className={`${iconOnly ? 'flex h-9 items-center justify-center rounded-md px-1 text-xs' : 'flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm'} font-bold transition-colors ${!value ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                            title="자동"
+                        >
+                            {autoOption?.file ? (
+                                <img
+                                    src={`${process.env.PUBLIC_URL}/assets/event/${assetPath}/${autoOption.file}`}
+                                    alt={autoOption.label}
+                                    className={`${iconOnly ? 'h-6 w-8' : 'h-5 w-5'} object-contain`}
+                                />
+                            ) : (
+                                autoOption?.label || '자동'
+                            )}
+                            {!iconOnly && autoOption?.file && (
+                                <>
+                                    {autoOption.label}
+                                    <span className="text-[10px] text-gray-400">(자동)</span>
+                                </>
+                            )}
+                            {iconOnly && autoOption?.file && (
+                                <span className="text-[9px] text-gray-400">(자동)</span>
+                            )}
+                        </button>
+                        {allOptions.map(option => (
+                            <button
+                                key={option.key}
+                                type="button"
+                                onClick={() => handleSelect(option.key)}
+                                className={`${iconOnly ? 'flex h-9 items-center justify-center rounded-md px-1 text-xs' : 'flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm'} font-bold transition-colors ${value === option.key ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                                title={option.label}
+                            >
+                                {option.file ? (
+                                    <img
+                                        src={`${process.env.PUBLIC_URL}/assets/event/${assetPath}/${option.file}`}
+                                        alt={option.label}
+                                        className={`${iconOnly ? 'h-6 w-8' : 'h-5 w-5'} object-contain`}
+                                    />
+                                ) : (
+                                    option.label
+                                )}
+                                {!iconOnly && option.file && option.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 function DeckTab({ surveyData, setSurveyData, subPath }) {
     const { t, language } = useTranslation();
     const navigate = useNavigate();
@@ -103,6 +293,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [manualEventBonusDecks, setManualEventBonusDecks] = useState({});
     const [focusedManualSkill, setFocusedManualSkill] = useState(null);
+    const [eventOverride, setEventOverride] = useState({ attr: '', unit: '', detailOpen: false, characters: {}, characterOrder: [] });
+    const [autoEventOverride, setAutoEventOverride] = useState({ attr: '', unit: '', isMix: false });
     const [friendCode, setFriendCode] = useState(() => {
         return localStorage.getItem('savedFriendCode') || '';
     });
@@ -116,6 +308,115 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     useEffect(() => {
         setActiveResultView(getViewFromSubPath(subPath));
     }, [subPath]);
+
+    useEffect(() => {
+        let cancelled = false;
+        let idleId = null;
+        let timeoutId = null;
+
+        const loadCurrentEventInBackground = async () => {
+            if (cancelled) return;
+            try {
+                const nextAutoEventOverride = await loadAutoEventOverride();
+                if (!cancelled) {
+                    setAutoEventOverride(nextAutoEventOverride);
+                }
+            } catch (err) {
+                console.warn('Failed to load current event info', err);
+            }
+        };
+
+        const scheduleAfterPageLoad = () => {
+            if (cancelled) return;
+            if ('requestIdleCallback' in window) {
+                idleId = window.requestIdleCallback(loadCurrentEventInBackground, { timeout: 3000 });
+            } else {
+                timeoutId = window.setTimeout(loadCurrentEventInBackground, 0);
+            }
+        };
+
+        if (document.readyState === 'complete') {
+            scheduleAfterPageLoad();
+        } else {
+            window.addEventListener('load', scheduleAfterPageLoad, { once: true });
+        }
+
+        return () => {
+            cancelled = true;
+            window.removeEventListener('load', scheduleAfterPageLoad);
+            if (idleId !== null && 'cancelIdleCallback' in window) {
+                window.cancelIdleCallback(idleId);
+            }
+            if (timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+            }
+        };
+    }, []);
+
+    const getCharData = (charId) => {
+        const id = String(charId).padStart(2, '0');
+        return characterBirthdays.find(c => c.image === id);
+    };
+
+    const getCharName = (charId) => {
+        const charData = getCharData(charId);
+        if (!charData) return String(charId);
+        if (language === 'ja') return charData.nameJa;
+        if (language === 'en') return charData.nameEn;
+        return charData.nameKo;
+    };
+
+    const buildEventOverrideForRequest = () => {
+        const hasManualCharacters = Object.keys(eventOverride.characters || {}).length > 0;
+        return {
+            attr: eventOverride.attr,
+            unit: eventOverride.unit,
+            characters: hasManualCharacters ? eventOverride.characters : {},
+        };
+    };
+
+    const updateEventUnit = (unitKey) => {
+        setEventOverride(prev => {
+            if (unitKey === 'mix') {
+                return { ...prev, unit: '', detailOpen: true };
+            }
+            return {
+                ...prev,
+                unit: unitKey,
+                detailOpen: false,
+                characters: {},
+                characterOrder: [],
+            };
+        });
+    };
+
+    const toggleEventCharacter = (charId) => {
+        setEventOverride(prev => {
+            const nextCharacters = { ...(prev.characters || {}) };
+            let nextOrder = [...(prev.characterOrder || [])].filter(id => id !== charId);
+            if (nextCharacters[charId]) {
+                delete nextCharacters[charId];
+            } else {
+                if (nextOrder.length >= 5) {
+                    const oldestId = nextOrder.shift();
+                    delete nextCharacters[oldestId];
+                }
+                nextCharacters[charId] = charId >= 21 ? (prev.unit || EVENT_UNITS[0].key) : ORIGINAL_CHAR_UNIT[charId];
+                nextOrder.push(charId);
+            }
+            return { ...prev, characters: nextCharacters, characterOrder: nextOrder };
+        });
+    };
+
+    const updateVsEventUnit = (charId, unitKey) => {
+        setEventOverride(prev => ({
+            ...prev,
+            characters: {
+                ...(prev.characters || {}),
+                [charId]: unitKey,
+            },
+        }));
+    };
 
     // Manual internal value state for power view
     const [manualInternalValue, setManualInternalValue] = useState('');
@@ -791,7 +1092,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         setIsLoadingFriend(true);
         setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
         try {
-            const parsed = await loadDeckFromFriendCode(friendCode);
+            const parsed = await loadDeckFromFriendCode(friendCode, buildEventOverrideForRequest());
             const {
                 totalPower: fetchedTotalPower,
                 skillValues,
@@ -847,6 +1148,10 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     };
 
 
+    const autoAttrOption = EVENT_ATTRS.find(attr => attr.key === autoEventOverride.attr) || null;
+    const autoUnitOption = autoEventOverride.unit
+        ? EVENT_UNITS.find(unit => unit.key === autoEventOverride.unit)
+        : (autoEventOverride.isMix ? { key: 'mix', label: '스까' } : null);
 
     return (
         <div id="deck-tab-content">
@@ -877,16 +1182,97 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             {t('app.load') || '불러오기'}
                         </button>
                         {showLoadModal && (
-                            <div className="absolute top-full right-0 z-50 mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white p-4 shadow-xl">
-                                <div className="mb-1 text-sm font-bold text-gray-700">친구코드 입력</div>
-                                <div className="mb-2 text-xs font-bold text-red-500">* 일본 서버에서만 동작</div>
+                            <div className="absolute top-full right-0 z-50 mt-2 w-64 max-w-[calc(100vw-1rem)] translate-x-8 rounded-lg border border-gray-200 bg-white p-3 shadow-xl md:left-1/2 md:right-auto md:w-64 md:-translate-x-1/2">
+                                <div className="mb-2 flex items-baseline gap-2 whitespace-nowrap">
+                                    <span className="text-sm font-bold text-gray-700">친구코드 입력</span>
+                                    <span className="text-[10px] font-bold text-red-500">* 일본 서버에서만 동작</span>
+                                </div>
+                                <div className="mb-2 grid grid-cols-2 gap-2">
+                                    <div>
+                                        <div className="mb-1 text-left text-xs font-bold text-gray-600">속성</div>
+                                        <EventOverrideDropdown
+                                            value={eventOverride.attr}
+                                            options={EVENT_ATTRS}
+                                            assetPath="attributes"
+                                            iconOnly
+                                            autoOption={autoAttrOption}
+                                            onChange={(nextAttr) => setEventOverride(prev => ({ ...prev, attr: nextAttr }))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="mb-1 text-left text-xs font-bold text-gray-600">유닛</div>
+                                        <EventOverrideDropdown
+                                            value={eventOverride.detailOpen ? 'mix' : eventOverride.unit}
+                                            options={EVENT_UNITS}
+                                            assetPath="units"
+                                            iconOnly
+                                            extraOptions={[{ key: 'mix', label: '스까' }]}
+                                            autoOption={autoUnitOption}
+                                            onChange={updateEventUnit}
+                                        />
+                                    </div>
+                                </div>
                                 <input
                                     type="text"
                                     value={friendCode}
                                     onChange={e => setFriendCode(e.target.value)}
                                     placeholder="예: 3939393939393939"
                                     className="w-full border border-gray-300 rounded px-2 py-1 mb-3 text-sm focus:outline-none focus:border-blue-500"
+                                    style={{ width: '100%' }}
                                 />
+                                {eventOverride.detailOpen && (
+                                    <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                                        <div className="mb-1 text-right text-[10px] font-bold text-gray-400">
+                                            {(eventOverride.characterOrder || []).length}/5
+                                        </div>
+                                        <div className="mb-2 grid grid-cols-7 gap-1">
+                                            {[...Array(26)].map((_, idx) => {
+                                                const charId = idx + 1;
+                                                const charData = getCharData(charId);
+                                                const selected = !!eventOverride.characters?.[charId];
+                                                return (
+                                                    <button
+                                                        key={charId}
+                                                        type="button"
+                                                        onClick={() => toggleEventCharacter(charId)}
+                                                        className={`h-8 w-8 overflow-hidden rounded-full border transition-all ${selected ? 'ring-2 ring-indigo-500 ring-offset-1 scale-105' : 'border-gray-200 opacity-70'}`}
+                                                        title={getCharName(charId)}
+                                                    >
+                                                        <img
+                                                            src={`${process.env.PUBLIC_URL}/assets/characters/${String(charId).padStart(2, '0')}.webp`}
+                                                            alt={getCharName(charId)}
+                                                            className="h-full w-full object-cover"
+                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                        />
+                                                        {!charData && <span className="text-[10px]">{charId}</span>}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {VS_CHAR_IDS.some(charId => eventOverride.characters?.[charId]) && (
+                                            <div className="space-y-1">
+                                                {VS_CHAR_IDS.filter(charId => eventOverride.characters?.[charId]).map(charId => (
+                                                    <div key={charId} className="flex items-center gap-1">
+                                                        <span className="w-10 text-left text-[10px] font-bold text-gray-500">{getCharName(charId)}</span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {EVENT_UNITS.map(unit => (
+                                                                <button
+                                                                    key={unit.key}
+                                                                    type="button"
+                                                                    onClick={() => updateVsEventUnit(charId, unit.key)}
+                                                                    className={`h-6 w-7 rounded border bg-white p-0.5 ${eventOverride.characters?.[charId] === unit.key ? 'ring-2 ring-indigo-500' : 'border-gray-200'}`}
+                                                                    title={unit.label}
+                                                                >
+                                                                    <img src={`${process.env.PUBLIC_URL}/assets/event/units/${unit.file}`} alt={unit.label} className="h-full w-full object-contain" />
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 <button
                                     onClick={handleLoadFriendCode}
                                     disabled={isLoadingFriend}
