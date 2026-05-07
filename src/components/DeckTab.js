@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
@@ -16,6 +16,71 @@ const BLOOM_LEVELS = {
     2: [65, 130],
     3: [70, 140],
     4: [80, 150]
+};
+
+const SKILL_LEVEL_OPTIONS = [1, 2, 3, 4];
+
+const SkillLevelDropdown = ({ value, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        const close = () => setIsOpen(false);
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            window.addEventListener('scroll', close, { capture: true });
+            window.addEventListener('resize', close);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', close, { capture: true });
+            window.removeEventListener('resize', close);
+        };
+    }, [isOpen]);
+
+    return (
+        <div className="relative inline-block" ref={containerRef}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(prev => !prev)}
+                className="min-w-[60px] h-[28px] inline-flex items-center justify-center gap-0.5 rounded-md border border-blue-200 bg-blue-50 px-1.5 text-xs font-medium text-blue-700 shadow-sm hover:bg-blue-100 focus:outline-none focus:ring-1 focus:ring-blue-300"
+            >
+                <span>SLv.{value}</span>
+                <svg className={`w-2.5 h-2.5 text-blue-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            {isOpen && (
+                <div className="absolute top-full left-1/2 z-50 mt-1 -translate-x-1/2 rounded-lg bg-white shadow-xl ring-1 ring-black/10 overflow-hidden animate-fade-in">
+                    <div className="p-1">
+                        {SKILL_LEVEL_OPTIONS.map(option => (
+                            <button
+                                key={option}
+                                type="button"
+                                onClick={() => {
+                                    onChange(option);
+                                    setIsOpen(false);
+                                }}
+                                className={`block w-[60px] rounded-md px-2 py-1.5 text-center text-xs font-medium transition-colors ${
+                                    Number(value) === option
+                                        ? 'bg-blue-500 text-white'
+                                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                                }`}
+                            >
+                                SLv.{option}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 function DeckTab({ surveyData, setSurveyData, subPath }) {
@@ -36,6 +101,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     // Load Friend Code Modal State
     const [showLoadModal, setShowLoadModal] = useState(false);
+    const [manualEventBonusDecks, setManualEventBonusDecks] = useState({});
+    const [focusedManualSkill, setFocusedManualSkill] = useState(null);
     const [friendCode, setFriendCode] = useState(() => {
         return localStorage.getItem('savedFriendCode') || '';
     });
@@ -54,6 +121,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const [manualInternalValue, setManualInternalValue] = useState('');
     const activeDeckKey = `deck${activeDeckNum}`;
     const isManualInternalEdit = surveyData.unifiedDecks?.[activeDeckKey]?.isManualInternalEdit || false;
+    const isManualEventBonusEdit = !!manualEventBonusDecks[activeDeckKey];
     // Detailed room skills input state
     const showDetailedInput = surveyData.unifiedDecks?.[activeDeckKey]?.isDetailedInput || false;
     const detailedRoomSkills = surveyData.unifiedDecks?.[activeDeckKey]?.detailedSkills || {
@@ -501,6 +569,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     // Switch a loaded bloom-fes-original member to manual input mode
     // (removes the range display and clears the SLv dropdown for that member)
     const switchBloomFesToManual = (memberKey) => {
+        setFocusedManualSkill(memberKey);
         setSurveyData(prev => {
             const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
             const updatedLoadedBloomFes = { ...(currentDeckData.loadedBloomFesOriginalMembers || {}) };
@@ -533,6 +602,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     // Reset all loaded friend data for the active deck
     const handleResetLoadedData = () => {
+        setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
         setSurveyData(prev => {
             const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
             const updatedDeck = {
@@ -577,8 +647,12 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         Object.keys(currentDeck.loadedBloomFesOriginalMembers || {}).length > 0 ||
         Object.keys(currentDeck.loadedVSBloomFesMembers || {}).length > 0
     );
+    const hasLoadedSkillButtons = Object.values(currentDeck.loadedSkillLevels || {}).some(v => v != null);
     const updateDeck = (key, value) => {
         console.log(`[updateDeck called] key: ${key}, value: ${value}`);
+        if (key === 'eventBonus') {
+            setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: true }));
+        }
         setSurveyData(prev => {
             const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
             
@@ -715,6 +789,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const handleLoadFriendCode = async () => {
         if (!friendCode) return;
         setIsLoadingFriend(true);
+        setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
         try {
             const parsed = await loadDeckFromFriendCode(friendCode);
             const {
@@ -765,7 +840,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             setShowLoadModal(false);
         } catch (err) {
             console.error('Failed to load friend data', err);
-            alert('데이터를 불러오는데 실패했습니다: ' + err.message);
+            alert(`서버에서 덱을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.\n\n오류코드: ${err.message}`);
         } finally {
             setIsLoadingFriend(false);
         }
@@ -802,7 +877,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             {t('app.load') || '불러오기'}
                         </button>
                         {showLoadModal && (
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                            <div className="absolute top-full right-0 z-50 mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white p-4 shadow-xl">
                                 <div className="mb-1 text-sm font-bold text-gray-700">친구코드 입력</div>
                                 <div className="mb-2 text-xs font-bold text-red-500">* 일본 서버에서만 동작</div>
                                 <input
@@ -826,7 +901,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             </div>
 
             {/* Shared Input Section */}
-            <InputTableWrapper>
+            <InputTableWrapper className={hasLoadedSkillButtons ? 'deck-input-loaded-skills' : ''}>
                 <InputRow
                     label={t('auto.total_power')}
                     value={totalPower !== null && totalPower !== undefined ? totalPower : ''}
@@ -898,9 +973,13 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                                 }
                                                 updateDeck('skillLeader', val === '' ? '' : Number(val));
                                             }}
-                                            onFocus={(e) => e.target.select()}
+                                            onFocus={(e) => {
+                                                e.target.select();
+                                                setFocusedManualSkill(null);
+                                            }}
                                             className="w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                             placeholder="120"
+                                            autoFocus={focusedManualSkill === 'leader'}
                                         />
                                         <span className="ml-1 text-gray-600">%</span>
                                     </>
@@ -923,16 +1002,10 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             </select>
                         )}
                         {currentDeck.loadedSkillLevels?.['leader'] && (
-                            <select
+                            <SkillLevelDropdown
                                 value={currentDeck.loadedSkillLevels['leader']}
-                                onChange={(e) => updateDeckLoadedSkillLevel('leader', Number(e.target.value))}
-                                className="text-sm px-2 py-1 border border-blue-200 rounded-md bg-blue-50 focus:outline-none focus:ring-1 focus:ring-blue-300 min-w-[60px] text-blue-700"
-                            >
-                                <option value={1}>SLv.1</option>
-                                <option value={2}>SLv.2</option>
-                                <option value={3}>SLv.3</option>
-                                <option value={4}>SLv.4</option>
-                            </select>
+                                onChange={(level) => updateDeckLoadedSkillLevel('leader', level)}
+                            />
                         )}
                     </td>
                     {!useBloomFes && !currentDeck.loadedSkillLevels?.['leader'] && <td className="w-8"></td>}
@@ -981,9 +1054,13 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                                     }
                                                     updateDeck(m.key, val === '' ? '' : Number(val));
                                                 }}
-                                                onFocus={(e) => e.target.select()}
+                                                onFocus={(e) => {
+                                                    e.target.select();
+                                                    setFocusedManualSkill(null);
+                                                }}
                                                 className="w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                                 placeholder="100"
+                                                autoFocus={focusedManualSkill === m.bloomKey}
                                             />
                                             <span className="ml-1 text-gray-600">%</span>
                                         </>
@@ -1006,16 +1083,10 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                 </select>
                             )}
                             {currentDeck.loadedSkillLevels?.[m.bloomKey] && (
-                                <select
+                                <SkillLevelDropdown
                                     value={currentDeck.loadedSkillLevels[m.bloomKey]}
-                                    onChange={(e) => updateDeckLoadedSkillLevel(m.bloomKey, Number(e.target.value))}
-                                    className="text-sm px-2 py-1 border border-blue-200 rounded-md bg-blue-50 focus:outline-none focus:ring-1 focus:ring-blue-300 min-w-[60px] text-blue-700"
-                                >
-                                    <option value={1}>SLv.1</option>
-                                    <option value={2}>SLv.2</option>
-                                    <option value={3}>SLv.3</option>
-                                    <option value={4}>SLv.4</option>
-                                </select>
+                                    onChange={(level) => updateDeckLoadedSkillLevel(m.bloomKey, level)}
+                                />
                             )}
                         </td>
                         {!useBloomFes && !currentDeck.loadedSkillLevels?.[m.bloomKey] && <td className="w-8"></td>}
@@ -1031,7 +1102,10 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     suffix="%"
                     placeholder="250"
                     spacer={true}
-                    loaded={hasLoadedData && eventBonus ? { onClear: () => updateDeck('eventBonus', '') } : undefined}
+                    autoFocus={isManualEventBonusEdit}
+                    loaded={hasLoadedData && eventBonus && !isManualEventBonusEdit ? {
+                        onEdit: () => setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: true }))
+                    } : undefined}
                 />
 
                 {/* Bloom Fes Awakening Checkbox + Reset Button */}
@@ -1206,4 +1280,3 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 }
 
 export default DeckTab;
-

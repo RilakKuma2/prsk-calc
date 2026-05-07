@@ -332,6 +332,10 @@ select {
         padding: 10px 0px;
     }
 
+    .deck-input-loaded-skills {
+        margin-left: 8px;
+    }
+
     label {
         margin: 0 10px 15px 0;
         font-size: 16px;

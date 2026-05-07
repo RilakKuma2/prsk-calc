@@ -15,8 +15,8 @@ export const SectionHeaderRow = ({ label, spacer, extraHeader }) => (
 );
 
 
-export const InputTableWrapper = ({ children, alignLeft = false }) => (
-    <div className="flex justify-center mb-1" style={alignLeft ? { marginRight: '45px' } : {}}>
+export const InputTableWrapper = ({ children, alignLeft = false, className = "" }) => (
+    <div className={`flex justify-center mb-1 ${className}`} style={alignLeft ? { marginRight: '45px' } : {}}>
         <table className="border-none border-collapse">
             <tbody>
                 {children}
@@ -25,7 +25,7 @@ export const InputTableWrapper = ({ children, alignLeft = false }) => (
     </div>
 );
 
-export const InputRow = ({ label, value, onChange, type = "number", min, max, suffix, suffixB, className = "", onFocus, onBlur, spacer, placeholder, placeholderB, comparisonMode, valueB, onChangeB, showLabels, tabIndexA, tabIndexB, loaded }) => {
+export const InputRow = ({ label, value, onChange, type = "number", min, max, suffix, suffixB, className = "", onFocus, onBlur, spacer, placeholder, placeholderB, comparisonMode, valueB, onChangeB, showLabels, tabIndexA, tabIndexB, loaded, autoFocus }) => {
     const { t } = useTranslation();
     return (
         <tr>
@@ -38,7 +38,7 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
                         // 불러온 값: 인디고색 박스로 표시 (클릭하면 일반 입력 가능)
                         <div
                             className="w-28 text-center bg-indigo-50 rounded-lg px-2 py-1.5 text-indigo-700 font-medium cursor-pointer hover:bg-indigo-100 transition-colors"
-                            onClick={loaded.onClear}
+                            onClick={loaded.onEdit || loaded.onClear}
                             title="클릭하여 직접 입력"
                         >
                             {value}{suffix && <span className="text-xs ml-0.5">{suffix}</span>}
@@ -104,6 +104,7 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
                                 onFocus={onFocus || ((e) => e.target.select())}
                                 className={`w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 ${className}`}
                                 onBlur={onBlur}
+                                autoFocus={autoFocus}
                             />
                             {suffix && <span className="ml-1 text-gray-600">{suffix}</span>}
                         </>

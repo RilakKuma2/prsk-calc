@@ -400,6 +400,22 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     };
 
     fetchPredictionData();
+
+    // 2분마다 자동으로 데이터 갱신
+    const intervalId = setInterval(fetchPredictionData, 120000);
+
+    // 탭으로 다시 돌아왔을 때 즉시 갱신
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchPredictionData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const formatTime = (ms) => {
