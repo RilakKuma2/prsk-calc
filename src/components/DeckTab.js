@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
@@ -6,9 +6,8 @@ import { calculateRawInternalValue, calculateInternalValue } from '../utils/deck
 import { loadDeckFromFriendCode } from '../utils/deckLoader';
 import { characterBirthdays } from '../data/characterBirthdays';
 
-// Import result components
-import AutoTab from './AutoTab';
-import PowerTab from './PowerTab';
+const AutoTab = lazy(() => import('./AutoTab'));
+const PowerTab = lazy(() => import('./PowerTab'));
 
 // Bloom Fes Awakening skill levels: [base%, max%]
 const BLOOM_LEVELS = {
@@ -26,6 +25,7 @@ const EVENT_ATTRS = [
     { key: 'pure', label: '퓨어', file: 'pure.webp', color: 'bg-green-50 border-green-200' },
     { key: 'happy', label: '해피', file: 'happy.webp', color: 'bg-orange-50 border-orange-200' },
     { key: 'mysterious', label: '미스', file: 'mysterious.webp', color: 'bg-purple-50 border-purple-200' },
+    { key: 'wl', label: 'WL' },
 ];
 const EVENT_UNITS = [
     { key: 'light_sound', label: 'L/n', file: 'Lnlogo.webp', chars: [1, 2, 3, 4] },
@@ -43,6 +43,9 @@ const ORIGINAL_CHAR_UNIT = {
 };
 const VS_CHAR_IDS = [21, 22, 23, 24, 25, 26];
 const EVENT_ASSET_BASE = 'https://asset.rilaksekai.com/suite';
+const EVENT_API_URL = 'https://api.rilaksekai.com/api/events';
+const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
+const DEFAULT_AUTO_EVENT_OVERRIDE = { attr: '', unit: '', isMix: false };
 let autoEventOverrideCache = null;
 let autoEventOverridePromise = null;
 
@@ -55,14 +58,52 @@ const selectCurrentOrLatestEvent = (events, now = Date.now()) => {
         .sort((a, b) => (b.startAt || 0) - (a.startAt || 0) || (b.id || 0) - (a.id || 0))[0];
 };
 
-const inferCurrentEventOverride = (events, eventBonuses, gameCharacterUnits) => {
+const getCurrentEventBonusRows = (eventBonuses, currentEvent) => {
+    if (!currentEvent) return [];
+    return eventBonuses.filter(row => row.eventId === currentEvent.id);
+};
+
+const getEventUnitFromEvent = (event) => (
+    EVENT_UNITS.some(unit => unit.key === event?.unit) ? event.unit : ''
+);
+
+const getCardAttr = (card) => card?.cardAttr || card?.attr || card?.attribute || '';
+
+const getCardRarity = (card) => {
+    if (!card) return 0;
+    if (card.cardRarityType === 'rarity_birthday') return 5;
+    if (card.cardRarityType) return Number(String(card.cardRarityType).replace('rarity_', '')) || 0;
+    return Number(card.rarity) || 0;
+};
+
+const inferEventAttrFromCards = (event, cards = []) => {
+    const eventCardIds = new Set((event?.eventCards || []).map(card => Number(card?.id ?? card)));
+    if (eventCardIds.size === 0) return '';
+
+    const eventCards = cards.filter(card => eventCardIds.has(Number(card.id)));
+    const highRarityCards = eventCards.filter(card => getCardRarity(card) >= 3);
+    const attrCards = highRarityCards.length > 0 ? highRarityCards : eventCards;
+    const counts = attrCards.reduce((acc, card) => {
+        const attr = getCardAttr(card);
+        if (attr) acc[attr] = (acc[attr] || 0) + 1;
+        return acc;
+    }, {});
+
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+};
+
+const inferCurrentEventOverride = (events, eventBonuses, gameCharacterUnits, cards = []) => {
     const currentEvent = selectCurrentOrLatestEvent(events);
     if (!currentEvent) return { attr: '', unit: '', isMix: false };
 
-    const rows = eventBonuses.filter(row => row.eventId === currentEvent.id);
-    const attr = rows.find(row => row.cardAttr)?.cardAttr || '';
+    const gameCharacterUnitById = new Map(gameCharacterUnits.map(unit => [unit.id, unit]));
+    const rows = getCurrentEventBonusRows(eventBonuses, currentEvent);
+    const fallbackUnit = getEventUnitFromEvent(currentEvent);
+    const attr = currentEvent.eventType === 'world_bloom'
+        ? 'wl'
+        : (rows.find(row => row.cardAttr)?.cardAttr || inferEventAttrFromCards(currentEvent, cards));
     const characterUnits = rows
-        .map(row => gameCharacterUnits.find(unit => unit.id === row.gameCharacterUnitId))
+        .map(row => gameCharacterUnitById.get(row.gameCharacterUnitId))
         .filter(Boolean);
     const originalUnits = new Set(
         characterUnits
@@ -80,8 +121,8 @@ const inferCurrentEventOverride = (events, eventBonuses, gameCharacterUnits) => 
 
     return {
         attr,
-        unit,
-        isMix: !unit && characterUnits.length > 0,
+        unit: unit || fallbackUnit,
+        isMix: !unit && !fallbackUnit && characterUnits.length > 0,
     };
 };
 
@@ -89,12 +130,21 @@ const loadAutoEventOverride = async () => {
     if (autoEventOverrideCache) return autoEventOverrideCache;
     if (!autoEventOverridePromise) {
         autoEventOverridePromise = Promise.all([
-            fetch(`${EVENT_ASSET_BASE}/events.json`).then(res => res.json()),
+            fetch(EVENT_API_URL, { cache: 'no-store' }).then(res => res.json()),
             fetch(`${EVENT_ASSET_BASE}/eventDeckBonuses.json`).then(res => res.json()),
             fetch(`${EVENT_ASSET_BASE}/gameCharacterUnits.json`).then(res => res.json()),
         ]).then(([events, eventBonuses, gameCharacterUnits]) => {
-            autoEventOverrideCache = inferCurrentEventOverride(events, eventBonuses, gameCharacterUnits);
-            return autoEventOverrideCache;
+            const currentEvent = selectCurrentOrLatestEvent(events);
+            if (getCurrentEventBonusRows(eventBonuses, currentEvent).length > 0) {
+                autoEventOverrideCache = inferCurrentEventOverride(events, eventBonuses, gameCharacterUnits);
+                return autoEventOverrideCache;
+            }
+            return fetch(CARD_API_URL, { cache: 'no-store' })
+                .then(res => res.json())
+                .then(cards => {
+                    autoEventOverrideCache = inferCurrentEventOverride(events, eventBonuses, gameCharacterUnits, cards);
+                    return autoEventOverrideCache;
+                });
         }).catch(err => {
             autoEventOverridePromise = null;
             throw err;
@@ -102,6 +152,12 @@ const loadAutoEventOverride = async () => {
     }
     return autoEventOverridePromise;
 };
+
+const ResultTabFallback = () => (
+    <div className="flex justify-center py-6 text-sm font-medium text-gray-400">
+        불러오는 중...
+    </div>
+);
 
 const SkillLevelDropdown = ({ value, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -150,11 +206,10 @@ const SkillLevelDropdown = ({ value, onChange }) => {
                                     onChange(option);
                                     setIsOpen(false);
                                 }}
-                                className={`block w-[60px] rounded-md px-2 py-1.5 text-center text-xs font-medium transition-colors ${
-                                    Number(value) === option
+                                className={`block w-[60px] rounded-md px-2 py-1.5 text-center text-xs font-medium transition-colors ${Number(value) === option
                                         ? 'bg-blue-500 text-white'
                                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                                }`}
+                                    }`}
                             >
                                 SLv.{option}
                             </button>
@@ -224,27 +279,10 @@ const EventOverrideDropdown = ({ value, options, onChange, assetPath, iconOnly =
                         <button
                             type="button"
                             onClick={() => handleSelect('')}
-                            className={`${iconOnly ? 'flex h-9 items-center justify-center rounded-md px-1 text-xs' : 'flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm'} font-bold transition-colors ${!value ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                            className={`${iconOnly ? 'flex h-9 items-center justify-center rounded-md px-1 text-xs' : 'flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm'} font-bold transition-colors ${!value ? 'bg-indigo-50 text-indigo-700' : 'text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700'}`}
                             title="자동"
                         >
-                            {autoOption?.file ? (
-                                <img
-                                    src={`${process.env.PUBLIC_URL}/assets/event/${assetPath}/${autoOption.file}`}
-                                    alt={autoOption.label}
-                                    className={`${iconOnly ? 'h-6 w-8' : 'h-5 w-5'} object-contain`}
-                                />
-                            ) : (
-                                autoOption?.label || '자동'
-                            )}
-                            {!iconOnly && autoOption?.file && (
-                                <>
-                                    {autoOption.label}
-                                    <span className="text-[10px] text-gray-400">(자동)</span>
-                                </>
-                            )}
-                            {iconOnly && autoOption?.file && (
-                                <span className="text-[9px] text-gray-400">(자동)</span>
-                            )}
+                            자동
                         </button>
                         {allOptions.map(option => (
                             <button
@@ -294,7 +332,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const [manualEventBonusDecks, setManualEventBonusDecks] = useState({});
     const [focusedManualSkill, setFocusedManualSkill] = useState(null);
     const [eventOverride, setEventOverride] = useState({ attr: '', unit: '', detailOpen: false, characters: {}, characterOrder: [] });
-    const [autoEventOverride, setAutoEventOverride] = useState({ attr: '', unit: '', isMix: false });
+    const [autoEventOverride, setAutoEventOverride] = useState(DEFAULT_AUTO_EVENT_OVERRIDE);
     const [friendCode, setFriendCode] = useState(() => {
         return localStorage.getItem('savedFriendCode') || '';
     });
@@ -303,6 +341,9 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         localStorage.setItem('savedFriendCode', friendCode);
     }, [friendCode]);
     const [isLoadingFriend, setIsLoadingFriend] = useState(false);
+    const [mountedResultViews, setMountedResultViews] = useState(() => ({
+        [getViewFromSubPath(subPath)]: true,
+    }));
 
     // Update activeResultView when subPath changes (e.g., browser back/forward)
     useEffect(() => {
@@ -310,29 +351,38 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     }, [subPath]);
 
     useEffect(() => {
+        setMountedResultViews(prev => (
+            prev[activeResultView] ? prev : { ...prev, [activeResultView]: true }
+        ));
+    }, [activeResultView]);
+
+    useEffect(() => {
         let cancelled = false;
         let idleId = null;
         let timeoutId = null;
+        let delayId = null;
 
-        const loadCurrentEventInBackground = async () => {
+        const prefetchCurrentEventInBackground = async () => {
             if (cancelled) return;
             try {
-                const nextAutoEventOverride = await loadAutoEventOverride();
-                if (!cancelled) {
-                    setAutoEventOverride(nextAutoEventOverride);
-                }
+                await loadAutoEventOverride();
             } catch (err) {
                 console.warn('Failed to load current event info', err);
             }
         };
 
-        const scheduleAfterPageLoad = () => {
+        const scheduleIdlePrefetch = () => {
             if (cancelled) return;
             if ('requestIdleCallback' in window) {
-                idleId = window.requestIdleCallback(loadCurrentEventInBackground, { timeout: 3000 });
+                idleId = window.requestIdleCallback(prefetchCurrentEventInBackground, { timeout: 8000 });
             } else {
-                timeoutId = window.setTimeout(loadCurrentEventInBackground, 0);
+                timeoutId = window.setTimeout(prefetchCurrentEventInBackground, 2000);
             }
+        };
+
+        const scheduleAfterPageLoad = () => {
+            if (cancelled) return;
+            delayId = window.setTimeout(scheduleIdlePrefetch, 1500);
         };
 
         if (document.readyState === 'complete') {
@@ -350,8 +400,35 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             if (timeoutId !== null) {
                 window.clearTimeout(timeoutId);
             }
+            if (delayId !== null) {
+                window.clearTimeout(delayId);
+            }
         };
     }, []);
+
+    useEffect(() => {
+        if (!showLoadModal) return;
+        let cancelled = false;
+
+        if (autoEventOverrideCache) {
+            setAutoEventOverride(autoEventOverrideCache);
+            return undefined;
+        }
+
+        loadAutoEventOverride()
+            .then(nextAutoEventOverride => {
+                if (!cancelled) {
+                    setAutoEventOverride(nextAutoEventOverride);
+                }
+            })
+            .catch(err => {
+                console.warn('Failed to load current event info', err);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [showLoadModal]);
 
     const getCharData = (charId) => {
         const id = String(charId).padStart(2, '0');
@@ -585,29 +662,29 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const updateDeckLoadedSkillLevel = (memberKey, level) => {
         setSurveyData(prev => {
             const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
-            
+
             const updatedLoadedSkillLevels = {
                 ...(currentDeckData.loadedSkillLevels || {}),
                 [memberKey]: level
             };
-            
+
             let skillVal = currentDeckData[`skill${memberKey === 'leader' ? 'Leader' : memberKey.charAt(0).toUpperCase() + memberKey.slice(1)}`];
-            
+
             if (level !== null && currentDeckData.loadedSkillRanges?.[memberKey]) {
                 skillVal = currentDeckData.loadedSkillRanges[memberKey][level];
             }
-            
+
             const skillKey = memberKey === 'leader' ? 'skillLeader' : `skill${memberKey.charAt(0).toUpperCase() + memberKey.slice(1)}`;
-            
+
             const updatedDeck = {
                 ...currentDeckData,
                 loadedSkillLevels: updatedLoadedSkillLevels,
                 [skillKey]: skillVal
             };
-            
+
             const preciseInternalVal = calculateInternalValueFromDeck(updatedDeck);
             const internalVal = Math.floor(preciseInternalVal / 10) * 10;
-            
+
             return {
                 ...prev,
                 unifiedDecks: {
@@ -950,16 +1027,15 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     );
     const hasLoadedSkillButtons = Object.values(currentDeck.loadedSkillLevels || {}).some(v => v != null);
     const updateDeck = (key, value) => {
-        console.log(`[updateDeck called] key: ${key}, value: ${value}`);
         if (key === 'eventBonus') {
             setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: true }));
         }
         setSurveyData(prev => {
             const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
-            
+
             const isSkillUpdate = key.startsWith('skill') || key === 'skillLeader';
             let updatedLoadedSkillLevels = currentDeckData.loadedSkillLevels;
-            
+
             if (isSkillUpdate && updatedLoadedSkillLevels) {
                 const memberKey = key === 'skillLeader' ? 'leader' : key.replace('skill', '').toLowerCase();
                 if (currentDeckData[key] !== value && updatedLoadedSkillLevels[memberKey]) {
@@ -1108,7 +1184,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 const updatedDeck = {
                     ...currentDeckData,
                     totalPower: fetchedTotalPower ?? currentDeckData.totalPower,
-                    skillLeader:  skillValues[0],
+                    skillLeader: skillValues[0],
                     skillMember2: skillValues[1],
                     skillMember3: skillValues[2],
                     skillMember4: skillValues[3],
@@ -1176,13 +1252,18 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 {language === 'ko' && (
                     <div className="relative">
                         <button
-                            onClick={() => setShowLoadModal(!showLoadModal)}
+                            onClick={() => {
+                                if (!showLoadModal && autoEventOverrideCache) {
+                                    setAutoEventOverride(autoEventOverrideCache);
+                                }
+                                setShowLoadModal(prev => !prev);
+                            }}
                             className="px-4 py-2 text-sm font-medium rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all duration-200"
                         >
                             {t('app.load') || '불러오기'}
                         </button>
                         {showLoadModal && (
-                            <div className="absolute top-full right-0 z-50 mt-2 w-64 max-w-[calc(100vw-1rem)] translate-x-8 rounded-lg border border-gray-200 bg-white p-3 shadow-xl md:left-1/2 md:right-auto md:w-64 md:-translate-x-1/2">
+                            <div className="absolute top-full right-0 z-50 mt-2 w-64 max-w-[calc(100vw-1rem)] translate-x-4 rounded-lg border border-gray-200 bg-white p-3 shadow-xl md:left-1/2 md:right-auto md:w-64 md:-translate-x-1/2">
                                 <div className="mb-2 flex items-baseline gap-2 whitespace-nowrap">
                                     <span className="text-sm font-bold text-gray-700">친구코드 입력</span>
                                     <span className="text-[10px] font-bold text-red-500">* 일본 서버에서만 동작</span>
@@ -1287,7 +1368,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             </div>
 
             {/* Shared Input Section */}
-            <InputTableWrapper className={hasLoadedSkillButtons ? 'deck-input-loaded-skills' : ''}>
+            <InputTableWrapper className={`deck-input-section ${hasLoadedSkillButtons ? 'deck-input-loaded-skills' : ''}`}>
                 <InputRow
                     label={t('auto.total_power')}
                     value={totalPower !== null && totalPower !== undefined ? totalPower : ''}
@@ -1339,7 +1420,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                         : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
                                     return (
                                         <div
-                                            className={`w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors ${colorClass}`}
+                                            className={`deck-loaded-control w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors ${colorClass}`}
                                             onClick={() => isLoaded && switchBloomFesToManual('leader')}
                                             title={isLoaded ? '클릭하여 직접 입력' : undefined}
                                         >
@@ -1420,7 +1501,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                             : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
                                         return (
                                             <div
-                                                className={`w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors ${colorClass}`}
+                                                className={`deck-loaded-control w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors ${colorClass}`}
                                                 onClick={() => isLoaded && switchBloomFesToManual(m.bloomKey)}
                                                 title={isLoaded ? '클릭하여 직접 입력' : undefined}
                                             >
@@ -1507,16 +1588,14 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                     role="switch"
                                     aria-checked={useBloomFes}
                                     onClick={() => updateUseBloomFes(!useBloomFes)}
-                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${
-                                        useBloomFes
+                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${useBloomFes
                                             ? 'bg-gradient-to-r from-indigo-500 to-purple-500'
                                             : 'bg-gray-200'
-                                    }`}
+                                        }`}
                                 >
                                     <span
-                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
-                                            useBloomFes ? 'translate-x-4' : 'translate-x-0'
-                                        }`}
+                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${useBloomFes ? 'translate-x-4' : 'translate-x-0'
+                                            }`}
                                     />
                                 </button>
                             </div>
@@ -1643,23 +1722,28 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 )
             })()}
 
-            {/* Render Both Tabs, Toggle Visibility with CSS (prevents scroll jump on switch) */}
             <div className="deck-results-container">
-                <div style={{ display: activeResultView === 'auto' ? 'block' : 'none' }}>
-                    <AutoTab
-                        surveyData={surveyData}
-                        setSurveyData={wrappedSetSurveyData}
-                        hideInputs={true}
-                    />
-                </div>
+                <Suspense fallback={<ResultTabFallback />}>
+                    {mountedResultViews.auto && (
+                        <div style={{ display: activeResultView === 'auto' ? 'block' : 'none' }}>
+                            <AutoTab
+                                surveyData={surveyData}
+                                setSurveyData={wrappedSetSurveyData}
+                                hideInputs={true}
+                            />
+                        </div>
+                    )}
 
-                <div style={{ display: activeResultView === 'power' ? 'block' : 'none' }}>
-                    <PowerTab
-                        surveyData={surveyData}
-                        setSurveyData={wrappedSetSurveyData}
-                        hideInputs={true}
-                    />
-                </div>
+                    {mountedResultViews.power && (
+                        <div style={{ display: activeResultView === 'power' ? 'block' : 'none' }}>
+                            <PowerTab
+                                surveyData={surveyData}
+                                setSurveyData={wrappedSetSurveyData}
+                                hideInputs={true}
+                            />
+                        </div>
+                    )}
+                </Suspense>
             </div>
         </div>
     );

@@ -10,16 +10,19 @@ import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/m
 import playerLevelData from '../data/player_levels.json';
 import { characterBirthdays } from '../data/characterBirthdays';
 
+const BASE_ALLOWED_RANKS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  20, 30, 40, 50,
+  100, 200, 300, 400, 500,
+  1000, 2000, 3000, 4000, 5000, 10000
+];
+
+const getAllowedRanksSet = (includeWorldLinkRanks = false) => new Set(
+  includeWorldLinkRanks ? [...BASE_ALLOWED_RANKS, 7000] : BASE_ALLOWED_RANKS
+);
+
 const FireTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
-  
-  // 랭킹 표시 기준 정의 (1500, 2500 제외, 7000 추가)
-  const allowedRanksSet = new Set([
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-    20, 30, 40, 50,
-    100, 200, 300, 400, 500,
-    1000, 2000, 3000, 4000, 5000, 7000, 10000
-  ]);
   const [score1, setScore1] = useState(surveyData.score1 || '');
   const [score2, setScore2] = useState(surveyData.score2 || '');
   const [score3, setScore3] = useState(surveyData.score3 || '');
@@ -37,6 +40,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [currentScoreLastUpdated, setCurrentScoreLastUpdated] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [eventInfo, setEventInfo] = useState(null);
+  const allowedRanksSet = getAllowedRanksSet(eventInfo?.event_type === 'world_bloom');
   const [showTop50, setShowTop50] = useState(false);
   const [chaptersData, setChaptersData] = useState([]);
   const [worldBloomsInfo, setWorldBloomsInfo] = useState([]);
@@ -301,7 +305,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           }
         }
 
-        finalData = finalData.filter(item => allowedRanksSet.has(item.rank));
+        const latestEventForRanks = mainData.latest_event;
+        const latestEventStartedForRanks = latestEventForRanks?.startAt && latestEventForRanks.startAt <= Date.now();
+        const effectiveEventType = latestEventStartedForRanks
+          ? (latestEventForRanks.eventType || latestEventForRanks.event_type || mergedEventInfo?.event_type)
+          : mergedEventInfo?.event_type;
+        const eventAllowedRanksSet = getAllowedRanksSet(effectiveEventType === 'world_bloom');
+        finalData = finalData.filter(item => eventAllowedRanksSet.has(item.rank));
 
         setLastUpdated(mainData.updatedAt);
         setPredictionData(finalData);
@@ -373,6 +383,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           if (latestEvent && latestEvent.startAt && latestEvent.startAt <= now) {
             // asname은 latest_event의 assetbundleName 사용
             mergedEventInfo.asname = latestEvent.assetbundleName || mergedEventInfo.asname;
+            mergedEventInfo.event_type = latestEvent.eventType || latestEvent.event_type || mergedEventInfo.event_type;
             // aggregateAt은 밀리초 단위, end는 초 단위라서 변환
             if (latestEvent.aggregateAt) {
               mergedEventInfo.end = latestEvent.aggregateAt / 1000;

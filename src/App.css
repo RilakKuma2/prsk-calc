@@ -315,6 +315,38 @@ select {
 
 /* Legacy MySekai Table styles removed - now using Tailwind in component */
 
+.deck-input-section label {
+    margin: 0 10px 6px 0;
+}
+
+.deck-input-section input,
+.deck-input-section select,
+.deck-input-section .deck-loaded-control {
+    margin-bottom: 6px;
+}
+
+.deck-input-section input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.deck-input-section input[type="number"]::-webkit-outer-spin-button,
+.deck-input-section input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.deck-input-section input {
+    padding-left: 0;
+    padding-right: 0;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+.deck-input-section input::placeholder {
+    color: #9ca3af;
+    opacity: 1;
+}
+
 
 /* --- Responsive Styles --- */
 
@@ -330,6 +362,10 @@ select {
 
     [id$="-tab-content"] {
         padding: 10px 0px;
+    }
+
+    .deck-input-section {
+        transform: translateX(12px);
     }
 
     .deck-input-loaded-skills {
