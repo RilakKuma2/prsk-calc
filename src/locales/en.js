@@ -76,9 +76,13 @@ const en = {
         item_name: 'Item',
         amount: 'Count',
         before_birthday: '(Before Birthday)',
+        unreleased: '(Unreleased)',
         etc_items: {
             birthday_26: '26 Birthday',
+            pass_mission_ticket: 'Pass Mission Ticket',
             newyear_gacha: '26 New Year Gacha',
+            wl_3: 'WL3',
+            exchange_5_5th: '5.5th Anniversary Exchange',
             memorial_5th_error: '5th Anniversary Memorial Comp.',
             memorial_5th: '5th Anniversary Memorial',
             exchange_5th: '5th Anniversary Exchange',

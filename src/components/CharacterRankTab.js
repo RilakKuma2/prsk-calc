@@ -956,8 +956,24 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                 }
 
                 // Etc rank acquisition items (based on user's image)
+                const checkWl3Active = () => {
+                    const today = new Date();
+                    const group1 = [24, 3, 8, 9, 18]; // 루카, 호나미, 시즈쿠, 코하네, 마후유
+                    const group2 = [26, 2, 12, 16, 20]; // 카이토, 사키, 토우야, 루이, 미즈키
+                    const group3 = [25, 7, 11, 15, 19]; // 메이코, 아이리, 아키토, 네네, 에나
+                    
+                    if (group1.includes(selectedCharId)) return today >= new Date(2026, 5, 15);
+                    if (group2.includes(selectedCharId)) return today >= new Date(2026, 6, 15);
+                    if (group3.includes(selectedCharId)) return today >= new Date(2026, 7, 15);
+                    return true;
+                };
+                const wl3Active = checkWl3Active();
+
                 const etcRankItems = [
                     { nameKey: 'etc_items.birthday_26', value: 1, isBirthday: true },
+                    { nameKey: 'etc_items.pass_mission_ticket', value: 5, isBirthday: false },
+                    { nameKey: 'etc_items.wl_3', value: 2, isBirthday: false, isWl3: true },
+                    { nameKey: 'etc_items.exchange_5_5th', value: 3, isBirthday: false },
                     { nameKey: 'etc_items.newyear_gacha', value: 3, isBirthday: false },
                     { nameKey: 'etc_items.memorial_5th_error', value: 1, isBirthday: false },
                     { nameKey: 'etc_items.memorial_5th', value: 1, isBirthday: false },
@@ -975,6 +991,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                 // Calculate max value
                 const maxValue = etcRankItems.reduce((sum, item) => {
                     if (!isBirthdayPassed && item.isBirthday) return sum;
+                    if (item.isWl3 && !wl3Active) return sum;
                     return sum + item.value;
                 }, 0);
 
@@ -1012,12 +1029,15 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {etcRankItems.map((item, idx) => {
-                                            const shouldStrike = !isBirthdayPassed && item.isBirthday;
+                                            const isFutureBd = item.isBirthday && !isBirthdayPassed;
+                                            const isFutureWl3 = item.isWl3 && !wl3Active;
+                                            const shouldStrike = isFutureBd || isFutureWl3;
                                             return (
                                                 <tr key={idx} className={`${shouldStrike ? 'bg-gray-50 text-gray-400' : 'hover:bg-gray-50/50'}`}>
                                                     <td className={`px-3 py-2 ${shouldStrike ? 'line-through' : ''} ${item.isBlue ? 'text-blue-700 font-medium' : ''}`}>
                                                         {t(`rank.${item.nameKey}`)}
-                                                        {shouldStrike && <span className="text-xs text-red-400 ml-1">{t('rank.before_birthday')}</span>}
+                                                        {isFutureBd && <span className="text-xs text-red-400 ml-1">{t('rank.before_birthday')}</span>}
+                                                        {isFutureWl3 && <span className="text-xs text-red-400 ml-1">{t('rank.unreleased')}</span>}
                                                     </td>
                                                     <td className={`px-3 py-2 text-right font-medium ${shouldStrike ? 'line-through' : ''}`}>{item.value}</td>
                                                 </tr>

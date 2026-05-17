@@ -73,9 +73,13 @@ const ko = {
         item_name: '항목',
         amount: '개수',
         before_birthday: '(생일 이전)',
+        unreleased: '(미출시)',
         etc_items: {
             birthday_26: '26생일',
+            pass_mission_ticket: '패스 미션 티켓',
             newyear_gacha: '26신년 복주머니 가챠',
+            wl_3: '월링3',
+            exchange_5_5th: '5.5주년 교환소',
             memorial_5th_error: '5주년 메모리얼 오류 보상',
             memorial_5th: '5주년 메모리얼',
             exchange_5th: '5주년교환소',

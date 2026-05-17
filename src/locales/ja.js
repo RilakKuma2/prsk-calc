@@ -76,9 +76,13 @@ const ja = {
         item_name: '項目',
         amount: '個数',
         before_birthday: '(誕生日前)',
+        unreleased: '(未実装)',
         etc_items: {
             birthday_26: '26年生日',
+            pass_mission_ticket: 'パスミッションチケット',
             newyear_gacha: '26福袋ガチャ',
+            wl_3: 'WL3',
+            exchange_5_5th: '5.5周年交換所',
             memorial_5th_error: '5周年メモリアルセレクト補填',
             memorial_5th: '5周年メモリアルセレクト',
             exchange_5th: '5周年交換所',

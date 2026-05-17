@@ -1268,6 +1268,11 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                     <span className="text-sm font-bold text-gray-700">친구코드 입력</span>
                                     <span className="text-[10px] font-bold text-red-500">* 일본 서버에서만 동작</span>
                                 </div>
+                                {(eventOverride.attr === 'wl' || (!eventOverride.attr && autoEventOverride.attr === 'wl')) && (
+                                    <div className="mb-2 text-left text-xs font-bold text-red-500">
+                                        * 월드 링크 서폿덱 미반영
+                                    </div>
+                                )}
                                 <div className="mb-2 grid grid-cols-2 gap-2">
                                     <div>
                                         <div className="mb-1 text-left text-xs font-bold text-gray-600">속성</div>
