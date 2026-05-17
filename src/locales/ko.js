@@ -23,6 +23,7 @@ const ko = {
         score_art: '점수아트',
         gacha: '가챠',
         rank: '캐랭',
+        support: '서폿덱',
         challenge: '챌라',
         level: '레벨',
         amatsuyu: '아마츠유',

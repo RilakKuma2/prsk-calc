@@ -29,6 +29,7 @@ const ja = {
         score_art: 'ポイント調整',
         gacha: 'ガチャ',
         rank: 'キャララン',
+        support: 'サポート',
     },
     rank: {
         title: 'キャラクターランク計算機',
@@ -643,4 +644,3 @@ const ja = {
 };
 
 export default ja;
-

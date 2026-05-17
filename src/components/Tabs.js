@@ -6,6 +6,7 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
   const tabInfo = [
     { id: 'deck', name: t('tabs.deck') },
     { id: 'fire', name: t('tabs.fire') },
+    { id: 'support', name: t('tabs.support') },
     { id: 'scoreArt', name: t('tabs.score_art') },
     { id: 'amatsuyu', name: t('tabs.amatsuyu') },
     { id: 'challenge', name: t('tabs.challenge') },

@@ -29,6 +29,7 @@ const en = {
         score_art: 'Score Art',
         gacha: 'Gacha',
         rank: 'Rank',
+        support: 'Support',
     },
     rank: {
         title: 'Character Rank Calculator',

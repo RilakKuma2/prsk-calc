@@ -13,6 +13,7 @@ import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
 import GachaTab from './components/GachaTab';
 import CharacterRankTab from './components/CharacterRankTab';
+import SupportDeckTab from './components/SupportDeckTab';
 
 // Main tab to path mapping
 const TAB_PATHS = {
@@ -25,6 +26,7 @@ const TAB_PATHS = {
   level: '/level',
   gacha: '/gacha',
   rank: '/CR',
+  support: '/support',
 };
 
 const PATH_TO_TAB = Object.entries(TAB_PATHS).reduce((acc, [tab, path]) => {
@@ -143,6 +145,7 @@ const AppContent = () => {
     scoreArt: <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
     gacha: <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
     rank: <CharacterRankTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
+    support: <SupportDeckTab key={loadVersion} />,
   };
 
   const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });
@@ -205,7 +208,7 @@ const AppContent = () => {
   }, [t]);
 
   return (
-    <div className="container relative min-h-screen">
+    <div className={`container relative min-h-screen ${currentTab === 'support' ? 'support-container' : ''}`}>
       <LanguageSwitcher />
       <UpcomingEvents>
         <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
