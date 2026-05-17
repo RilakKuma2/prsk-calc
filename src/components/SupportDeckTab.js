@@ -402,7 +402,7 @@ const OptionDropdown = ({ value, options, onChange, prefix }) => {
 };
 
 const SupportDeckTab = () => {
-    const { language } = useTranslation();
+    const { language, t } = useTranslation();
     const [selectedCharId, setSelectedCharId] = useState(1);
     const [decks, setDecks] = useState({});
     const [mainDeckSlots, setMainDeckSlots] = useState(() => createEmptyMainDeckSlots());
@@ -415,6 +415,10 @@ const SupportDeckTab = () => {
     const [isMainDeckOpen, setIsMainDeckOpen] = useState(false);
     const [pickerCharId, setPickerCharId] = useState(1);
     const [searchText, setSearchText] = useState('');
+    const [bulkOpen, setBulkOpen] = useState(false);
+    const [bulkMasterRank, setBulkMasterRank] = useState(5);
+    const [bulkSkillLevel, setBulkSkillLevel] = useState(4);
+    const bulkRef = useRef(null);
 
     useEffect(() => {
         try {
@@ -438,6 +442,17 @@ const SupportDeckTab = () => {
     useEffect(() => {
         setPickerCharId(Number(selectedCharId));
     }, [selectedCharId]);
+
+    useEffect(() => {
+        if (!bulkOpen) return undefined;
+        const handleClick = (e) => {
+            if (bulkRef.current && !bulkRef.current.contains(e.target)) {
+                setBulkOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [bulkOpen]);
 
     useEffect(() => {
         let isMounted = true;
@@ -637,7 +652,7 @@ const SupportDeckTab = () => {
     };
 
     const clearCurrentDeck = () => {
-        if (!window.confirm(`${getCardCharacterName(selectedCharId)} 서폿덱을 비울까요?`)) return;
+        if (!window.confirm(t('support.clear_confirm').replace('{{name}}', getCardCharacterName(selectedCharId, language)))) return;
         setDecks(prev => ({
             ...prev,
             [selectedCharId]: createEmptySlots(),
@@ -699,6 +714,17 @@ const SupportDeckTab = () => {
                 [selectedCharId]: sortedSlots,
             };
         });
+    };
+
+    const applyBulk = () => {
+        setDecks(prev => {
+            const nextSlots = normalizeSlots(prev[selectedCharId]).map(slot => {
+                if (!slot.cardId) return slot;
+                return { ...slot, masterRank: bulkMasterRank, skillLevel: bulkSkillLevel };
+            });
+            return { ...prev, [selectedCharId]: nextSlots };
+        });
+        setBulkOpen(false);
     };
 
     const activeSlot = activeSlotIndex !== null ? slotResults[activeSlotIndex] : null;
@@ -788,8 +814,8 @@ const SupportDeckTab = () => {
                 .support-toolbar {
                     display: flex;
                     align-items: center;
-                    justify-content: space-between;
-                    gap: 10px;
+                    justify-content: flex-start;
+                    gap: 8px;
                     margin: 8px 0 12px;
                     flex-wrap: wrap;
                 }
@@ -805,6 +831,7 @@ const SupportDeckTab = () => {
                 .support-chip {
                     display: inline-flex;
                     align-items: center;
+                    margin-right: auto;
                     height: 30px;
                     padding: 0 10px;
                     border-radius: 8px;
@@ -814,6 +841,51 @@ const SupportDeckTab = () => {
                     font-size: 12px;
                     font-weight: 800;
                     white-space: nowrap;
+                }
+
+                .support-bulk-wrap {
+                    position: relative;
+                }
+
+                .support-bulk-panel {
+                    position: absolute;
+                    top: calc(100% + 6px);
+                    right: 0;
+                    z-index: 100;
+                    background: #ffffff;
+                    border: 1px solid #bfdbfe;
+                    border-radius: 10px;
+                    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+                    padding: 12px 14px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    white-space: nowrap;
+                    font-size: 12px;
+                    font-weight: 800;
+                    color: var(--support-ink);
+                }
+
+                .support-bulk-panel label {
+                    color: var(--support-muted);
+                    font-size: 11px;
+                }
+
+                .support-bulk-apply {
+                    height: 30px;
+                    padding: 0 12px;
+                    border-radius: 8px;
+                    border: 0;
+                    background: var(--support-blue);
+                    color: #ffffff;
+                    font-size: 12px;
+                    font-weight: 900;
+                    cursor: pointer;
+                    transition: background 0.15s ease;
+                }
+
+                .support-bulk-apply:hover {
+                    background: #1d4ed8;
                 }
 
                 .support-ghost-button {
@@ -1524,6 +1596,20 @@ const SupportDeckTab = () => {
                         font-size: 16px;
                     }
 
+                    .support-toolbar {
+                        justify-content: space-between;
+                    }
+
+                    .support-chip {
+                        margin-right: 0;
+                    }
+
+                    .support-action-group {
+                        width: 100%;
+                        justify-content: flex-end;
+                        margin-top: 4px;
+                    }
+
                     .support-grid {
                         grid-template-columns: repeat(3, minmax(0, 1fr));
                         gap: 8px;
@@ -1591,7 +1677,6 @@ const SupportDeckTab = () => {
 
             <div className="support-header">
                 <div className="support-title-row">
-                    <h2>서폿덱</h2>
                     <CharacterSelector
                         selectedId={selectedCharId}
                         onSelect={(id) => setSelectedCharId(Number(id))}
@@ -1602,11 +1687,11 @@ const SupportDeckTab = () => {
 
                 <div className="support-summary">
                     <div className="support-summary-box">
-                        <span>선택</span>
+                        <span>{t('support.selected')}</span>
                         <strong>{selectedCount}/{SLOT_COUNT}</strong>
                     </div>
                     <div className="support-summary-box">
-                        <span>이벤트</span>
+                        <span>{t('support.event')}</span>
                         <strong>{formatSupportPercent(supportEventBonus)}</strong>
                         {hasMainDeckBonus && (
                             <small className="support-summary-detail" style={{ whiteSpace: 'nowrap' }}>
@@ -1616,7 +1701,7 @@ const SupportDeckTab = () => {
                         )}
                     </div>
                     <div className="support-summary-box">
-                        <span>배지</span>
+                        <span>{t('support.badge')}</span>
                         <strong>{formatSupportPercent(supportBadgeBonus)}</strong>
                         {hasMainDeckBonus && (
                             <small className="support-summary-detail" style={{ whiteSpace: 'nowrap' }}>
@@ -1629,32 +1714,64 @@ const SupportDeckTab = () => {
             </div>
 
             <div className="support-toolbar">
-                <span className="support-chip">{getCardCharacterName(selectedCharId)} 4성 카드 {fourStarCount}장{hasWl3 ? ' (월링3 제외)' : ''}</span>
+                <span className="support-chip">{hasWl3 ? t('support.four_star_cards_wl3').replace('{{name}}', getCardCharacterName(selectedCharId, language)).replace('{{count}}', fourStarCount) : t('support.four_star_cards').replace('{{name}}', getCardCharacterName(selectedCharId, language)).replace('{{count}}', fourStarCount)}</span>
+                <button
+                    type="button"
+                    className={`support-ghost-button support-main-open-button ${hasMainDeckBonus ? 'active' : ''}`}
+                    onClick={() => setIsMainDeckOpen(true)}
+                >
+                    {t('support.main_deck')}
+                </button>
                 <div className="support-action-group">
-                    <button
-                        type="button"
-                        className={`support-ghost-button support-main-open-button ${hasMainDeckBonus ? 'active' : ''}`}
-                        onClick={() => setIsMainDeckOpen(true)}
-                    >
-                        메인덱
-                    </button>
                     <button
                         type="button"
                         className={`support-ghost-button ${finaleEnabled ? 'active' : ''}`}
                         onClick={() => setFinaleEnabled(prev => !prev)}
                         aria-pressed={finaleEnabled}
                     >
-                        피날레 +50%
+                        {t('support.finale')}
                     </button>
                     <button type="button" className="support-ghost-button" onClick={applyTheoryDeck}>
-                        서폿덱 이론치
+                        {t('support.support_theory')}
                     </button>
                     <button type="button" className="support-ghost-button" onClick={sortCurrentDeck}>
-                        정렬
+                        {t('support.sort')}
                     </button>
                     <button type="button" className="support-ghost-button" onClick={clearCurrentDeck}>
-                        전체 비우기
+                        {t('support.reset')}
                     </button>
+                    <div className="support-bulk-wrap" ref={bulkRef}>
+                        <button
+                            type="button"
+                            className={`support-ghost-button ${bulkOpen ? 'active' : ''}`}
+                            onClick={() => setBulkOpen(prev => !prev)}
+                        >
+                            {t('support.bulk')}
+                        </button>
+                        {bulkOpen && (
+                            <div className="support-bulk-panel">
+                                <label>{t('support.master_rank')}</label>
+                                <select
+                                    value={bulkMasterRank}
+                                    onChange={e => setBulkMasterRank(Number(e.target.value))}
+                                    style={{ height: 30, width: 56, borderRadius: 7, border: '1px solid #d5deea', padding: '0 4px', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
+                                >
+                                    {MASTER_RANK_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                                <label>{t('support.skill')}</label>
+                                <select
+                                    value={bulkSkillLevel}
+                                    onChange={e => setBulkSkillLevel(Number(e.target.value))}
+                                    style={{ height: 30, width: 72, borderRadius: 7, border: '1px solid #d5deea', padding: '0 4px', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
+                                >
+                                    {SKILL_LEVEL_OPTIONS.map(v => <option key={v} value={v}>{t('support.skill_level').replace('{{v}}', v)}</option>)}
+                                </select>
+                                <button type="button" className="support-bulk-apply" onClick={applyBulk}>
+                                    {t('support.apply')}
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -1690,13 +1807,13 @@ const SupportDeckTab = () => {
                                 value={slot.masterRank}
                                 options={MASTER_RANK_OPTIONS}
                                 onChange={(value) => updateSlot(index, { masterRank: value })}
-                                prefix="마랭"
+                                prefix={t('support.master_rank')}
                             />
                             <NumberDropdown
                                 value={slot.skillLevel}
                                 options={SKILL_LEVEL_OPTIONS}
                                 onChange={(value) => updateSlot(index, { skillLevel: value })}
-                                prefix="스킬"
+                                prefix={t('support.skill')}
                                 suffix="렙"
                             />
                         </div>
@@ -1714,19 +1831,19 @@ const SupportDeckTab = () => {
                             </div>
                             <div className="support-modal-actions">
                                 <button type="button" className="support-modal-close" onClick={applyMainTheoryDeck}>
-                                    메인덱 이론치
+                                    {t('support.main_theory')}
                                 </button>
                                 <button type="button" className="support-modal-clear" onClick={clearMainDeck}>
-                                    초기화
+                                    {t('support.reset_short')}
                                 </button>
                                 <button type="button" className="support-modal-close" onClick={() => setIsMainDeckOpen(false)}>
-                                    닫기
+                                    {t('support.close')}
                                 </button>
                             </div>
                         </div>
 
                         <div className="support-main-summary">
-                            <span>메인덱 합계</span>
+                            <span>{t('support.main_deck_total')}</span>
                             <strong>{formatSupportPercent(mainDeckBonus)}</strong>
                         </div>
 
@@ -1755,13 +1872,13 @@ const SupportDeckTab = () => {
                                                     value={slot.rarityKey}
                                                     options={MAIN_DECK_RARITY_OPTIONS}
                                                     onChange={(value) => updateMainDeckSlot(index, { rarityKey: value })}
-                                                    prefix="레어"
+                                                    prefix={t('support.rarity')}
                                                 />
                                                 <NumberDropdown
                                                     value={slot.masterRank}
                                                     options={MASTER_RANK_OPTIONS}
                                                     onChange={(value) => updateMainDeckSlot(index, { masterRank: value })}
-                                                    prefix="마랭"
+                                                    prefix={t('support.master_rank')}
                                                 />
                                             </div>
                                             <div className="support-main-toggle-row">
@@ -1772,7 +1889,7 @@ const SupportDeckTab = () => {
                                                     disabled={!hasRarity}
                                                     aria-pressed={slot.typeMatched}
                                                 >
-                                                    타입
+                                                    {t('support.type')}
                                                 </button>
                                                 <button
                                                     type="button"
@@ -1781,7 +1898,7 @@ const SupportDeckTab = () => {
                                                     disabled={!hasRarity}
                                                     aria-pressed={slot.featured}
                                                 >
-                                                    인선
+                                                    {t('support.featured')}
                                                 </button>
                                                 <button
                                                     type="button"
@@ -1790,15 +1907,15 @@ const SupportDeckTab = () => {
                                                     disabled={!canPickup}
                                                     aria-pressed={slot.pickup}
                                                 >
-                                                    픽업
+                                                    {t('support.pickup')}
                                                 </button>
                                             </div>
 
                                             <div className="support-main-breakdown" aria-label={`${index + 1}번 메인덱 보너스`}>
-                                                <span>멤버 <b>{formatSupportPercent(bonus.member)}</b></span>
-                                                <span>인선 <b>{formatSupportPercent(bonus.character)}</b></span>
-                                                <span>타입 <b>{formatSupportPercent(bonus.type)}</b></span>
-                                                <span>마랭 <b>{formatSupportPercent(bonus.masterRank)}</b></span>
+                                                <span>{t('support.member')} <b>{formatSupportPercent(bonus.member)}</b></span>
+                                                <span>{t('support.featured')} <b>{formatSupportPercent(bonus.character)}</b></span>
+                                                <span>{t('support.type')} <b>{formatSupportPercent(bonus.type)}</b></span>
+                                                <span>{t('support.master_rank')} <b>{formatSupportPercent(bonus.masterRank)}</b></span>
                                             </div>
                                         </div>
                                     );
@@ -1814,15 +1931,15 @@ const SupportDeckTab = () => {
                     <div className="support-modal" onMouseDown={(event) => event.stopPropagation()}>
                         <div className="support-modal-header">
                             <div>
-                                <h3>{getCardCharacterName(selectedCharId)} 카드 선택</h3>
-                                <p>{activeSlotIndex + 1}번 슬롯</p>
+                                <h3>{getCardCharacterName(selectedCharId, language)} {t('support.card_select')}</h3>
+                                <p>{t('support.slot').replace('{{n}}', activeSlotIndex + 1)}</p>
                             </div>
                             <div className="support-modal-actions">
                                 <button type="button" className="support-modal-clear" onClick={clearSlot}>
-                                    선택 해제
+                                    {t('support.deselect')}
                                 </button>
                                 <button type="button" className="support-modal-close" onClick={() => setActiveSlotIndex(null)}>
-                                    닫기
+                                    {t('support.close')}
                                 </button>
                             </div>
                         </div>
@@ -1830,7 +1947,7 @@ const SupportDeckTab = () => {
                         <div className="support-picker-character-bar">
                             {unitMemberIds.map(id => {
                                 const idText = String(id).padStart(2, '0');
-                                const name = getCardCharacterName(id);
+                                const name = getCardCharacterName(id, language);
                                 return (
                                     <button
                                         type="button"
@@ -1859,11 +1976,11 @@ const SupportDeckTab = () => {
                                 className="support-search"
                                 value={searchText}
                                 onChange={(event) => setSearchText(event.target.value)}
-                                placeholder="카드명, 속성, 타입 검색"
+                                placeholder={t('support.search_placeholder')}
                                 autoFocus
                             />
                             <span className="support-count">
-                                {cardsLoading ? '불러오는 중' : cardsError || `${modalCards.length}장`}
+                                {cardsLoading ? t('support.loading') : cardsError || `${modalCards.length}장`}
                             </span>
                         </div>
 
@@ -1898,10 +2015,10 @@ const SupportDeckTab = () => {
                                 </>
                             )}
                             {!cardsLoading && !cardsError && modalCards.length === 0 && (
-                                <div className="support-empty-list">카드가 없습니다.</div>
+                                <div className="support-empty-list">{t('support.no_cards')}</div>
                             )}
                             {cardsLoading && (
-                                <div className="support-empty-list">카드 목록 불러오는 중...</div>
+                                <div className="support-empty-list">{t('support.loading_cards')}</div>
                             )}
                             {cardsError && (
                                 <div className="support-empty-list">{cardsError}</div>

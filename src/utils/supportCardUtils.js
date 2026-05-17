@@ -66,9 +66,43 @@ export const getCardCharacterId = (card) => {
     return CHARACTER_NAME_TO_ID[card.character] || null;
 };
 
-export const getCardCharacterName = (id) => {
-    return SUPPORT_CHARACTERS.find(character => character.id === Number(id))?.name || '';
+const CHAR_NAMES = {
+    1:  { ko: '\uc774\uce58\uce74',  ja: '\u4e00\u6b4c',   en: 'Ichika'  },
+    2:  { ko: '\uc0ac\ud0a4',   ja: '\u54b2\u5e0c',   en: 'Saki'    },
+    3:  { ko: '\ud638\ub098\ubbf8',  ja: '\u7a42\u6ce2',   en: 'Honami'  },
+    4:  { ko: '\uc2dc\ud638',   ja: '\u5fd7\u6b69',   en: 'Shiho'   },
+    5:  { ko: '\ubbf8\ub178\ub9ac',  ja: '\u307f\u306e\u308a',  en: 'Minori'  },
+    6:  { ko: '\ud558\ub8e8\uce74',  ja: '\u6625\u6f14',   en: 'Haruka'  },
+    7:  { ko: '\uc544\uc774\ub9ac',  ja: '\u611b\u308a',   en: 'Airi'    },
+    8:  { ko: '\uc2dc\uc988\ucfe0',  ja: '\u5c0f\u96f9',   en: 'Shizuku' },
+    9:  { ko: '\ucf54\ud558\ub124',  ja: '\u5c0f\u5e0c',   en: 'Kohane'  },
+    10: { ko: '\uc548',      ja: '\u9752\u5c71',   en: 'An'      },
+    11: { ko: '\uc544\ud0a4\ud1a0',  ja: '\u57ce\u4e43',   en: 'Akito'   },
+    12: { ko: '\ud1a0\uc6b0\uc57c',  ja: '\u5f39\u538b',   en: 'Touya'   },
+    13: { ko: '\uce20\uce74\uc0ac',  ja: '\u53f8',    en: 'Tsukasa' },
+    14: { ko: '\uc5d0\ubb34',   ja: '\u9060\u5c71',   en: 'Emu'     },
+    15: { ko: '\ub124\ub124',   ja: '\u3082\u3082',   en: 'Nene'    },
+    16: { ko: '\ub8e8\uc774',   ja: '\u7c89\u96ea',   en: 'Rui'     },
+    17: { ko: '\uce74\ub098\ub370',  ja: '\u594f',    en: 'Kanade'  },
+    18: { ko: '\ub9c8\ud6c4\uc720',  ja: '\u771f\u586b',   en: 'Mafuyu'  },
+    19: { ko: '\uc5d0\ub098',   ja: '\u7d75\u5948',   en: 'Ena'     },
+    20: { ko: '\ubbf8\uc988\ud0a4',  ja: '\u745e\u5e0c',   en: 'Mizuki'  },
+    21: { ko: '\ubbf8\ucfe0',   ja: '\u307f\u304f',   en: 'Miku'    },
+    22: { ko: '\ub9b0',      ja: '\u308a\u3093',   en: 'Rin'     },
+    23: { ko: '\ub80c',      ja: '\u308c\u3093',   en: 'Len'     },
+    24: { ko: '\ub8e8\uce74',   ja: '\u308b\u304b',   en: 'Luka'    },
+    25: { ko: '\uba54\uc774\ucf54',  ja: 'MEIKO',  en: 'MEIKO'   },
+    26: { ko: '\uce74\uc774\ud1a0',  ja: 'KAITO',  en: 'KAITO'   },
 };
+
+export const getCardCharacterName = (id, language) => {
+    const entry = CHAR_NAMES[Number(id)];
+    if (!entry) return '';
+    if (language === 'ja') return entry.ja;
+    if (language === 'en') return entry.en;
+    return entry.ko;
+};
+
 
 export const getSupportUnitMemberIds = (id) => {
     const numericId = Number(id);

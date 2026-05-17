@@ -41,11 +41,7 @@ const CharacterSelector = ({ selectedId, onSelect, language }) => {
 
     useLayoutEffect(() => {
         if (isOpen && containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            // Calculate top position: bottom of the button + minimal gap
-            setDropdownPos({
-                top: rect.bottom + 8
-            });
+            // No need to calculate position; we'll use CSS positioning
         }
     }, [isOpen]);
 
@@ -64,7 +60,7 @@ const CharacterSelector = ({ selectedId, onSelect, language }) => {
     const selectedChar = getCharData(selectedId);
 
     return (
-        <div className="inline-block text-left" ref={containerRef}>
+        <div className="inline-block text-left" ref={containerRef} style={{ position: 'relative' }}>
             {/* Trigger Button */}
             <button
                 type="button"
@@ -89,17 +85,24 @@ const CharacterSelector = ({ selectedId, onSelect, language }) => {
                 </svg>
             </button>
 
-            {/* Dropdown Panel - Fixed Layout */}
+            {/* Dropdown Panel - Anchored to button */}
             {isOpen && (
                 <div
-                    className="fixed inset-x-0 z-50 flex justify-center pointer-events-none"
-                    style={{ top: `${dropdownPos.top}px` }}
+                    style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        left: 0,
+                        zIndex: 500,
+                        width: 'max-content',
+                        maxWidth: '90vw',
+                        maxHeight: 'calc(100vh - 200px)',
+                        overflowY: 'auto',
+                    }}
                 >
                     <div
-                        className="pointer-events-auto w-[90vw] max-w-[340px] sm:w-[480px] bg-white rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 overflow-hidden animate-fade-in origin-top"
-                        style={{ maxHeight: `calc(100vh - ${dropdownPos.top + 20}px)` }}
+                        className="bg-white rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 overflow-hidden animate-fade-in origin-top"
                     >
-                        <div className="p-3 space-y-2 overflow-y-auto max-h-[inherit]">
+                        <div className="p-3 space-y-2">
                             {UNITS.map((unit, idx) => (
                                 <div key={idx} className={`p-2 rounded-lg ${unit.bg}`}>
                                     <div className="flex flex-wrap justify-center gap-2">
@@ -124,7 +127,6 @@ const CharacterSelector = ({ selectedId, onSelect, language }) => {
                                                         alt={getCharName(charData)}
                                                         className="w-full h-full object-cover"
                                                     />
-                                                    {/* Selected overlay */}
                                                     {isSelected && (
                                                         <div className="absolute inset-0 bg-indigo-500/20 flex items-center justify-center">
                                                         </div>
