@@ -116,11 +116,15 @@ export const isWorldLinkCard = (card) => {
 
     if (card.type === 'World Link' || card.type === 'Unit Event Limited') return true;
 
-    if (date.getFullYear() < 2026) return false;
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+
+    // 월링 이벤트는 2023년 10월(3주년 이후)부터 시작
+    if (year < 2023 || (year === 2023 && month < 10)) return false;
 
     if (card.type === 'Term Limited') {
         const day = date.getDate();
-        const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        const lastDay = new Date(year, month, 0).getDate();
         return day > 7 && day <= lastDay - 7;
     }
 
@@ -139,7 +143,8 @@ export const getWorldLinkSeason = (card) => {
 
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
-    const season = month >= 9 ? year - 2022 : year - 2023;
+    // 주년(9월 30일)을 기점으로 게임 사이클이 변경되므로 10월(month >= 10)을 기준 분기로 설정
+    const season = month >= 10 ? year - 2022 : year - 2023;
 
     return season >= 1 ? season : null;
 };

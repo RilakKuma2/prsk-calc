@@ -414,7 +414,6 @@ const SupportDeckTab = () => {
     const [activeSlotIndex, setActiveSlotIndex] = useState(null);
     const [isMainDeckOpen, setIsMainDeckOpen] = useState(false);
     const [pickerCharId, setPickerCharId] = useState(1);
-    const [searchText, setSearchText] = useState('');
     const [bulkOpen, setBulkOpen] = useState(false);
     const [bulkMasterRank, setBulkMasterRank] = useState(5);
     const [bulkSkillLevel, setBulkSkillLevel] = useState(4);
@@ -503,23 +502,7 @@ const SupportDeckTab = () => {
             });
     }, [cards, pickerCharId]);
 
-    const modalCards = useMemo(() => {
-        const query = searchText.trim().toLowerCase();
-        if (!query) return pickerCharacterCards;
-
-        return pickerCharacterCards.filter(card => {
-            const fields = [
-                card.title,
-                card.title_kr,
-                card.type,
-                card.attribute,
-                card.skill_effect,
-                card.available_from,
-                String(card.id),
-            ];
-            return fields.some(field => String(field || '').toLowerCase().includes(query));
-        });
-    }, [searchText, pickerCharacterCards]);
+    const modalCards = pickerCharacterCards;
 
     const modalCardGroups = useMemo(() => {
         return PICKER_GROUPS.map(group => ({
@@ -636,7 +619,6 @@ const SupportDeckTab = () => {
         if (activeSlotIndex === null) return;
         updateSlot(activeSlotIndex, { cardId: card.id });
         setActiveSlotIndex(null);
-        setSearchText('');
     };
 
     const openCardPicker = (index) => {
@@ -648,7 +630,6 @@ const SupportDeckTab = () => {
         if (activeSlotIndex === null) return;
         updateSlot(activeSlotIndex, { cardId: null });
         setActiveSlotIndex(null);
-        setSearchText('');
     };
 
     const clearCurrentDeck = () => {
@@ -1489,20 +1470,9 @@ const SupportDeckTab = () => {
                 .support-modal-tools {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    justify-content: flex-end;
                     padding: 12px 14px;
                     border-bottom: 1px solid #e8eef6;
-                }
-
-                .support-search {
-                    flex: 1;
-                    min-width: 160px;
-                    width: auto !important;
-                    margin: 0 !important;
-                    border-radius: 8px;
-                    text-align: left;
-                    font-size: 14px;
-                    padding: 8px 10px;
                 }
 
                 .support-count {
@@ -1638,11 +1608,35 @@ const SupportDeckTab = () => {
                     }
 
                     .support-modal-header {
-                        grid-template-columns: 1fr;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 10px 12px;
+                        border-bottom: none;
+                    }
+
+                    .support-modal-header h3 {
+                        display: none;
+                    }
+
+                    .support-modal-header p {
+                        margin: 0;
+                        font-size: 13px;
+                        font-weight: 800;
+                        color: #475569;
                     }
 
                     .support-modal-actions {
                         justify-content: flex-end;
+                    }
+
+                    .support-picker-character-bar {
+                        padding: 10px 12px;
+                        border-bottom: none;
+                    }
+
+                    .support-modal-tools {
+                        padding: 8px 12px;
                     }
 
                     .support-picker-character-button {
@@ -1651,26 +1645,105 @@ const SupportDeckTab = () => {
                     }
 
                     .support-card-picker-grid {
-                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
                         gap: 8px;
                     }
 
                     .support-main-deck-grid {
-                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        gap: 8px;
+                    }
+
+                    .support-main-slot {
+                        padding: 6px;
+                    }
+
+                    .support-main-slot-header {
+                        font-size: 10px;
+                        margin-bottom: 6px;
+                    }
+
+                    .support-main-toggle {
+                        height: 26px;
+                        padding: 0 3px;
+                        font-size: 9px !important;
+                        gap: 2px;
+                    }
+
+                    .support-main-toggle::before {
+                        width: 8px;
+                        height: 8px;
+                    }
+
+                    .support-main-control-grid {
+                        gap: 4px;
+                    }
+
+                    .support-main-breakdown {
+                        font-size: 8px;
+                        gap: 2px;
+                        margin-top: 6px;
                     }
                 }
 
                 @media (max-width: 420px) {
                     .support-grid {
-                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        gap: 4px;
                     }
 
                     .support-card-picker-grid {
-                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
+                        gap: 4px;
+                    }
+
+                    .support-slot {
+                        padding: 4px;
+                    }
+
+                    .support-slot-controls {
+                        gap: 3px;
+                    }
+
+                    .support-select-button {
+                        padding: 0 3px;
+                        font-size: 9px !important;
                     }
 
                     .support-main-deck-grid {
-                        grid-template-columns: 1fr;
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        gap: 4px;
+                    }
+
+                    .support-main-slot {
+                        padding: 4px;
+                    }
+
+                    .support-main-slot-header {
+                        font-size: 9px;
+                        margin-bottom: 4px;
+                    }
+
+                    .support-main-toggle {
+                        height: 24px;
+                        padding: 0 2px;
+                        font-size: 8px !important;
+                        gap: 2px;
+                    }
+
+                    .support-main-toggle::before {
+                        width: 7px;
+                        height: 7px;
+                    }
+
+                    .support-main-control-grid {
+                        gap: 3px;
+                    }
+
+                    .support-main-breakdown {
+                        font-size: 7.5px;
+                        gap: 1.5px;
+                        margin-top: 4px;
                     }
                 }
             `}</style>
@@ -1955,7 +2028,6 @@ const SupportDeckTab = () => {
                                         className={`support-picker-character-button ${Number(pickerCharId) === Number(id) ? 'selected' : ''}`}
                                         onClick={() => {
                                             setPickerCharId(Number(id));
-                                            setSearchText('');
                                         }}
                                         title={name}
                                         aria-label={`${name} 카드 보기`}
@@ -1971,14 +2043,6 @@ const SupportDeckTab = () => {
                         </div>
 
                         <div className="support-modal-tools">
-                            <input
-                                type="search"
-                                className="support-search"
-                                value={searchText}
-                                onChange={(event) => setSearchText(event.target.value)}
-                                placeholder={t('support.search_placeholder')}
-                                autoFocus
-                            />
                             <span className="support-count">
                                 {cardsLoading ? t('support.loading') : cardsError || `${modalCards.length}장`}
                             </span>
