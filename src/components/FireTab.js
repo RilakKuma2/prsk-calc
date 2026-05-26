@@ -21,6 +21,74 @@ const getAllowedRanksSet = (includeWorldLinkRanks = false) => new Set(
   includeWorldLinkRanks ? [...BASE_ALLOWED_RANKS, 7000] : BASE_ALLOWED_RANKS
 );
 
+const normalizeEventLengthHours = (len) => {
+  const numericLen = Number(len || 0);
+  if (!Number.isFinite(numericLen) || numericLen <= 0) return 0;
+  return numericLen > 1000 ? numericLen / 3600 : numericLen;
+};
+
+const latestEventLengthHours = (latestEvent) => {
+  const startAt = latestEvent?.startAt || 0;
+  const aggregateAt = latestEvent?.aggregateAt || 0;
+  return startAt && aggregateAt ? (aggregateAt - startAt) / 3600000 : 0;
+};
+
+const normalizeEventInfo = (eventInfo, latestEvent) => {
+  if (eventInfo) {
+    return {
+      ...eventInfo,
+      event_type: eventInfo.event_type || eventInfo.eventType,
+      len: normalizeEventLengthHours(eventInfo.len),
+      asname: eventInfo.asname || eventInfo.assetbundleName,
+    };
+  }
+  if (!latestEvent) return null;
+
+  const startAt = latestEvent.startAt || 0;
+  const aggregateAt = latestEvent.aggregateAt || 0;
+  return {
+    id: latestEvent.id,
+    event_type: latestEvent.eventType || latestEvent.event_type,
+    name: latestEvent.name,
+    start: startAt ? startAt / 1000 : 0,
+    end: aggregateAt ? aggregateAt / 1000 : 0,
+    len: latestEventLengthHours(latestEvent),
+    asname: latestEvent.assetbundleName,
+  };
+};
+
+const applyLatestEventToEventInfo = (eventInfo, latestEvent, now = Date.now()) => {
+  if (!eventInfo || !latestEvent?.startAt || latestEvent.startAt > now) return eventInfo;
+  return {
+    ...eventInfo,
+    id: latestEvent.id || eventInfo.id,
+    asname: latestEvent.assetbundleName || eventInfo.asname,
+    event_type: latestEvent.eventType || latestEvent.event_type || eventInfo.event_type,
+    end: latestEvent.aggregateAt ? latestEvent.aggregateAt / 1000 : eventInfo.end,
+    start: latestEvent.startAt ? latestEvent.startAt / 1000 : eventInfo.start,
+    len: latestEventLengthHours(latestEvent) || normalizeEventLengthHours(eventInfo.len),
+  };
+};
+
+const mergeRankingsByHighestScore = (rankings = []) => {
+  const byRank = new Map();
+
+  for (const item of rankings) {
+    const rank = Number(item?.rank);
+    if (!Number.isFinite(rank)) continue;
+
+    const score = Number(item?.score || 0);
+    const previous = byRank.get(rank);
+    const previousScore = Number(previous?.score || 0);
+
+    if (!previous || score > previousScore) {
+      byRank.set(rank, { ...item, rank });
+    }
+  }
+
+  return Array.from(byRank.values()).sort((a, b) => a.rank - b.rank);
+};
+
 const FireTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
   const [score1, setScore1] = useState(surveyData.score1 || '');
@@ -194,8 +262,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         }
 
         const assetTop100 = assetJson?.top100?.rankings || [];
-        const assetBorders = assetJson?.border?.borderRankings || [];
-        const assetData = [...assetBorders, ...assetTop100];
+        const assetBorders = assetJson?.border?.borderRankings || assetJson?.border?.eventRankingBorders || [];
+        const assetData = mergeRankingsByHighestScore([...assetBorders, ...assetTop100]);
 
         if (assetJson?.fetchedAt) {
           const formattedDateStr = assetJson.fetchedAt.replace(' ', 'T') + '+09:00';
@@ -205,11 +273,15 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         }
 
         // 1. Determine Event IDs
-        const mainEventId = mainData.event_info?.id || 0;
-        const assetEventId = assetJson?.eventId ? parseInt(assetJson.eventId, 10) : ((assetData.length > 0 && assetData[0].eventId) ? assetData[0].eventId : 0);
+        const mainEventInfo = normalizeEventInfo(mainData.event_info, mainData.latest_event);
+        const assetEventInfo = normalizeEventInfo(assetJson?.event_info, assetJson?.latest_event);
+        const mainEventId = Number(mainEventInfo?.id || 0);
+        const assetEventId = assetJson?.eventId
+          ? Number(assetJson.eventId)
+          : Number(assetEventInfo?.id || ((assetData.length > 0 && assetData[0].eventId) ? assetData[0].eventId : 0));
 
         let finalData = [];
-        let mergedEventInfo = mainData.event_info;
+        let mergedEventInfo = mainEventInfo;
         let mergedUpdatedAt = mainData.updatedAt;
         let isStale = false;
 
@@ -230,6 +302,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           } else if (assetData.length > 0 && assetData[0].timestamp) {
             mergedUpdatedAt = new Date(assetData[0].timestamp).getTime();
           }
+          if (assetEventInfo) {
+            mergedEventInfo = assetEventInfo;
+          }
         } else if (mainEventId > assetEventId) {
           // Main API is newer (or asset data is old)
           if (mainData.data) {
@@ -240,6 +315,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             })).sort((a, b) => a.rank - b.rank);
           }
         } else {
+          if (assetEventInfo) {
+            mergedEventInfo = { ...(mergedEventInfo || {}), ...assetEventInfo };
+          }
           // Same Event - Merge
           const mainMap = new Map((mainData.data || []).map(i => [i.rank, i]));
           const assetMap = new Map(assetData.map(i => [i.rank, i]));
@@ -305,13 +383,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           }
         }
 
-        const latestEventForRanks = mainData.latest_event;
+        const latestEventForRanks = assetEventId >= mainEventId
+          ? (assetJson?.latest_event || mainData.latest_event)
+          : mainData.latest_event;
         const latestEventStartedForRanks = latestEventForRanks?.startAt && latestEventForRanks.startAt <= Date.now();
         const effectiveEventType = latestEventStartedForRanks
           ? (latestEventForRanks.eventType || latestEventForRanks.event_type || mergedEventInfo?.event_type)
           : mergedEventInfo?.event_type;
         const eventAllowedRanksSet = getAllowedRanksSet(effectiveEventType === 'world_bloom');
         finalData = finalData.filter(item => eventAllowedRanksSet.has(item.rank));
+        mergedEventInfo = applyLatestEventToEventInfo(mergedEventInfo, latestEventForRanks);
 
         setLastUpdated(mainData.updatedAt);
         setPredictionData(finalData);
@@ -320,8 +401,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         // [추가] World Link 챕터 데이터 처리
         if (mergedEventInfo && mergedEventInfo.event_type === 'world_bloom') {
           try {
+            setChaptersData([]);
             const [wlResponse, wbResponse] = await Promise.all([
-              fetch(`${process.env.REACT_APP_API_BASE_URL}/api/wlranking`),
+              fetch(`${process.env.REACT_APP_API_BASE_URL}/api/wlranking`).catch(() => null),
               fetch(`https://asset.rilaksekai.com/suite/worldBlooms.json`).catch(() => null)
             ]);
             
@@ -331,8 +413,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             }
 
             // 챕터 라이브 랭킹 (latest_ranking의 userWorldBloomChapterRankings 활용)
-            const top100Chapters = assetJson?.top100?.userWorldBloomChapterRankings || [];
-            const borderChapters = assetJson?.border?.userWorldBloomChapterRankingBorders || [];
+            const currentEventId = Number(mergedEventInfo.id || 0);
+            const isCurrentEventChapter = (ch) => (
+              !currentEventId || !ch.eventId || Number(ch.eventId) === currentEventId
+            );
+            const top100Chapters = (assetJson?.top100?.userWorldBloomChapterRankings || []).filter(isCurrentEventChapter);
+            const borderChapters = (assetJson?.border?.userWorldBloomChapterRankingBorders || []).filter(isCurrentEventChapter);
             
             const mergedChaptersMap = new Map();
             for (const ch of top100Chapters) {
@@ -363,9 +449,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               }
             }
 
-            if (wlResponse.ok) {
+            if (wlResponse && wlResponse.ok) {
               const wlData = await wlResponse.json();
-              if (wlData.chapters && wlData.chapters.length > 0) {
+              const wlEventInfo = normalizeEventInfo(wlData.event_info, wlData.latest_event);
+              if (
+                Number(wlEventInfo?.id || 0) === currentEventId &&
+                wlData.chapters &&
+                wlData.chapters.length > 0
+              ) {
                 setChaptersData(wlData.chapters);
               }
             }
@@ -374,11 +465,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           }
         } else if (mainData.chapters && mainData.chapters.length > 0) {
           setChaptersData(mainData.chapters);
+        } else {
+          setChaptersData([]);
+          setChapterLiveData([]);
         }
 
         if (mergedEventInfo) {
           // [추가] latest_event가 있고, 이미 시작했으면 그 정보를 사용 (배너 이미지, 종료 시간)
-          const latestEvent = mainData.latest_event;
+          const latestEvent = latestEventForRanks;
           const now = Date.now();
           if (latestEvent && latestEvent.startAt && latestEvent.startAt <= now) {
             // asname은 latest_event의 assetbundleName 사용
@@ -390,17 +484,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             }
             // start도 업데이트 (진행률 계산용)
             mergedEventInfo.start = latestEvent.startAt / 1000;
+            mergedEventInfo.len = latestEventLengthHours(latestEvent) || normalizeEventLengthHours(mergedEventInfo.len);
           }
           // latest_event가 아직 시작 전이면 event_info 그대로 사용
           setEventInfo(mergedEventInfo);
-          const diff = mergedEventInfo.end ? (mergedEventInfo.end * 1000 - now) : 0; // Ensure end exists and convert to ms if needed (mainData has epoch seconds usually)
-          // Wait, data.endsAt was used before. MainData usually provides endsAt (ms) or event_info.end (seconds). 
-          // Previous code: const diff = data.endsAt - now; 
-          // Let's use data.endsAt if available, else calc
-          if (mainData.endsAt) {
-            const timeDiff = mainData.endsAt - now;
-            setTimeRemaining(timeDiff > 0 ? timeDiff : 0);
-          }
+          const endMs = mergedEventInfo.end ? mergedEventInfo.end * 1000 : mainData.endsAt;
+          const timeDiff = endMs ? endMs - now : 0;
+          setTimeRemaining(timeDiff > 0 ? timeDiff : 0);
         }
 
         setLoading(false);
@@ -1106,11 +1196,23 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     // live_chapter_rankings 데이터를 맵으로 변환 (종합의 eventlivejp와 동일한 역할)
     let currentChapterRankings = [];
+    const currentEventId = Number(eventInfo?.id || 0);
+    const eventChapterLiveData = chapterLiveData.filter(ch => (
+      !currentEventId || !ch.eventId || Number(ch.eventId) === currentEventId
+    ));
+
     if (worldBloomsInfo && worldBloomsInfo.length > 0) {
       const chNum = selectedChapter.split('-')[1];
-      const wbChapter = worldBloomsInfo.find(wb => wb.chapterNo == chNum);
+      const wbChapter = worldBloomsInfo.find(wb => (
+        (!currentEventId || Number(wb.eventId) === currentEventId) &&
+        Number(wb.chapterNo) === Number(chNum)
+      ));
       if (wbChapter && wbChapter.gameCharacterId) {
-        const chapterLiveInfo = chapterLiveData.find(c => c.gameCharacterId == wbChapter.gameCharacterId);
+        const chapterLiveInfo = eventChapterLiveData.find(c => (
+          (c.chapterNo != null && Number(c.chapterNo) === Number(wbChapter.chapterNo)) ||
+          (c.worldBloomChapterNo != null && Number(c.worldBloomChapterNo) === Number(wbChapter.chapterNo)) ||
+          (c.gameCharacterId != null && Number(c.gameCharacterId) === Number(wbChapter.gameCharacterId))
+        ));
         if (chapterLiveInfo) {
           const top100 = chapterLiveInfo.rankings || [];
           const borders = chapterLiveInfo.borderRankings || [];
@@ -1120,18 +1222,18 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     }
     
     // 만약 worldBloomsInfo를 불러오지 못했거나 매핑 실패시 순서대로 폴백 (chapterLiveData가 새로운 포맷인 경우)
-    if (currentChapterRankings.length === 0 && chapterLiveData.length > 0 && chapterLiveData[0].gameCharacterId) {
+    if (currentChapterRankings.length === 0 && eventChapterLiveData.length > 0 && eventChapterLiveData[0].gameCharacterId) {
       const chNumStr = selectedChapter.split('-')[1];
       const chIndex = parseInt(chNumStr, 10) - 1;
-      if (!isNaN(chIndex) && chIndex >= 0 && chIndex < chapterLiveData.length) {
-        const fallbackInfo = chapterLiveData[chIndex];
+      if (!isNaN(chIndex) && chIndex >= 0 && chIndex < eventChapterLiveData.length) {
+        const fallbackInfo = eventChapterLiveData[chIndex];
         const top100 = fallbackInfo.rankings || [];
         const borders = fallbackInfo.borderRankings || [];
         currentChapterRankings = [...borders, ...top100];
       }
-    } else if (currentChapterRankings.length === 0 && chapterLiveData.length > 0 && !chapterLiveData[0].gameCharacterId) {
+    } else if (currentChapterRankings.length === 0 && eventChapterLiveData.length > 0 && !eventChapterLiveData[0].gameCharacterId) {
       // 기존 포맷(단일 배열) 폴백
-      currentChapterRankings = chapterLiveData;
+      currentChapterRankings = eventChapterLiveData;
     }
     const chapterLiveMap = new Map(currentChapterRankings.map(i => [i.rank, i]));
 

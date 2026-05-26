@@ -24,7 +24,7 @@ const PICKER_GROUPS = [
     { key: 'rarity4', label: '4성', matches: (card) => Number(card?.rarity) === 4 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
     { key: 'birthday', label: '생일', matches: (card) => card?.type === 'Birthday' || card?.type === 'Anniversary' },
     { key: 'rarity3', label: '3성', matches: (card) => Number(card?.rarity) === 3 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
-    { key: 'low', label: '2성이하', matches: (card) => Number(card?.rarity) <= 2 },
+    { key: 'low', label: '2성이하', matches: (card) => Number(card?.rarity) <= 2 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
 ];
 const MAIN_DECK_RARITY_OPTIONS = [
     { key: 'rarity4', label: '★4', typeBonus: 25, masterRankBonus: [10, 12.5, 15, 17.5, 20, 25], canPickup: true, memberBonus: 20, pickupBonus: 30 },
@@ -106,9 +106,8 @@ const calculateMainDeckSlotBonus = (slot) => {
     }
 
     const normalizedMasterRank = Math.max(0, Math.min(5, Number(slot.masterRank) || 0));
-    const hasMemberBonus = rarityOption.canPickup && (slot.pickup || slot.featured);
     const breakdown = {
-        member: hasMemberBonus ? (slot.pickup ? rarityOption.pickupBonus : rarityOption.memberBonus) : 0,
+        member: (rarityOption.canPickup && slot.pickup) ? rarityOption.pickupBonus : 0,
         character: slot.featured ? 25 : 0,
         type: slot.typeMatched ? rarityOption.typeBonus : 0,
         masterRank: rarityOption.masterRankBonus[normalizedMasterRank] || 0,
