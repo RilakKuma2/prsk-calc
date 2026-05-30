@@ -1,17 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import CharacterSelector from './common/CharacterSelector';
+import SupportCardThumbnail from './common/SupportCardThumbnail';
+import SupportCardPickerModal from './common/SupportCardPickerModal';
 import {
-    calculateSupportCardBonus,
-    formatSupportPercent,
-    getCardCharacterId,
+    SUPPORT_CHARACTERS,
+    parseSupportDate,
     getCardCharacterName,
-    getSupportRarityKey,
+    getCardCharacterId,
     getSupportUnitMemberIds,
-    getWorldLinkKoreanLabel,
+    isWorldLinkCard,
     getWorldLinkSeason,
     isSupportBonusWorldLinkCard,
-    parseSupportDate,
+    calculateSupportCardBonus,
+    formatSupportPercent,
+    getSupportRarityKey,
 } from '../utils/supportCardUtils';
 
 const SLOT_COUNT = 25;
@@ -19,7 +22,6 @@ const MAIN_DECK_SLOT_COUNT = 5;
 const MASTER_RANK_OPTIONS = [0, 1, 2, 3, 4, 5];
 const SKILL_LEVEL_OPTIONS = [1, 2, 3, 4];
 const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
-const MAIN_DECK_PREVIEW_FACE_URL = 'https://asset.rilaksekai.com/face/res021_no001_normal.webp';
 const PICKER_GROUPS = [
     { key: 'rarity4', label: '4성', matches: (card) => Number(card?.rarity) === 4 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
     { key: 'birthday', label: '생일', matches: (card) => card?.type === 'Birthday' || card?.type === 'Anniversary' },
@@ -127,119 +129,7 @@ const getMainDeckPreviewRarity = (rarityKey) => {
     return rarityKey ? 4 : 0;
 };
 
-const getCardTitle = (card) => {
-    if (!card) return '';
-    return card.title_kr || card.title || `#${card.id}`;
-};
-
-const getFaceSuffix = (card) => {
-    const rarity = Number(card?.rarity) || 0;
-    if (rarity <= 2 || card?.type === 'Birthday' || card?.type === 'Anniversary') return 'normal';
-    return 'after_training';
-};
-
-const getCardImageUrl = (card, suffix = getFaceSuffix(card)) => {
-    const characterId = String(getCardCharacterId(card) || 1).padStart(2, '0');
-    const cardImageId = String(card?.card_image_id || '001').padStart(3, '0');
-    return `https://asset.rilaksekai.com/face/res0${characterId}_no${cardImageId}_${suffix}.webp`;
-};
-
-const SupportCardThumbnail = ({
-    card,
-    selected = false,
-    compact = false,
-    picker = false,
-    showLevels = false,
-    masterRank = 0,
-    skillLevel = 1,
-}) => {
-    const [imageSrc, setImageSrc] = useState(() => getCardImageUrl(card));
-
-    useEffect(() => {
-        setImageSrc(getCardImageUrl(card));
-    }, [card]);
-
-    if (!card) return null;
-
-    const rarity = Number(card.rarity) || 1;
-    const isBirthday = card.type === 'Birthday' || card.type === 'Anniversary';
-    const isLowRarity = rarity <= 2;
-    const frameName = isBirthday ? 'cardFrame_bd.webp' : isLowRarity ? 'frame_2star.webp' : 'Frame.webp';
-    const starName = isBirthday ? 'rairity_birth.webp' : getFaceSuffix(card) === 'after_training' ? 'afterstar.webp' : 'star_normal.webp';
-    const wlLabel = getWorldLinkKoreanLabel(card);
-    const publicUrl = process.env.PUBLIC_URL || '';
-    const normalizedMasterRank = Math.max(0, Math.min(5, Number(masterRank) || 0));
-    const normalizedSkillLevel = Math.max(1, Math.min(4, Number(skillLevel) || 1));
-
-    return (
-        <div className={`support-card-thumb ${selected ? 'selected' : ''} ${compact ? 'compact' : ''} ${picker ? 'picker' : ''} ${showLevels ? 'with-levels' : ''}`}>
-            <img
-                className="support-card-face"
-                src={imageSrc}
-                alt={getCardTitle(card)}
-                loading="lazy"
-                onError={() => {
-                    if (imageSrc.includes('after_training')) {
-                        setImageSrc(getCardImageUrl(card, 'normal'));
-                    }
-                }}
-            />
-            <img
-                className="support-card-frame"
-                src={`${publicUrl}/assets/card_style/${frameName}`}
-                alt=""
-                loading="lazy"
-                aria-hidden="true"
-            />
-            <img
-                className="support-card-attribute"
-                src={`${publicUrl}/assets/card_style/${card.attribute}.webp`}
-                alt={card.attribute}
-                loading="lazy"
-            />
-            {isBirthday ? (
-                <img
-                    className="support-card-birthday"
-                    src={`${publicUrl}/assets/card_style/${starName}`}
-                    alt="birthday"
-                    loading="lazy"
-                />
-            ) : (
-                <div className="support-card-stars" aria-label={`${rarity} star`}>
-                    {Array.from({ length: Math.max(1, rarity) }, (_, index) => (
-                        <img
-                            key={index}
-                            src={`${publicUrl}/assets/card_style/${starName}`}
-                            alt=""
-                            loading="lazy"
-                            aria-hidden="true"
-                        />
-                    ))}
-                </div>
-            )}
-            {wlLabel && (
-                <div className="support-wl-badge">
-                    {wlLabel}
-                </div>
-            )}
-            {showLevels && (
-                <>
-                    <div className="support-skill-badge">SLV.{normalizedSkillLevel}</div>
-                    {normalizedMasterRank > 0 && (
-                        <img
-                            className="support-mastery-badge"
-                            src={`${publicUrl}/assets/card_style/masterRank_S_${normalizedMasterRank}.webp`}
-                            alt={`master rank ${normalizedMasterRank}`}
-                            loading="lazy"
-                        />
-                    )}
-                </>
-            )}
-        </div>
-    );
-};
-
-const MainDeckPreviewCard = ({ rarityKey, masterRank = 0 }) => {
+const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, card = null }) => {
     const publicUrl = process.env.PUBLIC_URL || '';
     const rarity = getMainDeckPreviewRarity(rarityKey);
     const isBirthday = rarityKey === 'birthday';
@@ -247,14 +137,23 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0 }) => {
     const frameName = isBirthday ? 'cardFrame_bd.webp' : isLowRarity ? 'frame_2star.webp' : 'Frame.webp';
     const starName = isBirthday ? 'rairity_birth.webp' : 'afterstar.webp';
     const normalizedMasterRank = Math.max(0, Math.min(5, Number(masterRank) || 0));
+    
+    // Use actual card face if a card is selected
+    const faceUrl = card 
+        ? `https://asset.rilaksekai.com/face/res0${String(getCardCharacterId(card) || 1).padStart(2, '0')}_no${String(card?.card_image_id || '001').padStart(3, '0')}_normal.webp`
+        : `https://asset.rilaksekai.com/face/res0${String(previewCharId).padStart(2, '0')}_no001_normal.webp`;
 
     return (
         <div className={`support-card-thumb support-main-preview-card with-levels ${rarityKey ? '' : 'empty'}`}>
             <img
                 className="support-card-face"
-                src={MAIN_DECK_PREVIEW_FACE_URL}
+                src={faceUrl}
                 alt="메인덱 미리보기"
                 loading="lazy"
+                onError={(e) => {
+                    // Fallback to 1-star face if something fails
+                    e.target.src = `https://asset.rilaksekai.com/face/res0${String(previewCharId).padStart(2, '0')}_no001_normal.webp`;
+                }}
             />
             <img
                 className="support-card-frame"
@@ -411,12 +310,23 @@ const SupportDeckTab = () => {
     const [cardsLoading, setCardsLoading] = useState(true);
     const [cardsError, setCardsError] = useState('');
     const [activeSlotIndex, setActiveSlotIndex] = useState(null);
+    const [activeMainSlotIndex, setActiveMainSlotIndex] = useState(null);
     const [isMainDeckOpen, setIsMainDeckOpen] = useState(false);
     const [pickerCharId, setPickerCharId] = useState(1);
     const [bulkOpen, setBulkOpen] = useState(false);
     const [bulkMasterRank, setBulkMasterRank] = useState(5);
     const [bulkSkillLevel, setBulkSkillLevel] = useState(4);
+    const [isCharPickerOpen, setIsCharPickerOpen] = useState(false);
+
+    const [calcPreviewCharId, setCalcPreviewCharId] = useState(() => {
+        const saved = localStorage.getItem('calcPreviewCharId');
+        return saved ? Number(saved) : 21;
+    });
     const bulkRef = useRef(null);
+
+    useEffect(() => {
+        localStorage.setItem('calcPreviewCharId', calcPreviewCharId);
+    }, [calcPreviewCharId]);
 
     useEffect(() => {
         try {
@@ -1264,7 +1174,6 @@ const SupportDeckTab = () => {
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
-                    gap: 5px;
                     cursor: pointer;
                     font-size: 11px;
                     font-weight: 900;
@@ -1284,21 +1193,7 @@ const SupportDeckTab = () => {
                     color: #047857;
                 }
 
-                .support-main-toggle::before {
-                    content: '';
-                    width: 12px;
-                    height: 12px;
-                    border: 1px solid currentColor;
-                    border-radius: 3px;
-                    background: #ffffff;
-                    box-sizing: border-box;
-                }
 
-                .support-main-toggle.active::before {
-                    background: #10b981;
-                    border-color: #10b981;
-                    box-shadow: inset 0 0 0 2px #ffffff;
-                }
 
                 .support-main-toggle:disabled {
                     cursor: not-allowed;
@@ -1420,52 +1315,6 @@ const SupportDeckTab = () => {
                     border-color: #f5bfd0;
                 }
 
-                .support-picker-character-bar {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 10px 14px;
-                    border-bottom: 1px solid #e8eef6;
-                    background: #ffffff;
-                    overflow-x: auto;
-                    scrollbar-width: none;
-                }
-
-                .support-picker-character-bar::-webkit-scrollbar {
-                    display: none;
-                }
-
-                .support-picker-character-button {
-                    width: 44px;
-                    height: 44px;
-                    flex: 0 0 auto;
-                    border: 1px solid #d5deea;
-                    border-radius: 50%;
-                    padding: 2px;
-                    background: #ffffff;
-                    cursor: pointer;
-                    overflow: hidden;
-                    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
-                }
-
-                .support-picker-character-button:hover {
-                    transform: translateY(-1px);
-                    border-color: #93c5fd;
-                }
-
-                .support-picker-character-button.selected {
-                    border-color: var(--support-blue);
-                    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-                }
-
-                .support-picker-character-button img {
-                    display: block;
-                    width: 100%;
-                    height: 100%;
-                    border-radius: 50%;
-                    object-fit: cover;
-                }
-
                 .support-modal-tools {
                     display: flex;
                     align-items: center;
@@ -1504,12 +1353,6 @@ const SupportDeckTab = () => {
                     color: var(--support-muted);
                     font-size: 11px;
                     font-weight: 800;
-                }
-
-                .support-card-picker-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-                    gap: 10px;
                 }
 
                 .support-card-picker-button {
@@ -1618,15 +1461,14 @@ const SupportDeckTab = () => {
                         display: none;
                     }
 
-                    .support-modal-header p {
-                        margin: 0;
-                        font-size: 13px;
-                        font-weight: 800;
-                        color: #475569;
-                    }
-
                     .support-modal-actions {
                         justify-content: flex-end;
+                        flex-shrink: 0;
+                        flex-wrap: nowrap;
+                    }
+
+                    .support-modal-header p {
+                        display: none;
                     }
 
                     .support-picker-character-bar {
@@ -1643,10 +1485,7 @@ const SupportDeckTab = () => {
                         height: 40px;
                     }
 
-                    .support-card-picker-grid {
-                        grid-template-columns: repeat(4, minmax(0, 1fr));
-                        gap: 8px;
-                    }
+
 
                     .support-main-deck-grid {
                         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1666,12 +1505,6 @@ const SupportDeckTab = () => {
                         height: 26px;
                         padding: 0 3px;
                         font-size: 9px !important;
-                        gap: 2px;
-                    }
-
-                    .support-main-toggle::before {
-                        width: 8px;
-                        height: 8px;
                     }
 
                     .support-main-control-grid {
@@ -1688,11 +1521,6 @@ const SupportDeckTab = () => {
                 @media (max-width: 420px) {
                     .support-grid {
                         grid-template-columns: repeat(3, minmax(0, 1fr));
-                        gap: 4px;
-                    }
-
-                    .support-card-picker-grid {
-                        grid-template-columns: repeat(4, minmax(0, 1fr));
                         gap: 4px;
                     }
 
@@ -1727,12 +1555,6 @@ const SupportDeckTab = () => {
                         height: 24px;
                         padding: 0 2px;
                         font-size: 8px !important;
-                        gap: 2px;
-                    }
-
-                    .support-main-toggle::before {
-                        width: 7px;
-                        height: 7px;
                     }
 
                     .support-main-control-grid {
@@ -1754,7 +1576,7 @@ const SupportDeckTab = () => {
                         onSelect={(id) => setSelectedCharId(Number(id))}
                         language={language}
                     />
-                    <span className="support-chip">25칸</span>
+                    <span className="support-chip">{t('support.slots_25')}</span>
                 </div>
 
                 <div className="support-summary">
@@ -1897,9 +1719,11 @@ const SupportDeckTab = () => {
                 <div className="support-modal-backdrop" onMouseDown={() => setIsMainDeckOpen(false)}>
                     <div className="support-modal support-main-modal" onMouseDown={(event) => event.stopPropagation()}>
                         <div className="support-modal-header">
-                            <div>
-                                <h3>메인덱</h3>
-                                <p>이벤트 {formatSupportPercent(displayTotalBonus)} · 배지 {formatSupportPercent(displayBadgeBonus)}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div>
+                                    <h3>{t('support.main_deck')}</h3>
+                                    <p>{t('support.event')} {formatSupportPercent(displayTotalBonus)} · {t('support.badge')} {formatSupportPercent(displayBadgeBonus)}</p>
+                                </div>
                             </div>
                             <div className="support-modal-actions">
                                 <button type="button" className="support-modal-close" onClick={applyMainTheoryDeck}>
@@ -1932,10 +1756,22 @@ const SupportDeckTab = () => {
                                                 <strong>{formatSupportPercent(bonus.total)}</strong>
                                             </div>
 
-                                            <div className="support-main-preview-wrap">
+                                            <div 
+                                                className="support-main-preview-wrap"
+                                                style={{ cursor: 'pointer', transition: 'transform 0.1s' }}
+                                                onClick={() => {
+                                                    setPickerCharId(calcPreviewCharId);
+                                                    setActiveMainSlotIndex(index);
+                                                }}
+                                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                title="카드 선택"
+                                            >
                                                 <MainDeckPreviewCard
                                                     rarityKey={slot.rarityKey}
                                                     masterRank={slot.masterRank}
+                                                    previewCharId={selectedCharId}
+                                                    card={slot.card}
                                                 />
                                             </div>
 
@@ -1998,98 +1834,41 @@ const SupportDeckTab = () => {
                 </div>
             )}
 
-            {activeSlotIndex !== null && (
-                <div className="support-modal-backdrop" onMouseDown={() => setActiveSlotIndex(null)}>
-                    <div className="support-modal" onMouseDown={(event) => event.stopPropagation()}>
-                        <div className="support-modal-header">
-                            <div>
-                                <h3>{getCardCharacterName(selectedCharId, language)} {t('support.card_select')}</h3>
-                                <p>{t('support.slot').replace('{{n}}', activeSlotIndex + 1)}</p>
-                            </div>
-                            <div className="support-modal-actions">
-                                <button type="button" className="support-modal-clear" onClick={clearSlot}>
-                                    {t('support.deselect')}
-                                </button>
-                                <button type="button" className="support-modal-close" onClick={() => setActiveSlotIndex(null)}>
-                                    {t('support.close')}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="support-picker-character-bar">
-                            {unitMemberIds.map(id => {
-                                const idText = String(id).padStart(2, '0');
-                                const name = getCardCharacterName(id, language);
-                                return (
-                                    <button
-                                        type="button"
-                                        key={id}
-                                        className={`support-picker-character-button ${Number(pickerCharId) === Number(id) ? 'selected' : ''}`}
-                                        onClick={() => {
-                                            setPickerCharId(Number(id));
-                                        }}
-                                        title={name}
-                                        aria-label={`${name} 카드 보기`}
-                                    >
-                                        <img
-                                            src={`${process.env.PUBLIC_URL}/assets/characters/${idText}.webp`}
-                                            alt={name}
-                                            loading="lazy"
-                                        />
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        <div className="support-modal-tools">
-                            <span className="support-count">
-                                {cardsLoading ? t('support.loading') : cardsError || `${modalCards.length}장`}
-                            </span>
-                        </div>
-
-                        <div className="support-modal-scroll custom-scrollbar">
-                            {!cardsLoading && !cardsError && modalCards.length > 0 && (
-                                <>
-                                    {modalCardGroups.map(group => (
-                                        <section className="support-picker-section" key={group.key}>
-                                            <h4 className="support-picker-heading">
-                                                {group.label}
-                                                <span>{group.cards.length}장</span>
-                                            </h4>
-                                            <div className="support-card-picker-grid">
-                                                {group.cards.map(card => (
-                                                    <button
-                                                        type="button"
-                                                        key={card.id}
-                                                        className="support-card-picker-button"
-                                                        onClick={() => selectCard(card)}
-                                                        title={getCardTitle(card)}
-                                                    >
-                                                        <SupportCardThumbnail
-                                                            card={card}
-                                                            selected={Number(activeSlot?.slot.cardId) === Number(card.id)}
-                                                            picker
-                                                        />
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </section>
-                                    ))}
-                                </>
-                            )}
-                            {!cardsLoading && !cardsError && modalCards.length === 0 && (
-                                <div className="support-empty-list">{t('support.no_cards')}</div>
-                            )}
-                            {cardsLoading && (
-                                <div className="support-empty-list">{t('support.loading_cards')}</div>
-                            )}
-                            {cardsError && (
-                                <div className="support-empty-list">{cardsError}</div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <SupportCardPickerModal
+                isOpen={activeSlotIndex !== null || activeMainSlotIndex !== null}
+                isMain={activeMainSlotIndex !== null}
+                activeIndex={activeMainSlotIndex !== null ? activeMainSlotIndex : (activeSlotIndex !== null ? activeSlotIndex : 0)}
+                onClose={() => {
+                    setActiveSlotIndex(null);
+                    setActiveMainSlotIndex(null);
+                }}
+                onClear={() => {
+                    if (activeMainSlotIndex !== null) {
+                        updateMainDeckSlot(activeMainSlotIndex, { card: null, rarityKey: '' });
+                    } else {
+                        clearSlot();
+                    }
+                }}
+                onSelectCard={(card) => {
+                    if (activeMainSlotIndex !== null) {
+                        const rarityKey = card.type === 'Birthday' || card.type === 'Anniversary' ? 'birthday' : `rarity${card.rarity}`;
+                        updateMainDeckSlot(activeMainSlotIndex, { card, rarityKey });
+                        setCalcPreviewCharId(getCardCharacterId(card));
+                        setActiveMainSlotIndex(null);
+                    } else {
+                        selectCard(card);
+                        setActiveSlotIndex(null);
+                    }
+                }}
+                selectedCharId={selectedCharId}
+                pickerCharId={pickerCharId}
+                setPickerCharId={setPickerCharId}
+                cards={cards}
+                cardsLoading={cardsLoading}
+                cardsError={cardsError}
+                unitMemberIds={unitMemberIds}
+                activeSlotCardId={activeMainSlotIndex !== null ? mainDeckSlots[activeMainSlotIndex]?.card?.id : activeSlot?.slot?.cardId}
+            />
         </div>
     );
 };

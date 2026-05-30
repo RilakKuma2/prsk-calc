@@ -13,7 +13,7 @@ const UNITS = [
 const CharacterSelector = ({ selectedId, onSelect, language }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
-    const [dropdownPos, setDropdownPos] = useState({ top: 0 });
+
 
     // Close on click outside & scroll & resize
     useEffect(() => {

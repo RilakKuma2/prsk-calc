@@ -1,10 +1,15 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
-import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateRawInternalValue, calculateInternalValue } from '../utils/deckUtils';
 import { loadDeckFromFriendCode } from '../utils/deckLoader';
 import { characterBirthdays } from '../data/characterBirthdays';
+import EventBonusCalculatorModal from './common/EventBonusCalculatorModal';
+import EventOverrideDropdown from './common/EventOverrideDropdown';
+import {
+    EVENT_ATTRS, EVENT_UNITS, ORIGINAL_CHAR_UNIT, VS_CHAR_IDS,
+    DEFAULT_AUTO_EVENT_OVERRIDE, loadAutoEventOverride, autoEventOverrideCache
+} from '../utils/eventInfoUtils';
 
 const AutoTab = lazy(() => import('./AutoTab'));
 const PowerTab = lazy(() => import('./PowerTab'));
@@ -19,143 +24,52 @@ const BLOOM_LEVELS = {
 };
 
 const SKILL_LEVEL_OPTIONS = [1, 2, 3, 4];
-const EVENT_ATTRS = [
-    { key: 'cute', label: '큐트', file: 'cute.webp', color: 'bg-pink-50 border-pink-200' },
-    { key: 'cool', label: '쿨', file: 'cool.webp', color: 'bg-blue-50 border-blue-200' },
-    { key: 'pure', label: '퓨어', file: 'pure.webp', color: 'bg-green-50 border-green-200' },
-    { key: 'happy', label: '해피', file: 'happy.webp', color: 'bg-orange-50 border-orange-200' },
-    { key: 'mysterious', label: '미스', file: 'mysterious.webp', color: 'bg-purple-50 border-purple-200' },
-    { key: 'wl', label: 'WL' },
-];
-const EVENT_UNITS = [
-    { key: 'light_sound', label: 'L/n', file: 'Lnlogo.webp', chars: [1, 2, 3, 4] },
-    { key: 'idol', label: 'MMJ', file: 'MMJlogo.webp', chars: [5, 6, 7, 8] },
-    { key: 'street', label: 'VBS', file: 'VBSlogo.webp', chars: [9, 10, 11, 12] },
-    { key: 'theme_park', label: 'WxS', file: 'WxSlogo.webp', chars: [13, 14, 15, 16] },
-    { key: 'school_refusal', label: '25시', file: '25jilogo.webp', chars: [17, 18, 19, 20] },
-];
-const ORIGINAL_CHAR_UNIT = {
-    1: 'light_sound', 2: 'light_sound', 3: 'light_sound', 4: 'light_sound',
-    5: 'idol', 6: 'idol', 7: 'idol', 8: 'idol',
-    9: 'street', 10: 'street', 11: 'street', 12: 'street',
-    13: 'theme_park', 14: 'theme_park', 15: 'theme_park', 16: 'theme_park',
-    17: 'school_refusal', 18: 'school_refusal', 19: 'school_refusal', 20: 'school_refusal',
-};
-const VS_CHAR_IDS = [21, 22, 23, 24, 25, 26];
-const EVENT_ASSET_BASE = 'https://asset.rilaksekai.com/suite';
-const EVENT_API_URL = 'https://api.rilaksekai.com/api/events';
-const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
-const DEFAULT_AUTO_EVENT_OVERRIDE = { attr: '', unit: '', isMix: false };
-let autoEventOverrideCache = null;
-let autoEventOverridePromise = null;
 
-const selectCurrentOrLatestEvent = (events, now = Date.now()) => {
-    const normalEvents = events.filter(event => event && event.eventType !== 'chapter');
-    const ongoingEvents = normalEvents.filter(event => (event.startAt || 0) <= now && now <= (event.aggregateAt || 0));
-    const candidates = ongoingEvents.length > 0 ? ongoingEvents : normalEvents;
-    return candidates
-        .slice()
-        .sort((a, b) => (b.startAt || 0) - (a.startAt || 0) || (b.id || 0) - (a.id || 0))[0];
-};
-
-const getCurrentEventBonusRows = (eventBonuses, currentEvent) => {
-    if (!currentEvent) return [];
-    return eventBonuses.filter(row => row.eventId === currentEvent.id);
-};
-
-const getEventUnitFromEvent = (event) => (
-    EVENT_UNITS.some(unit => unit.key === event?.unit) ? event.unit : ''
-);
-
-const getCardAttr = (card) => card?.cardAttr || card?.attr || card?.attribute || '';
-
-const getCardRarity = (card) => {
-    if (!card) return 0;
-    if (card.cardRarityType === 'rarity_birthday') return 5;
-    if (card.cardRarityType) return Number(String(card.cardRarityType).replace('rarity_', '')) || 0;
-    return Number(card.rarity) || 0;
-};
-
-const inferEventAttrFromCards = (event, cards = []) => {
-    const eventCardIds = new Set((event?.eventCards || []).map(card => Number(card?.id ?? card)));
-    if (eventCardIds.size === 0) return '';
-
-    const eventCards = cards.filter(card => eventCardIds.has(Number(card.id)));
-    const highRarityCards = eventCards.filter(card => getCardRarity(card) >= 3);
-    const attrCards = highRarityCards.length > 0 ? highRarityCards : eventCards;
-    const counts = attrCards.reduce((acc, card) => {
-        const attr = getCardAttr(card);
-        if (attr) acc[attr] = (acc[attr] || 0) + 1;
-        return acc;
-    }, {});
-
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-};
-
-const inferCurrentEventOverride = (events, eventBonuses, gameCharacterUnits, cards = []) => {
-    const currentEvent = selectCurrentOrLatestEvent(events);
-    if (!currentEvent) return { attr: '', unit: '', isMix: false };
-
-    const gameCharacterUnitById = new Map(gameCharacterUnits.map(unit => [unit.id, unit]));
-    const rows = getCurrentEventBonusRows(eventBonuses, currentEvent);
-    const fallbackUnit = getEventUnitFromEvent(currentEvent);
-    const attr = currentEvent.eventType === 'world_bloom'
-        ? 'wl'
-        : (rows.find(row => row.cardAttr)?.cardAttr || inferEventAttrFromCards(currentEvent, cards));
-    const characterUnits = rows
-        .map(row => gameCharacterUnitById.get(row.gameCharacterUnitId))
-        .filter(Boolean);
-    const originalUnits = new Set(
-        characterUnits
-            .map(unit => ORIGINAL_CHAR_UNIT[unit.gameCharacterId])
-            .filter(Boolean)
-    );
-    const virtualSingerUnits = new Set(
-        characterUnits
-            .filter(unit => unit.gameCharacterId >= 21 && EVENT_UNITS.some(eventUnit => eventUnit.key === unit.unit))
-            .map(unit => unit.unit)
-    );
-    const unit = originalUnits.size === 1
-        ? [...originalUnits][0]
-        : (originalUnits.size === 0 && virtualSingerUnits.size === 1 ? [...virtualSingerUnits][0] : '');
-
-    return {
-        attr,
-        unit: unit || fallbackUnit,
-        isMix: !unit && !fallbackUnit && characterUnits.length > 0,
-    };
-};
-
-const loadAutoEventOverride = async () => {
-    if (autoEventOverrideCache) return autoEventOverrideCache;
-    if (!autoEventOverridePromise) {
-        autoEventOverridePromise = Promise.all([
-            fetch(EVENT_API_URL, { cache: 'no-store' }).then(res => res.json()),
-            fetch(`${EVENT_ASSET_BASE}/eventDeckBonuses.json`).then(res => res.json()),
-            fetch(`${EVENT_ASSET_BASE}/gameCharacterUnits.json`).then(res => res.json()),
-        ]).then(([events, eventBonuses, gameCharacterUnits]) => {
-            const currentEvent = selectCurrentOrLatestEvent(events);
-            if (getCurrentEventBonusRows(eventBonuses, currentEvent).length > 0) {
-                autoEventOverrideCache = inferCurrentEventOverride(events, eventBonuses, gameCharacterUnits);
-                return autoEventOverrideCache;
-            }
-            return fetch(CARD_API_URL, { cache: 'no-store' })
-                .then(res => res.json())
-                .then(cards => {
-                    autoEventOverrideCache = inferCurrentEventOverride(events, eventBonuses, gameCharacterUnits, cards);
-                    return autoEventOverrideCache;
-                });
-        }).catch(err => {
-            autoEventOverridePromise = null;
-            throw err;
-        });
-    }
-    return autoEventOverridePromise;
-};
 
 const ResultTabFallback = () => (
     <div className="flex justify-center py-6 text-sm font-medium text-gray-400">
         불러오는 중...
+    </div>
+);
+
+const DECK_INPUT_CLASS = 'deck-input-control w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500';
+const DECK_LOADED_CONTROL_CLASS = 'deck-loaded-control w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors';
+
+const DeckInputSection = ({ children, className = '' }) => (
+    <div className={`deck-input-section ${className}`}>
+        {children}
+    </div>
+);
+
+const DeckInputHeader = ({ label, extraHeader }) => (
+    <div className="deck-input-header">
+        <div className="deck-input-label-cell" />
+        <div className="deck-input-center-cell">
+            <span className="font-bold text-gray-700">{label}</span>
+        </div>
+        <div className="deck-input-side-cell deck-input-header-side">
+            {extraHeader && (
+                <span className="font-bold text-xs text-indigo-600">{extraHeader}</span>
+            )}
+        </div>
+    </div>
+);
+
+const DeckInputRow = ({ label, side, children }) => (
+    <div className="deck-input-row">
+        <div className="deck-input-label-cell">
+            <label className="whitespace-nowrap font-bold text-gray-700">{label}</label>
+        </div>
+        <div className="deck-input-center-cell">
+            {children}
+        </div>
+        <div className="deck-input-side-cell">
+            {side && (
+                <div className="deck-input-side-content">
+                    {side}
+                </div>
+            )}
+        </div>
     </div>
 );
 
@@ -221,95 +135,7 @@ const SkillLevelDropdown = ({ value, onChange }) => {
     );
 };
 
-const EventOverrideDropdown = ({ value, options, onChange, assetPath, iconOnly = false, extraOptions = [], autoOption = null }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const containerRef = useRef(null);
-    const allOptions = [...options, ...extraOptions];
-    const selected = allOptions.find(option => option.key === value);
-    const displayOption = selected || autoOption;
-    const isAutoSelected = !value;
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen]);
-
-    const handleSelect = (nextValue) => {
-        onChange(nextValue);
-        setIsOpen(false);
-    };
-
-    return (
-        <div className="relative" ref={containerRef}>
-            <button
-                type="button"
-                onClick={() => setIsOpen(prev => !prev)}
-                className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-left shadow-sm transition-colors hover:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
-            >
-                <span className="flex min-w-0 items-center gap-1.5">
-                    {displayOption?.file ? (
-                        <img
-                            src={`${process.env.PUBLIC_URL}/assets/event/${assetPath}/${displayOption.file}`}
-                            alt={displayOption.label}
-                            className={`${iconOnly ? 'h-6 w-7' : 'h-5 w-5'} shrink-0 object-contain`}
-                        />
-                    ) : (
-                        <span className="truncate text-sm font-bold text-gray-700">{displayOption?.label || '자동'}</span>
-                    )}
-                    {displayOption?.file && !iconOnly && (
-                        <span className="truncate text-sm font-bold text-gray-700">{displayOption.label}</span>
-                    )}
-                    {isAutoSelected && displayOption && (
-                        <span className="shrink-0 text-[10px] font-bold text-gray-400">(자동)</span>
-                    )}
-                </span>
-                <svg className={`ml-1 h-3 w-3 shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-            {isOpen && (
-                <div className="absolute left-0 top-full z-[60] mt-1 w-full overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-black/10">
-                    <div className={iconOnly ? 'grid grid-cols-3 gap-1 p-1.5' : ''}>
-                        <button
-                            type="button"
-                            onClick={() => handleSelect('')}
-                            className={`${iconOnly ? 'flex h-9 items-center justify-center rounded-md px-1 text-xs' : 'flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm'} font-bold transition-colors ${!value ? 'bg-indigo-50 text-indigo-700' : 'text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700'}`}
-                            title="자동"
-                        >
-                            자동
-                        </button>
-                        {allOptions.map(option => (
-                            <button
-                                key={option.key}
-                                type="button"
-                                onClick={() => handleSelect(option.key)}
-                                className={`${iconOnly ? 'flex h-9 items-center justify-center rounded-md px-1 text-xs' : 'flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm'} font-bold transition-colors ${value === option.key ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'}`}
-                                title={option.label}
-                            >
-                                {option.file ? (
-                                    <img
-                                        src={`${process.env.PUBLIC_URL}/assets/event/${assetPath}/${option.file}`}
-                                        alt={option.label}
-                                        className={`${iconOnly ? 'h-6 w-8' : 'h-5 w-5'} object-contain`}
-                                    />
-                                ) : (
-                                    option.label
-                                )}
-                                {!iconOnly && option.file && option.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
 
 function DeckTab({ surveyData, setSurveyData, subPath }) {
     const { t, language } = useTranslation();
@@ -329,6 +155,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     // Load Friend Code Modal State
     const [showLoadModal, setShowLoadModal] = useState(false);
+    const [showEventBonusCalc, setShowEventBonusCalc] = useState(false);
     const [manualEventBonusDecks, setManualEventBonusDecks] = useState({});
     const [focusedManualSkill, setFocusedManualSkill] = useState(null);
     const [eventOverride, setEventOverride] = useState({ attr: '', unit: '', detailOpen: false, characters: {}, characterOrder: [] });
@@ -1228,6 +1055,85 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const autoUnitOption = autoEventOverride.unit
         ? EVENT_UNITS.find(unit => unit.key === autoEventOverride.unit)
         : (autoEventOverride.isMix ? { key: 'mix', label: '스까' } : null);
+    const isEventBonusLoadedControl = hasLoadedData && eventBonus && !isManualEventBonusEdit;
+
+    const renderBloomLevelSelect = (memberKey) => (
+        useBloomFes ? (
+            <select
+                value={bloomLevels[memberKey] || 0}
+                onChange={(e) => updateBloomLevel(memberKey, Number(e.target.value))}
+                className="text-sm px-2 py-1 border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-300 min-w-[60px]"
+            >
+                <option value={0}>{t('auto.bloom_level_none') || 'X'}</option>
+                <option value={1}>{t('auto.bloom_level_1') || 'LV.1'}</option>
+                <option value={2}>{t('auto.bloom_level_2') || 'LV.2'}</option>
+                <option value={3}>{t('auto.bloom_level_3') || 'LV.3'}</option>
+                <option value={4}>{t('auto.bloom_level_4') || 'LV.4'}</option>
+            </select>
+        ) : null
+    );
+
+    const renderLoadedSkillLevel = (memberKey) => (
+        currentDeck.loadedSkillLevels?.[memberKey] ? (
+            <SkillLevelDropdown
+                value={currentDeck.loadedSkillLevels[memberKey]}
+                onChange={(level) => updateDeckLoadedSkillLevel(memberKey, level)}
+            />
+        ) : null
+    );
+
+    const renderSkillControl = (memberKey, value, deckKey, placeholder) => {
+        const range = getEffectiveSkillRange(memberKey);
+        if (range) {
+            const isLoaded = !!(
+                currentDeck.loadedSkillLevels?.[memberKey] ||
+                currentDeck.loadedBloomFesOriginalMembers?.[memberKey] ||
+                currentDeck.loadedVSBloomFesMembers?.[memberKey]
+            );
+            const colorClass = isLoaded
+                ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+
+            return (
+                <div
+                    className={`${DECK_LOADED_CONTROL_CLASS} ${colorClass}`}
+                    onClick={() => isLoaded && switchBloomFesToManual(memberKey)}
+                    title={isLoaded ? '클릭하여 직접 입력' : undefined}
+                >
+                    {range.min === range.max ? `${range.min}%` : `${range.min}~${range.max}%`}
+                </div>
+            );
+        }
+
+        return (
+            <input
+                type="number"
+                value={value !== null && value !== undefined ? value : ''}
+                onChange={(e) => {
+                    let val = e.target.value;
+                    if (val !== '' && Number(val) > 160) {
+                        val = '160';
+                    }
+                    updateDeck(deckKey, val === '' ? '' : Number(val));
+                }}
+                onFocus={(e) => {
+                    e.target.select();
+                    setFocusedManualSkill(null);
+                }}
+                className={DECK_INPUT_CLASS}
+                placeholder={placeholder}
+                autoFocus={focusedManualSkill === memberKey}
+            />
+        );
+    };
+
+    const renderSkillSide = (memberKey) => (
+        <>
+            {!getEffectiveSkillRange(memberKey) && <span className="text-gray-600">%</span>}
+            {renderBloomLevelSelect(memberKey)}
+            {renderLoadedSkillLevel(memberKey)}
+        </>
+    );
 
     return (
         <div id="deck-tab-content">
@@ -1373,262 +1279,161 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             </div>
 
             {/* Shared Input Section */}
-            <InputTableWrapper className={`deck-input-section ${hasLoadedSkillButtons ? 'deck-input-loaded-skills' : ''}`}>
-                <InputRow
-                    label={t('auto.total_power')}
-                    value={totalPower !== null && totalPower !== undefined ? totalPower : ''}
-                    onChange={(e) => {
-                        let val = e.target.value;
-                        if (val !== '' && Number(val) >= 500000) {
-                            val = '480000';
-                        }
-                        updateDeck('totalPower', val === '' ? '' : Number(val));
-                    }}
-                    onBlur={(e) => {
-                        const valStr = e.target.value;
-                        if (valStr === '') return;
-                        const val = Number(valStr);
-                        if (val > 0 && val <= 50) {
-                            updateDeck('totalPower', val * 10000);
-                        } else if (val >= 100 && val <= 500) {
-                            updateDeck('totalPower', val * 1000);
-                        } else if (val >= 1000 && val <= 5000) {
-                            updateDeck('totalPower', val * 100);
-                        } else if (val >= 10000 && val <= 47000) {
-                            updateDeck('totalPower', val * 10);
-                        }
-                    }}
-                    placeholder="293231"
-                    spacer={true}
-                    loaded={hasLoadedData && totalPower ? { onClear: () => updateDeck('totalPower', '') } : undefined}
-                />
-                <SectionHeaderRow
+            <DeckInputSection className={hasLoadedSkillButtons ? 'deck-input-loaded-skills' : ''}>
+                <DeckInputRow label={t('auto.total_power')}>
+                    {hasLoadedData && totalPower ? (
+                        <div
+                            className={`${DECK_LOADED_CONTROL_CLASS} bg-indigo-50 text-indigo-700 hover:bg-indigo-100`}
+                            onClick={() => updateDeck('totalPower', '')}
+                            title="클릭하여 직접 입력"
+                        >
+                            {totalPower}
+                        </div>
+                    ) : (
+                        <input
+                            type="number"
+                            value={totalPower !== null && totalPower !== undefined ? totalPower : ''}
+                            onChange={(e) => {
+                                let val = e.target.value;
+                                if (val !== '' && Number(val) >= 500000) {
+                                    val = '480000';
+                                }
+                                updateDeck('totalPower', val === '' ? '' : Number(val));
+                            }}
+                            onBlur={(e) => {
+                                const valStr = e.target.value;
+                                if (valStr === '') return;
+                                const val = Number(valStr);
+                                if (val > 0 && val <= 50) {
+                                    updateDeck('totalPower', val * 10000);
+                                } else if (val >= 100 && val <= 500) {
+                                    updateDeck('totalPower', val * 1000);
+                                } else if (val >= 1000 && val <= 5000) {
+                                    updateDeck('totalPower', val * 100);
+                                } else if (val >= 10000 && val <= 47000) {
+                                    updateDeck('totalPower', val * 10);
+                                }
+                            }}
+                            placeholder="293231"
+                            onFocus={(e) => e.target.select()}
+                            className={DECK_INPUT_CLASS}
+                        />
+                    )}
+                </DeckInputRow>
+
+                <DeckInputHeader
                     label={t('auto.member_skills')}
-                    spacer={!useBloomFes}
                     extraHeader={useBloomFes ? (t('auto.bloom_skill') || '블룸각전') : null}
                 />
 
-                {/* Leader skill input with bloom selector */}
-                <tr>
-                    <td className="text-right pr-2 py-0" style={{ verticalAlign: 'middle' }}>
-                        <label className="whitespace-nowrap font-bold text-gray-700">{t('auto.leader')}</label>
-                    </td>
-                    <td className="text-left py-0">
-                        <div className="flex items-center gap-1">
-                            {/* 불러오기: 파란색(indigo) / 블룸페스 수동 체크: 초록색으로 구분 */}
-                            {(() => {
-                                const r = getEffectiveSkillRange('leader');
-                                if (r) {
-                                    const isLoaded = !!(currentDeck.loadedSkillLevels?.['leader'] || currentDeck.loadedBloomFesOriginalMembers?.['leader'] || currentDeck.loadedVSBloomFesMembers?.['leader']);
-                                    const colorClass = isLoaded
-                                        ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
-                                    return (
-                                        <div
-                                            className={`deck-loaded-control w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors ${colorClass}`}
-                                            onClick={() => isLoaded && switchBloomFesToManual('leader')}
-                                            title={isLoaded ? '클릭하여 직접 입력' : undefined}
-                                        >
-                                            {r.min === r.max ? `${r.min}%` : `${r.min}~${r.max}%`}
-                                        </div>
-                                    );
-                                }
-                                return (
-                                    <>
-                                        <input
-                                            type="number"
-                                            value={skillLeader !== null && skillLeader !== undefined ? skillLeader : ''}
-                                            onChange={(e) => {
-                                                let val = e.target.value;
-                                                if (val !== '' && Number(val) > 160) {
-                                                    val = '160';
-                                                }
-                                                updateDeck('skillLeader', val === '' ? '' : Number(val));
-                                            }}
-                                            onFocus={(e) => {
-                                                e.target.select();
-                                                setFocusedManualSkill(null);
-                                            }}
-                                            className="w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                            placeholder="120"
-                                            autoFocus={focusedManualSkill === 'leader'}
-                                        />
-                                        <span className="ml-1 text-gray-600">%</span>
-                                    </>
-                                );
-                            })()}
-                        </div>
-                    </td>
-                    <td className="pl-1 flex gap-1">
-                        {useBloomFes && (
-                            <select
-                                value={bloomLevels.leader || 0}
-                                onChange={(e) => updateBloomLevel('leader', Number(e.target.value))}
-                                className="text-sm px-2 py-1 border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-300 min-w-[60px]"
-                            >
-                                <option value={0}>{t('auto.bloom_level_none') || 'X'}</option>
-                                <option value={1}>{t('auto.bloom_level_1') || 'LV.1'}</option>
-                                <option value={2}>{t('auto.bloom_level_2') || 'LV.2'}</option>
-                                <option value={3}>{t('auto.bloom_level_3') || 'LV.3'}</option>
-                                <option value={4}>{t('auto.bloom_level_4') || 'LV.4'}</option>
-                            </select>
-                        )}
-                        {currentDeck.loadedSkillLevels?.['leader'] && (
-                            <SkillLevelDropdown
-                                value={currentDeck.loadedSkillLevels['leader']}
-                                onChange={(level) => updateDeckLoadedSkillLevel('leader', level)}
-                            />
-                        )}
-                    </td>
-                    {!useBloomFes && !currentDeck.loadedSkillLevels?.['leader'] && <td className="w-8"></td>}
-                </tr>
+                <DeckInputRow
+                    label={t('auto.leader')}
+                    side={renderSkillSide('leader')}
+                >
+                    {renderSkillControl('leader', skillLeader, 'skillLeader', '120')}
+                </DeckInputRow>
 
-                {/* Member skill inputs with bloom selectors */}
                 {[
                     { label: t('auto.member_2'), val: skillMember2, key: 'skillMember2', bloomKey: 'member2' },
                     { label: t('auto.member_3'), val: skillMember3, key: 'skillMember3', bloomKey: 'member3' },
                     { label: t('auto.member_4'), val: skillMember4, key: 'skillMember4', bloomKey: 'member4' },
                     { label: t('auto.member_5'), val: skillMember5, key: 'skillMember5', bloomKey: 'member5' },
                 ].map((m, i) => (
-                    <tr key={i}>
-                        <td className="text-right pr-2 py-0" style={{ verticalAlign: 'middle' }}>
-                            <label className="whitespace-nowrap font-bold text-gray-700">{m.label}</label>
-                        </td>
-                        <td className="text-left py-0">
-                            <div className="flex items-center gap-1">
-                                {/* 불러오기: 파란색(indigo) / 블룸페스 수동 체크: 초록색으로 구분 */}
-                                {(() => {
-                                    const r = getEffectiveSkillRange(m.bloomKey);
-                                    if (r) {
-                                        const isLoaded = !!(currentDeck.loadedSkillLevels?.[m.bloomKey] || currentDeck.loadedBloomFesOriginalMembers?.[m.bloomKey] || currentDeck.loadedVSBloomFesMembers?.[m.bloomKey]);
-                                        const colorClass = isLoaded
-                                            ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
-                                        return (
-                                            <div
-                                                className={`deck-loaded-control w-28 text-center rounded-lg px-2 py-1.5 font-medium cursor-pointer transition-colors ${colorClass}`}
-                                                onClick={() => isLoaded && switchBloomFesToManual(m.bloomKey)}
-                                                title={isLoaded ? '클릭하여 직접 입력' : undefined}
-                                            >
-                                                {r.min === r.max ? `${r.min}%` : `${r.min}~${r.max}%`}
-                                            </div>
-                                        );
-                                    }
-                                    return (
-                                        <>
-                                            <input
-                                                type="number"
-                                                value={m.val !== null && m.val !== undefined ? m.val : ''}
-                                                onChange={(e) => {
-                                                    let val = e.target.value;
-                                                    if (val !== '' && Number(val) > 160) {
-                                                        val = '160';
-                                                    }
-                                                    updateDeck(m.key, val === '' ? '' : Number(val));
-                                                }}
-                                                onFocus={(e) => {
-                                                    e.target.select();
-                                                    setFocusedManualSkill(null);
-                                                }}
-                                                className="w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                placeholder="100"
-                                                autoFocus={focusedManualSkill === m.bloomKey}
-                                            />
-                                            <span className="ml-1 text-gray-600">%</span>
-                                        </>
-                                    );
-                                })()}
-                            </div>
-                        </td>
-                        <td className="pl-1 flex gap-1">
-                            {useBloomFes && (
-                                <select
-                                    value={bloomLevels[m.bloomKey] || 0}
-                                    onChange={(e) => updateBloomLevel(m.bloomKey, Number(e.target.value))}
-                                    className="text-sm px-2 py-1 border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-300 min-w-[60px]"
-                                >
-                                    <option value={0}>{t('auto.bloom_level_none') || 'X'}</option>
-                                    <option value={1}>{t('auto.bloom_level_1') || 'LV.1'}</option>
-                                    <option value={2}>{t('auto.bloom_level_2') || 'LV.2'}</option>
-                                    <option value={3}>{t('auto.bloom_level_3') || 'LV.3'}</option>
-                                    <option value={4}>{t('auto.bloom_level_4') || 'LV.4'}</option>
-                                </select>
-                            )}
-                            {currentDeck.loadedSkillLevels?.[m.bloomKey] && (
-                                <SkillLevelDropdown
-                                    value={currentDeck.loadedSkillLevels[m.bloomKey]}
-                                    onChange={(level) => updateDeckLoadedSkillLevel(m.bloomKey, level)}
-                                />
-                            )}
-                        </td>
-                        {!useBloomFes && !currentDeck.loadedSkillLevels?.[m.bloomKey] && <td className="w-8"></td>}
-                    </tr>
+                    <DeckInputRow
+                        key={i}
+                        label={m.label}
+                        side={renderSkillSide(m.bloomKey)}
+                    >
+                        {renderSkillControl(m.bloomKey, m.val, m.key, '100')}
+                    </DeckInputRow>
                 ))}
-                <InputRow
-                    label={t('auto.event_bonus')}
-                    value={eventBonus !== null && eventBonus !== undefined ? eventBonus : ''}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        updateDeck('eventBonus', val === '' ? '' : Number(val));
-                    }}
-                    suffix="%"
-                    placeholder="250"
-                    spacer={true}
-                    autoFocus={isManualEventBonusEdit}
-                    loaded={hasLoadedData && eventBonus && !isManualEventBonusEdit ? {
-                        onEdit: () => setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: true }))
-                    } : undefined}
-                />
 
-                {/* Bloom Fes Awakening Checkbox + Reset Button */}
-                <tr>
-                    <td colSpan="3" className="pt-2 pb-0">
-                        <div className="flex items-center justify-center gap-3">
-                            {/* 블룸페스 각전 토글 */}
-                            <div className="flex items-center gap-1.5">
-                                <span className={`text-xs font-medium transition-colors duration-200 ${useBloomFes ? 'text-indigo-600' : 'text-gray-400'}`}>
-                                    {t('auto.bloom_fes_awakening') || '블룸페스 각전'}
-                                </span>
-                                <button
-                                    role="switch"
-                                    aria-checked={useBloomFes}
-                                    onClick={() => updateUseBloomFes(!useBloomFes)}
-                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${useBloomFes
-                                            ? 'bg-gradient-to-r from-indigo-500 to-purple-500'
-                                            : 'bg-gray-200'
-                                        }`}
-                                >
-                                    <span
-                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${useBloomFes ? 'translate-x-4' : 'translate-x-0'
-                                            }`}
-                                    />
-                                </button>
-                            </div>
-                            {hasAnyVisibleLoaded && (
-                                <button
-                                    onClick={handleResetLoadedData}
-                                    title="불러온 값 초기화"
-                                    className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-600 transition-all duration-150 shadow-sm hover:shadow"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2.5"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="w-3.5 h-3.5"
-                                    >
-                                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                        <path d="M3 3v5h5" />
-                                    </svg>
-                                </button>
-                            )}
+                <DeckInputRow
+                    label={t('auto.event_bonus')}
+                    side={
+                        <div className="flex items-center gap-1.5">
+                            {!isEventBonusLoadedControl && <span className="text-gray-600">%</span>}
+                            <button 
+                                onClick={() => setShowEventBonusCalc(true)}
+                                className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-gray-700 transition-colors"
+                                title="이벤트 배율 계산기"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+                                </svg>
+                            </button>
                         </div>
-                    </td>
-                </tr>
-            </InputTableWrapper>
+                    }
+                >
+                    {isEventBonusLoadedControl ? (
+                        <div
+                            className={`${DECK_LOADED_CONTROL_CLASS} bg-indigo-50 text-indigo-700 hover:bg-indigo-100`}
+                            onClick={() => setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: true }))}
+                            title="클릭하여 직접 입력"
+                        >
+                            {eventBonus}<span className="text-xs ml-0.5">%</span>
+                        </div>
+                    ) : (
+                        <input
+                            type="number"
+                            value={eventBonus !== null && eventBonus !== undefined ? eventBonus : ''}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                updateDeck('eventBonus', val === '' ? '' : Number(val));
+                            }}
+                            placeholder="250"
+                            onFocus={(e) => e.target.select()}
+                            className={DECK_INPUT_CLASS}
+                            autoFocus={isManualEventBonusEdit}
+                        />
+                    )}
+                </DeckInputRow>
+
+                <div className="deck-input-actions">
+                    <div className="flex items-center justify-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                            <span className={`text-xs font-medium transition-colors duration-200 ${useBloomFes ? 'text-indigo-600' : 'text-gray-400'}`}>
+                                {t('auto.bloom_fes_awakening') || '블룸페스 각전'}
+                            </span>
+                            <button
+                                role="switch"
+                                aria-checked={useBloomFes}
+                                onClick={() => updateUseBloomFes(!useBloomFes)}
+                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${useBloomFes
+                                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                                        : 'bg-gray-200'
+                                    }`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${useBloomFes ? 'translate-x-4' : 'translate-x-0'
+                                        }`}
+                                />
+                            </button>
+                        </div>
+                        {hasAnyVisibleLoaded && (
+                            <button
+                                onClick={handleResetLoadedData}
+                                title="불러온 값 초기화"
+                                className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-600 transition-all duration-150 shadow-sm hover:shadow"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="w-3.5 h-3.5"
+                                >
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                    <path d="M3 3v5h5" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </DeckInputSection>
 
             {/* Result View Selector */}
             <div className="flex justify-center gap-2 mb-2 mt-1">
@@ -1750,6 +1555,14 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     )}
                 </Suspense>
             </div>
+            <EventBonusCalculatorModal
+                isOpen={showEventBonusCalc}
+                onClose={() => setShowEventBonusCalc(false)}
+                onApply={(totalBonus) => {
+                    updateDeck('eventBonus', Number(totalBonus.toFixed(1)));
+                    setShowEventBonusCalc(false);
+                }}
+            />
         </div>
     );
 }

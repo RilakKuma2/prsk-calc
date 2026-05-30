@@ -148,9 +148,48 @@ p {
 }
 
 input[type="checkbox"] {
-    width: auto;
-    margin-right: 8px;
-    accent-color: #3498db;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    aspect-ratio: 1 / 1 !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    background-color: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+    background-color: white;
+    border-color: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px;
+    height: 14px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff6699' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
 }
 
 .mini-tabs {
@@ -319,14 +358,80 @@ select {
 
 /* Legacy MySekai Table styles removed - now using Tailwind in component */
 
-.deck-input-section label {
-    margin: 0 10px 6px 0;
+.deck-input-section {
+    --deck-input-center-offset: 4%;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto 4px;
+}
+
+.deck-input-row,
+.deck-input-header {
+    display: grid;
+    grid-template-columns:
+        minmax(0, calc(50% - 3.5rem + var(--deck-input-center-offset))) 7rem minmax(0, calc(50% - 3.5rem - var(--deck-input-center-offset)));
+    align-items: center;
+    column-gap: 0;
+}
+
+.deck-input-row {
+    min-height: 38px;
+    margin-bottom: 6px;
+}
+
+.deck-input-header {
+    min-height: 34px;
+}
+
+.deck-input-label-cell {
+    min-width: 0;
+    padding-right: 8px;
+    text-align: right;
+}
+
+.deck-input-label-cell label {
+    margin: 0;
+}
+
+.deck-input-center-cell {
+    display: flex;
+    justify-content: center;
+    width: 7rem;
+    min-width: 7rem;
+}
+
+.deck-input-side-cell {
+    min-width: 0;
+    padding-left: 8px;
+}
+
+.deck-input-side-content {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.deck-input-side-content select {
+    width: auto;
+}
+
+.deck-input-header-side {
+    display: flex;
+    align-items: center;
+    min-height: 28px;
+}
+
+.deck-input-actions {
+    display: flex;
+    justify-content: center;
+    padding-top: 4px;
 }
 
 .deck-input-section input,
 .deck-input-section select,
 .deck-input-section .deck-loaded-control {
-    margin-bottom: 6px;
+    margin-bottom: 0;
 }
 
 .deck-input-section input[type="number"] {
@@ -369,11 +474,11 @@ select {
     }
 
     .deck-input-section {
-        transform: translateX(12px);
+        transform: none;
     }
 
     .deck-input-loaded-skills {
-        margin-left: 8px;
+        margin-left: 0;
     }
 
     label {
@@ -527,4 +632,346 @@ select {
 .animate-slide-down {
     animation: slideDown 0.15s ease-out forwards;
     transform-origin: top;
+}
+
+/* --- Shared Support Card & Modal Styles --- */
+
+.support-card-thumb {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #e2e8f0;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.support-card-thumb.selected {
+    box-shadow: 0 0 0 3px #22c55e, inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.support-card-face,
+.support-card-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.support-card-thumb.picker .support-card-face {
+    object-fit: contain;
+    background: #edf2f7;
+}
+
+.support-card-frame {
+    z-index: 2;
+    pointer-events: none;
+}
+
+.support-card-attribute {
+    position: absolute;
+    top: 2%;
+    left: 2%;
+    z-index: 3;
+    width: 22%;
+    height: 22%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.support-card-stars {
+    position: absolute;
+    z-index: 3;
+    bottom: 4%;
+    left: 3%;
+    width: 94%;
+    display: flex;
+    gap: 1%;
+    pointer-events: none;
+}
+
+.support-card-thumb.with-levels .support-card-stars {
+    bottom: 18%;
+    left: 5%;
+    width: 74%;
+}
+
+.support-card-stars img {
+    width: 13%;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+}
+
+.support-card-birthday {
+    position: absolute;
+    z-index: 3;
+    bottom: 3%;
+    left: 4%;
+    width: 22%;
+    height: auto;
+    pointer-events: none;
+}
+
+.support-card-thumb.with-levels .support-card-birthday {
+    bottom: 18%;
+}
+
+.support-wl-badge {
+    position: absolute;
+    z-index: 5;
+    top: 4px;
+    right: 4px;
+    max-width: calc(100% - 8px);
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: rgba(14, 165, 164, 0.92);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.support-skill-badge {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    bottom: 0;
+    height: 19%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 32% 0 7%;
+    border-radius: 0 0 7px 7px;
+    background: rgba(45, 48, 84, 0.9);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    transform: translateY(-4%);
+}
+
+.support-mastery-badge {
+    position: absolute;
+    z-index: 6;
+    right: 4%;
+    bottom: 3%;
+    width: 30%;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.28));
+    pointer-events: none;
+}
+
+.support-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0.58);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.support-modal {
+    width: min(1040px, 100%);
+    max-height: 100%;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 26px 70px rgba(15, 23, 42, 0.34);
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+}
+
+.support-modal-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid #cbd5e1;
+    background: #f8fbff;
+}
+
+.support-modal-header h3 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    color: #263445;
+}
+
+.support-modal-header p {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.support-modal-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.support-modal-close,
+.support-modal-clear {
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 0 10px;
+    cursor: pointer;
+}
+
+.support-modal-clear {
+    color: #d94676;
+    border-color: #f5bfd0;
+}
+
+.support-picker-character-bar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e8eef6;
+    background: #ffffff;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s ease;
+    max-height: 500px;
+    overflow-y: hidden;
+    flex-shrink: 0;
+}
+
+.support-card-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .support-card-picker-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+    }
+}
+
+.support-picker-character-bar.wrapped {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible;
+}
+
+.support-picker-character-bar.collapsed {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    max-height: 66px;
+    scrollbar-width: none;
+}
+
+.support-picker-character-bar.collapsed::-webkit-scrollbar {
+    display: none;
+}
+
+.support-picker-character-button {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    border: 1px solid #d5deea;
+    border-radius: 50%;
+    padding: 2px;
+    background: #ffffff;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.support-picker-character-button:hover {
+    transform: translateY(-1px);
+    border-color: #93c5fd;
+}
+
+.support-picker-character-button.selected {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.support-picker-character-button img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.support-modal-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 12px 14px;
+    border-bottom: 1px solid #e8eef6;
+}
+
+.support-count {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.support-modal-scroll {
+    overflow-y: auto;
+    padding: 14px;
+}
+
+.support-picker-section + .support-picker-section {
+    margin-top: 18px;
+}
+
+.support-picker-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.support-picker-heading span {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+
+
+.support-card-picker-button {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    min-width: 0;
+    aspect-ratio: 1 / 1;
+}
+
+.support-empty-list {
+    padding: 40px 12px;
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 800;
 }

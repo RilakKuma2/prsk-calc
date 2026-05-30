@@ -229,3 +229,8 @@ export const calculateSupportCardBonus = (card, masterRank = 0, skillLevel = 1, 
 export const formatSupportPercent = (value) => {
     return `${Number(value || 0).toFixed(2).replace(/\.?0+$/, '')}%`;
 };
+
+export const getCardTitle = (card) => {
+    if (!card) return '';
+    return card.title_kr || card.title || `#${card.id}`;
+};
