@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
-import { getCardCharacterId } from '../../utils/supportCardUtils';
+import { getCardCharacterId, SUPPORT_CHARACTERS } from '../../utils/supportCardUtils';
 import SupportCardPickerModal from './SupportCardPickerModal';
 import EventOverrideDropdown from './EventOverrideDropdown';
 import {
-    EVENT_ATTRS, EVENT_UNITS, ORIGINAL_CHAR_UNIT,
+    EVENT_ATTRS, EVENT_UNITS, ORIGINAL_CHAR_UNIT, VS_CHAR_IDS,
     DEFAULT_AUTO_EVENT_OVERRIDE, loadAutoEventOverride
 } from '../../utils/eventInfoUtils';
 
@@ -35,6 +35,7 @@ const createEmptyMainDeckSlots = () => (
         featured: true,
         typeMatched: true,
         isAwakened: true,
+        skillLevel: 1,
     }))
 );
 
@@ -125,7 +126,7 @@ const OptionDropdown = ({ value, options, onChange, prefix, hidePrefixOnMobile =
     );
 };
 
-const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, emptyText = '비움', previewCharId = 21, card = null, isAwakened = true }) => {
+const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, emptyText = '비움', previewCharId = 21, card = null, isAwakened = true }) => {
     const publicUrl = process.env.PUBLIC_URL || '';
     
     const getMainDeckPreviewRarity = (key) => {
@@ -177,7 +178,7 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, emptyText = '비움', 
                     ))}
                 </div>
             )}
-            <div className="ebc-skill-badge">{rarityKey ? 'SLV.4' : emptyText}</div>
+            <div className="ebc-skill-badge">{rarityKey ? `SLV.${skillLevel}` : emptyText}</div>
             {normalizedMasterRank > 0 && (
                 <img className="ebc-mastery-badge" src={`${publicUrl}/assets/card_style/masterRank_S_${normalizedMasterRank}.webp`} alt="" />
             )}
@@ -196,7 +197,9 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
     });
     const [eventOverride, setEventOverride] = useState(() => {
         const saved = localStorage.getItem('ebc_event_override');
-        return saved ? JSON.parse(saved) : DEFAULT_AUTO_EVENT_OVERRIDE;
+        const base = saved ? JSON.parse(saved) : DEFAULT_AUTO_EVENT_OVERRIDE;
+        // Ensure detailOpen/characters/characterOrder fields exist
+        return { detailOpen: false, characters: {}, characterOrder: [], ...base };
     });
     const [autoEventOverride, setAutoEventOverride] = useState(DEFAULT_AUTO_EVENT_OVERRIDE);
     const [isManualEvent, setIsManualEvent] = useState(() => {
@@ -288,6 +291,47 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
         return () => { cancelled = true; };
     }, [isOpen, isManualEvent]);
 
+    const updateEventUnit = useCallback((unitKey) => {
+        setEventOverride(prev => {
+            if (unitKey === 'mix') {
+                return { ...prev, unit: '', detailOpen: true };
+            }
+            return { ...prev, unit: unitKey, detailOpen: false, characters: {}, characterOrder: [] };
+        });
+    }, []);
+
+    const toggleEventCharacter = useCallback((charId) => {
+        setEventOverride(prev => {
+            const nextCharacters = { ...(prev.characters || {}) };
+            let nextOrder = [...(prev.characterOrder || [])].filter(id => id !== charId);
+            if (nextCharacters[charId]) {
+                delete nextCharacters[charId];
+            } else {
+                if (nextOrder.length >= 5) {
+                    const oldestId = nextOrder.shift();
+                    delete nextCharacters[oldestId];
+                }
+                nextCharacters[charId] = charId >= 21
+                    ? 'none'  // VS chars default to Virtual Singer (pure VS / no specific unit)
+                    : ORIGINAL_CHAR_UNIT[charId];
+                nextOrder.push(charId);
+            }
+            return { ...prev, characters: nextCharacters, characterOrder: nextOrder };
+        });
+    }, []);
+
+    const updateVsEventUnit = useCallback((charId, unitKey) => {
+        setEventOverride(prev => ({
+            ...prev,
+            characters: { ...(prev.characters || {}), [charId]: unitKey },
+        }));
+    }, []);
+
+    const getCharName = useCallback((charId) => {
+        const char = SUPPORT_CHARACTERS.find(c => c.id === charId);
+        return char ? char.name : String(charId);
+    }, []);
+
     const checkCardBonus = (card, overrideConfig) => {
         if (!card || !overrideConfig) return { typeMatched: false, featured: false };
         const cardAttr = card.attr || card.cardAttr || card.attribute || '';
@@ -311,9 +355,15 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
         let isFeatured = false;
         if (overrideConfig.characters && overrideConfig.characters[charId]) {
             if (charId >= 21) {
-                // 스까(Mixed Event)의 경우: 그 캐릭터가 인선에 있으면서, 카드의 서브유닛이 인선 유닛과 일치하거나 or 서브유닛이 버추얼 싱어(none)인 경우
+                // 스까(Mixed Event)의 경우 VS 캐릭터 인선 보너스:
                 const targetUnit = overrideConfig.characters[charId];
-                isFeatured = (cardSupportUnit === targetUnit || cardSupportUnit === 'none');
+                if (targetUnit === 'none') {
+                    // VS(버추얼싱어)로 참가: 서브유닛이 없는(순수 VS) 카드만 매칭
+                    isFeatured = (cardSupportUnit === 'none' || !cardSupportUnit);
+                } else {
+                    // 특정 유닛으로 참가: 해당 유닛 서브유닛 카드 OR 순수 VS 카드(none) 매칭
+                    isFeatured = (cardSupportUnit === targetUnit || cardSupportUnit === 'none' || !cardSupportUnit);
+                }
             } else {
                 isFeatured = true;
             }
@@ -379,6 +429,15 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
             const current = nextSlots[index];
             const nextSlot = { ...current, ...patch };
 
+            // Save skillLevel/masterRank if changed while NOT in manual event
+            if (!isManualEvent && current.card && ('skillLevel' in patch || 'masterRank' in patch)) {
+                const savedKey = `ebc_card_stats_${current.card.id}`;
+                const savedData = JSON.parse(localStorage.getItem(savedKey) || '{}');
+                if ('skillLevel' in patch) savedData.skillLevel = patch.skillLevel;
+                if ('masterRank' in patch) savedData.masterRank = patch.masterRank;
+                localStorage.setItem(savedKey, JSON.stringify(savedData));
+            }
+
             if (Object.prototype.hasOwnProperty.call(patch, 'rarityKey')) {
                 const hasRarity = Boolean(patch.rarityKey);
                 nextSlot.masterRank = hasRarity ? current.masterRank : 0;
@@ -391,6 +450,14 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                     
                     const autoPickup = shouldCardBePickup(patch.card, eventOverride);
                     nextSlot.pickup = autoPickup;
+                    
+                    // Load saved skillLevel/masterRank if available
+                    if (!isManualEvent) {
+                        const savedKey = `ebc_card_stats_${patch.card.id}`;
+                        const savedData = JSON.parse(localStorage.getItem(savedKey) || '{}');
+                        if (savedData.skillLevel !== undefined) nextSlot.skillLevel = savedData.skillLevel;
+                        if (savedData.masterRank !== undefined) nextSlot.masterRank = savedData.masterRank;
+                    }
                 } else if (!hasRarity) {
                     nextSlot.featured = false;
                     nextSlot.typeMatched = false;
@@ -457,7 +524,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                                     checked={isManualEvent} 
                                     onChange={(e) => setIsManualEvent(e.target.checked)} 
                                 />
-                                <span className="ebc-checkbox-text" style={{ marginLeft: '8px', lineHeight: 'normal', transform: 'translateY(1px)' }}>수동 입력</span>
+                                <span className="ebc-checkbox-text" style={{ marginLeft: '8px', lineHeight: 'normal', transform: 'translateY(1px)' }}>{t('support.manual_input') || '수동 입력'}</span>
                             </label>
                             
                             <label className="ebc-checkbox-label" style={{ margin: 0, fontWeight: 'bold', fontSize: '14px', color: '#334155', display: 'flex', alignItems: 'center' }}>
@@ -477,11 +544,11 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                                     const autoAttrOption = EVENT_ATTRS.find(a => a.key === autoEventOverride.attr) || null;
                                     const autoUnitOption = autoEventOverride.unit
                                         ? EVENT_UNITS.find(u => u.key === autoEventOverride.unit)
-                                        : (autoEventOverride.isMix ? { key: 'mix', label: '스까' } : null);
+                                        : (autoEventOverride.isMix ? { key: 'mix', label: t('support.mix') || '스까' } : null);
                                     return (
                                         <div style={{ display: 'flex', gap: '12px', flex: 1, minWidth: '200px' }}>
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ marginBottom: '4px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8' }}>속성</div>
+                                                <div style={{ marginBottom: '4px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8' }}>{t('support.attribute') || '속성'}</div>
                                                 <EventOverrideDropdown
                                                     value={eventOverride.attr}
                                                     options={EVENT_ATTRS}
@@ -492,20 +559,116 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                                                 />
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ marginBottom: '4px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8' }}>유닛</div>
+                                                <div style={{ marginBottom: '4px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8' }}>{t('support.unit') || '유닛'}</div>
                                                 <EventOverrideDropdown
-                                                    value={eventOverride.unit}
+                                                    value={eventOverride.detailOpen ? 'mix' : eventOverride.unit}
                                                     options={EVENT_UNITS}
                                                     assetPath="units"
                                                     iconOnly
                                                     extraOptions={[{ key: 'mix', label: '스까' }]}
                                                     autoOption={autoUnitOption}
-                                                    onChange={(val) => setEventOverride(prev => ({ ...prev, unit: val === 'mix' ? '' : val }))}
+                                                    onChange={updateEventUnit}
                                                 />
                                             </div>
                                         </div>
                                     );
                                 })()}
+
+                                {/* 스까 캐릭터 선택 패널 */}
+                                {!isManualEvent && eventOverride.detailOpen && (
+                                    <div style={{ width: '100%', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px', marginTop: '4px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>스까 인선 선택</span>
+                                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#6366f1' }}>{(eventOverride.characterOrder || []).length}/5</span>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(13, 1fr)', gap: '3px', marginBottom: '8px' }}>
+                                            {Array.from({ length: 26 }, (_, idx) => {
+                                                const charId = idx + 1;
+                                                const selected = !!(eventOverride.characters?.[charId]);
+                                                return (
+                                                    <button
+                                                        key={charId}
+                                                        type="button"
+                                                        onClick={() => toggleEventCharacter(charId)}
+                                                        title={getCharName(charId)}
+                                                        style={{
+                                                            width: '100%',
+                                                            aspectRatio: '1/1',
+                                                            borderRadius: '50%',
+                                                            border: selected ? '2px solid #6366f1' : '1px solid #cbd5e1',
+                                                            overflow: 'hidden',
+                                                            padding: 0,
+                                                            background: '#fff',
+                                                            cursor: 'pointer',
+                                                            transform: selected ? 'scale(1.1)' : 'scale(1)',
+                                                            opacity: selected ? 1 : 0.6,
+                                                            transition: 'all 0.1s',
+                                                            boxSizing: 'border-box',
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={`${process.env.PUBLIC_URL}/assets/characters/${String(charId).padStart(2, '0')}.webp`}
+                                                            alt={getCharName(charId)}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                        />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {VS_CHAR_IDS.some(cid => eventOverride.characters?.[cid]) && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '6px', borderTop: '1px solid #e2e8f0' }}>
+                                                {VS_CHAR_IDS.filter(cid => eventOverride.characters?.[cid]).map(cid => (
+                                                    <div key={cid} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', minWidth: '28px' }}>{getCharName(cid)}</span>
+                                                        <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+                                                            {/* 버추얼싱어 (none) 옵션 */}
+                                                            <button
+                                                                key="none"
+                                                                type="button"
+                                                                onClick={() => updateVsEventUnit(cid, 'none')}
+                                                                title="버추얼싱어"
+                                                                style={{
+                                                                    height: '20px',
+                                                                    padding: '0 5px',
+                                                                    border: eventOverride.characters?.[cid] === 'none' ? '2px solid #6366f1' : '1px solid #cbd5e1',
+                                                                    borderRadius: '4px',
+                                                                    background: eventOverride.characters?.[cid] === 'none' ? '#e0e7ff' : '#fff',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '9px',
+                                                                    fontWeight: 'bold',
+                                                                    color: eventOverride.characters?.[cid] === 'none' ? '#4f46e5' : '#64748b',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                            >
+                                                                VS
+                                                            </button>
+                                                            {/* 5개 유닛 옵션 */}
+                                                            {EVENT_UNITS.map(unit => (
+                                                                <button
+                                                                    key={unit.key}
+                                                                    type="button"
+                                                                    onClick={() => updateVsEventUnit(cid, unit.key)}
+                                                                    title={unit.label}
+                                                                    style={{
+                                                                        width: '24px', height: '20px',
+                                                                        border: eventOverride.characters?.[cid] === unit.key ? '2px solid #6366f1' : '1px solid #cbd5e1',
+                                                                        borderRadius: '4px',
+                                                                        background: '#fff',
+                                                                        padding: '1px',
+                                                                        cursor: 'pointer',
+                                                                    }}
+                                                                >
+                                                                    <img src={`${process.env.PUBLIC_URL}/assets/event/units/${unit.file}`} alt={unit.label} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 
                                 {isWorldLink && (
                                     <div className="ebc-support-bonus-inline" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '150px' }}>
@@ -577,11 +740,17 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                                             onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                             title="카드 선택"
                                         >
-                                            <MainDeckPreviewCard rarityKey={slot.rarityKey} masterRank={slot.masterRank} emptyText={t('support.empty')} card={slot.card} isAwakened={slot.isAwakened !== false} />
+                                            <MainDeckPreviewCard rarityKey={slot.rarityKey} masterRank={slot.masterRank} skillLevel={slot.skillLevel || 1} emptyText={t('support.empty')} card={slot.card} isAwakened={slot.isAwakened !== false} />
                                         </div>
-                                        <div className="ebc-control-grid">
-                                            <OptionDropdown value={slot.rarityKey} options={MAIN_DECK_RARITY_OPTIONS} onChange={v => updateSlot(index, { rarityKey: v })} prefix={t('support.rarity')} hidePrefixOnMobile={true} />
-                                            <NumberDropdown value={slot.masterRank} options={MASTER_RANK_OPTIONS} onChange={v => updateSlot(index, { masterRank: v })} prefix={t('support.master_rank')} />
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#64748b', marginBottom: '2px', padding: '0 2px' }}>
+                                            <span>{t('support.rarity') || '레어'}</span>
+                                            <span>{t('support.skill') || '스킬'}</span>
+                                            <span>{t('support.master_rank') || '마랭'}</span>
+                                        </div>
+                                        <div className="ebc-control-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                                            <OptionDropdown value={slot.rarityKey} options={MAIN_DECK_RARITY_OPTIONS} onChange={v => updateSlot(index, { rarityKey: v })} />
+                                            <NumberDropdown value={slot.skillLevel || 1} options={[1, 2, 3, 4]} onChange={v => updateSlot(index, { skillLevel: v })} />
+                                            <NumberDropdown value={slot.masterRank} options={MASTER_RANK_OPTIONS} onChange={v => updateSlot(index, { masterRank: v })} />
                                         </div>
                                         <div className="ebc-toggle-row">
                                             <button type="button" className={`ebc-toggle ${slot.typeMatched ? 'active' : ''} ${isWorldLink ? 'wl-auto' : ''}`} onClick={() => !isWorldLink && updateSlot(index, { typeMatched: !slot.typeMatched })} disabled={!hasRarity || isWorldLink} title={isWorldLink ? 'WL: 속성별 첫 번째 카드 자동 적용' : ''}>{t('support.type')}</button>
@@ -649,8 +818,9 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                             {t('support.final_event_bonus')} <strong>{totalBonus.toFixed(1)}%</strong>
                         </div>
                         <div className="ebc-footer-actions">
-                            <button type="button" className="ebc-btn-cancel" onClick={onClose}>{t('rank.cancel')}</button>
-                            <button type="button" className="ebc-btn-apply" onClick={() => onApply(totalBonus)}>{t('support.apply')}</button>
+                            <button type="button" className="ebc-btn-cancel" onClick={onClose}>{t('rank.cancel') || '취소'}</button>
+                            <button type="button" className="ebc-btn-apply" style={{ background: '#0ea5e9', whiteSpace: 'pre-line' }} onClick={() => onApply(totalBonus, false, slots)}>{t('support.load_bonus') || '배율\n불러오기'}</button>
+                            <button type="button" className="ebc-btn-apply" style={{ whiteSpace: 'pre-line' }} onClick={() => onApply(totalBonus, true, slots)}>{t('support.load_bonus_skill') || '배율+스킬\n불러오기'}</button>
                         </div>
                     </div>
                 </div>
@@ -955,15 +1125,15 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                 .ebc-skill-badge { position: absolute; left: 0; bottom: 0; height: 19%; width: 100%; z-index: 1; display: flex; align-items: center; padding-left: 7%; border-radius: 0 0 6px 6px; background: rgba(45,48,84,0.9); color: #fff; font-size: 13px; font-weight: 900; transform: translateY(-4%); }
                 .ebc-mastery-badge { position: absolute; right: 4%; bottom: 3%; z-index: 6; width: 30%; height: auto; }
                 
-                .ebc-control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 4px; }
+                .ebc-control-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 4px; }
                 .ebc-toggle-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 6px; }
                 
                 .ebc-select { position: relative; }
-                .ebc-select-button { width: 100%; height: 28px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 6px; font-size: 11px; font-weight: 800; cursor: pointer; color: #334155; }
-                .ebc-select-button span { color: #64748b; font-weight: 700; }
+                .ebc-select-button { width: 100%; height: 26px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 0 4px; font-size: 11px; font-weight: 800; cursor: pointer; color: #334155; }
+                .ebc-select-button span { display: none; }
                 .ebc-select-button.open { border-color: #6366f1; color: #4f46e5; }
-                .ebc-select-menu { position: absolute; z-index: 100; left: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 4px; min-width: 100%; }
-                .ebc-select-menu button { display: block; width: 100%; height: 26px; border: none; background: transparent; font-size: 12px; font-weight: 800; color: #334155; border-radius: 4px; cursor: pointer; text-align: left; padding: 0 8px; }
+                .ebc-select-menu { position: absolute; z-index: 100; left: 0; top: calc(100% + 4px); background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 4px; min-width: 100%; text-align: center; }
+                .ebc-select-menu button { display: block; width: 100%; height: 26px; border: none; background: transparent; font-size: 12px; font-weight: 800; color: #334155; border-radius: 4px; cursor: pointer; text-align: center; padding: 0 8px; }
                 .ebc-select-menu button:hover, .ebc-select-menu button.selected { background: #e0e7ff; color: #4f46e5; }
                 
                 .ebc-toggle { height: 26px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #475569; font-size: 11px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }

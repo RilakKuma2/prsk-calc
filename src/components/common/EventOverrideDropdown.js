@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 const EventOverrideDropdown = ({ value, options, onChange, assetPath, iconOnly = false, extraOptions = [], autoOption = null }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
     const allOptions = [...options, ...extraOptions];
@@ -39,13 +41,13 @@ const EventOverrideDropdown = ({ value, options, onChange, assetPath, iconOnly =
                             className={`${iconOnly ? 'h-6 w-7' : 'h-5 w-5'} shrink-0 object-contain`}
                         />
                     ) : (
-                        <span className="truncate text-sm font-bold text-gray-700">{displayOption?.label || '자동'}</span>
+                        <span className="truncate text-sm font-bold text-gray-700">{displayOption?.label || (t('support.auto') || '자동')}</span>
                     )}
                     {displayOption?.file && (
                         <span className="truncate text-sm font-bold text-gray-700">{displayOption.label}</span>
                     )}
                     {isAutoSelected && displayOption && (
-                        <span className="shrink-0 text-[10px] font-bold text-gray-400">(자동)</span>
+                        <span className="shrink-0 text-[10px] font-bold text-gray-400">({t('support.auto') || '자동'})</span>
                     )}
                 </span>
                 <svg className={`ml-1 h-3 w-3 shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,9 +61,9 @@ const EventOverrideDropdown = ({ value, options, onChange, assetPath, iconOnly =
                             type="button"
                             onClick={() => handleSelect('')}
                             className={`${iconOnly ? 'flex h-9 items-center justify-center rounded-md px-1 text-xs' : 'flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm'} font-bold transition-colors ${!value ? 'bg-indigo-50 text-indigo-700' : 'text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700'}`}
-                            title="자동"
+                            title={t('support.auto') || '자동'}
                         >
-                            자동
+                            {t('support.auto') || '자동'}
                         </button>
                         {allOptions.map(option => (
                             <button

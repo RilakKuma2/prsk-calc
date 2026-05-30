@@ -1558,8 +1558,62 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             <EventBonusCalculatorModal
                 isOpen={showEventBonusCalc}
                 onClose={() => setShowEventBonusCalc(false)}
-                onApply={(totalBonus) => {
-                    updateDeck('eventBonus', Number(totalBonus.toFixed(1)));
+                onApply={(totalBonus, includeSkill, slots) => {
+                    if (includeSkill && slots && slots.length === 5) {
+                        const getFallbackRanges = (rarity) => {
+                            if (rarity === 'birthday') return [0, 70, 75, 80, 85];
+                            if (rarity === 'rarity4') return [0, 100, 105, 110, 120];
+                            if (rarity === 'rarity3') return [0, 60, 65, 70, 80];
+                            if (rarity === 'rarity2') return [0, 30, 35, 40, 50];
+                            if (rarity === 'rarity1') return [0, 10, 15, 20, 30];
+                            return [0, 100, 105, 110, 120];
+                        };
+
+                        const nextSkillLevels = {};
+                        const nextSkillRanges = {};
+                        const skillValues = [];
+
+                        const keys = ['leader', 'member2', 'member3', 'member4', 'member5'];
+                        slots.forEach((slot, index) => {
+                            const key = keys[index];
+                            const slv = Number(slot.skillLevel) || 1;
+                            nextSkillLevels[key] = slv;
+
+                            let ranges = getFallbackRanges(slot.rarityKey);
+                            
+                            // fallback ranges are used since card exact skill percentage parsing is complex here
+                            // and standard numbers are what users typically expect from manual selections.
+                            nextSkillRanges[key] = ranges;
+                            skillValues.push(ranges[slv] || ranges[1]);
+                        });
+
+                        setSurveyData(prev => {
+                            const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
+                            return {
+                                ...prev,
+                                unifiedDecks: {
+                                    ...prev.unifiedDecks,
+                                    [`deck${activeDeckNum}`]: {
+                                        ...currentDeckData,
+                                        eventBonus: Number(totalBonus.toFixed(1)),
+                                        skillLeader: skillValues[0],
+                                        skillMember2: skillValues[1],
+                                        skillMember3: skillValues[2],
+                                        skillMember4: skillValues[3],
+                                        skillMember5: skillValues[4],
+                                        loadedSkillLevels: nextSkillLevels,
+                                        loadedSkillRanges: nextSkillRanges,
+                                        loadedBloomFesOriginalMembers: {},
+                                        loadedVSBloomFesMembers: {},
+                                        useBloomFes: false,
+                                    }
+                                }
+                            };
+                        });
+                        setManualEventBonusDecks(prev => ({ ...prev, [`deck${activeDeckNum}`]: true }));
+                    } else {
+                        updateDeck('eventBonus', Number(totalBonus.toFixed(1)));
+                    }
                     setShowEventBonusCalc(false);
                 }}
             />

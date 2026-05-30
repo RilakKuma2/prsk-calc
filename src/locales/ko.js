@@ -695,6 +695,14 @@ const ko = {
         count_cards: '{{count}}장',
         awakened: '각후',
         unawakened: '각전',
+        manual_input: '수동 입력',
+        attribute: '속성',
+        unit: '유닛',
+        mix: '스까',
+        auto: '자동',
+        load_bonus: '배율\n불러오기',
+        load_bonus_skill: '배율+스킬\n불러오기',
+        skill: '스킬',
     },
 };
 

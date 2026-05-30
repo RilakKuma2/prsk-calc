@@ -679,6 +679,14 @@ const en = {
         count_cards: '{{count}}',
         awakened: 'Trained',
         unawakened: 'Untrained',
+        manual_input: 'Manual Input',
+        attribute: 'Attribute',
+        unit: 'Unit',
+        mix: 'Mixed',
+        auto: 'Auto',
+        load_bonus: 'Load\nBonus',
+        load_bonus_skill: 'Load Bonus\n+ Skill',
+        skill: 'Skill',
     },
 };
 

@@ -689,6 +689,14 @@ const ja = {
         count_cards: '{{count}}枚',
         awakened: '特訓後',
         unawakened: '特訓前',
+        manual_input: '手動入力',
+        attribute: 'タイプ',
+        unit: 'ユニット',
+        mix: '混合',
+        auto: '自動',
+        load_bonus: '倍率\n読み込み',
+        load_bonus_skill: '倍率＋スキル\n読み込み',
+        skill: 'スキル',
     },
 };
 
