@@ -167,6 +167,14 @@ const AppContent = () => {
     }, 1500);
   };
 
+  useEffect(() => {
+    const handleShowToast = (e) => {
+      if (e.detail) showToastMessage(e.detail);
+    };
+    window.addEventListener('show-toast', handleShowToast);
+    return () => window.removeEventListener('show-toast', handleShowToast);
+  }, []);
+
   const saveData = () => {
     // Exclude UI state like active deck selection, view selection, and VS mode from save
     const { activeDeckNum, activeResultView, isComparisonMode, ...dataToSave } = surveyData;
@@ -338,7 +346,10 @@ const AppContent = () => {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 z-50 flex items-center gap-2 whitespace-nowrap ${toast.fadingOut ? 'animate-fade-out' : 'animate-toast-fade-in-up'}`}>
+        <div 
+          className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 flex items-center gap-2 whitespace-nowrap ${toast.fadingOut ? 'animate-fade-out' : 'animate-toast-fade-in-up'}`}
+          style={{ zIndex: 99999 }}
+        >
           <span className="text-green-400">✓</span>
           {toast.message}
         </div>

@@ -3,6 +3,7 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { getCardCharacterId, SUPPORT_CHARACTERS } from '../../utils/supportCardUtils';
 import SupportCardPickerModal from './SupportCardPickerModal';
 import EventOverrideDropdown from './EventOverrideDropdown';
+import { calculateSlotSkillValues } from '../../utils/deckUtils';
 import {
     EVENT_ATTRS, EVENT_UNITS, ORIGINAL_CHAR_UNIT, VS_CHAR_IDS,
     DEFAULT_AUTO_EVENT_OVERRIDE, loadAutoEventOverride
@@ -186,7 +187,7 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, emptyT
     );
 };
 
-const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
+const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) => {
     const { t, language } = useTranslation();
     const [isWorldLink, setIsWorldLink] = useState(() => {
         const saved = localStorage.getItem('ebc_is_world_link');
@@ -503,6 +504,16 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
 
     const totalBonus = mainDeckBonus + (isWorldLink ? (Number(supportBonus) || 0) : 0);
 
+    const effectiveValue = useMemo(() => {
+        if (isManualEvent) return null;
+        if (!slots.every(slot => slot.card != null)) return null;
+
+        const skillValuesObj = calculateSlotSkillValues(slots);
+        const skillValues = skillValuesObj.map(obj => obj.skillValue);
+
+        return skillValues[0] + (skillValues[1] + skillValues[2] + skillValues[3] + skillValues[4]) * 0.2;
+    }, [slots, isManualEvent]);
+
     if (!isOpen) return null;
 
     return (
@@ -768,6 +779,22 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                             })}
                         </div>
                         
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                            <button
+                                type="button"
+                                className="ebc-btn-reset"
+                                style={{ background: '#8b5cf6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '600' }}
+                                onClick={() => {
+                                    if (onLoadSkill) {
+                                        onLoadSkill(slots);
+                                        window.dispatchEvent(new CustomEvent('show-toast', { detail: t('app.toast.skill_loaded') || '스킬 정보가 입력되었습니다.' }));
+                                    }
+                                }}
+                            >
+                                {t('support.skill') ? `${t('support.skill')} ${t('app.load') || '불러오기'}` : '스킬 불러오기'}
+                            </button>
+                        </div>
+
                         <div className="ebc-deck-toolbar">
                             <div className="ebc-toolbar-presets">
                                 {[1, 2, 3].map(presetNum => {
@@ -816,11 +843,15 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply }) => {
                     <div className="ebc-footer">
                         <div className="ebc-footer-total">
                             {t('support.final_event_bonus')} <strong>{totalBonus.toFixed(1)}%</strong>
+                            {effectiveValue !== null && (
+                                <span style={{ marginLeft: '12px', fontSize: '13px', color: '#64748b' }}>
+                                    {t('internal.effective_value') || '실효치'}: <strong>{effectiveValue.toFixed(1)}%</strong>
+                                </span>
+                            )}
                         </div>
                         <div className="ebc-footer-actions">
                             <button type="button" className="ebc-btn-cancel" onClick={onClose}>{t('rank.cancel') || '취소'}</button>
-                            <button type="button" className="ebc-btn-apply" style={{ background: '#0ea5e9', whiteSpace: 'pre-line' }} onClick={() => onApply(totalBonus, false, slots)}>{t('support.load_bonus') || '배율\n불러오기'}</button>
-                            <button type="button" className="ebc-btn-apply" style={{ whiteSpace: 'pre-line' }} onClick={() => onApply(totalBonus, true, slots)}>{t('support.load_bonus_skill') || '배율+스킬\n불러오기'}</button>
+                            <button type="button" className="ebc-btn-apply" style={{ background: '#0ea5e9' }} onClick={() => onApply(totalBonus)}>{t('support.apply') || '적용'}</button>
                         </div>
                     </div>
                 </div>

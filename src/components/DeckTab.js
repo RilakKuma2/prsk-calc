@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
-import { calculateRawInternalValue, calculateInternalValue } from '../utils/deckUtils';
+import { calculateRawInternalValue, calculateInternalValue, calculateSlotSkillValues } from '../utils/deckUtils';
 import { loadDeckFromFriendCode } from '../utils/deckLoader';
 import { characterBirthdays } from '../data/characterBirthdays';
 import EventBonusCalculatorModal from './common/EventBonusCalculatorModal';
@@ -1558,33 +1558,27 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             <EventBonusCalculatorModal
                 isOpen={showEventBonusCalc}
                 onClose={() => setShowEventBonusCalc(false)}
-                onApply={(totalBonus, includeSkill, slots) => {
-                    if (includeSkill && slots && slots.length === 5) {
-                        const getFallbackRanges = (rarity) => {
-                            if (rarity === 'birthday') return [0, 70, 75, 80, 85];
-                            if (rarity === 'rarity4') return [0, 100, 105, 110, 120];
-                            if (rarity === 'rarity3') return [0, 60, 65, 70, 80];
-                            if (rarity === 'rarity2') return [0, 30, 35, 40, 50];
-                            if (rarity === 'rarity1') return [0, 10, 15, 20, 30];
-                            return [0, 100, 105, 110, 120];
-                        };
-
+                onApply={(totalBonus) => {
+                    updateDeck('eventBonus', Number(totalBonus.toFixed(1)));
+                    setShowEventBonusCalc(false);
+                }}
+                onLoadSkill={(slots) => {
+                    if (slots && slots.length === 5) {
                         const nextSkillLevels = {};
                         const nextSkillRanges = {};
                         const skillValues = [];
 
                         const keys = ['leader', 'member2', 'member3', 'member4', 'member5'];
+                        const computedSkills = calculateSlotSkillValues(slots);
+
                         slots.forEach((slot, index) => {
                             const key = keys[index];
                             const slv = Number(slot.skillLevel) || 1;
                             nextSkillLevels[key] = slv;
 
-                            let ranges = getFallbackRanges(slot.rarityKey);
-                            
-                            // fallback ranges are used since card exact skill percentage parsing is complex here
-                            // and standard numbers are what users typically expect from manual selections.
+                            const { ranges, skillValue } = computedSkills[index];
                             nextSkillRanges[key] = ranges;
-                            skillValues.push(ranges[slv] || ranges[1]);
+                            skillValues.push(skillValue);
                         });
 
                         setSurveyData(prev => {
@@ -1595,7 +1589,6 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                     ...prev.unifiedDecks,
                                     [`deck${activeDeckNum}`]: {
                                         ...currentDeckData,
-                                        eventBonus: Number(totalBonus.toFixed(1)),
                                         skillLeader: skillValues[0],
                                         skillMember2: skillValues[1],
                                         skillMember3: skillValues[2],
@@ -1611,10 +1604,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             };
                         });
                         setManualEventBonusDecks(prev => ({ ...prev, [`deck${activeDeckNum}`]: true }));
-                    } else {
-                        updateDeck('eventBonus', Number(totalBonus.toFixed(1)));
                     }
-                    setShowEventBonusCalc(false);
                 }}
             />
         </div>
