@@ -354,19 +354,23 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         }
 
         let isFeatured = false;
-        if (overrideConfig.characters && overrideConfig.characters[charId]) {
-            if (charId >= 21) {
-                // 스까(Mixed Event)의 경우 VS 캐릭터 인선 보너스:
-                const targetUnit = overrideConfig.characters[charId];
-                if (targetUnit === 'none') {
-                    // VS(버추얼싱어)로 참가: 서브유닛이 없는(순수 VS) 카드만 매칭
-                    isFeatured = (cardSupportUnit === 'none' || !cardSupportUnit);
+        if (overrideConfig.characters && Object.keys(overrideConfig.characters).length > 0) {
+            if (overrideConfig.characters[charId]) {
+                if (charId >= 21) {
+                    // 스까(Mixed Event)의 경우 VS 캐릭터 인선 보너스:
+                    const targetUnit = overrideConfig.characters[charId];
+                    if (targetUnit === 'none') {
+                        // VS(버추얼싱어)로 참가: 서브유닛이 없는(순수 VS) 카드만 매칭
+                        isFeatured = (cardSupportUnit === 'none' || !cardSupportUnit);
+                    } else {
+                        // 특정 유닛으로 참가: 해당 유닛 서브유닛 카드 OR 순수 VS 카드(none) 매칭
+                        isFeatured = (cardSupportUnit === targetUnit || cardSupportUnit === 'none' || !cardSupportUnit);
+                    }
                 } else {
-                    // 특정 유닛으로 참가: 해당 유닛 서브유닛 카드 OR 순수 VS 카드(none) 매칭
-                    isFeatured = (cardSupportUnit === targetUnit || cardSupportUnit === 'none' || !cardSupportUnit);
+                    isFeatured = true;
                 }
             } else {
-                isFeatured = true;
+                isFeatured = false;
             }
         } else if (overrideConfig.unit) {
             if (charId >= 21) {

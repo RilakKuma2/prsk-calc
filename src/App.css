@@ -642,9 +642,12 @@ select {
     height: 100%;
     aspect-ratio: 1 / 1;
     border-radius: 8px;
-    overflow: hidden;
     background: #e2e8f0;
     box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.support-card-thumb:not(.picker) {
+    overflow: hidden;
 }
 
 .support-card-thumb.selected {
@@ -658,11 +661,13 @@ select {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: inherit;
 }
 
 .support-card-thumb.picker .support-card-face {
     object-fit: contain;
     background: #edf2f7;
+    border-radius: inherit;
 }
 
 .support-card-frame {

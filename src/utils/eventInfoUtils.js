@@ -110,7 +110,7 @@ export const inferCurrentEventOverride = (events, eventBonuses, gameCharacterUni
     characterUnits.forEach(unitInfo => {
         const charId = unitInfo.gameCharacterId;
         const unitKey = ORIGINAL_CHAR_UNIT[charId] || (
-            EVENT_UNITS.some(u => u.key === unitInfo.unit) ? unitInfo.unit : null
+            (unitInfo.unit === 'none' || EVENT_UNITS.some(u => u.key === unitInfo.unit)) ? unitInfo.unit : null
         );
         if (charId && unitKey) {
             characters[charId] = unitKey;

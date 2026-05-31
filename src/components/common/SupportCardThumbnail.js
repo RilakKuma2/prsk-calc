@@ -13,6 +13,18 @@ const getCardImageUrl = (card, suffix = getFaceSuffix(card)) => {
     return `https://asset.rilaksekai.com/face/res0${characterId}_no${cardImageId}_${suffix}.webp`;
 };
 
+const getSkillBadgeInfo = (effect) => {
+    if (!effect) return null;
+    if (effect.includes('페스')) return { label: '컬페', bg: '#ff3388' };
+    if (effect.includes('블페') || effect.includes('월링')) return { label: '블페', bg: '#8b5cf6' };
+    if (effect.includes('퍼스업')) return { label: '퍼펙트', bg: '#06b6d4' };
+    if (effect.includes('스업') || effect === '스코어') return { label: '스코어', bg: '#3b82f6' };
+    if (effect.includes('힐') || effect.includes('회복') || effect.includes('라이프')) return { label: '회복', bg: '#22c55e' };
+    if (effect.includes('판강') || effect.includes('판정')) return { label: '판강', bg: '#f59e0b' };
+    if (effect.includes('버싱한정') || effect.includes('결정')) return { label: '결정', bg: '#6366f1' };
+    return { label: effect, bg: '#64748b' };
+};
+
 const SupportCardThumbnail = ({
     card,
     selected = false,
@@ -82,6 +94,29 @@ const SupportCardThumbnail = ({
                     <div className="support-card-skill-level">Lv.{normalizedSkillLevel}</div>
                 </>
             )}
+            {picker && card?.skill_effect && (() => {
+                const badge = getSkillBadgeInfo(card.skill_effect);
+                if (!badge) return null;
+                return (
+                    <div style={{
+                        position: 'absolute',
+                        top: '-4px',
+                        right: '-4px',
+                        backgroundColor: badge.bg,
+                        color: 'white',
+                        padding: '2px 5px',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        fontWeight: '900',
+                        textShadow: '-0.5px -0.5px 0 #000, 0.5px -0.5px 0 #000, -0.5px 0.5px 0 #000, 0.5px 0.5px 0 #000',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                        zIndex: 10,
+                        lineHeight: '1.2'
+                    }}>
+                        {badge.label}
+                    </div>
+                );
+            })()}
         </div>
     );
 };
