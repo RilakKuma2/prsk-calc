@@ -262,6 +262,7 @@ const en = {
         chapter_ends_in: 'Ch. Ends In',
         chapter_starts_in: 'Ch. Starts In',
         data_provided: 'Data Source',
+        recent_hourly_speed: 'Recent Speed',
         predictions_disclaimer: '* Predictions are estimates and may differ from actual results.',
         rank: 'Rank',
         current: 'Current',

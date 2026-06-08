@@ -156,6 +156,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     // Load Friend Code Modal State
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [showEventBonusCalc, setShowEventBonusCalc] = useState(false);
+    const [manualTotalPowerDecks, setManualTotalPowerDecks] = useState({});
     const [manualEventBonusDecks, setManualEventBonusDecks] = useState({});
     const [focusedManualSkill, setFocusedManualSkill] = useState(null);
     const [eventOverride, setEventOverride] = useState({ attr: '', unit: '', detailOpen: false, characters: {}, characterOrder: [] });
@@ -326,6 +327,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const [manualInternalValue, setManualInternalValue] = useState('');
     const activeDeckKey = `deck${activeDeckNum}`;
     const isManualInternalEdit = surveyData.unifiedDecks?.[activeDeckKey]?.isManualInternalEdit || false;
+    const isManualTotalPowerEdit = !!manualTotalPowerDecks[activeDeckKey];
     const isManualEventBonusEdit = !!manualEventBonusDecks[activeDeckKey];
     // Detailed room skills input state
     const showDetailedInput = surveyData.unifiedDecks?.[activeDeckKey]?.isDetailedInput || false;
@@ -807,6 +809,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     // Reset all loaded friend data for the active deck
     const handleResetLoadedData = () => {
+        setManualTotalPowerDecks(prev => ({ ...prev, [activeDeckKey]: false }));
         setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
         setSurveyData(prev => {
             const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
@@ -843,17 +846,22 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     // 불러온 데이터가 한 건이라도 있는지 (loadedSkillRanges 존재 여부)
     const hasLoadedData = !!(currentDeck.loadedSkillRanges && Object.keys(currentDeck.loadedSkillRanges).length > 0);
+    const isTotalPowerLoadedControl = hasLoadedData && !!totalPower && !isManualTotalPowerEdit;
+    const isEventBonusLoadedControl = hasLoadedData && !!eventBonus && !isManualEventBonusEdit;
 
     // 현재 파란색으로 표시 중인 항목이 하나라도 있는지 (리셋 버튼 표시 조건)
     const hasAnyVisibleLoaded = hasLoadedData && (
-        !!(totalPower) ||
-        !!(eventBonus) ||
+        isTotalPowerLoadedControl ||
+        isEventBonusLoadedControl ||
         Object.values(currentDeck.loadedSkillLevels || {}).some(v => v != null) ||
         Object.keys(currentDeck.loadedBloomFesOriginalMembers || {}).length > 0 ||
         Object.keys(currentDeck.loadedVSBloomFesMembers || {}).length > 0
     );
     const hasLoadedSkillButtons = Object.values(currentDeck.loadedSkillLevels || {}).some(v => v != null);
     const updateDeck = (key, value) => {
+        if (key === 'totalPower') {
+            setManualTotalPowerDecks(prev => ({ ...prev, [activeDeckKey]: true }));
+        }
         if (key === 'eventBonus') {
             setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: true }));
         }
@@ -993,6 +1001,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const handleLoadFriendCode = async () => {
         if (!friendCode) return;
         setIsLoadingFriend(true);
+        setManualTotalPowerDecks(prev => ({ ...prev, [activeDeckKey]: false }));
         setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
         try {
             const parsed = await loadDeckFromFriendCode(friendCode, buildEventOverrideForRequest());
@@ -1055,7 +1064,6 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const autoUnitOption = autoEventOverride.unit
         ? EVENT_UNITS.find(unit => unit.key === autoEventOverride.unit)
         : (autoEventOverride.isMix ? { key: 'mix', label: '스까' } : null);
-    const isEventBonusLoadedControl = hasLoadedData && eventBonus && !isManualEventBonusEdit;
 
     const renderBloomLevelSelect = (memberKey) => (
         useBloomFes ? (
@@ -1281,7 +1289,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             {/* Shared Input Section */}
             <DeckInputSection className={hasLoadedSkillButtons ? 'deck-input-loaded-skills' : ''}>
                 <DeckInputRow label={t('auto.total_power')}>
-                    {hasLoadedData && totalPower ? (
+                    {isTotalPowerLoadedControl ? (
                         <div
                             className={`${DECK_LOADED_CONTROL_CLASS} bg-indigo-50 text-indigo-700 hover:bg-indigo-100`}
                             onClick={() => updateDeck('totalPower', '')}
@@ -1317,6 +1325,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             placeholder="293231"
                             onFocus={(e) => e.target.select()}
                             className={DECK_INPUT_CLASS}
+                            autoFocus={isManualTotalPowerEdit}
                         />
                     )}
                 </DeckInputRow>

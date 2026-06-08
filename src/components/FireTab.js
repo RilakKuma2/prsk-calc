@@ -10,15 +10,22 @@ import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/m
 import playerLevelData from '../data/player_levels.json';
 import { characterBirthdays } from '../data/characterBirthdays';
 
-const BASE_ALLOWED_RANKS = [
+const GENERAL_ALLOWED_RANKS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
   20, 30, 40, 50,
   100, 200, 300, 400, 500,
-  1000, 2000, 3000, 4000, 5000, 10000
+  1000, 1500, 2000, 2500, 3000, 4000, 5000, 10000
 ];
 
-const getAllowedRanksSet = (includeWorldLinkRanks = false) => new Set(
-  includeWorldLinkRanks ? [...BASE_ALLOWED_RANKS, 7000] : BASE_ALLOWED_RANKS
+const WORLD_LINK_CHAPTER_ALLOWED_RANKS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  20, 30, 40, 50,
+  100, 200, 300, 400, 500,
+  1000, 2000, 3000, 4000, 5000, 7000, 10000
+];
+
+const getAllowedRanksSet = (includeWorldLinkChapterRanks = false) => new Set(
+  includeWorldLinkChapterRanks ? WORLD_LINK_CHAPTER_ALLOWED_RANKS : GENERAL_ALLOWED_RANKS
 );
 
 const normalizeEventLengthHours = (len) => {
@@ -89,6 +96,37 @@ const mergeRankingsByHighestScore = (rankings = []) => {
   return Array.from(byRank.values()).sort((a, b) => a.rank - b.rank);
 };
 
+const formatScoreDelta1h = (delta) => {
+  if (delta === null || delta === undefined || delta === '') return null;
+  const value = Number(delta);
+  if (!Number.isFinite(value)) return null;
+  const rounded = Math.floor(value);
+  const sign = rounded >= 0 ? '+' : '';
+  return `(${sign}${rounded.toLocaleString()})`;
+};
+
+const CURRENT_SCORE_COLUMN_RATIO = 0.48;
+const CURRENT_SCORE_CELL_HORIZONTAL_PADDING = 8;
+const SCORE_DELTA_INLINE_GAP = 4;
+
+const CurrentScoreWithDelta = ({ score, delta, stacked = false }) => {
+  const formattedDelta = formatScoreDelta1h(delta);
+  const layoutClass = stacked
+    ? 'flex-col items-center justify-center gap-y-0'
+    : 'flex-row flex-nowrap items-baseline justify-center gap-x-1';
+
+  return (
+    <span className={`inline-flex max-w-full ${layoutClass}`}>
+      <span className="whitespace-nowrap leading-tight">{Math.floor(score || 0).toLocaleString()}</span>
+      {formattedDelta && (
+        <span className={`whitespace-nowrap text-[9px] sm:text-[10px] font-extrabold leading-tight ${Number(delta) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+          {formattedDelta}
+        </span>
+      )}
+    </span>
+  );
+};
+
 const FireTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
   const [score1, setScore1] = useState(surveyData.score1 || '');
@@ -108,15 +146,17 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [currentScoreLastUpdated, setCurrentScoreLastUpdated] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [eventInfo, setEventInfo] = useState(null);
-  const allowedRanksSet = getAllowedRanksSet(eventInfo?.event_type === 'world_bloom');
   const [showTop50, setShowTop50] = useState(false);
   const [chaptersData, setChaptersData] = useState([]);
   const [worldBloomsInfo, setWorldBloomsInfo] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState('all');
+  const isWorldBloomChapterSelected = eventInfo?.event_type === 'world_bloom' && selectedChapter !== 'all';
+  const allowedRanksSet = getAllowedRanksSet(isWorldBloomChapterSelected);
   const [chapterLiveData, setChapterLiveData] = useState([]);
   const [chapterScoreLastUpdated, setChapterScoreLastUpdated] = useState(null);
   const [isRoomSearchOpen, setIsRoomSearchOpen] = useState(false);
   const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('roomSearchEngine') || 'yahoo');
+  const [showRecentHourlySpeed, setShowRecentHourlySpeed] = useState(() => localStorage.getItem('showRecentHourlySpeed') !== 'false');
   const [currentNaturalFire, setCurrentNaturalFire] = useState(surveyData.currentNaturalFire || '');
   const [challengeScore, setChallengeScore] = useState(surveyData.challengeScore || ''); // Default empty, used as 250 if empty
   const [worldPass, setWorldPass] = useState(surveyData.worldPass || false);
@@ -180,18 +220,24 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const dropdownRef = useRef(null);
   const importMenuRef = useRef(null);
   const hasAutoSelected = useRef(false);
+  const rankingTableContainerRef = useRef(null);
+  const [stackScoreDeltas, setStackScoreDeltas] = useState(false);
 
   // Persist Search Engine Preference
   useEffect(() => {
     localStorage.setItem('roomSearchEngine', searchEngine);
   }, [searchEngine]);
 
+  useEffect(() => {
+    localStorage.setItem('showRecentHourlySpeed', showRecentHourlySpeed ? 'true' : 'false');
+  }, [showRecentHourlySpeed]);
+
   // World Link Chapter Auto-selection
   useEffect(() => {
     if (!hasAutoSelected.current) {
       let selected = null;
       const now = Date.now();
-      
+
       // 1. worldBloomsInfo에서 먼저 찾기
       if (worldBloomsInfo && worldBloomsInfo.length > 0 && eventInfo?.id) {
         const eventChapters = worldBloomsInfo.filter(wb => wb.eventId == eventInfo.id);
@@ -206,7 +252,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           selected = matchedChapter?.chapter_id || `wl-${currentChapter.chapterNo}`;
         }
       }
-      
+
       // 2. 못 찾았으면 chaptersData에서 찾기
       if (!selected && chaptersData.length > 0) {
         const currentChapter = chaptersData.find(ch => {
@@ -291,7 +337,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           finalData = assetData.map(item => ({
             rank: item.rank,
             currentScore: item.score,
-            predictedScore: 0 // No prediction
+            predictedScore: 0, // No prediction
+            scoreDelta1h: item.scoreDelta1h
           })).sort((a, b) => a.rank - b.rank);
           // Can't really update eventInfo properly without metadata, but we follow instruction "display higher event number"
           // We'll keep mainData.event_info if available (might be old), or maybe we should just not show outdated event info?
@@ -311,7 +358,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             finalData = mainData.data.map(item => ({
               rank: item.rank,
               currentScore: item.current,
-              predictedScore: item.predicted
+              predictedScore: item.predicted,
+              scoreDelta1h: item.scoreDelta1h
             })).sort((a, b) => a.rank - b.rank);
           }
         } else {
@@ -345,16 +393,19 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
             let currentScore = 0;
             let predictedScore = 0;
+            let scoreDelta1h = null;
 
             if (mainItem) {
               currentScore = mainItem.current;
               predictedScore = mainItem.predicted;
+              scoreDelta1h = mainItem.scoreDelta1h ?? null;
             }
 
             const mainTs = mainData.updatedAt || 0;
             const assetTs = assetJson?.fetchedAt ? new Date(assetJson.fetchedAt.replace(' ', 'T') + '+09:00').getTime() : (assetData.length > 0 && assetData[0].timestamp ? new Date(assetData[0].timestamp).getTime() : 0);
 
             if (assetItem) {
+              scoreDelta1h = assetItem.scoreDelta1h ?? scoreDelta1h;
               if (mainTs > assetTs) {
                 if (!currentScore) currentScore = assetItem.score;
               } else {
@@ -366,6 +417,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               rank,
               currentScore,
               predictedScore,
+              scoreDelta1h,
               l: rangeItem?.l || (mainItem?.l) || 0,
               u: rangeItem?.u || (mainItem?.u) || 0
             };
@@ -386,11 +438,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         const latestEventForRanks = assetEventId >= mainEventId
           ? (assetJson?.latest_event || mainData.latest_event)
           : mainData.latest_event;
-        const latestEventStartedForRanks = latestEventForRanks?.startAt && latestEventForRanks.startAt <= Date.now();
-        const effectiveEventType = latestEventStartedForRanks
-          ? (latestEventForRanks.eventType || latestEventForRanks.event_type || mergedEventInfo?.event_type)
-          : mergedEventInfo?.event_type;
-        const eventAllowedRanksSet = getAllowedRanksSet(effectiveEventType === 'world_bloom');
+        const eventAllowedRanksSet = getAllowedRanksSet(false);
         finalData = finalData.filter(item => eventAllowedRanksSet.has(item.rank));
         mergedEventInfo = applyLatestEventToEventInfo(mergedEventInfo, latestEventForRanks);
 
@@ -406,7 +454,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               fetch(`${process.env.REACT_APP_API_BASE_URL}/api/wlranking`).catch(() => null),
               fetch(`https://asset.rilaksekai.com/suite/worldBlooms.json`).catch(() => null)
             ]);
-            
+
             if (wbResponse && wbResponse.ok) {
               const wbData = await wbResponse.json();
               setWorldBloomsInfo(Array.isArray(wbData) ? wbData : (wbData.data || []));
@@ -419,7 +467,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             );
             const top100Chapters = (assetJson?.top100?.userWorldBloomChapterRankings || []).filter(isCurrentEventChapter);
             const borderChapters = (assetJson?.border?.userWorldBloomChapterRankingBorders || []).filter(isCurrentEventChapter);
-            
+
             const mergedChaptersMap = new Map();
             for (const ch of top100Chapters) {
               mergedChaptersMap.set(ch.gameCharacterId, {
@@ -439,7 +487,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 });
               }
             }
-            
+
             const mergedChapters = Array.from(mergedChaptersMap.values());
             if (mergedChapters.length > 0) {
               setChapterLiveData(mergedChapters);
@@ -1176,12 +1224,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
   // [추가] 월드링크: 선택된 챕터에 따라 표시할 예측 데이터 결정
   const activePredictionData = (() => {
-    if (selectedChapter === 'all') {
+    if (selectedChapter === 'all' || eventInfo?.event_type !== 'world_bloom') {
       return predictionData;
     }
     const chapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
     const chapterData = chapter?.data || [];
-    
+
     const rankRangeMap = new Map();
     if (chapter?.ranks) {
       chapter.ranks.forEach(rankObj => {
@@ -1220,7 +1268,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         }
       }
     }
-    
+
     // 만약 worldBloomsInfo를 불러오지 못했거나 매핑 실패시 순서대로 폴백 (chapterLiveData가 새로운 포맷인 경우)
     if (currentChapterRankings.length === 0 && eventChapterLiveData.length > 0 && eventChapterLiveData[0].gameCharacterId) {
       const chNumStr = selectedChapter.split('-')[1];
@@ -1252,11 +1300,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
       let currentScore = chapterItem?.current || 0;
       let predictedScore = chapterItem?.predicted || 0;
+      let scoreDelta1h = chapterItem?.scoreDelta1h ?? null;
 
       const liveTs = chapterScoreLastUpdated || 0;
       const mainTs = lastUpdated || 0;
 
       if (liveItem) {
+        scoreDelta1h = liveItem.scoreDelta1h ?? scoreDelta1h;
         if (mainTs > liveTs) {
           if (!currentScore) currentScore = liveItem.score;
         } else {
@@ -1268,11 +1318,85 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         rank,
         currentScore,
         predictedScore,
+        scoreDelta1h,
         l: rangeItem?.l || 0,
         u: rangeItem?.u || 0
       };
     }).sort((a, b) => a.rank - b.rank);
   })();
+
+  const scoreDeltaLayoutSignature = JSON.stringify(
+    activePredictionData.map(row => [
+      Math.floor(row.currentScore || 0).toLocaleString(),
+      showRecentHourlySpeed ? (formatScoreDelta1h(row.scoreDelta1h) || '') : ''
+    ])
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const container = rankingTableContainerRef.current;
+    if (!container || !showRecentHourlySpeed) {
+      setStackScoreDeltas(false);
+      return undefined;
+    }
+
+    let layoutRows = [];
+    try {
+      layoutRows = JSON.parse(scoreDeltaLayoutSignature);
+    } catch (error) {
+      layoutRows = [];
+    }
+
+    if (!layoutRows.some(([, deltaText]) => deltaText)) {
+      setStackScoreDeltas(false);
+      return undefined;
+    }
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return undefined;
+
+    let animationFrameId = null;
+    const evaluate = () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(() => {
+        const tableWidth = container.getBoundingClientRect().width;
+        if (!tableWidth) {
+          setStackScoreDeltas(false);
+          return;
+        }
+
+        const fontFamily = window.getComputedStyle(container).fontFamily || 'system-ui, sans-serif';
+        const deltaFontSize = window.matchMedia('(min-width: 640px)').matches ? 10 : 9;
+        const currentScoreContentWidth = (tableWidth * CURRENT_SCORE_COLUMN_RATIO) - CURRENT_SCORE_CELL_HORIZONTAL_PADDING;
+
+        const shouldStack = layoutRows.some(([scoreText, deltaText]) => {
+          context.font = `400 14px ${fontFamily}`;
+          const scoreWidth = context.measureText(scoreText).width;
+          if (!deltaText) return scoreWidth > currentScoreContentWidth;
+
+          context.font = `800 ${deltaFontSize}px ${fontFamily}`;
+          const deltaWidth = context.measureText(deltaText).width;
+          return scoreWidth + SCORE_DELTA_INLINE_GAP + deltaWidth > currentScoreContentWidth;
+        });
+
+        setStackScoreDeltas(shouldStack);
+      });
+    };
+
+    evaluate();
+
+    const observer = window.ResizeObserver ? new window.ResizeObserver(evaluate) : null;
+    if (observer) observer.observe(container);
+    window.addEventListener('resize', evaluate);
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', evaluate);
+    };
+  }, [scoreDeltaLayoutSignature, showRecentHourlySpeed]);
 
   return (
 
@@ -2037,7 +2161,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         <div className="flex gap-1 sm:gap-1.5">
           {/* Ranking Board Button */}
           <button
-            onClick={() => window.open('https://sekai.run/', '_blank')}
+            onClick={() => window.open('https://run.rilaksekai.com/', '_blank')}
             className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
             title={t('fire.ranking_board')}
           >
@@ -2050,7 +2174,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           </button>
           {/* Refresh Button */}
           <button
-            onClick={() => window.open('https://sekai.run/refresh', '_blank')}
+            onClick={() => window.open('https://run.rilaksekai.com/refresh', '_blank')}
             className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 border border-blue-100 hover:border-blue-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
             title={t('fire.refresh')}
           >
@@ -2184,7 +2308,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                               chEndMs = wbChapter.chapterEndAt;
                             }
                           }
-                          
+
                           if (chStartMs && now < chStartMs) return t('fire.chapter_starts_in');
                           if (chEndMs && now >= chEndMs) return t('fire.chapter_ended');
                           return t('fire.chapter_ends_in') || t('fire.ends_in');
@@ -2233,7 +2357,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 {/* Progress Bar */}
                 {(() => {
                   let startSec, totalHours, currentTs;
-                  
+
                   // 챕터 선택 시 해당 챕터의 시간 범위 사용
                   if (selectedChapter !== 'all') {
                     // 1) chaptersData에서 찾기
@@ -2244,7 +2368,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       const maxTs = Math.max(lastUpdated || 0, chapterScoreLastUpdated || 0);
                       currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
                     }
-                    
+
                     // 2) worldBloomsInfo에서 찾기 (fallback)
                     if (!startSec && eventInfo?.id) {
                       const chNum = selectedChapter.split('-')[1];
@@ -2257,7 +2381,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       }
                     }
                   }
-                  
+
                   // 종합 (기존 로직)
                   if (!startSec) {
                     startSec = eventInfo.start;
@@ -2273,11 +2397,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   return (
                     <div className="relative w-full h-6 bg-gray-200 rounded-lg overflow-hidden shadow-inner mt-0">
                       <div
-                        className={`absolute top-0 left-0 h-full transition-all duration-500 ${
-                          selectedChapter !== 'all' 
-                            ? 'bg-gradient-to-r from-purple-400 to-fuchsia-500' 
+                        className={`absolute top-0 left-0 h-full transition-all duration-500 ${selectedChapter !== 'all'
+                            ? 'bg-gradient-to-r from-purple-400 to-fuchsia-500'
                             : 'bg-gradient-to-r from-blue-400 to-indigo-500'
-                        }`}
+                          }`}
                         style={{ width: `${progress}% ` }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] z-10 leading-none pb-[1px]">
@@ -2324,8 +2447,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             // worldBloomsInfo에서 현재 이벤트의 모든 챕터 추출
             const eventChaptersFromWB = eventInfo?.id
               ? worldBloomsInfo
-                  .filter(wb => wb.eventId == eventInfo.id)
-                  .sort((a, b) => a.chapterNo - b.chapterNo)
+                .filter(wb => wb.eventId == eventInfo.id)
+                .sort((a, b) => a.chapterNo - b.chapterNo)
               : [];
 
             // 챕터 목록: worldBloomsInfo 우선, 없으면 chaptersData 사용
@@ -2342,11 +2465,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     onClick={() => setSelectedChapter('all')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-                      selectedChapter === 'all'
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${selectedChapter === 'all'
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {t('fire.chapter_all')}
                   </button>
@@ -2360,7 +2482,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       const isActive = now >= chStart && now < chEnd;
                       const isEnded = now >= chEnd;
                       const chapterNum = wbChapter.chapterNo;
-                      
+
                       // chaptersData에서 매칭되는 챕터 찾기 (선택 시 데이터 표시용)
                       const matchedChapter = chaptersData.find(ch => {
                         const chNum = ch.chapter_id?.split('-')[1];
@@ -2383,15 +2505,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         <button
                           key={wbChapter.id || chapterId}
                           onClick={() => setSelectedChapter(chapterId)}
-                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-[3px] ${
-                            selectedChapter === chapterId
+                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-[3px] ${selectedChapter === chapterId
                               ? 'text-white border-transparent translate-y-[3px]'
                               : isActive
                                 ? 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50 shadow-sm ring-1 ring-purple-300'
                                 : isEnded
                                   ? 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200'
                                   : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 shadow-sm opacity-60'
-                          }`}
+                            }`}
                           style={selectedChapter === chapterId ? { backgroundColor: charData?.color || '#9333ea', borderColor: charData?.color || '#9333ea' } : {}}
                         >
                           {charData && (
@@ -2399,9 +2520,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                               <img
                                 src={`/assets/characters/${charData.image}.webp`}
                                 alt={displayName}
-                                className={`w-full h-full object-contain ${
-                                  isEnded && selectedChapter !== chapterId ? 'opacity-50 grayscale' : ''
-                                }${!isActive && !isEnded ? 'opacity-40' : ''}`}
+                                className={`w-full h-full object-contain ${isEnded && selectedChapter !== chapterId ? 'opacity-50 grayscale' : ''
+                                  }${!isActive && !isEnded ? 'opacity-40' : ''}`}
                               />
                             </div>
                           )}
@@ -2420,12 +2540,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       const isActive = now >= chStart && now < chEnd;
                       const isEnded = now >= chEnd;
                       const chapterNum = ch.chapter_id.split('-')[1] || (idx + 1);
-                      
+
                       let charData = null;
                       const eventWorldBloom = worldBloomsInfo.find(wb => wb.id == ch.world_bloom_id || wb.eventId == eventInfo?.id);
                       if (eventWorldBloom && eventWorldBloom.worldBloomChapters) {
                         const targetIdx = parseInt(chapterNum) - 1;
-                        const wbChapter = eventWorldBloom.worldBloomChapters.find(c => c.id == chapterNum) 
+                        const wbChapter = eventWorldBloom.worldBloomChapters.find(c => c.id == chapterNum)
                           || eventWorldBloom.worldBloomChapters[targetIdx];
                         if (wbChapter && wbChapter.characterId) {
                           const charIdStr = String(wbChapter.characterId).padStart(2, '0');
@@ -2436,31 +2556,30 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       const charMatch = (ch.nick || '').match(/\(([^)]+)\)/);
                       const fallbackName = charMatch ? charMatch[1] : `Ch.${chapterNum}`;
                       if (!charData && fallbackName) {
-                        const charDataByName = characterBirthdays.find(b => 
+                        const charDataByName = characterBirthdays.find(b =>
                           b.nameEn.toLowerCase() === fallbackName.toLowerCase() ||
                           b.nameKo === fallbackName ||
                           b.nameJa === fallbackName
                         );
                         if (charDataByName) charData = charDataByName;
                       }
-                      
-                      const displayName = charData 
-                        ? (language === 'en' ? charData.nameEn : (language === 'ja' ? charData.nameJa : charData.nameKo)) 
+
+                      const displayName = charData
+                        ? (language === 'en' ? charData.nameEn : (language === 'ja' ? charData.nameJa : charData.nameKo))
                         : fallbackName;
 
                       return (
                         <button
                           key={ch.chapter_id}
                           onClick={() => setSelectedChapter(ch.chapter_id)}
-                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-[3px] ${
-                            selectedChapter === ch.chapter_id
+                          className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-[3px] ${selectedChapter === ch.chapter_id
                               ? 'text-white border-transparent translate-y-[3px]'
                               : isActive
                                 ? 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50 shadow-sm ring-1 ring-purple-300'
                                 : isEnded
                                   ? 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200'
                                   : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 shadow-sm'
-                          }`}
+                            }`}
                           style={selectedChapter === ch.chapter_id ? { backgroundColor: charData?.color || '#9333ea', borderColor: charData?.color || '#9333ea' } : {}}
                         >
                           {charData && (
@@ -2488,13 +2607,18 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               {t('fire.loading_prediction_data')}
             </div>
           ) : activePredictionData.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" ref={rankingTableContainerRef}>
               <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[26%]" />
+                  <col className="w-[48%]" />
+                  <col className="w-[26%]" />
+                </colgroup>
                 <thead>
                   <tr className="bg-gray-50/50">
-                    <th className="px-3 py-2 text-left font-semibold text-gray-600 w-20">{t('fire.rank')}</th>
-                    <th className="px-3 py-2 text-right font-semibold text-gray-600">{t('fire.current')}</th>
-                    <th className="px-3 py-2 text-right font-semibold text-gray-600">{t('fire.predicted')}</th>
+                    <th className="pl-3 pr-1 py-2 text-left font-semibold text-gray-600">{t('fire.rank')}</th>
+                    <th className="px-1 py-2 text-center font-semibold text-gray-600">{t('fire.current')}</th>
+                    <th className="pl-1 pr-3 py-2 text-right font-semibold text-gray-600">{t('fire.predicted')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -2519,6 +2643,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           }`}
                       >
                         <table className="w-full text-sm table-fixed">
+                          <colgroup>
+                            <col className="w-[26%]" />
+                            <col className="w-[48%]" />
+                            <col className="w-[26%]" />
+                          </colgroup>
                           <tbody className="divide-y divide-gray-100">
                             {activePredictionData.filter(r => r.rank <= 50).map((row, index) => (
                               <React.Fragment key={row.rank}>
@@ -2526,13 +2655,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                   className={`transition-colors cursor-pointer active:bg-indigo-100 ${index % 2 === 0 ? 'bg-indigo-50/10 hover:bg-indigo-50/60' : 'bg-indigo-50/40 hover:bg-indigo-50/80'} ${activeRank === row.rank ? 'bg-indigo-100/70 hover:bg-indigo-100/70' : ''}`}
                                   onClick={(e) => handleRowClick(e, row.rank)}
                                 >
-                                  <td className="px-3 py-2 font-bold text-indigo-600 w-20 relative">
+                                  <td className="pl-3 pr-1 py-2 text-left font-bold text-indigo-600 relative">
                                     #{row.rank}
                                   </td>
-                                  <td className="px-3 py-2 text-right tabular-nums text-gray-700">
-                                    {Math.floor(row.currentScore).toLocaleString()}
+                                  <td className="px-1 py-2 text-center tabular-nums text-gray-700">
+                                    <CurrentScoreWithDelta score={row.currentScore} delta={showRecentHourlySpeed ? row.scoreDelta1h : null} stacked={stackScoreDeltas} />
                                   </td>
-                                  <td className="px-3 py-2 text-right tabular-nums font-bold text-gray-900">
+                                  <td className="pl-1 pr-3 py-2 text-right tabular-nums font-bold text-gray-900">
                                     {Math.floor(row.predictedScore).toLocaleString()}
                                   </td>
                                 </tr>
@@ -2590,13 +2719,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         className={`transition-colors cursor-pointer active:bg-gray-200 ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'} ${activeRank === row.rank ? 'bg-gray-200 hover:bg-gray-200' : ''}`}
                         onClick={(e) => handleRowClick(e, row.rank)}
                       >
-                        <td className="px-3 py-2 font-bold text-indigo-600 relative">
+                        <td className="pl-3 pr-1 py-2 text-left font-bold text-indigo-600 relative">
                           #{row.rank}
                         </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-gray-700">
-                          {Math.floor(row.currentScore).toLocaleString()}
+                        <td className="px-1 py-2 text-center tabular-nums text-gray-700">
+                          <CurrentScoreWithDelta score={row.currentScore} delta={showRecentHourlySpeed ? row.scoreDelta1h : null} stacked={stackScoreDeltas} />
                         </td>
-                        <td className="px-3 py-2 text-right tabular-nums font-bold text-gray-900">
+                        <td className="pl-1 pr-3 py-2 text-right tabular-nums font-bold text-gray-900">
                           {Math.floor(row.predictedScore).toLocaleString()}
                         </td>
                       </tr>
@@ -2653,7 +2782,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             <span>
               {t('fire.data_provided')} <a href="https://jiiku831.github.io/sekarun.html" target="_blank" rel="noopener noreferrer" className="hover:underline text-indigo-500">Jiiku</a>
             </span>
-            <span>
+            <span className="self-center sm:self-auto">
               {t('fire.predictions_disclaimer')}
             </span>
           </div>
@@ -2662,9 +2791,21 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
 
 
+      <div className="w-full max-w-2xl mx-auto mt-3 flex justify-end">
+        <label className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-bold text-gray-500">
+          <input
+            type="checkbox"
+            checked={showRecentHourlySpeed}
+            onChange={(e) => setShowRecentHourlySpeed(e.target.checked)}
+            className="h-3 w-3 accent-emerald-500"
+          />
+          {t('fire.recent_hourly_speed') || '최근 시속'}
+        </label>
+      </div>
+
       {
         language === 'ko' && (
-          <div className="w-full max-w-2xl mx-auto mt-4 text-center">
+          <div className="w-full max-w-2xl mx-auto mt-2 text-center">
             <button
               onClick={() => window.open('https://x.rilaksekai.com/', '_blank')}
               className="w-full bg-white border border-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-gray-50 hover:text-indigo-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"

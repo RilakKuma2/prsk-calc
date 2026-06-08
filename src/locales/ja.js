@@ -256,6 +256,7 @@ const ja = {
         chapter_ends_in: 'チャプ終了',
         chapter_starts_in: 'チャプ開始まで',
         data_provided: 'データ出典',
+        recent_hourly_speed: '直近時速',
         predictions_disclaimer: '* 予測は推定値であり変動します',
         rank: '順位',
         current: '現在P',

@@ -239,6 +239,7 @@ const ko = {
         chapter_ends_in: '챕터 종료',
         chapter_starts_in: '챕터 시작까지',
         data_provided: '데이터 출처',
+        recent_hourly_speed: '최근 시속',
         predictions_disclaimer: '* 예측값은 추정치이며 실제와 다를 수 있습니다',
         rank: '순위',
         current: '현재 점수',
