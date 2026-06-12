@@ -1709,17 +1709,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
                   {/* World Pass Toggle */}
                   <div className="flex flex-col items-center justify-end h-full w-1/2 max-w-[100px] pb-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={worldPass}
-                          onChange={(e) => setWorldPass(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </div>
-                      <span className="text-[10px] text-gray-600 font-medium select-none whitespace-nowrap">{t('fire.world_pass')}</span>
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer text-[10px] text-gray-600 font-bold select-none whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={worldPass}
+                        onChange={(e) => setWorldPass(e.target.checked)}
+                        className="h-3.5 w-3.5 accent-indigo-600"
+                      />
+                      {t('fire.world_pass')}
                     </label>
                   </div>
                 </div>
@@ -1728,39 +1725,35 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             {/* Toggles Row */}
             <div className="border-t border-indigo-100 pt-2 mt-2 pb-1 flex justify-center items-center gap-4">
               {/* Level Up Bonus Toggle */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={isLevelUpBonusEnabled}
-                    onChange={(e) => setIsLevelUpBonusEnabled(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                </div>
-                <span className="text-xs font-bold text-gray-700">{t('fire.levelup_bonus_toggle')}</span>
+              <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-gray-700 select-none whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={isLevelUpBonusEnabled}
+                  onChange={(e) => setIsLevelUpBonusEnabled(e.target.checked)}
+                  className="h-3.5 w-3.5 accent-indigo-600"
+                />
+                {t('fire.levelup_bonus_toggle')}
               </label>
 
               <div className="h-4 w-px bg-gray-200"></div>
 
               {/* Next Event Fire Toggle */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={isNextEventFireEnabled}
-                    onChange={(e) => {
-                      const checked = e.target.value === 'true' || e.target.checked;
-                      setIsNextEventFireEnabled(checked);
+              <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-gray-700 select-none whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={isNextEventFireEnabled}
+                  onChange={(e) => {
+                    const checked = e.target.value === 'true' || e.target.checked;
+                    setIsNextEventFireEnabled(checked);
 
-                      // Auto-fill logic when manually enabling
-                      if (checked && eventInfo) {
-                        const now = Date.now();
-                        const end = eventInfo.end * 1000;
-                        // Calculate target: If event ended, or during event -> End + 2 days 15:00
-                        // If before event -> Actual next start
-                        let targetMs = null;
-                        const startMs = eventInfo.start ? eventInfo.start * 1000 : 0;
+                    // Auto-fill logic when manually enabling
+                    if (checked && eventInfo) {
+                      const now = Date.now();
+                      const end = eventInfo.end * 1000;
+                      // Calculate target: If event ended, or during event -> End + 2 days 15:00
+                      // If before event -> Actual next start
+                      let targetMs = null;
+                      const startMs = eventInfo.start ? eventInfo.start * 1000 : 0;
 
                         let nextChapterStartMs = null;
                         if (eventInfo.event_type === 'world_bloom') {
@@ -1862,12 +1855,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           setManualNextEventTime(timeStr);
                         }
                       }
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
-                </div>
-                <span className="text-xs font-bold text-gray-700">{t('fire.next_event_fire_toggle')}</span>
+                  }}
+                  className="h-3.5 w-3.5 accent-purple-500"
+                />
+                {t('fire.next_event_fire_toggle')}
               </label>
             </div>
 

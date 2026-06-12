@@ -1,77 +1,95 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
-import { getSongOptionsSync } from '../utils/dataLoader';
+import { getMusicMetasSync, getSongOptionsSync } from '../utils/dataLoader';
 import { LiveType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
-// Fixed configuration for batch calculation with levels
-const TARGET_SONGS = [
-    { id: 6, difficulty: 'append' },
-    { id: 141, difficulty: 'append' },
-    { id: 627, difficulty: 'append' },
-    { id: 671, difficulty: 'append' },
-    { id: 540, difficulty: 'master' },
-    { id: 644, difficulty: 'append' },
-    { id: 104, difficulty: 'master' },
-    { id: 72, difficulty: 'master' },
-    { id: 11, difficulty: 'master' },
-    { id: 134, difficulty: 'append' },
-    { id: 154, difficulty: 'append' },
-    { id: 62, difficulty: 'master' },
-    { id: 410, difficulty: 'master' },
-    { id: 190, difficulty: 'master' },
-    { id: 539, difficulty: 'master' },
-    { id: 566, difficulty: 'master' },
-    { id: 627, difficulty: 'master' },
-    { id: 605, difficulty: 'master' },
-    { id: 91, difficulty: 'master' },
-    { id: 227, difficulty: 'append' },
-    { id: 489, difficulty: 'append' },
-    { id: 671, difficulty: 'master' },
-    { id: 427, difficulty: 'master' },
-    { id: 117, difficulty: 'master' },
-    { id: 160, difficulty: 'append' },
-    { id: 6, difficulty: 'master' },
-    { id: 585, difficulty: 'master' },
-    { id: 150, difficulty: 'append' },
-    { id: 538, difficulty: 'master' },
-    { id: 671, difficulty: 'expert' },
-    { id: 585, difficulty: 'append' },
-    { id: 382, difficulty: 'master' },
-    { id: 583, difficulty: 'master' },
-    { id: 691, difficulty: 'append' },
-    { id: 74, difficulty: 'master' },
-    { id: 141, difficulty: 'master' },
-    { id: 62, difficulty: 'expert' },
-    { id: 622, difficulty: 'append' },
-    { id: 26, difficulty: 'master' },
-    { id: 74, difficulty: 'expert' },
-    { id: 100, difficulty: 'append' },
-    { id: 578, difficulty: 'master' },
-    { id: 610, difficulty: 'master' },
-    { id: 320, difficulty: 'master' },
-    { id: 89, difficulty: 'append' },
-    { id: 554, difficulty: 'append' },
-    { id: 264, difficulty: 'master' },
-    { id: 11, difficulty: 'expert' },
-    { id: 374, difficulty: 'master' },
-    { id: 366, difficulty: 'append' },
-    { id: 11, difficulty: 'append' },
-];
+const DEFAULT_CHALLENGE_DECK = {
+    totalPower: 410520,
+    skillLeader: 140,
+    skillMember2: 120,
+    skillMember3: 100,
+    skillMember4: 100,
+    skillMember5: 100,
+};
+const EMPTY_CHALLENGE_DECK = {
+    totalPower: '',
+    skillLeader: '',
+    skillMember2: '',
+    skillMember3: '',
+    skillMember4: '',
+    skillMember5: ''
+};
+const TOP_CHALLENGE_SONG_LIMIT = 100;
+let cachedTopChallengeTargets = null;
+
+const getSongDisplayName = (song, language) => {
+    if (!song) return '';
+    if (language === 'ko') return song.name || song.title_jp || '';
+    if (language === 'ja') return song.title_jp || song.name || '';
+    return song.title_en || song.title_jp || song.name || '';
+};
+
+const getSongLevel = (song, difficulty) => {
+    const level = song?.levels?.[difficulty];
+    return level === undefined ? null : level;
+};
+
+const buildTopChallengeTargets = () => {
+    if (cachedTopChallengeTargets) return cachedTopChallengeTargets;
+
+    const songs = getSongOptionsSync();
+    const songsById = new Map(songs.map(song => [Number(song.id), song]));
+    const seen = new Set();
+    const candidates = [];
+
+    for (const musicMeta of getMusicMetasSync()) {
+        const songId = Number(musicMeta.music_id);
+        const difficulty = musicMeta.difficulty;
+        const key = `${songId}-${difficulty}`;
+        const song = songsById.get(songId);
+
+        if (!song || !difficulty || seen.has(key)) continue;
+        if (!musicMeta.skill_score_solo || musicMeta.skill_score_solo.length < 5) continue;
+        seen.add(key);
+
+        try {
+            const result = calculateScoreRange({
+                songId,
+                difficulty,
+                ...DEFAULT_CHALLENGE_DECK,
+                musicMeta,
+            }, LiveType.SOLO);
+
+            if (result) {
+                candidates.push({
+                    id: songId,
+                    difficulty,
+                    level: getSongLevel(song, difficulty),
+                    referenceMax: result.max,
+                });
+            }
+        } catch (error) {
+            console.error(`Failed to rank challenge song ${songId} ${difficulty}`, error);
+        }
+    }
+
+    cachedTopChallengeTargets = candidates
+        .sort((a, b) => {
+            if (b.referenceMax !== a.referenceMax) return b.referenceMax - a.referenceMax;
+            return a.id - b.id;
+        })
+        .slice(0, TOP_CHALLENGE_SONG_LIMIT);
+
+    return cachedTopChallengeTargets;
+};
 
 function ChallengeScoreTab({ surveyData, setSurveyData }) {
     const { t, language } = useTranslation();
     // Initialize or read from surveyData
     // Using 'challengeDeck' to separate from 'autoDeck'
-    const deck = surveyData.challengeDeck || {
-        totalPower: '',
-        skillLeader: '',
-        skillMember2: '',
-        skillMember3: '',
-        skillMember4: '',
-        skillMember5: ''
-    };
+    const deck = useMemo(() => surveyData.challengeDeck || EMPTY_CHALLENGE_DECK, [surveyData.challengeDeck]);
 
     const updateDeck = (key, value) => {
         setSurveyData(prev => ({
@@ -85,9 +103,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
     const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5 } = deck;
 
+    const [targetSongs] = useState(() => buildTopChallengeTargets());
     const [batchResults, setBatchResults] = useState(null);
-    const [scoreData, setScoreData] = useState([]);
-    const [difficulty, setDifficulty] = useState(surveyData.difficulty || 'master');
     const [sortConfig, setSortConfig] = useState({ key: 'max', direction: 'desc' });
 
     // Search State
@@ -156,7 +173,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
     const handleSelectSong = (song) => {
         setSelectedSong(song);
-        setSearchQuery(language === 'ko' ? song.name : song.title_jp);
+        setSearchQuery(getSongDisplayName(song, language));
         setSearchResults([]);
 
         // Calculate result immediately
@@ -164,7 +181,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             const input = {
                 songId: song.id,
                 difficulty: searchDifficulty,
-                totalPower: Number(deck.totalPower || '410520'),
+                totalPower: Number(deck.totalPower || DEFAULT_CHALLENGE_DECK.totalPower),
                 skillLeader: Number(deck.skillLeader || '140'),
                 skillMember2: Number(deck.skillMember2 || '120'),
                 skillMember3: Number(deck.skillMember3 || '100'),
@@ -177,9 +194,10 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 if (res) {
                     setCustomResult({
                         ...res,
-                        songName: language === 'ko' ? song.name : song.title_jp,
+                        songName: getSongDisplayName(song, language),
                         songId: song.id,
                         difficulty: searchDifficulty,
+                        mv: song.mv,
                         // level: ??? (Need to fetch level if possible, but might not be in SONG_OPTIONS directly without song data lookup, handled by calculator?)
                         // Calculator doesn't return level usually, it takes inputs. 
                         // But for display we might want it. 
@@ -192,23 +210,13 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         }
     };
 
-    // Re-calculate custom result when difficulty or deck changes if a song is selected
-    useEffect(() => {
-        if (selectedSong) {
-            handleSelectSong(selectedSong);
-        }
-    }, [searchDifficulty, deck, selectedSong]);
-    // ^ Warning: handleSelectSong calls setSelectedSong, likely loop if not careful. 
-    // Better to extract calculation to separate function or use specific effect.
-    // Simpler: Just make handleSelectSong set song, and an effect watches [selectedSong, searchDifficulty, deck].
-
     useEffect(() => {
         if (!selectedSong) return;
 
         const input = {
             songId: selectedSong.id,
             difficulty: searchDifficulty,
-            totalPower: Number(deck.totalPower || '410520'),
+            totalPower: Number(deck.totalPower || DEFAULT_CHALLENGE_DECK.totalPower),
             skillLeader: Number(deck.skillLeader || '140'),
             skillMember2: Number(deck.skillMember2 || '120'),
             skillMember3: Number(deck.skillMember3 || '100'),
@@ -221,9 +229,10 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             if (res) {
                 setCustomResult({
                     ...res,
-                    songName: language === 'ko' ? selectedSong.name : selectedSong.title_jp,
+                    songName: getSongDisplayName(selectedSong, language),
                     songId: selectedSong.id,
                     difficulty: searchDifficulty,
+                    mv: selectedSong.mv,
                 });
             }
         } catch (e) {
@@ -239,29 +248,25 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             setSurveyData(prev => ({
                 ...prev,
                 challengeDeck: {
-                    totalPower: '',
-                    skillLeader: '',
-                    skillMember2: '',
-                    skillMember3: '',
-                    skillMember4: '',
-                    skillMember5: ''
+                    ...EMPTY_CHALLENGE_DECK
                 }
             }));
         }
     }, [surveyData.challengeDeck, setSurveyData]);
 
-    // Auto-calculate batch results whenever inputs change
+    // Auto-calculate only the pre-selected top 100 targets whenever inputs change.
     useEffect(() => {
         const results = [];
+        const songsById = new Map(getSongOptionsSync().map(song => [Number(song.id), song]));
 
-        TARGET_SONGS.forEach(target => {
-            const song = getSongOptionsSync().find(s => s.id === target.id);
+        targetSongs.forEach(target => {
+            const song = songsById.get(target.id);
             if (!song) return;
 
             const input = {
                 songId: target.id,
                 difficulty: target.difficulty,
-                totalPower: Number(totalPower || '410520'),
+                totalPower: Number(totalPower || DEFAULT_CHALLENGE_DECK.totalPower),
                 skillLeader: Number(skillLeader || '140'),
                 skillMember2: Number(skillMember2 || '120'),
                 skillMember3: Number(skillMember3 || '100'),
@@ -275,10 +280,12 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 if (res) {
                     results.push({
                         ...res,
-                        songName: language === 'ko' ? song.name : song.title_jp,
+                        songName: getSongDisplayName(song, language),
                         songId: song.id,
                         difficulty: target.difficulty,
                         level: target.level,
+                        mv: song.mv,
+                        referenceMax: target.referenceMax,
                     });
                 }
             } catch (e) {
@@ -287,7 +294,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         });
 
         setBatchResults(results);
-    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, language]);
+    }, [targetSongs, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';
@@ -349,7 +356,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 <InputRow
                     label={t('challenge_score.total_power')}
                     value={totalPower}
-                    placeholder="410520"
+                    placeholder={String(DEFAULT_CHALLENGE_DECK.totalPower)}
                     onChange={(e) => {
                         let val = parseInt(e.target.value) || 0;
                         if (val > 460000) {
@@ -443,7 +450,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                 }`}
                                         >
                                             <span className="font-medium text-gray-700 truncate w-full">
-                                                {language === 'ko' ? song.name : song.title_jp}
+                                                {getSongDisplayName(song, language)}
                                             </span>
                                             {language === 'ko' && (
                                                 <span className="text-[10px] text-gray-400 truncate w-full -mt-0.5">
@@ -494,6 +501,11 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                         <td className="px-4 py-4 font-bold text-gray-800 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 {customResult.songName}
+                                                {customResult.mv === 3 && (
+                                                    <span className="shrink-0 inline-flex items-center justify-center px-1 py-[1px] rounded text-[9px] font-bold border border-yellow-400 text-yellow-400 bg-slate-700 leading-none select-none">
+                                                        3D
+                                                    </span>
+                                                )}
                                                 <span
                                                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${customResult.difficulty === 'master' || customResult.difficulty === 'append' || customResult.difficulty === 'expert' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
                                                         }`}
@@ -671,6 +683,11 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                 <td className="px-1 py-4 md:p-4 font-bold text-gray-800 group-hover/row:text-pink-600 transition-colors text-xs md:text-base text-center">
                                                     <div className="flex items-center justify-center gap-1 md:gap-2">
                                                         {res.songName}
+                                                        {res.mv === 3 && (
+                                                            <span className="shrink-0 inline-flex items-center justify-center px-1 py-[1px] rounded text-[9px] font-bold border border-yellow-400 text-yellow-400 bg-slate-700 leading-none select-none">
+                                                                3D
+                                                            </span>
+                                                        )}
                                                         <span
                                                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${res.difficulty === 'master' || res.difficulty === 'append' || res.difficulty === 'expert' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
                                                                 }`}

@@ -62,6 +62,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isEfficiencyOrder, setIsEfficiencyOrder] = useState(true);
+    const [show3DOnly, setShow3DOnly] = useState(false);
     const [songOptions, setSongOptions] = useState([]);
     const [musicMetas, setMusicMetas] = useState([]);
 
@@ -88,7 +89,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
     // Reset pagination when search query changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery]);
+    }, [searchQuery, show3DOnly]);
 
     const normalize = (str) => {
         if (!str) return '';
@@ -108,6 +109,10 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
                 (row.title_hi && normalize(row.title_hi).includes(term)) ||
                 (row.title_hangul && normalize(row.title_hangul).includes(term))
             );
+        }
+
+        if (show3DOnly) {
+            finalResults = finalResults.filter(row => row.mv === 3);
         }
 
         if (isAutoMode && isEfficiencyOrder) {
@@ -152,7 +157,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
         }
 
         return finalResults;
-    }, [results, searchQuery, isEfficiencyOrder, isAutoMode, sortKey, sortOrder]);
+    }, [results, searchQuery, show3DOnly, isEfficiencyOrder, isAutoMode, sortKey, sortOrder]);
 
     // Re-trigger calculation
     const handleRefresh = () => {
@@ -781,24 +786,35 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
 
                 {/* Footer */}
                 {filteredResults.length > 0 && !isCalculating && (
-                    <div className="px-4 py-3 border border-t-0 border-gray-200 rounded-b-lg bg-gray-50 flex justify-center items-center gap-4">
-                        <button
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1 bg-white border border-gray-200 rounded text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            Prev
-                        </button>
-                        <span className="text-xs font-medium text-gray-600">
-                            {currentPage} / {totalPages}
-                        </span>
-                        <button
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1 bg-white border border-gray-200 rounded text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            Next
-                        </button>
+                    <div className="px-4 py-3 border border-t-0 border-gray-200 rounded-b-lg bg-gray-50 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                        <div className="col-start-2 flex justify-center items-center gap-4">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 bg-white border border-gray-200 rounded text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Prev
+                            </button>
+                            <span className="text-xs font-medium text-gray-600">
+                                {currentPage} / {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-1 bg-white border border-gray-200 rounded text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                        <label className="justify-self-end inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-bold text-gray-500 select-none">
+                            <input
+                                type="checkbox"
+                                checked={show3DOnly}
+                                onChange={(event) => setShow3DOnly(event.target.checked)}
+                                className="h-3.5 w-3.5 accent-indigo-600"
+                            />
+                            {language === 'ko' ? '3D만' : language === 'ja' ? '3Dのみ' : '3D only'}
+                        </label>
                     </div>
                 )}
             </div>

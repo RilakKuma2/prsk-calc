@@ -67,10 +67,11 @@ export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
         skillMember3,
         skillMember4,
         skillMember5,
+        musicMeta: inputMusicMeta,
     } = input;
 
     const musicMetas = getMusicMetasSync();
-    const musicMeta = musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
+    const musicMeta = inputMusicMeta || musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
 
     if (!musicMeta) {
         console.error(`Calculator: Music meta not found for ID: ${songId}, Difficulty: ${difficulty}`);
