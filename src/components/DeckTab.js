@@ -1567,7 +1567,10 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             <EventBonusCalculatorModal
                 isOpen={showEventBonusCalc}
                 onClose={() => setShowEventBonusCalc(false)}
-                onApply={(totalBonus) => {
+                onApply={(totalBonus, calculatedTotalPower) => {
+                    if (calculatedTotalPower !== null && calculatedTotalPower !== undefined) {
+                        updateDeck('totalPower', Math.round(calculatedTotalPower));
+                    }
                     updateDeck('eventBonus', Number(totalBonus.toFixed(1)));
                     setShowEventBonusCalc(false);
                 }}

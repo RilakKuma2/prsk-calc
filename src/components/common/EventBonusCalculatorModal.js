@@ -3,7 +3,7 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { getCardCharacterId, SUPPORT_CHARACTERS } from '../../utils/supportCardUtils';
 import SupportCardPickerModal from './SupportCardPickerModal';
 import EventOverrideDropdown from './EventOverrideDropdown';
-import { calculateSlotSkillValues } from '../../utils/deckUtils';
+import { calculateSlotSkillValues, resolveSupportUnit } from '../../utils/deckUtils';
 import {
     EVENT_ATTRS, EVENT_UNITS, ORIGINAL_CHAR_UNIT, VS_CHAR_IDS,
     DEFAULT_AUTO_EVENT_OVERRIDE, loadAutoEventOverride
@@ -12,6 +12,26 @@ import {
 const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
 const MASTER_RANK_OPTIONS = [0, 1, 2, 3, 4, 5];
 const MAIN_DECK_SLOT_COUNT = 5;
+const CANVAS_POWER_BONUS = 1500;
+const DEFAULT_CHARACTER_RANK = 51;
+const GATE_LEVEL_POWER_BONUS = 0.1;
+const UNIT_EVENT_LIMITED_CHARACTER_RANK_OFFSET = 40;
+const POWER_PARAM_KEYS = ['param1', 'param2', 'param3'];
+
+const MASTER_RANK_POWER_BONUS_BY_RARITY = {
+    rarity1: 150,
+    rarity2: 300,
+    rarity3: 450,
+    birthday: 540,
+    rarity4: 600,
+};
+
+const AREA_UNIT_OPTIONS = [
+    { key: 'none', label: 'VS', file: 'Virtualsingerlogo.webp' },
+    ...EVENT_UNITS,
+];
+
+const AREA_ATTR_OPTIONS = EVENT_ATTRS.filter(attr => attr.key !== 'wl');
 
 const MAIN_DECK_RARITY_OPTIONS = [
     { key: 'rarity4', label: '★4', typeBonus: 25, masterRankBonus: [10, 12.5, 15, 17.5, 20, 25], canPickup: true, memberBonus: 20 },
@@ -37,8 +57,273 @@ const createEmptyMainDeckSlots = () => (
         typeMatched: true,
         isAwakened: true,
         skillLevel: 1,
+        canvas: false,
     }))
 );
+
+const clampNumber = (value, min, max) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return '';
+    return Math.max(min, Math.min(max, numeric));
+};
+
+const normalizeBonusInput = (value, max) => {
+    if (value === '') return '';
+    return clampNumber(value, 0, max);
+};
+
+const normalizeLevelInput = (value, max) => {
+    if (value === '') return '';
+    const numeric = Number(String(value).replace(/[^\d]/g, ''));
+    if (!Number.isFinite(numeric)) return '';
+    return Math.max(0, Math.min(max, numeric));
+};
+
+const normalizePowerInput = (value) => {
+    if (value === '') return '';
+    const numeric = Number(String(value).replace(/[^\d]/g, ''));
+    if (!Number.isFinite(numeric)) return '';
+    return Math.max(0, numeric);
+};
+
+const normalizeRankInput = (value) => {
+    if (value === '') return '';
+    const numeric = Number(String(value).replace(/[^\d]/g, ''));
+    if (!Number.isFinite(numeric)) return '';
+    return Math.max(0, numeric > 50 ? DEFAULT_CHARACTER_RANK : Math.min(50, numeric));
+};
+
+const formatBonus = (value) => {
+    const numeric = Number(value || 0);
+    return numeric.toFixed(1).replace(/\.0$/, '');
+};
+
+const formatCharacterRank = (value) => {
+    if (value === '') return '';
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return '';
+    return numeric > 50 ? '50+' : String(numeric);
+};
+
+const getMasterRankPowerBonusStep = (slot) => {
+    if (!slot?.card) return 0;
+    const cardType = slot.card.type || slot.card.cardRarityType || '';
+    if (slot.rarityKey === 'birthday' || cardType === 'Birthday' || cardType === 'Anniversary') {
+        return MASTER_RANK_POWER_BONUS_BY_RARITY.birthday;
+    }
+    const rarityKey = slot.rarityKey || `rarity${Number(slot.card.rarity) || 4}`;
+    return MASTER_RANK_POWER_BONUS_BY_RARITY[rarityKey] || MASTER_RANK_POWER_BONUS_BY_RARITY.rarity4;
+};
+
+const getFallbackPowerParams = (power) => {
+    const totalPower = Math.max(0, Math.floor(Number(power) || 0));
+    const basePower = Math.floor(totalPower / POWER_PARAM_KEYS.length);
+    const remainder = totalPower % POWER_PARAM_KEYS.length;
+    return POWER_PARAM_KEYS.map((_, index) => basePower + (index < remainder ? 1 : 0));
+};
+
+const getCardPowerParams = (card) => {
+    if (!card) return getFallbackPowerParams(0);
+    const nestedParams = card.params || card.parameters || {};
+    const paramValues = POWER_PARAM_KEYS.map((key, index) => {
+        const value = card[key] ?? nestedParams[key] ?? nestedParams[`power${index + 1}`];
+        const numeric = Math.floor(Number(value) || 0);
+        return Math.max(0, numeric);
+    });
+    const paramTotal = paramValues.reduce((sum, value) => sum + value, 0);
+    if (paramTotal > 0) {
+        return paramValues;
+    }
+    return getFallbackPowerParams(card.power || card.defaultPower || 0);
+};
+
+const applyPowerDeltaToParams = (params, delta) => {
+    const numericDelta = Math.trunc(Number(delta) || 0);
+    if (numericDelta === 0) return params;
+    const sign = numericDelta < 0 ? -1 : 1;
+    const absoluteDelta = Math.abs(numericDelta);
+    const baseDelta = Math.floor(absoluteDelta / POWER_PARAM_KEYS.length);
+    const remainder = absoluteDelta % POWER_PARAM_KEYS.length;
+    return params.map((value, index) => (
+        Math.max(0, value + sign * (baseDelta + (index < remainder ? 1 : 0)))
+    ));
+};
+
+const sumPowerParams = (params) => params.reduce((sum, value) => sum + value, 0);
+
+const calculateCardPercentBonus = (power, percent) => {
+    const numericPercent = Number(percent) || 0;
+    return Math.floor(Math.max(0, Number(power) || 0) * numericPercent / 100);
+};
+
+const calculateSeparatedPercentBonus = (power, percent) => {
+    const numericPercent = Number(percent) || 0;
+    const wholePercent = Math.trunc(numericPercent);
+    const fractionalPercent = Number((numericPercent - wholePercent).toFixed(6));
+    return calculateCardPercentBonus(power, wholePercent)
+        + (fractionalPercent > 0 ? calculateCardPercentBonus(power, fractionalPercent) : 0);
+};
+
+const calculateAreaItemPowerBonus = (power, characterAreaPercent, unitBonus, attrBonus) => {
+    return calculateCardPercentBonus(power, characterAreaPercent)
+        + calculateCardPercentBonus(power, unitBonus)
+        + calculateSeparatedPercentBonus(power, attrBonus);
+};
+
+const isUnitEventLimitedCard = (card) => {
+    const cardType = card?.type || card?.cardType || '';
+    return cardType === 'Unit Event Limited' || Number(card?.cardSupplyId) === 6;
+};
+
+const createDefaultAreaSettings = () => ({
+    units: AREA_UNIT_OPTIONS.reduce((acc, unit) => ({ ...acc, [unit.key]: 10 }), {}),
+    gates: AREA_UNIT_OPTIONS.reduce((acc, unit) => ({ ...acc, [unit.key]: 0 }), {}),
+    attrs: AREA_ATTR_OPTIONS.reduce((acc, attr) => ({ ...acc, [attr.key]: 10 }), {}),
+    titlePower: 0,
+    characters: SUPPORT_CHARACTERS.reduce((acc, character) => ({
+        ...acc,
+        [character.id]: {
+            area: 30,
+            rank: DEFAULT_CHARACTER_RANK,
+            nui: 0,
+        },
+    }), {}),
+});
+
+const mergeAreaSettings = (settings = {}) => {
+    const defaults = createDefaultAreaSettings();
+    return {
+        titlePower: settings.titlePower === undefined || settings.titlePower === '' ? defaults.titlePower : settings.titlePower,
+        units: AREA_UNIT_OPTIONS.reduce((acc, unit) => {
+            const saved = settings.units?.[unit.key];
+            return {
+                ...acc,
+                [unit.key]: saved === undefined || saved === '' ? defaults.units[unit.key] : saved,
+            };
+        }, {}),
+        gates: AREA_UNIT_OPTIONS.reduce((acc, unit) => {
+            const saved = settings.gates?.[unit.key];
+            return {
+                ...acc,
+                [unit.key]: saved === undefined || saved === '' ? defaults.gates[unit.key] : saved,
+            };
+        }, {}),
+        attrs: AREA_ATTR_OPTIONS.reduce((acc, attr) => {
+            const saved = settings.attrs?.[attr.key];
+            return {
+                ...acc,
+                [attr.key]: saved === undefined || saved === '' ? defaults.attrs[attr.key] : saved,
+            };
+        }, {}),
+        characters: SUPPORT_CHARACTERS.reduce((acc, character) => {
+            const saved = settings.characters?.[character.id] || {};
+            return {
+                ...acc,
+                [character.id]: {
+                    ...defaults.characters[character.id],
+                    ...saved,
+                    area: saved.area === undefined || saved.area === '' ? defaults.characters[character.id].area : saved.area,
+                    nui: saved.nui === undefined || saved.nui === '' ? defaults.characters[character.id].nui : saved.nui,
+                },
+            };
+        }, {}),
+    };
+};
+
+const getAreaPowerSummary = (slots, areaSettings) => {
+    const filledSlots = slots.filter(slot => slot?.card);
+    const attrs = filledSlots.map(slot => (slot.card.attr || slot.card.cardAttr || slot.card.attribute || '').toLowerCase()).filter(Boolean);
+    const units = filledSlots.map(slot => resolveSupportUnit(slot.card)).filter(Boolean);
+    const allSameAttr = attrs.length === MAIN_DECK_SLOT_COUNT && new Set(attrs).size === 1;
+    const allSameUnit = units.length === MAIN_DECK_SLOT_COUNT && new Set(units).size === 1;
+
+    const slotPowers = slots.map(slot => {
+        const rawPowerParams = getCardPowerParams(slot?.card);
+        const rawCardPower = sumPowerParams(rawPowerParams);
+        const masterRank = Math.max(0, Math.min(5, Number(slot?.masterRank) || 0));
+        const masterRankPower = slot?.card ? (masterRank - 5) * getMasterRankPowerBonusStep(slot) : 0;
+        const canvasPower = slot?.card && slot.canvas ? CANVAS_POWER_BONUS : 0;
+        const masterRankParams = applyPowerDeltaToParams(rawPowerParams, masterRankPower);
+        const basePowerParams = applyPowerDeltaToParams(masterRankParams, canvasPower);
+        const basePower = sumPowerParams(basePowerParams);
+        if (!slot?.card || basePower <= 0) {
+            return {
+                rawCardPower: 0,
+                masterRankPower: 0,
+                canvasPower: 0,
+                basePower: 0,
+                totalPower: 0,
+                areaPercent: 0,
+                areaItemBonus: 0,
+                characterRankBonus: 0,
+                titleBonus: 0,
+                furnitureBonus: 0,
+                gateBonus: 0,
+            };
+        }
+
+        const charId = getCardCharacterId(slot.card);
+        const attr = (slot.card.attr || slot.card.cardAttr || slot.card.attribute || '').toLowerCase();
+        const unit = resolveSupportUnit(slot.card);
+        const charSettings = areaSettings.characters?.[charId] || {};
+        const charRank = Number(charSettings.rank);
+        const charRankBonus = Math.min(Number.isFinite(charRank) ? charRank : 0, 50) * 0.1;
+        const characterAreaPercent = Number(charSettings.area || 0);
+        const furniturePercent = Number(charSettings.nui || 0);
+        const unitBonus = Number(areaSettings.units?.[unit] || 0) * (allSameUnit ? 2 : 1);
+        const attrBonus = Number(areaSettings.attrs?.[attr] || 0) * (allSameAttr ? 2 : 1);
+        const gateBonusPercent = Number(areaSettings.gates?.[unit] || 0) * GATE_LEVEL_POWER_BONUS;
+        const areaItemPercent = characterAreaPercent + unitBonus + attrBonus;
+        const areaPercent = areaItemPercent + charRankBonus + gateBonusPercent;
+        const areaItemBonus = calculateAreaItemPowerBonus(basePower, characterAreaPercent, unitBonus, attrBonus);
+        const characterRankBasePower = Math.max(0, basePower - (isUnitEventLimitedCard(slot.card) ? UNIT_EVENT_LIMITED_CHARACTER_RANK_OFFSET : 0));
+        const characterRankPowerBonus = calculateCardPercentBonus(characterRankBasePower, charRankBonus);
+        const gateBonus = Math.floor(basePower * gateBonusPercent / 100);
+        const furnitureBonus = Math.floor(basePower * furniturePercent / 100);
+        const titleBonus = 0;
+        const totalPower = basePower + areaItemBonus + characterRankPowerBonus + titleBonus + furnitureBonus + gateBonus;
+
+        return {
+            rawCardPower,
+            masterRankPower,
+            canvasPower,
+            basePower,
+            totalPower,
+            areaPercent,
+            areaItemPercent,
+            charRankBonus,
+            unitBonus,
+            attrBonus,
+            gateBonusPercent,
+            furniturePercent,
+            areaItemBonus,
+            characterRankBonus: characterRankPowerBonus,
+            titleBonus,
+            furnitureBonus,
+            gateBonus,
+        };
+    });
+    const sumSlotPower = key => slotPowers.reduce((sum, slot) => sum + (slot[key] || 0), 0);
+    const titleBonus = Math.max(0, Math.floor(Number(areaSettings.titlePower || 0)));
+    const totalPower = sumSlotPower('totalPower') + titleBonus;
+    const basePower = sumSlotPower('basePower');
+
+    return {
+        allSameAttr,
+        allSameUnit,
+        slotPowers,
+        rawCardPower: sumSlotPower('rawCardPower'),
+        masterRankPower: sumSlotPower('masterRankPower'),
+        canvasPower: sumSlotPower('canvasPower'),
+        basePower,
+        totalPower,
+        areaItemBonus: sumSlotPower('areaItemBonus'),
+        characterRankBonus: sumSlotPower('characterRankBonus'),
+        titleBonus,
+        furnitureBonus: sumSlotPower('furnitureBonus'),
+        gateBonus: sumSlotPower('gateBonus'),
+    };
+};
 
 const calculateMainDeckSlotBonus = (slot, isWorldLink) => {
     const rarityOption = MAIN_DECK_RARITY_MAP[slot?.rarityKey] || MAIN_DECK_RARITY_MAP[''];
@@ -218,6 +503,12 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         const generalSaved = localStorage.getItem('ebc_main_deck_slots');
         return generalSaved ? JSON.parse(generalSaved) : createEmptyMainDeckSlots();
     });
+    const [areaSettings, setAreaSettings] = useState(() => {
+        const saved = localStorage.getItem('ebc_area_settings');
+        return mergeAreaSettings(saved ? JSON.parse(saved) : {});
+    });
+    const [isAreaPanelOpen, setIsAreaPanelOpen] = useState(false);
+    const [isPowerDetailOpen, setIsPowerDetailOpen] = useState(false);
     const [isCharPickerOpen, setIsCharPickerOpen] = useState(false);
     const [activeMainSlotIndex, setActiveMainSlotIndex] = useState(null);
     const [pickerCharId, setPickerCharId] = useState(() => {
@@ -255,6 +546,31 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
     }, [isOpen, cards.length]);
 
     useEffect(() => {
+        if (!cards.length) return;
+        const cardsById = new Map(cards.map(card => [Number(card.id), card]));
+        setSlots(prev => {
+            let changed = false;
+            const nextSlots = prev.map(slot => {
+                if (!slot.card?.id) return slot;
+                const latestCard = cardsById.get(Number(slot.card.id));
+                if (!latestCard) return slot;
+                const needsRefresh = POWER_PARAM_KEYS.some(key => slot.card[key] !== latestCard[key])
+                    || slot.card.power !== latestCard.power;
+                if (!needsRefresh) return slot;
+                changed = true;
+                return {
+                    ...slot,
+                    card: {
+                        ...slot.card,
+                        ...latestCard,
+                    },
+                };
+            });
+            return changed ? nextSlots : prev;
+        });
+    }, [cards]);
+
+    useEffect(() => {
         localStorage.setItem('ebc_is_world_link', JSON.stringify(isWorldLink));
     }, [isWorldLink]);
 
@@ -266,6 +582,10 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         localStorage.setItem('ebc_main_deck_slots', JSON.stringify(slots));
         localStorage.setItem(`ebc_preset_${activePreset}`, JSON.stringify(slots));
     }, [slots, activePreset]);
+
+    useEffect(() => {
+        localStorage.setItem('ebc_area_settings', JSON.stringify(areaSettings));
+    }, [areaSettings]);
 
 
 
@@ -390,7 +710,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         return { typeMatched: isTypeMatched, featured: isFeatured };
     };
 
-    const shouldCardBePickup = (card, overrideConfig) => {
+    const shouldCardBePickup = useCallback((card, overrideConfig) => {
         if (!card || !overrideConfig) return false;
         const rarity = Number(card.rarity) || 0;
         if (rarity !== 4) return false;
@@ -401,7 +721,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
         const eventCardIds = overrideConfig.eventCardIds || [];
         return eventCardIds.includes(Number(card.id));
-    };
+    }, [isManualEvent]);
 
     useEffect(() => {
         if (isOpen && eventOverride) {
@@ -426,7 +746,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 };
             }));
         }
-    }, [eventOverride, isOpen, isManualEvent]);
+    }, [eventOverride, isOpen, isManualEvent, shouldCardBePickup]);
 
     const updateSlot = (index, patch) => {
         setSlots(prev => {
@@ -479,6 +799,65 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         });
     };
 
+    const updateAreaUnit = (unitKey, value) => {
+        setAreaSettings(prev => ({
+            ...prev,
+            units: {
+                ...prev.units,
+                [unitKey]: normalizeBonusInput(value, 20),
+            },
+        }));
+    };
+
+    const updateAreaGate = (unitKey, value) => {
+        setAreaSettings(prev => ({
+            ...prev,
+            gates: {
+                ...prev.gates,
+                [unitKey]: normalizeLevelInput(value, 40),
+            },
+        }));
+    };
+
+    const updateAreaAttr = (attrKey, value) => {
+        setAreaSettings(prev => ({
+            ...prev,
+            attrs: {
+                ...prev.attrs,
+                [attrKey]: normalizeBonusInput(value, 20),
+            },
+        }));
+    };
+
+    const updateTitlePower = (value) => {
+        setAreaSettings(prev => ({
+            ...prev,
+            titlePower: normalizePowerInput(value),
+        }));
+    };
+
+    const updateCharacterArea = (charId, key, value) => {
+        const maxByKey = { area: 40, nui: 10 };
+        const nextValue = key === 'rank'
+            ? normalizeRankInput(value)
+            : normalizeBonusInput(value, maxByKey[key] || 30);
+
+        setAreaSettings(prev => ({
+            ...prev,
+            characters: {
+                ...prev.characters,
+                [charId]: {
+                    ...prev.characters?.[charId],
+                    [key]: nextValue,
+                },
+            },
+        }));
+    };
+
+    const resetAreaSettings = () => {
+        setAreaSettings(createDefaultAreaSettings());
+    };
+
     const slotResults = useMemo(() => {
         if (isWorldLink) {
             // WL: typeMatched = first card per attribute in deck order gets the type bonus
@@ -507,6 +886,21 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
     }, [slotResults]);
 
     const totalBonus = mainDeckBonus + (isWorldLink ? (Number(supportBonus) || 0) : 0);
+
+    const powerSummary = useMemo(() => {
+        return getAreaPowerSummary(slots, areaSettings);
+    }, [slots, areaSettings]);
+
+    const powerDetailRows = useMemo(() => {
+        return [
+            { label: '퍼포먼스', value: powerSummary.basePower || 0 },
+            { label: '에어리어 아이템보너스', value: powerSummary.areaItemBonus || 0 },
+            { label: '캐릭터 랭크 보너스', value: powerSummary.characterRankBonus || 0 },
+            { label: '칭호 보너스', value: powerSummary.titleBonus || 0 },
+            { label: '가구 보너스', value: powerSummary.furnitureBonus || 0 },
+            { label: '게이트 보너스', value: powerSummary.gateBonus || 0 },
+        ];
+    }, [powerSummary]);
 
     const effectiveValue = useMemo(() => {
         if (isManualEvent) return null;
@@ -550,6 +944,15 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                 />
                                 <span className="ebc-checkbox-text" style={{ marginLeft: '8px', lineHeight: 'normal', transform: 'translateY(1px)' }}>{t('support.world_link_mode')}</span>
                             </label>
+
+                            <button
+                                type="button"
+                                className={`ebc-area-open-btn ${isAreaPanelOpen ? 'active' : ''}`}
+                                onClick={() => setIsAreaPanelOpen(prev => !prev)}
+                            >
+                                <span>{t('support.area_settings') || '에어리어'}</span>
+                                <strong>{powerSummary.totalPower.toLocaleString()}</strong>
+                            </button>
                         </div>
                         
                         {/* Options Row (Dropdowns & Inputs) */}
@@ -707,14 +1110,25 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
                     <div className="ebc-deck-section">
                         <div className="ebc-deck-header">
-                            <h3>{t('support.main_deck')}</h3>
-                            <span className="ebc-main-total">{t('amatsuyu.total')}: <strong className="text-emerald-600">{mainDeckBonus.toFixed(1)}%</strong></span>
+                            <span className="ebc-power-total">
+                                <span>{t('support.total_power') || '종합력'}</span>
+                                <strong>{powerSummary.totalPower.toLocaleString()}</strong>
+                                <button
+                                    type="button"
+                                    className="ebc-power-info-btn"
+                                    onClick={() => setIsPowerDetailOpen(true)}
+                                    aria-label="종합력 상세"
+                                >
+                                    i
+                                </button>
+                            </span>
                         </div>
 
                         <div className="ebc-deck-grid">
                             {slotResults.map(({ slot, bonus }, index) => {
                                 const hasRarity = Boolean(slot.rarityKey);
                                 const canPickup = MAIN_DECK_RARITY_MAP[slot.rarityKey]?.canPickup;
+                                const powerResult = powerSummary.slotPowers[index] || {};
 
                                 return (
                                     <div className="ebc-slot" key={index}>
@@ -756,6 +1170,22 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             title="카드 선택"
                                         >
                                             <MainDeckPreviewCard rarityKey={slot.rarityKey} masterRank={slot.masterRank} skillLevel={slot.skillLevel || 1} emptyText={t('support.empty')} card={slot.card} isAwakened={slot.isAwakened !== false} />
+                                        </div>
+                                        <div className="ebc-slot-power-row">
+                                            <button
+                                                type="button"
+                                                className={`ebc-canvas-toggle ${slot.canvas ? 'active' : ''}`}
+                                                onClick={() => updateSlot(index, { canvas: !slot.canvas })}
+                                                disabled={!slot.card}
+                                            >
+                                                {t('support.canvas') || '캔버스'}
+                                            </button>
+                                            <span
+                                                className="ebc-slot-base-power"
+                                                title={`에어리어 적용 후 ${(powerResult.totalPower || 0).toLocaleString()} (${formatBonus(powerResult.areaPercent || 0)}%)`}
+                                            >
+                                                <strong>{(powerResult.basePower || 0).toLocaleString()}</strong>
+                                            </span>
                                         </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#64748b', marginBottom: '2px', padding: '0 2px' }}>
                                             <span>{t('support.rarity') || '레어'}</span>
@@ -855,11 +1285,255 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                         </div>
                         <div className="ebc-footer-actions">
                             <button type="button" className="ebc-btn-cancel" onClick={onClose}>{t('rank.cancel') || '취소'}</button>
-                            <button type="button" className="ebc-btn-apply" style={{ background: '#0ea5e9' }} onClick={() => onApply(totalBonus)}>{t('support.apply') || '적용'}</button>
+                            <button
+                                type="button"
+                                className="ebc-btn-apply"
+                                style={{ background: '#0ea5e9' }}
+                                onClick={() => onApply(totalBonus, powerSummary.totalPower || null)}
+                            >
+                                {t('support.apply') || '적용'}
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {isAreaPanelOpen && (
+                <div
+                    className="ebc-area-floating-backdrop"
+                    onMouseDown={(e) => {
+                        e.stopPropagation();
+                        if (e.target === e.currentTarget) setIsAreaPanelOpen(false);
+                    }}
+                >
+                    <div className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            className="ebc-area-floating-close"
+                            onClick={() => setIsAreaPanelOpen(false)}
+                            aria-label={t('support.close') || '닫기'}
+                        >
+                            ×
+                        </button>
+
+                        <div className="ebc-area-floating-scroll">
+                            <div className="ebc-area-floating-head">
+                                <h3>{t('support.area_settings') || '에어리어'}</h3>
+                                <div className="ebc-area-floating-totals">
+                                    <span>{t('support.base_power') || '기초'} <strong>{powerSummary.basePower.toLocaleString()}</strong></span>
+                                    <span>{t('support.total_power') || '종합력'} <strong>{powerSummary.totalPower.toLocaleString()}</strong></span>
+                                    <button type="button" onClick={resetAreaSettings}>{t('support.reset') || '리셋'}</button>
+                                </div>
+                                <div className="ebc-title-power-editor">
+                                    <span>칭호 보너스</span>
+                                    <label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            value={areaSettings.titlePower ?? ''}
+                                            onChange={(e) => updateTitlePower(e.target.value)}
+                                            onFocus={(e) => e.target.select()}
+                                            aria-label="칭호 보너스 종합력"
+                                        />
+                                        <b>종합력</b>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <section className="ebc-area-game-section">
+                                <div className="ebc-area-game-title">
+                                    <span>{t('support.unit_effect') || '유닛 효과'}</span>
+                                    {powerSummary.allSameUnit && <strong>×2</strong>}
+                                </div>
+                                <div className="ebc-area-unit-header">
+                                    <span />
+                                    <span>{t('support.area') || '에어리어'}</span>
+                                    <span>게이트</span>
+                                </div>
+                                <div className="ebc-area-game-grid units">
+                                    {AREA_UNIT_OPTIONS.map(unit => (
+                                        <label key={unit.key} className="ebc-area-game-pill">
+                                            <span className="ebc-area-pill-media">
+                                                <img src={`${process.env.PUBLIC_URL}/assets/event/units/${unit.file}`} alt={unit.label} />
+                                            </span>
+                                            <span className="ebc-area-pill-input">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="20"
+                                                    step="0.1"
+                                                    value={areaSettings.units?.[unit.key] ?? ''}
+                                                    onChange={(e) => updateAreaUnit(unit.key, e.target.value)}
+                                                    onFocus={(e) => e.target.select()}
+                                                    aria-label={`${unit.label} ${t('support.unit_effect') || '유닛 효과'}`}
+                                                />
+                                                <b>%</b>
+                                            </span>
+                                            <span className="ebc-area-pill-input gate">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="40"
+                                                    step="1"
+                                                    value={areaSettings.gates?.[unit.key] ?? ''}
+                                                    onChange={(e) => updateAreaGate(unit.key, e.target.value)}
+                                                    onFocus={(e) => e.target.select()}
+                                                    aria-label={`${unit.label} 게이트`}
+                                                />
+                                                <b>Lv</b>
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <section className="ebc-area-game-section">
+                                <div className="ebc-area-game-title">
+                                    <span>{t('support.type_effect') || '타입 효과'}</span>
+                                    {powerSummary.allSameAttr && <strong>×2</strong>}
+                                </div>
+                                <div className="ebc-area-game-grid attrs">
+                                    {AREA_ATTR_OPTIONS.map(attr => (
+                                        <label key={attr.key} className="ebc-area-game-pill attr">
+                                            <span className="ebc-area-pill-media icon">
+                                                <img src={`${process.env.PUBLIC_URL}/assets/event/attributes/${attr.file}`} alt={attr.label} />
+                                            </span>
+                                            <span className="ebc-area-pill-input">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="20"
+                                                    step="0.1"
+                                                    value={areaSettings.attrs?.[attr.key] ?? ''}
+                                                    onChange={(e) => updateAreaAttr(attr.key, e.target.value)}
+                                                    onFocus={(e) => e.target.select()}
+                                                    aria-label={`${attr.label} ${t('support.type_effect') || '타입 효과'}`}
+                                                />
+                                                <b>%</b>
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <section className="ebc-area-game-section">
+                                <div className="ebc-area-game-title">
+                                    <span>{t('support.character_effect') || '캐릭터 효과'}</span>
+                                </div>
+                                <div className="ebc-area-character-grid">
+                                    {SUPPORT_CHARACTERS.map(character => {
+                                        const charSettings = areaSettings.characters?.[character.id] || {};
+                                        return (
+                                            <div key={character.id} className="ebc-area-character-pill">
+                                                <div className="ebc-area-character-face">
+                                                    <img
+                                                        src={`${process.env.PUBLIC_URL}/assets/characters/${String(character.id).padStart(2, '0')}.webp`}
+                                                        alt={character.name}
+                                                    />
+                                                    <span>{character.name}</span>
+                                                </div>
+                                                <div className="ebc-area-character-fields">
+                                                    <label>
+                                                        <span>{t('support.area') || '에어리어'}</span>
+                                                        <div className="ebc-area-character-input">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="40"
+                                                                step="0.1"
+                                                                value={charSettings.area ?? ''}
+                                                                onChange={(e) => updateCharacterArea(character.id, 'area', e.target.value)}
+                                                                onFocus={(e) => e.target.select()}
+                                                                aria-label={`${character.name} ${t('support.area') || '에어리어'}`}
+                                                            />
+                                                            <b>%</b>
+                                                        </div>
+                                                    </label>
+                                                    <label>
+                                                        <span>{t('support.character_rank_short') || '캐랭'}</span>
+                                                        <input
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            value={formatCharacterRank(charSettings.rank)}
+                                                            onChange={(e) => updateCharacterArea(character.id, 'rank', e.target.value)}
+                                                            onFocus={(e) => e.target.select()}
+                                                            aria-label={`${character.name} ${t('support.character_rank_short') || '캐랭'}`}
+                                                        />
+                                                    </label>
+                                                    <label>
+                                                        <span>{t('support.nui') || '누이'}</span>
+                                                        <div className="ebc-area-character-input">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="10"
+                                                                step="0.1"
+                                                                value={charSettings.nui ?? ''}
+                                                                onChange={(e) => updateCharacterArea(character.id, 'nui', e.target.value)}
+                                                                onFocus={(e) => e.target.select()}
+                                                                aria-label={`${character.name} ${t('support.nui') || '누이'}`}
+                                                            />
+                                                            <b>%</b>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        </div>
+
+                        <div className="ebc-area-floating-footer">
+                            <button type="button" onClick={() => setIsAreaPanelOpen(false)}>
+                                {t('support.close') || '닫기'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isPowerDetailOpen && (
+                <div
+                    className="ebc-power-detail-backdrop"
+                    onMouseDown={(e) => {
+                        e.stopPropagation();
+                        if (e.target === e.currentTarget) setIsPowerDetailOpen(false);
+                    }}
+                >
+                    <div className="ebc-power-detail-modal" onMouseDown={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            className="ebc-power-detail-close"
+                            onClick={() => setIsPowerDetailOpen(false)}
+                            aria-label={t('support.close') || '닫기'}
+                        >
+                            ×
+                        </button>
+                        <div className="ebc-power-detail-body">
+                            <div className="ebc-power-detail-total">
+                                <span>{t('support.total_power') || '종합력'}</span>
+                                <strong>{powerSummary.totalPower.toLocaleString()}</strong>
+                            </div>
+                            <div className="ebc-power-detail-box">
+                                {powerDetailRows.map(row => (
+                                    <div className="ebc-power-detail-row" key={row.label}>
+                                        <span>{row.label}</span>
+                                        <i aria-hidden="true" />
+                                        <strong>{row.value.toLocaleString()}</strong>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="ebc-power-detail-footer">
+                            <button type="button" onClick={() => setIsPowerDetailOpen(false)}>
+                                {t('support.close') || '닫기'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <SupportCardPickerModal
                 isOpen={isCharPickerOpen}
@@ -908,7 +1582,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 }
                 .ebc-modal {
                     width: 100%;
-                    max-width: 760px;
+                    max-width: 880px;
                     background: #ffffff;
                     border-radius: 12px;
                     box-shadow: 0 20px 40px rgba(0,0,0,0.15);
@@ -956,6 +1630,554 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     display: flex;
                     flex-direction: column;
                     gap: 16px;
+                }
+                .ebc-area-open-btn {
+                    min-height: 34px;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 8px;
+                    background: #ffffff;
+                    color: #334155;
+                    padding: 4px 10px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    font-weight: 900;
+                    transition: all 0.15s;
+                }
+                .ebc-area-open-btn strong {
+                    color: #0ea5e9;
+                    font-size: 13px;
+                }
+                .ebc-area-open-btn.active {
+                    border-color: #0ea5e9;
+                    background: #e0f2fe;
+                    color: #0369a1;
+                }
+                .ebc-area-floating-backdrop {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 2200;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 18px;
+                    background: rgba(31, 35, 60, 0.28);
+                }
+                .ebc-area-floating-modal {
+                    position: relative;
+                    width: min(960px, 100%);
+                    max-height: min(92vh, 820px);
+                    border-radius: 18px;
+                    background: #f0f0f8;
+                    box-shadow: 0 24px 60px rgba(31, 35, 60, 0.28), inset 0 0 0 1px rgba(255,255,255,0.72);
+                    color: #474967;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+                .ebc-area-floating-close {
+                    position: absolute;
+                    top: 12px;
+                    right: 18px;
+                    z-index: 3;
+                    width: 44px;
+                    height: 44px;
+                    border: none;
+                    background: transparent;
+                    color: #474967;
+                    font-size: 48px;
+                    line-height: 38px;
+                    font-weight: 900;
+                    text-shadow: 0 2px 4px rgba(31, 35, 60, 0.15);
+                    cursor: pointer;
+                }
+                .ebc-area-floating-scroll {
+                    padding: 34px 44px 26px;
+                    overflow-y: auto;
+                    scrollbar-width: thin;
+                    scrollbar-color: #535577 #d7d8e7;
+                }
+                .ebc-area-floating-scroll::-webkit-scrollbar {
+                    width: 10px;
+                }
+                .ebc-area-floating-scroll::-webkit-scrollbar-track {
+                    background: #d7d8e7;
+                    border-radius: 999px;
+                }
+                .ebc-area-floating-scroll::-webkit-scrollbar-thumb {
+                    background: #535577;
+                    border-radius: 999px;
+                }
+                .ebc-area-floating-head {
+                    padding-right: 48px;
+                    margin-bottom: 22px;
+                }
+                .ebc-area-floating-head h3 {
+                    margin: 0 0 10px;
+                    font-size: 28px;
+                    font-weight: 1000;
+                    color: #3f415f;
+                    letter-spacing: 0;
+                    border-bottom: 3px solid #a9abc1;
+                    padding: 0 0 10px 6px;
+                }
+                .ebc-area-floating-totals {
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    padding-left: 6px;
+                    font-size: 12px;
+                    font-weight: 900;
+                    color: #686a87;
+                }
+                .ebc-area-floating-totals span,
+                .ebc-area-floating-totals button {
+                    height: 30px;
+                    border: none;
+                    border-radius: 999px;
+                    background: #ffffff;
+                    box-shadow: 0 2px 6px rgba(31, 35, 60, 0.10);
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 0 12px;
+                }
+                .ebc-area-floating-totals strong {
+                    margin-left: 6px;
+                    color: #3f415f;
+                }
+                .ebc-area-floating-totals button {
+                    cursor: pointer;
+                    color: #d94467;
+                    font-weight: 1000;
+                }
+                .ebc-title-power-editor {
+                    display: inline-grid;
+                    grid-template-columns: auto 150px;
+                    align-items: center;
+                    gap: 10px;
+                    margin: 10px 0 0 6px;
+                    color: #555776;
+                    font-size: 13px;
+                    font-weight: 1000;
+                }
+                .ebc-title-power-editor label {
+                    height: 34px;
+                    border-radius: 10px;
+                    background: #ffffff;
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) auto;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 0 8px;
+                    box-shadow: inset 0 0 0 1px rgba(71,73,103,0.05);
+                }
+                .ebc-title-power-editor input {
+                    min-width: 0;
+                    width: 100%;
+                    border: none;
+                    background: transparent;
+                    color: #555776;
+                    font-size: 18px;
+                    font-weight: 900;
+                    text-align: right;
+                    outline: none;
+                    letter-spacing: 0;
+                }
+                .ebc-title-power-editor b {
+                    color: #555776;
+                    font-size: 12px;
+                    font-weight: 900;
+                }
+                .ebc-area-game-section {
+                    margin-top: 26px;
+                }
+                .ebc-area-game-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    color: #3f415f;
+                    font-size: 25px;
+                    font-weight: 1000;
+                    letter-spacing: 0;
+                    border-bottom: 3px solid #a9abc1;
+                    padding: 0 0 8px 6px;
+                    margin-bottom: 18px;
+                }
+                .ebc-area-game-title strong {
+                    border-radius: 999px;
+                    background: #e4f9ef;
+                    color: #18a66a;
+                    font-size: 14px;
+                    padding: 4px 10px;
+                    box-shadow: inset 0 0 0 1px rgba(24,166,106,0.16);
+                }
+                .ebc-area-game-grid {
+                    display: grid;
+                    gap: 12px 14px;
+                }
+                .ebc-area-game-grid.units {
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+                .ebc-area-game-grid.attrs {
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                }
+                .ebc-area-unit-header {
+                    width: calc((100% - 28px) / 3);
+                    min-width: 260px;
+                    display: grid;
+                    grid-template-columns: minmax(70px, 1fr) minmax(92px, 102px) minmax(78px, 88px);
+                    gap: 8px;
+                    align-items: center;
+                    padding: 0 9px 4px;
+                    color: #777993;
+                    font-size: 12px;
+                    font-weight: 1000;
+                    text-align: center;
+                }
+                .ebc-area-game-pill {
+                    min-width: 0;
+                    height: 50px;
+                    border-radius: 14px;
+                    background: #dedfeb;
+                    display: grid;
+                    grid-template-columns: minmax(70px, 1fr) minmax(92px, 102px) minmax(78px, 88px);
+                    gap: 8px;
+                    align-items: center;
+                    padding: 0 9px;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.52);
+                }
+                .ebc-area-game-pill.attr {
+                    grid-template-columns: 44px minmax(106px, 118px);
+                    gap: 8px;
+                    justify-content: center;
+                }
+                .ebc-area-pill-media {
+                    min-width: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .ebc-area-pill-media img {
+                    max-width: 112px;
+                    max-height: 38px;
+                    object-fit: contain;
+                    filter: drop-shadow(0 1px 1px rgba(31,35,60,0.18));
+                }
+                .ebc-area-pill-media.icon img {
+                    width: 42px;
+                    height: 42px;
+                }
+                .ebc-area-pill-input {
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 4px;
+                    min-width: 0;
+                    height: 34px;
+                    border-radius: 10px;
+                    background: #ffffff;
+                    padding: 0 9px;
+                    box-sizing: border-box;
+                    overflow: hidden;
+                    box-shadow: inset 0 0 0 1px rgba(71,73,103,0.05);
+                    color: #555776;
+                    font-size: 22px;
+                    font-weight: 900;
+                }
+                .ebc-area-pill-input input {
+                    flex: 1 1 auto;
+                    width: 0;
+                    min-width: 0;
+                    height: 100%;
+                    border: none;
+                    background: transparent;
+                    color: #555776;
+                    font-size: 22px;
+                    font-weight: 900;
+                    text-align: right;
+                    outline: none;
+                    padding: 0;
+                    box-sizing: border-box;
+                    letter-spacing: 0;
+                }
+                .ebc-area-floating-modal input[type="number"] {
+                    appearance: textfield;
+                    -moz-appearance: textfield;
+                }
+                .ebc-area-floating-modal input[type="number"]::-webkit-outer-spin-button,
+                .ebc-area-floating-modal input[type="number"]::-webkit-inner-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+                .ebc-area-pill-input b {
+                    flex: 0 0 auto;
+                    display: inline-flex;
+                    align-items: baseline;
+                    justify-content: flex-end;
+                    min-width: 18px;
+                    font-size: 18px;
+                    font-weight: 900;
+                    text-align: right;
+                    line-height: 1;
+                    white-space: nowrap;
+                }
+                .ebc-area-pill-input.gate {
+                    padding: 0 8px;
+                }
+                .ebc-area-pill-input.gate input {
+                    font-size: 18px;
+                }
+                .ebc-area-pill-input.gate b {
+                    min-width: 24px;
+                    font-size: 12px;
+                }
+                .ebc-area-character-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+                    gap: 10px;
+                }
+                .ebc-area-character-pill {
+                    min-width: 0;
+                    min-height: 118px;
+                    border-radius: 14px;
+                    background: #dedfeb;
+                    padding: 9px 8px 8px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.52);
+                }
+                .ebc-area-character-face {
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 5px;
+                    color: #555776;
+                    font-size: 12px;
+                    font-weight: 1000;
+                    text-align: center;
+                }
+                .ebc-area-character-face img {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    box-shadow: 0 0 0 4px #ececf5, 0 2px 5px rgba(31,35,60,0.15);
+                    flex: 0 0 auto;
+                }
+                .ebc-area-character-face span {
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .ebc-area-character-fields {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 4px;
+                }
+                .ebc-area-character-pill label {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 3px;
+                    min-width: 0;
+                    height: auto;
+                    color: #777993;
+                    font-size: 9px;
+                    font-weight: 1000;
+                    text-align: center;
+                }
+                .ebc-area-character-pill label > span {
+                    line-height: 1;
+                    white-space: nowrap;
+                }
+                .ebc-area-character-input,
+                .ebc-area-character-pill label > input {
+                    width: 100%;
+                    min-width: 0;
+                    height: 27px;
+                    border-radius: 10px;
+                    background: #ffffff;
+                    box-sizing: border-box;
+                    overflow: hidden;
+                    box-shadow: inset 0 0 0 1px rgba(71,73,103,0.05);
+                }
+                .ebc-area-character-input {
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 1px;
+                    padding: 0 4px;
+                }
+                .ebc-area-character-pill input {
+                    width: 100%;
+                    min-width: 0;
+                    height: 100%;
+                    border: none;
+                    border-radius: 10px;
+                    background: #ffffff;
+                    color: #555776;
+                    font-size: 13px;
+                    font-weight: 900;
+                    text-align: center;
+                    outline: none;
+                    padding: 0;
+                    letter-spacing: 0;
+                }
+                .ebc-area-character-input input {
+                    flex: 1 1 auto;
+                    width: 0;
+                    min-width: 0;
+                    background: transparent;
+                    text-align: right;
+                }
+                .ebc-area-character-input b {
+                    flex: 0 0 auto;
+                    min-width: 9px;
+                    color: #555776;
+                    font-size: 10px;
+                    font-weight: 900;
+                    text-align: right;
+                    line-height: 1;
+                    white-space: nowrap;
+                }
+                .ebc-area-floating-footer {
+                    padding: 18px 24px 22px;
+                    display: flex;
+                    justify-content: center;
+                    background: linear-gradient(to bottom, rgba(240,240,248,0.75), #f0f0f8 42%);
+                    box-shadow: 0 -10px 18px rgba(240,240,248,0.88);
+                }
+                .ebc-area-floating-footer button {
+                    min-width: 220px;
+                    height: 56px;
+                    border: none;
+                    border-radius: 999px;
+                    background: #ffffff;
+                    color: #474967;
+                    font-size: 22px;
+                    font-weight: 1000;
+                    box-shadow: 0 3px 12px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.08);
+                    cursor: pointer;
+                }
+                .ebc-power-detail-backdrop {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 2250;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 22px;
+                    background: rgba(31, 35, 60, 0.36);
+                    backdrop-filter: blur(2px);
+                }
+                .ebc-power-detail-modal {
+                    position: relative;
+                    width: min(820px, 100%);
+                    min-height: min(640px, 88vh);
+                    border-radius: 18px;
+                    background: #f0f0f8;
+                    box-shadow: 0 24px 60px rgba(31, 35, 60, 0.32), inset 0 0 0 1px rgba(255,255,255,0.72);
+                    color: #474967;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+                .ebc-power-detail-close {
+                    position: absolute;
+                    top: 16px;
+                    right: 20px;
+                    z-index: 2;
+                    width: 46px;
+                    height: 46px;
+                    border: none;
+                    background: transparent;
+                    color: #474967;
+                    font-size: 52px;
+                    line-height: 40px;
+                    font-weight: 1000;
+                    text-shadow: 0 2px 4px rgba(31, 35, 60, 0.15);
+                    cursor: pointer;
+                }
+                .ebc-power-detail-body {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 34px;
+                    padding: 76px 42px 34px;
+                }
+                .ebc-power-detail-total {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 16px;
+                    color: #3f415f;
+                    font-size: 24px;
+                    font-weight: 1000;
+                    letter-spacing: 0;
+                }
+                .ebc-power-detail-total strong {
+                    color: #555776;
+                    font-size: 30px;
+                    font-weight: 800;
+                    letter-spacing: 3px;
+                }
+                .ebc-power-detail-box {
+                    width: min(520px, 100%);
+                    border-radius: 12px;
+                    background: #dedfeb;
+                    padding: 22px 28px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                }
+                .ebc-power-detail-row {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) 1px minmax(96px, auto);
+                    align-items: center;
+                    gap: 24px;
+                    color: #555776;
+                    font-size: 21px;
+                    font-weight: 1000;
+                    letter-spacing: 0;
+                }
+                .ebc-power-detail-row i {
+                    width: 1px;
+                    height: 28px;
+                    background: #a9abc1;
+                }
+                .ebc-power-detail-row strong {
+                    color: #555776;
+                    font-size: 23px;
+                    font-weight: 700;
+                    text-align: right;
+                    letter-spacing: 1px;
+                }
+                .ebc-power-detail-footer {
+                    padding: 18px 24px 24px;
+                    display: flex;
+                    justify-content: center;
+                    background: linear-gradient(to bottom, rgba(240,240,248,0.75), #f0f0f8 42%);
+                }
+                .ebc-power-detail-footer button {
+                    min-width: 220px;
+                    height: 56px;
+                    border: none;
+                    border-radius: 999px;
+                    background: #ffffff;
+                    color: #474967;
+                    font-size: 22px;
+                    font-weight: 1000;
+                    box-shadow: 0 3px 12px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.08);
+                    cursor: pointer;
                 }
                 .ebc-wl-row {
                     display: flex;
@@ -1013,23 +2235,56 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     font-weight: 700;
                     margin-left: 4px;
                 }
-                
+                .ebc-deck-section {
+                    background: #eef0fa;
+                    border-radius: 14px;
+                    padding: 14px 16px 16px;
+                    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.28);
+                }
                 .ebc-deck-header {
                     display: flex;
                     align-items: center;
-                    justify-content: space-between;
-                    margin-bottom: 8px;
+                    justify-content: flex-start;
+                    gap: 12px;
+                    margin-bottom: 12px;
                 }
-                .ebc-deck-header h3 {
-                    margin: 0;
-                    font-size: 16px;
-                    font-weight: 800;
-                    color: #1e293b;
+                .ebc-power-total {
+                    min-height: 34px;
+                    color: #525575;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: flex-start;
+                    gap: 10px;
+                    padding: 0;
+                    font-size: 18px;
+                    font-weight: 900;
+                    text-align: left;
                 }
-                .ebc-main-total {
-                    font-size: 14px;
-                    font-weight: 800;
-                    color: #475569;
+                .ebc-power-total strong {
+                    color: #525575;
+                    font-size: 19px;
+                    font-weight: 700;
+                    letter-spacing: 2px;
+                }
+                .ebc-power-info-btn {
+                    width: 30px;
+                    height: 30px;
+                    border: none;
+                    border-radius: 50%;
+                    background: #ffffff;
+                    color: #525575;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
+                    font-weight: 1000;
+                    line-height: 1;
+                    box-shadow: 0 2px 7px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.06);
+                    cursor: pointer;
+                }
+                .ebc-power-info-btn:hover {
+                    background: #f8fafc;
+                    transform: translateY(-1px);
                 }
                 .ebc-deck-toolbar {
                     display: flex;
@@ -1095,11 +2350,11 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     gap: 12px;
                 }
                 .ebc-slot {
-                    border: 1px solid #e2e8f0;
-                    border-radius: 10px;
-                    padding: 10px;
-                    background: #ffffff;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+                    border: none;
+                    border-radius: 8px;
+                    padding: 0;
+                    background: transparent;
+                    box-shadow: none;
                 }
                 .ebc-slot-header {
                     display: flex;
@@ -1140,15 +2395,16 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 .ebc-preview-wrap {
                     width: 100%;
                     aspect-ratio: 1/1;
-                    margin-bottom: 10px;
+                    margin-bottom: 6px;
                 }
                 .ebc-preview-card {
                     position: relative;
                     width: 100%;
                     height: 100%;
-                    border-radius: 6px;
+                    border-radius: 4px;
                     background: #e2e8f0;
                     overflow: hidden;
+                    box-shadow: 0 2px 7px rgba(31,35,60,0.16);
                 }
                 .ebc-preview-card.empty .ebc-card-face { filter: grayscale(0.5); opacity: 0.5; }
                 .ebc-card-face, .ebc-card-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -1159,6 +2415,57 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 .ebc-card-birthday { position: absolute; bottom: 18%; left: 4%; z-index: 3; width: 22%; height: auto; }
                 .ebc-skill-badge { position: absolute; left: 0; bottom: 0; height: 19%; width: 100%; z-index: 1; display: flex; align-items: center; padding-left: 7%; border-radius: 0 0 6px 6px; background: rgba(45,48,84,0.9); color: #fff; font-size: 13px; font-weight: 900; transform: translateY(-4%); }
                 .ebc-mastery-badge { position: absolute; right: 4%; bottom: 3%; z-index: 6; width: 30%; height: auto; }
+                .ebc-slot-power-row {
+                    display: grid;
+                    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+                    gap: 6px;
+                    align-items: center;
+                    margin-bottom: 8px;
+                    min-height: 28px;
+                }
+                .ebc-canvas-toggle {
+                    height: 28px;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 999px;
+                    background: #ffffff;
+                    color: #64748b;
+                    font-size: 10px;
+                    font-weight: 900;
+                    cursor: pointer;
+                    padding: 0 4px;
+                }
+                .ebc-canvas-toggle.active {
+                    border-color: #0ea5e9;
+                    background: #e0f2fe;
+                    color: #0369a1;
+                }
+                .ebc-canvas-toggle:disabled {
+                    opacity: 0.45;
+                    cursor: not-allowed;
+                }
+                .ebc-slot-power-row .ebc-slot-base-power {
+                    min-width: 0;
+                    overflow: hidden;
+                    height: 28px;
+                    border-radius: 999px;
+                    background: #ffffff;
+                    color: #525575;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 4px;
+                    padding: 0 8px;
+                    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.20);
+                    font-size: 11px;
+                    font-weight: 900;
+                    letter-spacing: 0;
+                }
+                .ebc-slot-base-power strong {
+                    min-width: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
                 
                 .ebc-control-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 4px; }
                 .ebc-toggle-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 6px; }
@@ -1204,7 +2511,24 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 @media (max-width: 768px) {
                     .ebc-backdrop { padding: 12px; }
                     .ebc-modal { border-radius: 8px; max-height: 95vh; }
+                    .ebc-deck-section { padding: 12px; }
+                    .ebc-deck-header { align-items: flex-start; flex-direction: column; }
                     .ebc-deck-grid { grid-template-columns: repeat(3, 1fr); }
+                    .ebc-area-floating-backdrop { padding: 10px; }
+                    .ebc-area-floating-modal { max-height: 96vh; border-radius: 14px; }
+                    .ebc-area-floating-scroll { padding: 28px 22px 18px; }
+                    .ebc-area-floating-head h3,
+                    .ebc-area-game-title { font-size: 22px; }
+                    .ebc-area-game-grid.units,
+                    .ebc-area-game-grid.attrs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+                    .ebc-area-unit-header { width: calc((100% - 12px) / 2); min-width: 0; }
+                    .ebc-area-character-grid { grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); }
+                    .ebc-power-detail-modal { min-height: min(560px, 92vh); border-radius: 14px; }
+                    .ebc-power-detail-body { padding: 62px 24px 24px; gap: 24px; }
+                    .ebc-power-detail-total { font-size: 22px; gap: 12px; }
+                    .ebc-power-detail-total strong { font-size: 27px; letter-spacing: 2px; }
+                    .ebc-power-detail-row { font-size: 18px; gap: 18px; grid-template-columns: minmax(0, 1fr) 1px minmax(82px, auto); }
+                    .ebc-power-detail-row strong { font-size: 19px; }
                     .ebc-footer { flex-direction: column; gap: 12px; }
                     .ebc-footer-total, .ebc-footer-actions { width: 100%; text-align: center; justify-content: center; }
                     .ebc-btn-cancel, .ebc-btn-apply { flex: 1; }
@@ -1220,7 +2544,62 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     .ebc-backdrop { padding: 4px; }
                     .ebc-modal { border-radius: 6px; max-height: 98vh; }
                     .ebc-deck-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+                    .ebc-deck-section { padding: 8px; border-radius: 10px; }
+                    .ebc-power-total { min-height: 34px; gap: 6px; padding: 0; font-size: 14px; }
+                    .ebc-power-total strong { font-size: 15px; }
+                    .ebc-power-info-btn { width: 26px; height: 26px; font-size: 17px; }
                     .ebc-slot { padding: 4px; }
+                    .ebc-area-floating-backdrop { padding: 4px; }
+                    .ebc-area-floating-scroll { padding: 24px 12px 12px; }
+                    .ebc-area-floating-close { top: 8px; right: 10px; font-size: 38px; width: 34px; height: 34px; line-height: 30px; }
+                    .ebc-area-floating-head { padding-right: 36px; }
+                    .ebc-area-floating-head h3,
+                    .ebc-area-game-title { font-size: 19px; border-bottom-width: 2px; }
+                    .ebc-area-floating-totals { gap: 6px; font-size: 10px; }
+                    .ebc-area-floating-totals span,
+                    .ebc-area-floating-totals button { height: 26px; padding: 0 8px; }
+                    .ebc-title-power-editor { grid-template-columns: 1fr; align-items: stretch; width: calc(100% - 6px); gap: 5px; font-size: 12px; }
+                    .ebc-title-power-editor label { height: 30px; }
+                    .ebc-title-power-editor input { font-size: 16px; }
+                    .ebc-area-game-grid.units,
+                    .ebc-area-game-grid.attrs { grid-template-columns: 1fr; gap: 8px; }
+                    .ebc-area-unit-header { width: 100%; min-width: 0; grid-template-columns: minmax(74px, 1fr) minmax(80px, 92px) minmax(66px, 76px); gap: 5px; padding: 0 9px 3px; }
+                    .ebc-area-game-pill { height: 46px; border-radius: 13px; grid-template-columns: minmax(74px, 1fr) minmax(80px, 92px) minmax(66px, 76px); gap: 5px; }
+                    .ebc-area-game-pill.attr { grid-template-columns: 42px minmax(96px, 112px); gap: 6px; }
+                    .ebc-area-pill-media img { max-height: 30px; }
+                    .ebc-area-pill-media.icon img { width: 34px; height: 34px; }
+                    .ebc-area-pill-input { height: 30px; padding: 0 7px; gap: 3px; }
+                    .ebc-area-pill-input input { font-size: 18px; }
+                    .ebc-area-pill-input b { font-size: 15px; min-width: 15px; }
+                    .ebc-area-pill-input.gate { padding: 0 6px; }
+                    .ebc-area-pill-input.gate input { font-size: 15px; }
+                    .ebc-area-pill-input.gate b { font-size: 10px; min-width: 20px; }
+                    .ebc-area-character-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+                    .ebc-area-character-pill { min-height: 108px; border-radius: 13px; padding: 8px 6px 7px; gap: 7px; }
+                    .ebc-area-character-face { font-size: 10px; gap: 4px; }
+                    .ebc-area-character-face img { width: 34px; height: 34px; box-shadow: 0 0 0 3px #ececf5, 0 2px 4px rgba(31,35,60,0.12); }
+                    .ebc-area-character-fields { gap: 3px; }
+                    .ebc-area-character-pill label { font-size: 8px; gap: 2px; }
+                    .ebc-area-character-input,
+                    .ebc-area-character-pill label > input { height: 25px; border-radius: 8px; }
+                    .ebc-area-character-pill input { font-size: 12px; border-radius: 8px; }
+                    .ebc-area-character-input b { font-size: 9px; min-width: 8px; }
+                    .ebc-area-floating-footer { padding: 12px 14px 14px; }
+                    .ebc-area-floating-footer button { min-width: 180px; height: 46px; font-size: 18px; }
+                    .ebc-power-detail-backdrop { padding: 8px; }
+                    .ebc-power-detail-modal { min-height: min(500px, 94vh); border-radius: 14px; }
+                    .ebc-power-detail-close { top: 8px; right: 10px; font-size: 38px; width: 34px; height: 34px; line-height: 30px; }
+                    .ebc-power-detail-body { padding: 48px 12px 18px; gap: 18px; }
+                    .ebc-power-detail-total { font-size: 17px; gap: 8px; }
+                    .ebc-power-detail-total strong { font-size: 21px; letter-spacing: 1px; }
+                    .ebc-power-detail-box { padding: 16px 14px; gap: 12px; border-radius: 10px; }
+                    .ebc-power-detail-row { font-size: 14px; gap: 10px; grid-template-columns: minmax(0, 1fr) 1px minmax(68px, auto); }
+                    .ebc-power-detail-row i { height: 22px; }
+                    .ebc-power-detail-row strong { font-size: 15px; letter-spacing: 0; }
+                    .ebc-power-detail-footer { padding: 12px 14px 14px; }
+                    .ebc-power-detail-footer button { min-width: 180px; height: 46px; font-size: 18px; }
+                    .ebc-canvas-toggle { font-size: 9px; }
+                    .ebc-slot-power-row .ebc-slot-base-power { font-size: 10px; padding: 0 5px; }
                     .ebc-breakdown { font-size: 8px; }
                     .ebc-prefix-label.hide-on-mobile { display: none; }
                     .lang-ja .ebc-slot-header { font-size: 9px; }
