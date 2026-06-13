@@ -1041,10 +1041,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     const eok = Math.floor(score / 100000000);
     const man = Math.floor((score % 100000000) / 10000);
 
+    const suffixEok = t('fire.suffix_eok') || '억';
+    const suffixMan = t('fire.suffix_man') || '만';
+
     if (eok > 0) {
-      return `${eok}억${man > 0 ? man.toLocaleString() + '만' : ''}`;
+      return `${eok}${suffixEok}${man > 0 ? man.toLocaleString() + suffixMan : ''}`;
     }
-    return `${man.toLocaleString()}만`;
+    return `${man.toLocaleString()}${suffixMan}`;
   };
 
   // Import Calculation Logic
@@ -2150,31 +2153,35 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       {/* Room Search Dropdown (Below Result) - Minimal Margin */}
       <div className={`w-[95%] sm:w-[90%] max-w-[340px] mx-auto flex justify-between mt-0.5 items-center gap-2`} ref={dropdownRef}>
         <div className="flex gap-1 sm:gap-1.5">
-          {/* Ranking Board Button */}
-          <button
-            onClick={() => window.open('https://run.rilaksekai.com/', '_blank')}
-            className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
-            title={t('fire.ranking_board')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-            <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')}</span>
-          </button>
-          {/* Refresh Button */}
-          <button
-            onClick={() => window.open('https://run.rilaksekai.com/refresh', '_blank')}
-            className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 border border-blue-100 hover:border-blue-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
-            title={t('fire.refresh')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-            </svg>
-            <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.refresh')}</span>
-          </button>
+          {language === 'ko' && (
+            <>
+              {/* Ranking Board Button */}
+              <button
+                onClick={() => window.open('https://run.rilaksekai.com/', '_blank')}
+                className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
+                title={t('fire.ranking_board')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')}</span>
+              </button>
+              {/* Refresh Button */}
+              <button
+                onClick={() => window.open('https://run.rilaksekai.com/refresh', '_blank')}
+                className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 border border-blue-100 hover:border-blue-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
+                title={t('fire.refresh')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.refresh')}</span>
+              </button>
+            </>
+          )}
         </div>
         <div className="flex gap-1 sm:gap-2 items-center">
 

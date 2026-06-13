@@ -9,10 +9,32 @@ import {
     DEFAULT_AUTO_EVENT_OVERRIDE, loadAutoEventOverride
 } from '../../utils/eventInfoUtils';
 
+export const DEFAULT_AREA_VALUES = {
+    unit: 10,
+    gate: 0,
+    attr: 10,
+    titlePower: 250,
+    characterArea: 20,
+    characterRank: 51,
+    characterNui: 0,
+};
+
 const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
 const MASTER_RANK_OPTIONS = [0, 1, 2, 3, 4, 5];
 const MAIN_DECK_SLOT_COUNT = 5;
-const CANVAS_POWER_BONUS = 1500;
+const getCanvasPowerBonus = (card) => {
+    if (!card) return 0;
+    const type = String(card.type || '').toLowerCase();
+    if (type === 'birthday') return 1200;
+
+    const rarity = String(card.rarity || card.cardRarity || '').toLowerCase();
+    if (rarity === 'birthday') return 1200;
+    if (rarity === '4') return 1500;
+    if (rarity === '3') return 900;
+    if (rarity === '2') return 600;
+    if (rarity === '1') return 300;
+    return 0;
+};
 const DEFAULT_CHARACTER_RANK = 51;
 const GATE_LEVEL_POWER_BONUS = 0.1;
 const UNIT_EVENT_LIMITED_CHARACTER_RANK_OFFSET = 40;
@@ -176,16 +198,16 @@ const isUnitEventLimitedCard = (card) => {
 };
 
 const createDefaultAreaSettings = () => ({
-    units: AREA_UNIT_OPTIONS.reduce((acc, unit) => ({ ...acc, [unit.key]: 10 }), {}),
-    gates: AREA_UNIT_OPTIONS.reduce((acc, unit) => ({ ...acc, [unit.key]: 0 }), {}),
-    attrs: AREA_ATTR_OPTIONS.reduce((acc, attr) => ({ ...acc, [attr.key]: 10 }), {}),
-    titlePower: 0,
+    units: AREA_UNIT_OPTIONS.reduce((acc, unit) => ({ ...acc, [unit.key]: DEFAULT_AREA_VALUES.unit }), {}),
+    gates: AREA_UNIT_OPTIONS.reduce((acc, unit) => ({ ...acc, [unit.key]: DEFAULT_AREA_VALUES.gate }), {}),
+    attrs: AREA_ATTR_OPTIONS.reduce((acc, attr) => ({ ...acc, [attr.key]: DEFAULT_AREA_VALUES.attr }), {}),
+    titlePower: DEFAULT_AREA_VALUES.titlePower,
     characters: SUPPORT_CHARACTERS.reduce((acc, character) => ({
         ...acc,
         [character.id]: {
-            area: 30,
-            rank: DEFAULT_CHARACTER_RANK,
-            nui: 0,
+            area: DEFAULT_AREA_VALUES.characterArea,
+            rank: DEFAULT_AREA_VALUES.characterRank,
+            nui: DEFAULT_AREA_VALUES.characterNui,
         },
     }), {}),
 });
@@ -242,7 +264,7 @@ const getAreaPowerSummary = (slots, areaSettings) => {
         const rawCardPower = sumPowerParams(rawPowerParams);
         const masterRank = Math.max(0, Math.min(5, Number(slot?.masterRank) || 0));
         const masterRankPower = slot?.card ? (masterRank - 5) * getMasterRankPowerBonusStep(slot) : 0;
-        const canvasPower = slot?.card && slot.canvas ? CANVAS_POWER_BONUS : 0;
+        const canvasPower = slot?.card && slot.canvas ? getCanvasPowerBonus(slot.card) : 0;
         const masterRankParams = applyPowerDeltaToParams(rawPowerParams, masterRankPower);
         const basePowerParams = applyPowerDeltaToParams(masterRankParams, canvasPower);
         const basePower = sumPowerParams(basePowerParams);
@@ -414,7 +436,7 @@ const OptionDropdown = ({ value, options, onChange, prefix, hidePrefixOnMobile =
 
 const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, emptyText = '비움', previewCharId = 21, card = null, isAwakened = true }) => {
     const publicUrl = process.env.PUBLIC_URL || '';
-    
+
     const getMainDeckPreviewRarity = (key) => {
         if (key === 'birthday') return 4;
         if (key === 'rarity3') return 3;
@@ -422,34 +444,34 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, emptyT
         if (key === 'rarity1') return 1;
         return key ? 4 : 0;
     };
-    
+
     const rarity = getMainDeckPreviewRarity(rarityKey);
     const isBirthday = rarityKey === 'birthday';
     const isLowRarity = rarity > 0 && rarity <= 2;
     const frameName = isBirthday ? 'cardFrame_bd.webp' : isLowRarity ? 'frame_2star.webp' : 'Frame.webp';
-    
-    const hasAfterTraining = card 
+
+    const hasAfterTraining = card
         ? (Number(card.rarity) > 2 && card.type !== 'Birthday' && card.type !== 'Anniversary')
         : (rarityKey === 'rarity4' || rarityKey === 'rarity3');
-        
+
     const actualAwakened = hasAfterTraining ? isAwakened : false;
     const suffix = actualAwakened ? 'after_training' : 'normal';
     const starName = isBirthday ? 'rairity_birth.webp' : actualAwakened ? 'afterstar.webp' : 'star_normal.webp';
     const normalizedMasterRank = Math.max(0, Math.min(5, Number(masterRank) || 0));
-    
+
     // Determine attribute icon: use card's actual attr if available
     const attrName = card ? (card.attr || card.cardAttr || card.attribute || 'pure').toLowerCase() : null;
-    
-    const faceUrl = card 
+
+    const faceUrl = card
         ? `https://asset.rilaksekai.com/face/res0${String(getCardCharacterId(card) || 1).padStart(2, '0')}_no${String(card?.card_image_id || '001').padStart(3, '0')}_${suffix}.webp`
         : `https://asset.rilaksekai.com/face/res0${String(previewCharId).padStart(2, '0')}_no001_${suffix}.webp`;
 
     return (
         <div className={`ebc-preview-card ${rarityKey ? '' : 'empty'}`}>
-            <img 
-                className="ebc-card-face" 
-                src={faceUrl} 
-                alt="" 
+            <img
+                className="ebc-card-face"
+                src={faceUrl}
+                alt=""
                 onError={(e) => {
                     e.target.src = `https://asset.rilaksekai.com/face/res021_no001_normal.webp`;
                 }}
@@ -503,13 +525,44 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         const generalSaved = localStorage.getItem('ebc_main_deck_slots');
         return generalSaved ? JSON.parse(generalSaved) : createEmptyMainDeckSlots();
     });
+    const [activeAreaPreset, setActiveAreaPreset] = useState(() => {
+        return localStorage.getItem('ebc_active_area_preset') ? Number(localStorage.getItem('ebc_active_area_preset')) : 1;
+    });
     const [areaSettings, setAreaSettings] = useState(() => {
-        const saved = localStorage.getItem('ebc_area_settings');
-        return mergeAreaSettings(saved ? JSON.parse(saved) : {});
+        const activeNum = localStorage.getItem('ebc_active_area_preset') ? Number(localStorage.getItem('ebc_active_area_preset')) : 1;
+        
+        if (activeNum === 1 && !localStorage.getItem('ebc_area_preset_1')) {
+            const oldSettings = localStorage.getItem('ebc_area_settings');
+            if (oldSettings) {
+                localStorage.setItem('ebc_area_preset_1', oldSettings);
+            }
+        }
+        
+        const saved = localStorage.getItem(`ebc_area_preset_${activeNum}`);
+        if (saved) {
+            try {
+                return mergeAreaSettings(JSON.parse(saved));
+            } catch (e) {
+                return createDefaultAreaSettings();
+            }
+        }
+        return createDefaultAreaSettings();
     });
     const [isAreaPanelOpen, setIsAreaPanelOpen] = useState(false);
     const [isPowerDetailOpen, setIsPowerDetailOpen] = useState(false);
     const [isCharPickerOpen, setIsCharPickerOpen] = useState(false);
+    const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+    const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+    const [loadJsonText, setLoadJsonText] = useState('');
+    const [isBatchAreaModalOpen, setIsBatchAreaModalOpen] = useState(false);
+    const [batchAreaSettings, setBatchAreaSettings] = useState({
+        unit: DEFAULT_AREA_VALUES.unit,
+        gate: DEFAULT_AREA_VALUES.gate,
+        attr: DEFAULT_AREA_VALUES.attr,
+        characterArea: DEFAULT_AREA_VALUES.characterArea,
+        characterRank: DEFAULT_AREA_VALUES.characterRank,
+        characterNui: DEFAULT_AREA_VALUES.characterNui,
+    });
     const [activeMainSlotIndex, setActiveMainSlotIndex] = useState(null);
     const [pickerCharId, setPickerCharId] = useState(() => {
         const saved = localStorage.getItem('ebc_last_char_id');
@@ -570,6 +623,48 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         });
     }, [cards]);
 
+    const [nuiStats, setNuiStats] = useState(null);
+
+    useEffect(() => {
+        let mounted = true;
+        fetch('https://asset.rilaksekai.com/suite/mysekaiFixtures.json', { cache: 'no-cache' })
+            .then(res => res.json())
+            .then(fixtures => {
+                if (!mounted) return;
+                const chars = {
+                    1: '一歌', 2: '咲希', 3: '穂波', 4: '志歩',
+                    5: 'みのり', 6: '遥', 7: '愛莉', 8: '雫',
+                    9: 'こはね', 10: '杏', 11: '彰人', 12: '冬弥',
+                    13: '司', 14: 'えむ', 15: '寧々', 16: '類',
+                    17: '奏', 18: 'まふゆ', 19: '絵名', 20: '瑞希',
+                    21: 'ミク', 22: 'リン', 23: 'レン', 24: 'ルカ', 25: 'MEIKO', 26: 'KAITO'
+                };
+                
+                let min = 999;
+                let max = -1;
+                
+                for (let i = 1; i <= 26; i++) {
+                    const jpName = chars[i];
+                    if (!jpName) continue;
+                    
+                    const count = fixtures.filter(f => 
+                        f.name && f.name.includes(`${jpName}のぬいぐるみ`)
+                    ).length;
+                    
+                    const sets = Math.floor(count / 3);
+                    if (sets < min) min = sets;
+                    if (sets > max) max = sets;
+                }
+
+                if (min === 999) min = 0;
+                if (max === -1) max = 0;
+                setNuiStats({ min, max });
+            })
+            .catch(err => console.warn("Failed to fetch mysekaiFixtures.json", err));
+            
+        return () => { mounted = false; };
+    }, []);
+
     useEffect(() => {
         localStorage.setItem('ebc_is_world_link', JSON.stringify(isWorldLink));
     }, [isWorldLink]);
@@ -584,8 +679,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
     }, [slots, activePreset]);
 
     useEffect(() => {
-        localStorage.setItem('ebc_area_settings', JSON.stringify(areaSettings));
-    }, [areaSettings]);
+        localStorage.setItem(`ebc_area_preset_${activeAreaPreset}`, JSON.stringify(areaSettings));
+    }, [areaSettings, activeAreaPreset]);
 
 
 
@@ -605,6 +700,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     if (!cancelled && autoData) {
                         setAutoEventOverride(autoData);
                         setEventOverride(autoData);
+                        setIsWorldLink(autoData.attr === 'wl');
                     }
                 })
                 .catch(err => console.warn('Failed to auto load event override', err));
@@ -658,7 +754,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         const cardAttr = card.attr || card.cardAttr || card.attribute || '';
         const charId = getCardCharacterId(card);
         const isWorldLink = overrideConfig.attr === 'wl';
-        
+
         // Resolve card's support unit for VS chars (mirror profile-server logic)
         // Priority: supportUnit field > unit field (converted via UNIT_NAME_TO_KEY)
         const UNIT_NAME_TO_KEY = {
@@ -700,13 +796,13 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 isFeatured = (ORIGINAL_CHAR_UNIT[charId] === overrideConfig.unit);
             }
         }
-        
+
         // WL event: typeMatched is determined at deck level (first card per attribute), not per-card
         // For non-WL events: match by attribute
         const isTypeMatched = isWorldLink
             ? false  // WL: overridden in slotResults (first unique attr per deck)
             : (overrideConfig.attr ? (cardAttr === overrideConfig.attr) : false);
-        
+
         return { typeMatched: isTypeMatched, featured: isFeatured };
     };
 
@@ -729,20 +825,20 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 if (!slot.card) return slot;
                 const bonus = checkCardBonus(slot.card, eventOverride);
                 const autoPickup = shouldCardBePickup(slot.card, eventOverride);
-                
+
                 // Only update if changed to avoid unnecessary renders
                 if (
-                    slot.typeMatched === bonus.typeMatched && 
+                    slot.typeMatched === bonus.typeMatched &&
                     slot.featured === bonus.featured &&
                     slot.pickup === autoPickup
                 ) {
                     return slot;
                 }
-                return { 
-                    ...slot, 
-                    typeMatched: bonus.typeMatched, 
+                return {
+                    ...slot,
+                    typeMatched: bonus.typeMatched,
                     featured: bonus.featured,
-                    pickup: autoPickup 
+                    pickup: autoPickup
                 };
             }));
         }
@@ -766,16 +862,16 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
             if (Object.prototype.hasOwnProperty.call(patch, 'rarityKey')) {
                 const hasRarity = Boolean(patch.rarityKey);
                 nextSlot.masterRank = hasRarity ? current.masterRank : 0;
-                
+
                 // When picking a new card, calculate bonus automatically
                 if (patch.card) {
                     const autoBonus = checkCardBonus(patch.card, eventOverride);
                     nextSlot.typeMatched = autoBonus.typeMatched;
                     nextSlot.featured = autoBonus.featured;
-                    
+
                     const autoPickup = shouldCardBePickup(patch.card, eventOverride);
                     nextSlot.pickup = autoPickup;
-                    
+
                     // Load saved skillLevel/masterRank if available
                     if (!isManualEvent) {
                         const savedKey = `ebc_card_stats_${patch.card.id}`;
@@ -854,8 +950,50 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         }));
     };
 
-    const resetAreaSettings = () => {
-        setAreaSettings(createDefaultAreaSettings());
+
+
+    const downloadJson = (dataStr) => {
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'area_settings.json';
+        a.click();
+    };
+
+    const handleAreaPresetClick = (num) => {
+        if (num === activeAreaPreset) return;
+        const saved = localStorage.getItem(`ebc_area_preset_${num}`);
+        if (saved) {
+            try {
+                setAreaSettings(mergeAreaSettings(JSON.parse(saved)));
+            } catch(e) {
+                setAreaSettings(createDefaultAreaSettings());
+            }
+        } else {
+            setAreaSettings(createDefaultAreaSettings());
+        }
+        setActiveAreaPreset(num);
+        localStorage.setItem('ebc_active_area_preset', String(num));
+    };
+
+    const applyBatchAreaSettings = () => {
+        setAreaSettings(prev => ({
+            ...prev,
+            units: AREA_UNIT_OPTIONS.reduce((acc, unit) => ({ ...acc, [unit.key]: batchAreaSettings.unit }), {}),
+            gates: AREA_UNIT_OPTIONS.reduce((acc, unit) => ({ ...acc, [unit.key]: batchAreaSettings.gate }), {}),
+            attrs: AREA_ATTR_OPTIONS.reduce((acc, attr) => ({ ...acc, [attr.key]: batchAreaSettings.attr }), {}),
+            characters: SUPPORT_CHARACTERS.reduce((acc, character) => ({
+                ...acc,
+                [character.id]: {
+                    ...prev.characters?.[character.id],
+                    area: batchAreaSettings.characterArea,
+                    rank: batchAreaSettings.characterRank,
+                    nui: batchAreaSettings.characterNui,
+                },
+            }), {}),
+        }));
+        setIsBatchAreaModalOpen(false);
     };
 
     const slotResults = useMemo(() => {
@@ -891,14 +1029,35 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         return getAreaPowerSummary(slots, areaSettings);
     }, [slots, areaSettings]);
 
+    const isAreaDefault = useMemo(() => {
+        try {
+            if (areaSettings.titlePower !== DEFAULT_AREA_VALUES.titlePower) return false;
+            for (const key of Object.keys(areaSettings.units || {})) {
+                if (areaSettings.units[key] !== DEFAULT_AREA_VALUES.unit) return false;
+            }
+            for (const key of Object.keys(areaSettings.attrs || {})) {
+                if (areaSettings.attrs[key] !== DEFAULT_AREA_VALUES.attr) return false;
+            }
+            for (const charId of Object.keys(areaSettings.characters || {})) {
+                const charS = areaSettings.characters[charId] || {};
+                if (Number(charS.area) !== DEFAULT_AREA_VALUES.characterArea) return false;
+                if (Number(charS.rank) !== DEFAULT_AREA_VALUES.characterRank) return false;
+                if (Number(charS.nui) !== DEFAULT_AREA_VALUES.characterNui) return false;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }, [areaSettings]);
+
     const powerDetailRows = useMemo(() => {
         return [
-            { label: '퍼포먼스', value: powerSummary.basePower || 0 },
-            { label: '에어리어 아이템보너스', value: powerSummary.areaItemBonus || 0 },
-            { label: '캐릭터 랭크 보너스', value: powerSummary.characterRankBonus || 0 },
-            { label: '칭호 보너스', value: powerSummary.titleBonus || 0 },
-            { label: '가구 보너스', value: powerSummary.furnitureBonus || 0 },
-            { label: '게이트 보너스', value: powerSummary.gateBonus || 0 },
+            { label: t('support.base_power') || '퍼포먼스', value: powerSummary.basePower || 0 },
+            { label: t('support.area_item_bonus') || '에어리어 아이템보너스', value: powerSummary.areaItemBonus || 0 },
+            { label: t('support.character_rank_bonus') || '캐릭터 랭크 보너스', value: powerSummary.characterRankBonus || 0 },
+            { label: t('support.title_bonus') || '칭호 보너스', value: powerSummary.titleBonus || 0 },
+            { label: t('support.furniture_bonus') || '가구 보너스', value: powerSummary.furnitureBonus || 0 },
+            { label: t('support.gate_bonus') || '게이트 보너스', value: powerSummary.gateBonus || 0 },
         ];
     }, [powerSummary]);
 
@@ -918,29 +1077,29 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         <div className="ebc-backdrop" onMouseDown={onClose}>
             <div className={`ebc-modal ${language === 'ja' ? 'lang-ja' : ''}`} onMouseDown={(e) => e.stopPropagation()}>
                 <div className="ebc-header">
-                    <h2>{t('support.event_bonus_calculator')}</h2>
+                    <h2>{t('support.deck_simulator') || '덱 시뮬레이터'}</h2>
                     <button type="button" className="ebc-close-btn" onClick={onClose}>✕</button>
                 </div>
-                
+
                 <div className="ebc-content">
                     {/* Event Config Row */}
                     <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '16px', borderRadius: '12px' }}>
                         {/* Checkboxes Row */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
                             <label className="ebc-checkbox-label" style={{ margin: 0, fontWeight: 'bold', fontSize: '14px', color: '#334155', display: 'flex', alignItems: 'center' }}>
-                                <input 
-                                    type="checkbox" 
-                                    checked={isManualEvent} 
-                                    onChange={(e) => setIsManualEvent(e.target.checked)} 
+                                <input
+                                    type="checkbox"
+                                    checked={isManualEvent}
+                                    onChange={(e) => setIsManualEvent(e.target.checked)}
                                 />
                                 <span className="ebc-checkbox-text" style={{ marginLeft: '8px', lineHeight: 'normal', transform: 'translateY(1px)' }}>{t('support.manual_input') || '수동 입력'}</span>
                             </label>
-                            
+
                             <label className="ebc-checkbox-label" style={{ margin: 0, fontWeight: 'bold', fontSize: '14px', color: '#334155', display: 'flex', alignItems: 'center' }}>
-                                <input 
-                                    type="checkbox" 
-                                    checked={isWorldLink} 
-                                    onChange={(e) => setIsWorldLink(e.target.checked)} 
+                                <input
+                                    type="checkbox"
+                                    checked={isWorldLink}
+                                    onChange={(e) => setIsWorldLink(e.target.checked)}
                                 />
                                 <span className="ebc-checkbox-text" style={{ marginLeft: '8px', lineHeight: 'normal', transform: 'translateY(1px)' }}>{t('support.world_link_mode')}</span>
                             </label>
@@ -951,10 +1110,9 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                 onClick={() => setIsAreaPanelOpen(prev => !prev)}
                             >
                                 <span>{t('support.area_settings') || '에어리어'}</span>
-                                <strong>{powerSummary.totalPower.toLocaleString()}</strong>
                             </button>
                         </div>
-                        
+
                         {/* Options Row (Dropdowns & Inputs) */}
                         {(!isManualEvent || isWorldLink) && (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
@@ -973,7 +1131,10 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                     assetPath="attributes"
                                                     iconOnly
                                                     autoOption={autoAttrOption}
-                                                    onChange={(val) => setEventOverride(prev => ({ ...prev, attr: val }))}
+                                                    onChange={(val) => {
+                                                        setEventOverride(prev => ({ ...prev, attr: val }));
+                                                        setIsWorldLink(val === 'wl');
+                                                    }}
                                                 />
                                             </div>
                                             <div style={{ flex: 1 }}>
@@ -983,7 +1144,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                     options={EVENT_UNITS}
                                                     assetPath="units"
                                                     iconOnly
-                                                    extraOptions={[{ key: 'mix', label: '스까' }]}
+                                                    extraOptions={[{ key: 'mix', label: t('support.mix') || '스까' }]}
                                                     autoOption={autoUnitOption}
                                                     onChange={updateEventUnit}
                                                 />
@@ -996,7 +1157,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                 {!isManualEvent && eventOverride.detailOpen && (
                                     <div style={{ width: '100%', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px', marginTop: '4px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>스까 인선 선택</span>
+                                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>{t('support.select_mix_characters') || '스까 인선 선택'}</span>
                                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#6366f1' }}>{(eventOverride.characterOrder || []).length}/5</span>
                                         </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(13, 1fr)', gap: '3px', marginBottom: '8px' }}>
@@ -1045,7 +1206,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                                 key="none"
                                                                 type="button"
                                                                 onClick={() => updateVsEventUnit(cid, 'none')}
-                                                                title="버추얼싱어"
+                                                                title={t('support.virtual_singer') || "버추얼싱어"}
                                                                 style={{
                                                                     height: '20px',
                                                                     padding: '0 5px',
@@ -1087,15 +1248,15 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                         )}
                                     </div>
                                 )}
-                                
+
                                 {isWorldLink && (
                                     <div className="ebc-support-bonus-inline" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '150px' }}>
                                         <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#64748b', whiteSpace: 'nowrap' }}>{t('support.support_bonus')}</label>
                                         <div className="ebc-input-wrapper" style={{ flex: 1 }}>
-                                            <input 
-                                                type="number" 
-                                                value={supportBonus} 
-                                                onChange={(e) => setSupportBonus(e.target.value)} 
+                                            <input
+                                                type="number"
+                                                value={supportBonus}
+                                                onChange={(e) => setSupportBonus(e.target.value)}
                                                 placeholder="0"
                                                 className="ebc-support-input"
                                                 style={{ margin: 0, padding: 0, lineHeight: '1' }}
@@ -1117,10 +1278,15 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                     type="button"
                                     className="ebc-power-info-btn"
                                     onClick={() => setIsPowerDetailOpen(true)}
-                                    aria-label="종합력 상세"
+                                    aria-label={t('support.power_detail') || "종합력 상세"}
                                 >
                                     i
                                 </button>
+                                {isAreaDefault && (
+                                    <span style={{ marginLeft: '8px', fontSize: '11px', color: '#ec4899', fontWeight: '800' }}>
+                                        {t('support.area_default_warning') || '상단 메뉴로 에어리어 조건 입력'}
+                                    </span>
+                                )}
                             </span>
                         </div>
 
@@ -1135,12 +1301,12 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                         <div className="ebc-slot-header">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                 {(() => {
-                                                    const hasAfterTraining = slot.card 
+                                                    const hasAfterTraining = slot.card
                                                         ? (Number(slot.card.rarity) > 2 && slot.card.type !== 'Birthday' && slot.card.type !== 'Anniversary')
                                                         : (slot.rarityKey === 'rarity4' || slot.rarityKey === 'rarity3');
                                                     return hasAfterTraining ? (
-                                                        <button 
-                                                            type="button" 
+                                                        <button
+                                                            type="button"
                                                             className={`ebc-awaken-toggle ${slot.isAwakened ? 'awakened' : 'unawakened'}`}
                                                             onClick={(e) => { e.stopPropagation(); updateSlot(index, { isAwakened: !slot.isAwakened }); }}
                                                             title={slot.isAwakened ? t('support.awakened') : t('support.unawakened')}
@@ -1152,8 +1318,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             </div>
                                             <strong>+{bonus.total}%</strong>
                                         </div>
-                                        <div 
-                                            className="ebc-preview-wrap" 
+                                        <div
+                                            className="ebc-preview-wrap"
                                             style={{ cursor: 'pointer', transition: 'transform 0.1s' }}
                                             onClick={() => {
                                                 const slotCard = slot.card;
@@ -1167,7 +1333,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             }}
                                             onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                                             onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                            title="카드 선택"
+                                            title={t('support.select_card') || "카드 선택"}
                                         >
                                             <MainDeckPreviewCard rarityKey={slot.rarityKey} masterRank={slot.masterRank} skillLevel={slot.skillLevel || 1} emptyText={t('support.empty')} card={slot.card} isAwakened={slot.isAwakened !== false} />
                                         </div>
@@ -1177,12 +1343,13 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                 className={`ebc-canvas-toggle ${slot.canvas ? 'active' : ''}`}
                                                 onClick={() => updateSlot(index, { canvas: !slot.canvas })}
                                                 disabled={!slot.card}
+                                                style={language === 'ja' ? { fontSize: '10px', letterSpacing: '-0.5px' } : undefined}
                                             >
                                                 {t('support.canvas') || '캔버스'}
                                             </button>
                                             <span
                                                 className="ebc-slot-base-power"
-                                                title={`에어리어 적용 후 ${(powerResult.totalPower || 0).toLocaleString()} (${formatBonus(powerResult.areaPercent || 0)}%)`}
+                                                title={`${t('support.after_area_bonus') || '에어리어 적용 후'} ${(powerResult.totalPower || 0).toLocaleString()} (${formatBonus(powerResult.areaPercent || 0)}%)`}
                                             >
                                                 <strong>{(powerResult.basePower || 0).toLocaleString()}</strong>
                                             </span>
@@ -1198,7 +1365,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             <NumberDropdown value={slot.masterRank} options={MASTER_RANK_OPTIONS} onChange={v => updateSlot(index, { masterRank: v })} />
                                         </div>
                                         <div className="ebc-toggle-row">
-                                            <button type="button" className={`ebc-toggle ${slot.typeMatched ? 'active' : ''} ${isWorldLink ? 'wl-auto' : ''}`} onClick={() => !isWorldLink && updateSlot(index, { typeMatched: !slot.typeMatched })} disabled={!hasRarity || isWorldLink} title={isWorldLink ? 'WL: 속성별 첫 번째 카드 자동 적용' : ''}>{t('support.type')}</button>
+                                            <button type="button" className={`ebc-toggle ${slot.typeMatched ? 'active' : ''} ${isWorldLink ? 'wl-auto' : ''}`} onClick={() => !isWorldLink && updateSlot(index, { typeMatched: !slot.typeMatched })} disabled={!hasRarity || isWorldLink} title={isWorldLink ? t('support.wl_auto_apply') : ''}>{t('support.type')}</button>
                                             <button type="button" className={`ebc-toggle ${slot.featured ? 'active' : ''}`} onClick={() => updateSlot(index, { featured: !slot.featured })} disabled={!hasRarity}>{t('support.featured')}</button>
                                             <button type="button" className={`ebc-toggle ${slot.pickup ? 'active' : ''}`} onClick={() => updateSlot(index, { pickup: !slot.pickup })} disabled={!canPickup}>{t('support.pickup')}</button>
                                         </div>
@@ -1212,7 +1379,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                 );
                             })}
                         </div>
-                        
+
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
                             <button
                                 type="button"
@@ -1225,7 +1392,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                     }
                                 }}
                             >
-                                {t('support.skill') ? `${t('support.skill')} ${t('app.load') || '불러오기'}` : '스킬 불러오기'}
+                                {t('support.load_skill') || '스킬 불러오기'}
                             </button>
                         </div>
 
@@ -1245,7 +1412,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                 localStorage.setItem('ebc_active_preset', String(presetNum));
                                                 setSlots(nextSlots);
                                             }}
-                                            title={`프리셋 ${presetNum}`}
+                                            title={`${t('support.preset') || '프리셋'} ${presetNum}`}
                                         >
                                             P{presetNum}
                                         </button>
@@ -1257,7 +1424,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                 type="button"
                                 className="ebc-btn-reset"
                                 onClick={() => {
-                                    if (window.confirm('현재 설정한 덱을 모두 초기화하시겠습니까?')) {
+                                    if (window.confirm(t('support.reset_confirm') || '현재 설정한 덱을 모두 초기화하시겠습니까?')) {
                                         setSlots(createEmptyMainDeckSlots());
                                     }
                                 }}
@@ -1319,13 +1486,31 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                         <div className="ebc-area-floating-scroll">
                             <div className="ebc-area-floating-head">
                                 <h3>{t('support.area_settings') || '에어리어'}</h3>
-                                <div className="ebc-area-floating-totals">
-                                    <span>{t('support.base_power') || '기초'} <strong>{powerSummary.basePower.toLocaleString()}</strong></span>
-                                    <span>{t('support.total_power') || '종합력'} <strong>{powerSummary.totalPower.toLocaleString()}</strong></span>
-                                    <button type="button" onClick={resetAreaSettings}>{t('support.reset') || '리셋'}</button>
+                                <div className="ebc-area-floating-totals" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                        <button type="button" onClick={() => setIsBatchAreaModalOpen(true)} className="ebc-btn-batch">{t('support.batch_apply') || '일괄적용'}</button>
+                                        <button type="button" onClick={() => setIsSaveModalOpen(true)} className="ebc-btn-save">{t('app.save') || '저장'}</button>
+                                        <button type="button" onClick={() => { setLoadJsonText(''); setIsLoadModalOpen(true); }} className="ebc-btn-load">{t('app.load') || '불러오기'}</button>
+                                    </div>
+                                    <div className="ebc-toolbar-presets" style={{ margin: 0 }}>
+                                        {[1, 2, 3].map(presetNum => {
+                                            const isActive = activeAreaPreset === presetNum;
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={presetNum}
+                                                    className={`ebc-preset-load-btn ${isActive ? 'active' : ''}`}
+                                                    onClick={() => handleAreaPresetClick(presetNum)}
+                                                    title={`${t('support.area_preset') || '에어리어 프리셋'} ${presetNum}`}
+                                                >
+                                                    P{presetNum}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                                 <div className="ebc-title-power-editor">
-                                    <span>칭호 보너스</span>
+                                    <span>{t('support.title_bonus') || '칭호 보너스'}</span>
                                     <label>
                                         <input
                                             type="number"
@@ -1334,9 +1519,9 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             value={areaSettings.titlePower ?? ''}
                                             onChange={(e) => updateTitlePower(e.target.value)}
                                             onFocus={(e) => e.target.select()}
-                                            aria-label="칭호 보너스 종합력"
+                                            aria-label={`${t('support.title_bonus')} ${t('support.total_power')}`}
                                         />
-                                        <b>종합력</b>
+                                        <b>{t('support.total_power') || '종합력'}</b>
                                     </label>
                                 </div>
                             </div>
@@ -1349,7 +1534,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                 <div className="ebc-area-unit-header">
                                     <span />
                                     <span>{t('support.area') || '에어리어'}</span>
-                                    <span>게이트</span>
+                                    <span>{t('support.gate') || '게이트'}</span>
                                 </div>
                                 <div className="ebc-area-game-grid units">
                                     {AREA_UNIT_OPTIONS.map(unit => (
@@ -1379,7 +1564,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                     value={areaSettings.gates?.[unit.key] ?? ''}
                                                     onChange={(e) => updateAreaGate(unit.key, e.target.value)}
                                                     onFocus={(e) => e.target.select()}
-                                                    aria-label={`${unit.label} 게이트`}
+                                                    aria-label={`${unit.label} ${t('support.gate') || '게이트'}`}
                                                 />
                                                 <b>Lv</b>
                                             </span>
@@ -1418,8 +1603,13 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                             </section>
 
                             <section className="ebc-area-game-section">
-                                <div className="ebc-area-game-title">
+                                <div className="ebc-area-game-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span>{t('support.character_effect') || '캐릭터 효과'}</span>
+                                    {nuiStats && (
+                                        <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: 'bold' }}>
+                                            현재 누이 {nuiStats.min === nuiStats.max ? `${nuiStats.min}세트` : `${nuiStats.min}~${nuiStats.max}세트`}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="ebc-area-character-grid">
                                     {SUPPORT_CHARACTERS.map(character => {
@@ -1428,10 +1618,9 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             <div key={character.id} className="ebc-area-character-pill">
                                                 <div className="ebc-area-character-face">
                                                     <img
-                                                        src={`${process.env.PUBLIC_URL}/assets/characters/${String(character.id).padStart(2, '0')}.webp`}
+                                                        src={`${process.env.PUBLIC_URL}/assets/stamps/${String(character.id).padStart(2, '0')}.webp`}
                                                         alt={character.name}
                                                     />
-                                                    <span>{character.name}</span>
                                                 </div>
                                                 <div className="ebc-area-character-fields">
                                                     <label>
@@ -1487,6 +1676,251 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
                         <div className="ebc-area-floating-footer">
                             <button type="button" onClick={() => setIsAreaPanelOpen(false)}>
+                                {t('support.close') || '닫기'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isBatchAreaModalOpen && (
+                <div className="ebc-area-floating-backdrop" onMouseDown={(e) => {
+                    e.stopPropagation();
+                    if (e.target === e.currentTarget) setIsBatchAreaModalOpen(false);
+                }}>
+                    <div className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            className="ebc-area-floating-close"
+                            onClick={() => setIsBatchAreaModalOpen(false)}
+                            aria-label={t('support.close') || '닫기'}
+                        >
+                            ×
+                        </button>
+                        <div className="ebc-area-floating-scroll">
+                            <div className="ebc-area-floating-head">
+                                <h3>{t('support.batch_apply') || '일괄 적용'}</h3>
+                            </div>
+                            <div className="ebc-area-floating-body">
+                                <section className="ebc-area-game-section">
+                                    <div className="ebc-area-game-title">
+                                        <span>{t('support.unit_gate_effect') || '유닛 / 게이트 효과'}</span>
+                                    </div>
+                                    <div className="ebc-area-game-grid units" style={{ gridTemplateColumns: '1fr' }}>
+                                        <div className="ebc-area-game-pill unit">
+                                            <div className="ebc-area-pill-media">
+                                                <img src={`${process.env.PUBLIC_URL}/assets/event/units/Lnlogo.webp`} alt="Leo/need" />
+                                            </div>
+                                            <label className="ebc-area-pill-input">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="30"
+                                                    step="0.1"
+                                                    value={batchAreaSettings.unit ?? ''}
+                                                    onChange={(e) => setBatchAreaSettings(p => ({ ...p, unit: normalizeBonusInput(e.target.value, 30) }))}
+                                                />
+                                                <b>%</b>
+                                            </label>
+                                            <label className="ebc-area-pill-input gate">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="3"
+                                                    step="1"
+                                                    value={batchAreaSettings.gate ?? ''}
+                                                    onChange={(e) => setBatchAreaSettings(p => ({ ...p, gate: clampNumber(e.target.value, 0, 3) }))}
+                                                />
+                                                <b>LV</b>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="ebc-area-game-section">
+                                    <div className="ebc-area-game-title">
+                                        <span>타입 효과</span>
+                                    </div>
+                                    <div className="ebc-area-game-grid attrs" style={{ gridTemplateColumns: '1fr' }}>
+                                        <div className="ebc-area-game-pill attr">
+                                            <div className="ebc-area-pill-media">
+                                                <img src={`${process.env.PUBLIC_URL}/assets/event/attributes/cool.webp`} alt="Cool" />
+                                            </div>
+                                            <label className="ebc-area-pill-input">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="30"
+                                                    step="0.1"
+                                                    value={batchAreaSettings.attr ?? ''}
+                                                    onChange={(e) => setBatchAreaSettings(p => ({ ...p, attr: normalizeBonusInput(e.target.value, 30) }))}
+                                                />
+                                                <b>%</b>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="ebc-area-game-section">
+                                    <div className="ebc-area-game-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>캐릭터 효과</span>
+                                        {nuiStats && (
+                                            <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: 'bold' }}>
+                                                현재 누이 {nuiStats.min === nuiStats.max ? `${nuiStats.min}세트` : `${nuiStats.min}~${nuiStats.max}세트`}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="ebc-area-character-grid" style={{ gridTemplateColumns: '1fr' }}>
+                                        <div className="ebc-area-character-pill">
+                                            <div className="ebc-area-character-face">
+                                                <img src={`${process.env.PUBLIC_URL}/assets/stamps/01.webp`} alt="Miku" />
+                                            </div>
+                                            <div className="ebc-area-character-fields">
+                                                <label>
+                                                    <span>{t('support.area') || '에어리어'}</span>
+                                                    <div className="ebc-area-character-input">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="40"
+                                                            step="0.1"
+                                                            value={batchAreaSettings.characterArea ?? ''}
+                                                            onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterArea: normalizeBonusInput(e.target.value, 40) }))}
+                                                        />
+                                                        <b>%</b>
+                                                    </div>
+                                                </label>
+                                                <label>
+                                                    <span>{t('support.character_rank_short') || '캐랭'}</span>
+                                                    <input
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        value={formatCharacterRank(batchAreaSettings.characterRank)}
+                                                        onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterRank: normalizeRankInput(e.target.value) }))}
+                                                    />
+                                                </label>
+                                                <label>
+                                                    <span>{t('support.nui') || '누이'}</span>
+                                                    <div className="ebc-area-character-input">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="10"
+                                                            step="0.1"
+                                                            value={batchAreaSettings.characterNui ?? ''}
+                                                            onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterNui: normalizeBonusInput(e.target.value, 10) }))}
+                                                        />
+                                                        <b>%</b>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                        <div className="ebc-area-floating-footer" style={{ gap: '12px' }}>
+                            <button type="button" onClick={() => setIsBatchAreaModalOpen(false)}>
+                                {t('support.close') || '닫기'}
+                            </button>
+                            <button type="button" className="ebc-btn-apply" onClick={applyBatchAreaSettings}>
+                                {t('support.batch_apply') || '일괄적용'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isSaveModalOpen && (
+                <div className="ebc-area-floating-backdrop" onMouseDown={(e) => {
+                    e.stopPropagation();
+                    if (e.target === e.currentTarget) setIsSaveModalOpen(false);
+                }}>
+                    <div className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <button type="button" className="ebc-area-floating-close" onClick={() => setIsSaveModalOpen(false)}>×</button>
+                        <div className="ebc-area-floating-scroll" style={{ padding: '24px 24px 0' }}>
+                            <div className="ebc-area-floating-head">
+                                <h3>{t('support.save_area_settings') || '에어리어 설정 저장'}</h3>
+                            </div>
+                            <div className="ebc-area-floating-body" style={{ padding: '0 0 16px' }}>
+                                <p style={{ fontSize: '13px', color: '#555', marginBottom: '8px' }}>{t('support.save_area_desc') || '현재 설정을 텍스트로 복사하거나 파일로 다운로드합니다.'}</p>
+                                <textarea
+                                    readOnly
+                                    value={JSON.stringify(areaSettings)}
+                                    style={{ width: '100%', height: '150px', fontSize: '11px', fontFamily: 'monospace', borderRadius: '8px', border: '1px solid #ccc', padding: '8px', boxSizing: 'border-box', whiteSpace: 'pre-wrap', wordBreak: 'break-all', resize: 'none' }}
+                                />
+                            </div>
+                        </div>
+                        <div className="ebc-area-floating-footer" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px 24px 20px', background: 'linear-gradient(to bottom, rgba(240,240,248,0.75), #f0f0f8 42%)', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+                            <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                                <button type="button" style={{ flex: 1, minWidth: 0, height: '48px', padding: '0 8px', borderRadius: '999px', background: '#ffffff', color: '#474967', fontSize: '15px', fontWeight: 900, border: 'none', cursor: 'pointer', boxSizing: 'border-box', boxShadow: '0 3px 12px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.08)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => {
+                                    navigator.clipboard.writeText(JSON.stringify(areaSettings)).then(() => alert('복사되었습니다.'));
+                                }}>
+                                    {t('support.text_copy') || '텍스트 복사'}
+                                </button>
+                                <button type="button" style={{ flex: 1, minWidth: 0, height: '48px', padding: '0 8px', borderRadius: '999px', background: '#ffffff', color: '#474967', fontSize: '15px', fontWeight: 900, border: 'none', cursor: 'pointer', boxSizing: 'border-box', boxShadow: '0 3px 12px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.08)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => downloadJson(JSON.stringify(areaSettings))}>
+                                    {t('support.file_download') || '파일 다운로드'}
+                                </button>
+                            </div>
+                            <button type="button" onClick={() => setIsSaveModalOpen(false)} style={{ width: '100%', minWidth: 0, height: '48px', padding: '0', borderRadius: '999px', background: '#ffffff', color: '#474967', fontSize: '15px', fontWeight: 900, border: 'none', cursor: 'pointer', boxSizing: 'border-box', boxShadow: '0 3px 12px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.08)' }}>
+                                {t('support.close') || '닫기'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isLoadModalOpen && (
+                <div className="ebc-area-floating-backdrop" onMouseDown={(e) => {
+                    e.stopPropagation();
+                    if (e.target === e.currentTarget) setIsLoadModalOpen(false);
+                }}>
+                    <div className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <button type="button" className="ebc-area-floating-close" onClick={() => setIsLoadModalOpen(false)}>×</button>
+                        <div className="ebc-area-floating-scroll" style={{ padding: '24px 24px 0' }}>
+                            <div className="ebc-area-floating-head">
+                                <h3>{t('support.load_area_settings') || '에어리어 설정 불러오기'}</h3>
+                            </div>
+                            <div className="ebc-area-floating-body" style={{ padding: '0 0 16px' }}>
+                                <p style={{ fontSize: '13px', color: '#555', marginBottom: '8px' }}>{t('support.load_area_desc') || '복사한 텍스트를 아래에 붙여넣거나 파일을 업로드하세요.'}</p>
+                                <textarea
+                                    value={loadJsonText}
+                                    onChange={(e) => setLoadJsonText(e.target.value)}
+                                    placeholder={t('support.paste_json_placeholder') || '여기에 텍스트를 붙여넣으세요...'}
+                                    style={{ width: '100%', height: '150px', fontSize: '11px', fontFamily: 'monospace', borderRadius: '8px', border: '1px solid #ccc', padding: '8px', boxSizing: 'border-box', whiteSpace: 'pre-wrap', wordBreak: 'break-all', resize: 'none' }}
+                                />
+                            </div>
+                        </div>
+                        <div className="ebc-area-floating-footer" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px 24px 20px', background: 'linear-gradient(to bottom, rgba(240,240,248,0.75), #f0f0f8 42%)', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+                            <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                                <label style={{ flex: 1, minWidth: 0, height: '48px', padding: '0 8px', borderRadius: '999px', background: '#ffffff', color: '#474967', fontSize: '15px', fontWeight: 900, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', boxShadow: '0 3px 12px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.08)' }}>
+                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('support.file_upload') || '파일 업로드'}</span>
+                                    <input type="file" accept=".json" style={{ display: 'none' }} onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        const reader = new FileReader();
+                                        reader.onload = (event) => setLoadJsonText(event.target.result);
+                                        reader.readAsText(file);
+                                    }} />
+                                </label>
+                                <button type="button" style={{ flex: 1, minWidth: 0, height: '48px', padding: '0 8px', borderRadius: '999px', background: '#ffffff', color: '#474967', fontSize: '15px', fontWeight: 900, border: 'none', cursor: 'pointer', boxSizing: 'border-box', boxShadow: '0 3px 12px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.08)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => {
+                                    try {
+                                        const parsed = JSON.parse(loadJsonText);
+                                        if (parsed && parsed.characters) {
+                                            setAreaSettings(parsed);
+                                            alert('불러왔습니다.');
+                                            setIsLoadModalOpen(false);
+                                        } else {
+                                            alert('올바른 설정 데이터가 아닙니다.');
+                                        }
+                                    } catch (err) {
+                                        alert('JSON 파싱 오류입니다. 텍스트를 확인해주세요.');
+                                    }
+                                }}>
+                                    {t('support.apply') || '적용'}
+                                </button>
+                            </div>
+                            <button type="button" onClick={() => setIsLoadModalOpen(false)} style={{ width: '100%', minWidth: 0, height: '48px', padding: '0', borderRadius: '999px', background: '#ffffff', color: '#474967', fontSize: '15px', fontWeight: 900, border: 'none', cursor: 'pointer', boxSizing: 'border-box', boxShadow: '0 3px 12px rgba(31,35,60,0.18), inset 0 0 0 1px rgba(31,35,60,0.08)' }}>
                                 {t('support.close') || '닫기'}
                             </button>
                         </div>
@@ -1646,10 +2080,6 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     font-weight: 900;
                     transition: all 0.15s;
                 }
-                .ebc-area-open-btn strong {
-                    color: #0ea5e9;
-                    font-size: 13px;
-                }
                 .ebc-area-open-btn.active {
                     border-color: #0ea5e9;
                     background: #e0f2fe;
@@ -1711,7 +2141,6 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     border-radius: 999px;
                 }
                 .ebc-area-floating-head {
-                    padding-right: 48px;
                     margin-bottom: 22px;
                 }
                 .ebc-area-floating-head h3 {
@@ -1750,8 +2179,12 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 }
                 .ebc-area-floating-totals button {
                     cursor: pointer;
-                    color: #d94467;
+                    color: #000000;
                     font-weight: 1000;
+                }
+                .ebc-area-floating-totals button.ebc-btn-save,
+                .ebc-area-floating-totals button.ebc-btn-load {
+                    border-radius: 6px;
                 }
                 .ebc-title-power-editor {
                     display: inline-grid;
@@ -1938,16 +2371,17 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
                     gap: 10px;
+                    align-items: start;
                 }
                 .ebc-area-character-pill {
                     min-width: 0;
-                    min-height: 118px;
-                    border-radius: 14px;
+                    border-radius: 12px;
                     background: #dedfeb;
-                    padding: 9px 8px 8px;
+                    padding: 5px 5px 3px;
                     display: flex;
                     flex-direction: column;
-                    gap: 8px;
+                    gap: 4px;
+                    height: fit-content;
                     box-shadow: inset 0 1px 0 rgba(255,255,255,0.52);
                 }
                 .ebc-area-character-face {
@@ -1970,12 +2404,6 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     box-shadow: 0 0 0 4px #ececf5, 0 2px 5px rgba(31,35,60,0.15);
                     flex: 0 0 auto;
                 }
-                .ebc-area-character-face span {
-                    max-width: 100%;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                }
                 .ebc-area-character-fields {
                     display: grid;
                     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1985,7 +2413,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 3px;
+                    gap: 2px;
                     min-width: 0;
                     height: auto;
                     color: #777993;
@@ -2001,7 +2429,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 .ebc-area-character-pill label > input {
                     width: 100%;
                     min-width: 0;
-                    height: 27px;
+                    height: 24px;
                     border-radius: 10px;
                     background: #ffffff;
                     box-sizing: border-box;
@@ -2027,7 +2455,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     font-weight: 900;
                     text-align: center;
                     outline: none;
-                    padding: 0;
+                    padding: 5px 0 0 0;
+                    box-sizing: border-box;
                     letter-spacing: 0;
                 }
                 .ebc-area-character-input input {
@@ -2561,8 +2990,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     .ebc-title-power-editor { grid-template-columns: 1fr; align-items: stretch; width: calc(100% - 6px); gap: 5px; font-size: 12px; }
                     .ebc-title-power-editor label { height: 30px; }
                     .ebc-title-power-editor input { font-size: 16px; }
-                    .ebc-area-game-grid.units,
-                    .ebc-area-game-grid.attrs { grid-template-columns: 1fr; gap: 8px; }
+                    .ebc-area-game-grid.units { grid-template-columns: 1fr; gap: 8px; }
+                    .ebc-area-game-grid.attrs { grid-template-columns: repeat(2, 1fr); gap: 8px; }
                     .ebc-area-unit-header { width: 100%; min-width: 0; grid-template-columns: minmax(74px, 1fr) minmax(80px, 92px) minmax(66px, 76px); gap: 5px; padding: 0 9px 3px; }
                     .ebc-area-game-pill { height: 46px; border-radius: 13px; grid-template-columns: minmax(74px, 1fr) minmax(80px, 92px) minmax(66px, 76px); gap: 5px; }
                     .ebc-area-game-pill.attr { grid-template-columns: 42px minmax(96px, 112px); gap: 6px; }
@@ -2574,18 +3003,17 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     .ebc-area-pill-input.gate { padding: 0 6px; }
                     .ebc-area-pill-input.gate input { font-size: 15px; }
                     .ebc-area-pill-input.gate b { font-size: 10px; min-width: 20px; }
-                    .ebc-area-character-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
-                    .ebc-area-character-pill { min-height: 108px; border-radius: 13px; padding: 8px 6px 7px; gap: 7px; }
-                    .ebc-area-character-face { font-size: 10px; gap: 4px; }
+                    .ebc-area-character-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; align-items: start; }
+                    .ebc-area-character-pill { border-radius: 12px; padding: 4px 3px 2px; gap: 3px; height: fit-content; }
+                    .ebc-area-character-face { font-size: 10px; gap: 3px; }
                     .ebc-area-character-face img { width: 34px; height: 34px; box-shadow: 0 0 0 3px #ececf5, 0 2px 4px rgba(31,35,60,0.12); }
                     .ebc-area-character-fields { gap: 3px; }
-                    .ebc-area-character-pill label { font-size: 8px; gap: 2px; }
+                    .ebc-area-character-pill label { font-size: 8px; gap: 1px; }
                     .ebc-area-character-input,
-                    .ebc-area-character-pill label > input { height: 25px; border-radius: 8px; }
-                    .ebc-area-character-pill input { font-size: 12px; border-radius: 8px; }
+                    .ebc-area-character-pill label > input { height: 22px; border-radius: 8px; }
+                    .ebc-area-character-pill input { font-size: 12px; border-radius: 8px; padding: 4px 0 0 0; }
                     .ebc-area-character-input b { font-size: 9px; min-width: 8px; }
-                    .ebc-area-floating-footer { padding: 12px 14px 14px; }
-                    .ebc-area-floating-footer button { min-width: 180px; height: 46px; font-size: 18px; }
+                    .ebc-area-floating-footer { padding: 12px 14px 14px; flex-wrap: wrap; }
                     .ebc-power-detail-backdrop { padding: 8px; }
                     .ebc-power-detail-modal { min-height: min(500px, 94vh); border-radius: 14px; }
                     .ebc-power-detail-close { top: 8px; right: 10px; font-size: 38px; width: 34px; height: 34px; line-height: 30px; }

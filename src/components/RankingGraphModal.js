@@ -302,7 +302,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
     const formatTick = (d) => {
         if (d >= 10000) {
             const manStr = (d / 10000).toLocaleString();
-            return `${manStr}만`;
+            return `${manStr}${t('fire.suffix_man') || '만'}`;
         }
         return d.toLocaleString();
     };
@@ -439,7 +439,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
         // Custom Tick Format for Y Axis (Decimal 'man')
         const formatDecimalMan = (d) => {
             if (d >= 10000) {
-                return `${(d / 10000).toFixed(1)}만`;
+                return `${(d / 10000).toFixed(1)}${t('fire.suffix_man') || '만'}`;
             }
             return d.toLocaleString();
         };
@@ -568,7 +568,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
                         x: "tfe",
                         y: "ep",
                         z: "b",
-                        text: e => `과거 예측컷 (T${e.b})`,
+                        text: e => `${t('fire.past_prediction_cut') || '과거 예측컷'} (T${e.b})`,
                         textAnchor: "end",
                         dx: -5,
                     })),

@@ -1547,12 +1547,12 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row border-t border-gray-200">
                   <td className="px-1 py-1 md:px-4 md:py-2 font-bold text-gray-800 text-sm md:text-base text-center align-middle bg-white">
-                    리프레시 1% 점수
+                    {t('power.refresh_1percent_score')}
                   </td>
                   <td colSpan={isComparisonMode ? 3 : 2} className="px-1 py-1 md:px-4 md:py-2 align-middle bg-white">
                     <div className="flex flex-row w-full h-full">
                       <div className="flex-1 flex flex-col items-center justify-center px-1 md:px-2 py-2">
-                        <span className="text-[10px] md:text-xs text-gray-500 font-bold mb-1">10불 엔비 기준</span>
+                        <span className="text-[10px] md:text-xs text-gray-500 font-bold mb-1">{t('power.envy_10_fire_basis')}</span>
                         <div className="flex items-baseline gap-1">
                           <span className="text-indigo-600 font-extrabold text-sm md:text-lg tabular-nums">
                             {envy10FireScore?.max > 0 ? Math.floor(envy10FireScore.max * (1 / ENVY_REFRESH_GAUGE)).toLocaleString() : 'N/A'}
@@ -1565,7 +1565,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                         </div>
                       </div>
                       <div className="flex-1 flex flex-col items-center justify-center px-1 md:px-2 py-2">
-                        <span className="text-[10px] md:text-xs text-gray-500 font-bold mb-1">마이세카이 부스터 기준</span>
+                        <span className="text-[10px] md:text-xs text-gray-500 font-bold mb-1">{t('power.mysekai_booster_basis')}</span>
                         <div className="flex items-baseline gap-1">
                           <span className="text-teal-600 font-extrabold text-sm md:text-lg tabular-nums">
                             {mySekaiScore > 0 ? Math.floor(Number(mySekaiScore) * MY_SEKAI_1PERCENT_STAMINA).toLocaleString() : 'N/A'}

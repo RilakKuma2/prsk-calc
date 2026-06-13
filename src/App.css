@@ -338,8 +338,13 @@ select {
         margin: 0 -30px 20px -30px;
         /* Bleed into container padding */
         padding: 0 30px;
-        justify-content: center;
-        /* Restore centering */
+        justify-content: flex-start;
+        /* Use auto margins on pseudo-elements for safe centering */
+    }
+    .tabs::before,
+    .tabs::after {
+        content: '';
+        margin: auto;
     }
 }
 
@@ -606,14 +611,18 @@ select {
     background: #94a3b8;
 }
 
-/* Adjustments for Desktop Container */
 @media (min-width: 769px) {
     .tabs {
         margin: 0 -30px 20px -30px;
         /* Wider bleed for larger padding container */
         padding: 0 30px;
-        justify-content: center;
-        /* Center tabs on desktop */
+        justify-content: flex-start;
+        /* Use auto margins on pseudo-elements for safe centering */
+    }
+    .tabs::before,
+    .tabs::after {
+        content: '';
+        margin: auto;
     }
 }
 

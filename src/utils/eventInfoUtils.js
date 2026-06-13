@@ -1,9 +1,9 @@
 export const EVENT_ATTRS = [
-    { key: 'cute', label: '큐트', file: 'cute.webp', color: 'bg-pink-50 border-pink-200' },
     { key: 'cool', label: '쿨', file: 'cool.webp', color: 'bg-blue-50 border-blue-200' },
     { key: 'pure', label: '퓨어', file: 'pure.webp', color: 'bg-green-50 border-green-200' },
-    { key: 'happy', label: '해피', file: 'happy.webp', color: 'bg-orange-50 border-orange-200' },
     { key: 'mysterious', label: '미스', file: 'mysterious.webp', color: 'bg-purple-50 border-purple-200' },
+    { key: 'happy', label: '해피', file: 'happy.webp', color: 'bg-orange-50 border-orange-200' },
+    { key: 'cute', label: '큐트', file: 'cute.webp', color: 'bg-pink-50 border-pink-200' },
     { key: 'wl', label: 'WL' },
 ];
 

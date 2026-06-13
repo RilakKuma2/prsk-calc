@@ -97,14 +97,68 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     };
   }, [updateGlider]);
 
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [hasDragged, setHasDragged] = useState(false);
+
+  const handleMouseDown = (e) => {
+    if (!tabsRef.current) return;
+    setIsDragging(true);
+    setHasDragged(false);
+    setStartX(e.pageX - tabsRef.current.offsetLeft);
+    setScrollLeft(tabsRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !tabsRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - tabsRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    if (Math.abs(walk) > 10) {
+      setHasDragged(true);
+    }
+    tabsRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleTabClick = (e, tabId) => {
+    if (hasDragged) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setCurrentTab(tabId);
+  };
+
   return (
-    <div className="tabs" ref={tabsRef}>
+    <div 
+      className={`tabs ${isDragging ? 'dragging' : ''}`} 
+      ref={tabsRef}
+      onMouseDown={handleMouseDown}
+      onMouseLeave={handleMouseLeave}
+      onMouseUp={handleMouseUp}
+      onMouseMove={handleMouseMove}
+      style={{
+        cursor: isDragging ? 'grabbing' : 'auto',
+        userSelect: isDragging ? 'none' : 'auto',
+        WebkitUserSelect: isDragging ? 'none' : 'auto',
+      }}
+    >
       <div className="glider" style={gliderStyle}></div>
       {tabInfo.map(tab => (
         <div
           key={tab.id}
           className={`tab ${currentTab === tab.id ? 'active' : ''}`}
-          onClick={() => setCurrentTab(tab.id)}
+          onClick={(e) => handleTabClick(e, tab.id)}
+          style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
         >
           {tab.name}
         </div>

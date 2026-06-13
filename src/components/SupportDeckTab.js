@@ -1676,7 +1676,7 @@ const SupportDeckTab = () => {
                             type="button"
                             className="support-slot-card"
                             onClick={() => openCardPicker(index)}
-                            aria-label={`${index + 1}번 카드 선택`}
+                            aria-label={`${t('support.slot_label', { n: index + 1 }).replace('{{n}}', index + 1)} 카드 선택`}
                         >
                             {card ? (
                                 <SupportCardThumbnail
@@ -1752,7 +1752,7 @@ const SupportDeckTab = () => {
                                     return (
                                         <div className="support-main-slot" key={index}>
                                             <div className="support-main-slot-header">
-                                                <span>{index + 1}번</span>
+                                                <span>{t('support.slot_label', { n: index + 1 }).replace('{{n}}', index + 1)}</span>
                                                 <strong>{formatSupportPercent(bonus.total)}</strong>
                                             </div>
 
@@ -1819,7 +1819,7 @@ const SupportDeckTab = () => {
                                                 </button>
                                             </div>
 
-                                            <div className="support-main-breakdown" aria-label={`${index + 1}번 메인덱 보너스`}>
+                                            <div className="support-main-breakdown" aria-label={`${t('support.slot_label', { n: index + 1 }).replace('{{n}}', index + 1)} 메인덱 보너스`}>
                                                 <span>{t('support.member')} <b>{formatSupportPercent(bonus.member)}</b></span>
                                                 <span>{t('support.featured')} <b>{formatSupportPercent(bonus.character)}</b></span>
                                                 <span>{t('support.type')} <b>{formatSupportPercent(bonus.type)}</b></span>
