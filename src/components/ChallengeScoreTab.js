@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
-import { getMusicMetasSync, getSongOptionsSync } from '../utils/dataLoader';
+import { getMusicMetas, getSongOptionsSync } from '../utils/dataLoader';
 import { LiveType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -24,6 +24,43 @@ const EMPTY_CHALLENGE_DECK = {
 const TOP_CHALLENGE_SONG_LIMIT = 100;
 let cachedTopChallengeTargets = null;
 
+const buildPaginationItems = (currentPage, totalPages, maxItems) => {
+    if (totalPages <= 0) return [];
+
+    const maxVisibleItems = Math.max(5, Math.min(maxItems, totalPages));
+    if (totalPages <= maxVisibleItems) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const makeItems = (start, end) => {
+        const items = [1];
+        if (start > 2) items.push({ type: 'ellipsis', key: 'start' });
+        for (let page = start; page <= end; page += 1) {
+            items.push(page);
+        }
+        if (end < totalPages - 1) items.push({ type: 'ellipsis', key: 'end' });
+        items.push(totalPages);
+        return items;
+    };
+
+    const middleSlots = Math.max(1, maxVisibleItems - 2);
+    let start = Math.max(2, currentPage - Math.floor((middleSlots - 1) / 2));
+    let end = Math.min(totalPages - 1, start + middleSlots - 1);
+    start = Math.max(2, Math.min(start, end - middleSlots + 1));
+
+    let items = makeItems(start, end);
+    while (items.length > maxVisibleItems && start <= end) {
+        if (currentPage - start > end - currentPage) {
+            start += 1;
+        } else {
+            end -= 1;
+        }
+        items = makeItems(start, end);
+    }
+
+    return items;
+};
+
 const getSongDisplayName = (song, language) => {
     if (!song) return '';
     if (language === 'ko') return song.name || song.title_jp || '';
@@ -36,7 +73,7 @@ const getSongLevel = (song, difficulty) => {
     return level === undefined ? null : level;
 };
 
-const buildTopChallengeTargets = () => {
+const buildTopChallengeTargets = (musicMetas) => {
     if (cachedTopChallengeTargets) return cachedTopChallengeTargets;
 
     const songs = getSongOptionsSync();
@@ -44,7 +81,7 @@ const buildTopChallengeTargets = () => {
     const seen = new Set();
     const candidates = [];
 
-    for (const musicMeta of getMusicMetasSync()) {
+    for (const musicMeta of musicMetas) {
         const songId = Number(musicMeta.music_id);
         const difficulty = musicMeta.difficulty;
         const key = `${songId}-${difficulty}`;
@@ -103,7 +140,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
     const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5 } = deck;
 
-    const [targetSongs] = useState(() => buildTopChallengeTargets());
+    const [musicMetas, setMusicMetas] = useState(null);
+    const [targetSongs, setTargetSongs] = useState(null);
     const [batchResults, setBatchResults] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'max', direction: 'desc' });
 
@@ -115,7 +153,30 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
     const [searchDifficulty, setSearchDifficulty] = useState('master');
     const [customResult, setCustomResult] = useState(null);
     const searchContainerRef = useRef(null);
+    const paginationContainerRef = useRef(null);
+    const prevPaginationButtonRef = useRef(null);
+    const nextPaginationButtonRef = useRef(null);
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        getMusicMetas()
+            .then(metas => {
+                if (cancelled) return;
+                setMusicMetas(metas);
+                setTargetSongs(buildTopChallengeTargets(metas));
+            })
+            .catch(error => {
+                console.error('Failed to load music metas for challenge score tab', error);
+                if (!cancelled) {
+                    setMusicMetas([]);
+                    setTargetSongs([]);
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // Click Outside Effect
     useEffect(() => {
@@ -175,43 +236,17 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         setSelectedSong(song);
         setSearchQuery(getSongDisplayName(song, language));
         setSearchResults([]);
-
-        // Calculate result immediately
-        if (song) {
-            const input = {
-                songId: song.id,
-                difficulty: searchDifficulty,
-                totalPower: Number(deck.totalPower || DEFAULT_CHALLENGE_DECK.totalPower),
-                skillLeader: Number(deck.skillLeader || '140'),
-                skillMember2: Number(deck.skillMember2 || '120'),
-                skillMember3: Number(deck.skillMember3 || '100'),
-                skillMember4: Number(deck.skillMember4 || '100'),
-                skillMember5: Number(deck.skillMember5 || '100'),
-            };
-
-            try {
-                const res = calculateScoreRange(input, LiveType.SOLO);
-                if (res) {
-                    setCustomResult({
-                        ...res,
-                        songName: getSongDisplayName(song, language),
-                        songId: song.id,
-                        difficulty: searchDifficulty,
-                        mv: song.mv,
-                        // level: ??? (Need to fetch level if possible, but might not be in SONG_OPTIONS directly without song data lookup, handled by calculator?)
-                        // Calculator doesn't return level usually, it takes inputs. 
-                        // But for display we might want it. 
-                        // However, we just need score range.
-                    });
-                }
-            } catch (e) {
-                console.error(`Failed to calculate for ${song.name}`, e);
-            }
-        }
+        setCustomResult(null);
     };
 
     useEffect(() => {
-        if (!selectedSong) return;
+        if (!selectedSong || !musicMetas) return;
+
+        const musicMeta = musicMetas.find(m => m.music_id === selectedSong.id && m.difficulty === searchDifficulty);
+        if (!musicMeta) {
+            setCustomResult(null);
+            return;
+        }
 
         const input = {
             songId: selectedSong.id,
@@ -222,6 +257,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             skillMember3: Number(deck.skillMember3 || '100'),
             skillMember4: Number(deck.skillMember4 || '100'),
             skillMember5: Number(deck.skillMember5 || '100'),
+            musicMeta,
         };
 
         try {
@@ -239,7 +275,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             console.error(e);
         }
 
-    }, [selectedSong, searchDifficulty, deck, language]);
+    }, [selectedSong, searchDifficulty, deck, language, musicMetas]);
 
 
     // Ensure default data exists
@@ -256,12 +292,19 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
     // Auto-calculate only the pre-selected top 100 targets whenever inputs change.
     useEffect(() => {
+        if (!targetSongs || !musicMetas) {
+            setBatchResults(null);
+            return;
+        }
+
         const results = [];
         const songsById = new Map(getSongOptionsSync().map(song => [Number(song.id), song]));
 
         targetSongs.forEach(target => {
             const song = songsById.get(target.id);
             if (!song) return;
+            const musicMeta = musicMetas.find(m => m.music_id === target.id && m.difficulty === target.difficulty);
+            if (!musicMeta) return;
 
             const input = {
                 songId: target.id,
@@ -272,6 +315,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 skillMember3: Number(skillMember3 || '100'),
                 skillMember4: Number(skillMember4 || '100'),
                 skillMember5: Number(skillMember5 || '100'),
+                musicMeta,
             };
 
             try {
@@ -294,7 +338,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         });
 
         setBatchResults(results);
-    }, [targetSongs, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, language]);
+    }, [targetSongs, musicMetas, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';
@@ -335,6 +379,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
     }, [batchResults, sortConfig]);
 
     const [currentPage, setCurrentPage] = useState(1);
+    const [maxPaginationItems, setMaxPaginationItems] = useState(7);
     const itemsPerPage = 10;
 
     const currentItems = useMemo(() => {
@@ -345,6 +390,49 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
     }, [sortedBatchResults, currentPage]);
 
     const totalPages = sortedBatchResults ? Math.ceil(sortedBatchResults.length / itemsPerPage) : 0;
+    const paginationItems = useMemo(
+        () => buildPaginationItems(currentPage, totalPages, maxPaginationItems),
+        [currentPage, totalPages, maxPaginationItems]
+    );
+
+    useEffect(() => {
+        if (totalPages <= 1) return undefined;
+
+        let animationFrameId = null;
+
+        const updateMaxPaginationItems = () => {
+            const container = paginationContainerRef.current;
+            if (!container) return;
+
+            const prevWidth = prevPaginationButtonRef.current?.offsetWidth || 48;
+            const nextWidth = nextPaginationButtonRef.current?.offsetWidth || 48;
+            const groupGaps = 16;
+            const pageSlotWidth = 36;
+            const availableWidth = container.clientWidth - prevWidth - nextWidth - groupGaps - 8;
+            const nextMaxItems = Math.max(5, Math.min(totalPages, Math.floor(availableWidth / pageSlotWidth)));
+
+            setMaxPaginationItems(prev => (prev === nextMaxItems ? prev : nextMaxItems));
+        };
+
+        const scheduleUpdate = () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(updateMaxPaginationItems);
+        };
+
+        scheduleUpdate();
+        window.addEventListener('resize', scheduleUpdate);
+
+        const resizeObserver = 'ResizeObserver' in window ? new ResizeObserver(scheduleUpdate) : null;
+        if (resizeObserver && paginationContainerRef.current) {
+            resizeObserver.observe(paginationContainerRef.current);
+        }
+
+        return () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            window.removeEventListener('resize', scheduleUpdate);
+            if (resizeObserver) resizeObserver.disconnect();
+        };
+    }, [totalPages, language]);
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
@@ -833,32 +921,47 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                     </div>
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-2 mt-6 mb-4">
+                        <div ref={paginationContainerRef} className="flex w-full max-w-full justify-center items-center gap-2 mt-6 mb-4 overflow-hidden px-1">
                             <button
+                                ref={prevPaginationButtonRef}
                                 onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
-                                className="px-3 py-1 rounded-md bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="shrink-0 whitespace-nowrap px-2 sm:px-3 py-1 rounded-md bg-white border border-gray-200 text-gray-600 text-xs sm:text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {t('challenge_score.prev')}
                             </button>
-                            <div className="flex gap-1">
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                    <button
-                                        key={page}
-                                        onClick={() => handlePageChange(page)}
-                                        className={`w-8 h-8 rounded-md text-sm font-bold transition-all duration-200 ${currentPage === page
-                                            ? 'bg-blue-500 text-white shadow-md scale-105'
-                                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-blue-200'
-                                            }`}
-                                    >
-                                        {page}
-                                    </button>
-                                ))}
+                            <div className="flex min-w-0 shrink gap-1">
+                                {paginationItems.map((item) => {
+                                    if (typeof item !== 'number') {
+                                        return (
+                                            <span
+                                                key={item.key}
+                                                className="w-8 h-8 shrink-0 flex items-center justify-center rounded-md text-sm font-bold text-gray-400"
+                                            >
+                                                ...
+                                            </span>
+                                        );
+                                    }
+
+                                    return (
+                                        <button
+                                            key={item}
+                                            onClick={() => handlePageChange(item)}
+                                            className={`w-8 h-8 shrink-0 rounded-md text-sm font-bold transition-all duration-200 ${currentPage === item
+                                                ? 'bg-blue-500 text-white shadow-md scale-105'
+                                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-blue-200'
+                                                }`}
+                                        >
+                                            {item}
+                                        </button>
+                                    );
+                                })}
                             </div>
                             <button
+                                ref={nextPaginationButtonRef}
                                 onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1 rounded-md bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="shrink-0 whitespace-nowrap px-2 sm:px-3 py-1 rounded-md bg-white border border-gray-200 text-gray-600 text-xs sm:text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {t('challenge_score.next')}
                             </button>

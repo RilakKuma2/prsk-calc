@@ -3,7 +3,7 @@ import MySekaiTable from './MySekaiTable';
 import AllSongsTable from './AllSongsTable';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import { LiveCalculator, EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import { getSongOptionsSync, getMusicMetasSync } from '../utils/dataLoader';
+import { getSongOptionsSync, getMusicMetasSync, preloadMusicMetas } from '../utils/dataLoader';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -182,6 +182,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   const [internalValue, setInternalValue] = useState(surveyData.internalValue || '');
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
   const [showAllSongsTable, setShowAllSongsTable] = useState(false);
+  const [musicMetasLoadVersion, setMusicMetasLoadVersion] = useState(0);
 
   // Comparison Mode State
   const [isComparisonMode, setIsComparisonMode] = useState(surveyData.isComparisonMode || false);
@@ -215,6 +216,16 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     member3: '',
     member4: ''
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    preloadMusicMetas().then(() => {
+      if (!cancelled) setMusicMetasLoadVersion(version => version + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Fire Counts State
   const [fireCounts, setFireCounts] = useState(surveyData.fireCounts || {
@@ -541,7 +552,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB, selectedSong, searchDifficulty]);
+  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB, selectedSong, searchDifficulty, musicMetasLoadVersion]);
 
   const handleDetailedChange = (key, value) => {
     const val = parseInt(value) || 0;

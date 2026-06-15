@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
-import { getSongOptionsSync, getMusicMetasSync } from '../utils/dataLoader';
+import { getSongOptionsSync, getMusicMetas } from '../utils/dataLoader';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
@@ -88,14 +88,37 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
     const [batchResults, setBatchResults] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'eventPoint', direction: 'desc' });
     const [showAllSongsTable, setShowAllSongsTable] = useState(false);
+    const [musicMetas, setMusicMetas] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getMusicMetas()
+            .then(metas => {
+                if (!cancelled) setMusicMetas(metas);
+            })
+            .catch(error => {
+                console.error('Failed to load music metas for auto tab', error);
+                if (!cancelled) setMusicMetas([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // Auto-calculate batch results whenever inputs change
     useEffect(() => {
+        if (!musicMetas) {
+            setBatchResults(null);
+            return;
+        }
+
         const results = [];
 
         TARGET_SONGS.forEach(target => {
             const song = getSongOptionsSync().find(s => s.id === target.id);
             if (!song) return;
+            const musicMeta = musicMetas.find(m => m.music_id === target.id && m.difficulty === target.difficulty);
+            if (!musicMeta) return;
 
             const input = {
                 songId: target.id,
@@ -106,6 +129,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                 skillMember3: Number(skillMember3 || '100'),
                 skillMember4: Number(skillMember4 || '100'),
                 skillMember5: Number(skillMember5 || '100'),
+                musicMeta,
             };
 
             try {
@@ -114,15 +138,13 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                     const minRank = calculateRank(res.min, target.level);
 
                     // Event Point Calculation
-                    const musicMeta = getMusicMetasSync().find(m => m.music_id === target.id && m.difficulty === target.difficulty);
-                    const eventRate = musicMeta ? musicMeta.event_rate : 100;
                     const boostRate = ENERGY_MULTIPLIERS[energyUsed] || 1;
 
                     const minEventPoint = EventCalculator.getEventPoint(
                         LiveType.AUTO,
                         EventType.MARATHON,
                         res.min,
-                        eventRate,
+                        musicMeta.event_rate,
                         Number(eventBonus || '250'),
                         boostRate
                     );
@@ -131,7 +153,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                         LiveType.AUTO,
                         EventType.MARATHON,
                         res.max,
-                        eventRate,
+                        musicMeta.event_rate,
                         Number(eventBonus || '250'),
                         boostRate
                     );
@@ -153,7 +175,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
         });
 
         setBatchResults(results);
-    }, [totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, language]);
+    }, [musicMetas, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';

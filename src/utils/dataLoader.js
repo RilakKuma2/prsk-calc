@@ -1,9 +1,13 @@
 // Fallback data
-import localMusicMetas from '../data/music_metas.json';
+import { ESSENTIAL_MUSIC_METAS } from '../data/essentialMusicMetas';
 import { SONG_OPTIONS as localSongOptions } from './songs';
 
 let cachedMusicMetas = null;
+let musicMetasPromise = null;
 let cachedSongOptions = null;
+
+const MUSIC_METAS_URL = 'https://asset.rilaksekai.com/music_metas.json';
+const MUSIC_METAS_TIMEOUT_MS = 6000;
 
 function applyDateFilter(songs) {
     if (!songs) return songs;
@@ -44,27 +48,51 @@ function normalizeSong(apiSong) {
     };
 }
 
+async function fetchJsonWithTimeout(url, timeoutMs) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+        return response.json();
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
 /**
  * music_metas.json 가져오기
  * 1. 외부 URL (Remote)
- * 2. Public 폴더 (Fallback 1)
- * 3. 로컬 번들 파일 (Fallback 2)
+ * 2. 로컬 JSON lazy chunk (Fallback)
  */
 export async function getMusicMetas() {
     if (cachedMusicMetas) return cachedMusicMetas;
+    if (musicMetasPromise) return musicMetasPromise;
 
-    try {
-        // 1. Try Remote
-        const responseReference = await fetch('https://asset.rilaksekai.com/music_metas.json');
-        if (!responseReference.ok) throw new Error('Remote fetch failed');
-        cachedMusicMetas = await responseReference.json();
-        console.log('Loaded music_metas from REMOTE API');
-        return cachedMusicMetas;
-    } catch (remoteError) {
-        console.warn('Failed to fetch music_metas from REMOTE, using LOCAL IMPORT fallback:', remoteError.message);
-        cachedMusicMetas = localMusicMetas;
-        return cachedMusicMetas;
-    }
+    musicMetasPromise = (async () => {
+        try {
+            // 1. Try Remote
+            cachedMusicMetas = await fetchJsonWithTimeout(MUSIC_METAS_URL, MUSIC_METAS_TIMEOUT_MS);
+            console.log('Loaded music_metas from REMOTE API');
+            return cachedMusicMetas;
+        } catch (remoteError) {
+            console.warn('Failed to fetch music_metas from REMOTE, using lazy LOCAL fallback:', remoteError.message);
+            const localMusicMetasModule = await import('../data/music_metas.json');
+            cachedMusicMetas = localMusicMetasModule.default || localMusicMetasModule;
+            return cachedMusicMetas;
+        }
+    })();
+
+    return musicMetasPromise;
+}
+
+export function preloadMusicMetas() {
+    return getMusicMetas().catch(error => {
+        console.warn('Failed to preload music_metas:', error.message);
+        musicMetasPromise = null;
+        return ESSENTIAL_MUSIC_METAS;
+    });
 }
 
 /**
@@ -93,7 +121,7 @@ export async function getSongOptions() {
  * 동기적으로 사용해야 할 때 캐시된 데이터 또는 로컬 fallback 반환
  */
 export function getMusicMetasSync() {
-    return cachedMusicMetas || localMusicMetas;
+    return cachedMusicMetas || ESSENTIAL_MUSIC_METAS;
 }
 
 export function getSongOptionsSync() {

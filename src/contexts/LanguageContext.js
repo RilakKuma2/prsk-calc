@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ko from '../locales/ko';
 import ja from '../locales/ja';
 import en from '../locales/en';
@@ -6,6 +7,8 @@ import en from '../locales/en';
 const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [language, setLanguage] = useState(() => {
         // 1. Check URL query parameter (Priority)
         const params = new URLSearchParams(window.location.search);
@@ -81,9 +84,13 @@ export const LanguageProvider = ({ children }) => {
         // document.documentElement.lang = lang; // redundant with useEffect
 
         // Update URL query parameter without reloading
-        const url = new URL(window.location);
-        url.searchParams.set('lang', lang);
-        window.history.pushState({}, '', url);
+        const params = new URLSearchParams(location.search);
+        params.set('lang', lang);
+        navigate({
+            pathname: location.pathname,
+            search: `?${params.toString()}`,
+            hash: location.hash,
+        });
     };
 
     const translations = {

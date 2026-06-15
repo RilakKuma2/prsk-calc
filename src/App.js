@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Tabs from './components/Tabs';
@@ -34,6 +34,22 @@ const PATH_TO_TAB = Object.entries(TAB_PATHS).reduce((acc, [tab, path]) => {
   return acc;
 }, {});
 
+const getTabFromPathname = (path) => {
+  // Check for exact match first
+  if (PATH_TO_TAB[path]) {
+    return { mainTab: PATH_TO_TAB[path], subPath: null };
+  }
+  // Check for sub-tab paths (e.g., /chall/score, /level/kizuna)
+  for (const [mainPath, tabId] of Object.entries(PATH_TO_TAB)) {
+    if (path.startsWith(mainPath + '/')) {
+      const subPath = path.substring(mainPath.length + 1);
+      return { mainTab: tabId, subPath };
+    }
+  }
+  // Default to deck (Event Deck)
+  return { mainTab: 'deck', subPath: null };
+};
+
 const AppContent = () => {
   const { t, language } = useTranslation();
   const navigate = useNavigate();
@@ -45,10 +61,8 @@ const AppContent = () => {
   useEffect(() => {
     const preload = async () => {
       try {
-        await Promise.all([
-          import('./utils/dataLoader').then(m => m.getMusicMetas()),
-          import('./utils/dataLoader').then(m => m.getSongOptions())
-        ]);
+        const dataLoader = await import('./utils/dataLoader');
+        await dataLoader.getSongOptions();
       } catch (e) {
         console.error("Data preload failed", e);
       } finally {
@@ -58,42 +72,31 @@ const AppContent = () => {
     preload();
   }, []);
 
-  // Determine current tab from URL path
-  const getTabFromPath = useCallback(() => {
-    const path = location.pathname;
+  const routeTabInfo = useMemo(() => getTabFromPathname(location.pathname), [location.pathname]);
+  const [currentTab, setCurrentTab] = useState(routeTabInfo.mainTab);
+  const subPath = currentTab === routeTabInfo.mainTab ? routeTabInfo.subPath : null;
 
-    // Check for exact match first
-    if (PATH_TO_TAB[path]) {
-      return { mainTab: PATH_TO_TAB[path], subPath: null };
-    }
-    // Check for sub-tab paths (e.g., /chall/score, /level/kizuna)
-    for (const [mainPath, tabId] of Object.entries(PATH_TO_TAB)) {
-      if (path.startsWith(mainPath + '/')) {
-        const subPath = path.substring(mainPath.length + 1);
-        return { mainTab: tabId, subPath };
-      }
-    }
-    // Default to deck (Event Deck)
-    return { mainTab: 'deck', subPath: null };
-  }, [location.pathname]);
-
-  const { mainTab, subPath } = getTabFromPath();
-  const [currentTab, setCurrentTab] = useState(mainTab);
-
-  // Update currentTab when URL changes
+  // Keep tab state in sync with URL changes such as direct entry or browser back/forward.
   useEffect(() => {
-    const { mainTab: newTab } = getTabFromPath();
-    if (newTab !== currentTab) {
-      setCurrentTab(newTab);
-    }
-  }, [location.pathname, getTabFromPath, currentTab]);
+    setCurrentTab(routeTabInfo.mainTab);
+  }, [routeTabInfo.mainTab]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentTab(getTabFromPathname(window.location.pathname).mainTab);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Handle tab change - update URL
   const handleTabChange = useCallback((tabId) => {
-    setCurrentTab(tabId);
     const path = TAB_PATHS[tabId] || '/event';
-    navigate(path);
-  }, [navigate]);
+    setCurrentTab(tabId);
+    if (location.pathname !== path) {
+      navigate(path);
+    }
+  }, [location.pathname, navigate]);
   const [surveyData, setSurveyData] = useState({});
   const [loadVersion, setLoadVersion] = useState(0);
 
