@@ -2334,19 +2334,19 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           }
 
                           if (chStartMs && now < chStartMs) {
-                            return formatDuration(chStartMs - now);
+                            return formatDuration(chStartMs - now, t);
                           } else if (chEndMs && now < chEndMs) {
                             const refTime = Math.max(lastUpdated || 0, chapterScoreLastUpdated || 0) || now;
-                            return formatDuration(chEndMs - refTime);
+                            return formatDuration(chEndMs - refTime, t);
                           } else if (chEndMs && now >= chEndMs) {
                             return '-';
                           }
                         }
                         // 종합 (기존 로직)
                         if (eventInfo && lastUpdated) {
-                          return formatDuration((eventInfo.end * 1000) - lastUpdated);
+                          return formatDuration((eventInfo.end * 1000) - lastUpdated, t);
                         }
-                        return timeRemaining !== null ? formatDuration(timeRemaining) : null;
+                        return timeRemaining !== null ? formatDuration(timeRemaining, t) : null;
                       })()}
                     </span>
                   </div>
@@ -2432,7 +2432,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   </div>
                 </span>
                 <span>
-                  {timeRemaining !== null && `${t('fire.ends_in')}: ${formatDuration(timeRemaining)} `}
+                  {timeRemaining !== null && `${t('fire.ends_in')}: ${formatDuration(timeRemaining, t)} `}
                 </span>
               </div>
             )}

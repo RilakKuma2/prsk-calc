@@ -564,6 +564,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         characterNui: DEFAULT_AREA_VALUES.characterNui,
     });
     const [activeMainSlotIndex, setActiveMainSlotIndex] = useState(null);
+    const [activeCharTab, setActiveCharTab] = useState('area');
     const [pickerCharId, setPickerCharId] = useState(() => {
         const saved = localStorage.getItem('ebc_last_char_id');
         return saved ? Number(saved) : 21;
@@ -1604,7 +1605,11 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
                             <section className="ebc-area-game-section">
                                 <div className="ebc-area-game-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>{t('support.character_effect') || '캐릭터 효과'}</span>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <button type="button" className={`ebc-char-tab ${activeCharTab === 'area' ? 'active' : ''}`} onClick={() => setActiveCharTab('area')}>{t('support.area') || '에어리어'}</button>
+                                        <button type="button" className={`ebc-char-tab ${activeCharTab === 'nui' ? 'active' : ''}`} onClick={() => setActiveCharTab('nui')}>{t('support.nui') || '누이'}</button>
+                                        <button type="button" className={`ebc-char-tab ${activeCharTab === 'rank' ? 'active' : ''}`} onClick={() => setActiveCharTab('rank')}>{t('support.character_rank_short') || '캐랭'}</button>
+                                    </div>
                                     {nuiStats && (
                                         <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: 'bold' }}>
                                             현재 누이 {nuiStats.min === nuiStats.max ? `${nuiStats.min}세트` : `${nuiStats.min}~${nuiStats.max}세트`}
@@ -1623,49 +1628,57 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                     />
                                                 </div>
                                                 <div className="ebc-area-character-fields">
-                                                    <label>
-                                                        <span>{t('support.area') || '에어리어'}</span>
-                                                        <div className="ebc-area-character-input">
+                                                    {activeCharTab === 'area' && (
+                                                        <label>
+                                                            <span>{t('support.area') || '에어리어'}</span>
+                                                            <div className="ebc-area-character-input">
+                                                                <b>+</b>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="40"
+                                                                    step="0.1"
+                                                                    value={charSettings.area ?? ''}
+                                                                    onChange={(e) => updateCharacterArea(character.id, 'area', e.target.value)}
+                                                                    onFocus={(e) => e.target.select()}
+                                                                    aria-label={`${character.name} ${t('support.area') || '에어리어'}`}
+                                                                />
+                                                                <b>%</b>
+                                                            </div>
+                                                        </label>
+                                                    )}
+                                                    {activeCharTab === 'rank' && (
+                                                        <label>
+                                                            <span>{t('support.character_rank_short') || '캐랭'}</span>
                                                             <input
-                                                                type="number"
-                                                                min="0"
-                                                                max="40"
-                                                                step="0.1"
-                                                                value={charSettings.area ?? ''}
-                                                                onChange={(e) => updateCharacterArea(character.id, 'area', e.target.value)}
+                                                                type="text"
+                                                                inputMode="numeric"
+                                                                value={formatCharacterRank(charSettings.rank)}
+                                                                onChange={(e) => updateCharacterArea(character.id, 'rank', e.target.value)}
                                                                 onFocus={(e) => e.target.select()}
-                                                                aria-label={`${character.name} ${t('support.area') || '에어리어'}`}
+                                                                aria-label={`${character.name} ${t('support.character_rank_short') || '캐랭'}`}
                                                             />
-                                                            <b>%</b>
-                                                        </div>
-                                                    </label>
-                                                    <label>
-                                                        <span>{t('support.character_rank_short') || '캐랭'}</span>
-                                                        <input
-                                                            type="text"
-                                                            inputMode="numeric"
-                                                            value={formatCharacterRank(charSettings.rank)}
-                                                            onChange={(e) => updateCharacterArea(character.id, 'rank', e.target.value)}
-                                                            onFocus={(e) => e.target.select()}
-                                                            aria-label={`${character.name} ${t('support.character_rank_short') || '캐랭'}`}
-                                                        />
-                                                    </label>
-                                                    <label>
-                                                        <span>{t('support.nui') || '누이'}</span>
-                                                        <div className="ebc-area-character-input">
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                max="10"
-                                                                step="0.1"
-                                                                value={charSettings.nui ?? ''}
-                                                                onChange={(e) => updateCharacterArea(character.id, 'nui', e.target.value)}
-                                                                onFocus={(e) => e.target.select()}
-                                                                aria-label={`${character.name} ${t('support.nui') || '누이'}`}
-                                                            />
-                                                            <b>%</b>
-                                                        </div>
-                                                    </label>
+                                                        </label>
+                                                    )}
+                                                    {activeCharTab === 'nui' && (
+                                                        <label>
+                                                            <span>{t('support.nui') || '누이'}</span>
+                                                            <div className="ebc-area-character-input">
+                                                                <b>+</b>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="10"
+                                                                    step="0.1"
+                                                                    value={charSettings.nui ?? ''}
+                                                                    onChange={(e) => updateCharacterArea(character.id, 'nui', e.target.value)}
+                                                                    onFocus={(e) => e.target.select()}
+                                                                    aria-label={`${character.name} ${t('support.nui') || '누이'}`}
+                                                                />
+                                                                <b>%</b>
+                                                            </div>
+                                                        </label>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -1763,7 +1776,11 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
                                 <section className="ebc-area-game-section">
                                     <div className="ebc-area-game-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span>캐릭터 효과</span>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'area' ? 'active' : ''}`} onClick={() => setActiveCharTab('area')}>{t('support.area') || '에어리어'}</button>
+                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'nui' ? 'active' : ''}`} onClick={() => setActiveCharTab('nui')}>{t('support.nui') || '누이'}</button>
+                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'rank' ? 'active' : ''}`} onClick={() => setActiveCharTab('rank')}>{t('support.character_rank_short') || '캐랭'}</button>
+                                        </div>
                                         {nuiStats && (
                                             <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: 'bold' }}>
                                                 현재 누이 {nuiStats.min === nuiStats.max ? `${nuiStats.min}세트` : `${nuiStats.min}~${nuiStats.max}세트`}
@@ -1776,43 +1793,51 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                 <img src={`${process.env.PUBLIC_URL}/assets/stamps/01.webp`} alt="Miku" />
                                             </div>
                                             <div className="ebc-area-character-fields">
-                                                <label>
-                                                    <span>{t('support.area') || '에어리어'}</span>
-                                                    <div className="ebc-area-character-input">
+                                                {activeCharTab === 'area' && (
+                                                    <label>
+                                                        <span>{t('support.area') || '에어리어'}</span>
+                                                        <div className="ebc-area-character-input">
+                                                            <b>+</b>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="40"
+                                                                step="0.1"
+                                                                value={batchAreaSettings.characterArea ?? ''}
+                                                                onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterArea: normalizeBonusInput(e.target.value, 40) }))}
+                                                            />
+                                                            <b>%</b>
+                                                        </div>
+                                                    </label>
+                                                )}
+                                                {activeCharTab === 'rank' && (
+                                                    <label>
+                                                        <span>{t('support.character_rank_short') || '캐랭'}</span>
                                                         <input
-                                                            type="number"
-                                                            min="0"
-                                                            max="40"
-                                                            step="0.1"
-                                                            value={batchAreaSettings.characterArea ?? ''}
-                                                            onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterArea: normalizeBonusInput(e.target.value, 40) }))}
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            value={formatCharacterRank(batchAreaSettings.characterRank)}
+                                                            onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterRank: normalizeRankInput(e.target.value) }))}
                                                         />
-                                                        <b>%</b>
-                                                    </div>
-                                                </label>
-                                                <label>
-                                                    <span>{t('support.character_rank_short') || '캐랭'}</span>
-                                                    <input
-                                                        type="text"
-                                                        inputMode="numeric"
-                                                        value={formatCharacterRank(batchAreaSettings.characterRank)}
-                                                        onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterRank: normalizeRankInput(e.target.value) }))}
-                                                    />
-                                                </label>
-                                                <label>
-                                                    <span>{t('support.nui') || '누이'}</span>
-                                                    <div className="ebc-area-character-input">
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            max="10"
-                                                            step="0.1"
-                                                            value={batchAreaSettings.characterNui ?? ''}
-                                                            onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterNui: normalizeBonusInput(e.target.value, 10) }))}
-                                                        />
-                                                        <b>%</b>
-                                                    </div>
-                                                </label>
+                                                    </label>
+                                                )}
+                                                {activeCharTab === 'nui' && (
+                                                    <label>
+                                                        <span>{t('support.nui') || '누이'}</span>
+                                                        <div className="ebc-area-character-input">
+                                                            <b>+</b>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="10"
+                                                                step="0.1"
+                                                                value={batchAreaSettings.characterNui ?? ''}
+                                                                onChange={(e) => setBatchAreaSettings(p => ({ ...p, characterNui: normalizeBonusInput(e.target.value, 10) }))}
+                                                            />
+                                                            <b>%</b>
+                                                        </div>
+                                                    </label>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -2215,7 +2240,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     color: #555776;
                     font-size: 18px;
                     font-weight: 900;
-                    text-align: right;
+                    text-align: center;
                     outline: none;
                     letter-spacing: 0;
                 }
@@ -2306,7 +2331,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 .ebc-area-pill-input {
                     display: flex;
                     align-items: center;
-                    justify-content: flex-end;
+                    justify-content: center;
                     gap: 4px;
                     min-width: 0;
                     height: 34px;
@@ -2330,7 +2355,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     color: #555776;
                     font-size: 22px;
                     font-weight: 900;
-                    text-align: right;
+                    text-align: center;
                     outline: none;
                     padding: 0;
                     box-sizing: border-box;
@@ -2349,11 +2374,11 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     flex: 0 0 auto;
                     display: inline-flex;
                     align-items: baseline;
-                    justify-content: flex-end;
+                    justify-content: center;
                     min-width: 18px;
                     font-size: 18px;
                     font-weight: 900;
-                    text-align: right;
+                    text-align: center;
                     line-height: 1;
                     white-space: nowrap;
                 }
@@ -2369,110 +2394,125 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 }
                 .ebc-area-character-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
-                    gap: 10px;
-                    align-items: start;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 12px;
+                    align-items: center;
                 }
                 .ebc-area-character-pill {
                     min-width: 0;
-                    border-radius: 12px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    border-radius: 28px;
                     background: #dedfeb;
-                    padding: 5px 5px 3px;
+                    padding: 3px 14px 3px 3px;
                     display: flex;
-                    flex-direction: column;
-                    gap: 4px;
+                    flex-direction: row;
+                    align-items: center;
+                    gap: 8px;
                     height: fit-content;
-                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.52);
                 }
                 .ebc-area-character-face {
                     min-width: 0;
                     display: flex;
-                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    gap: 5px;
-                    color: #555776;
-                    font-size: 12px;
-                    font-weight: 1000;
-                    text-align: center;
+                    flex: 0 0 auto;
                 }
                 .ebc-area-character-face img {
                     width: 44px;
                     height: 44px;
                     border-radius: 50%;
                     object-fit: cover;
-                    box-shadow: 0 0 0 4px #ececf5, 0 2px 5px rgba(31,35,60,0.15);
+                    box-shadow: 0 0 0 1px rgba(255,255,255,0.4), 0 1px 4px rgba(31,35,60,0.15);
                     flex: 0 0 auto;
                 }
                 .ebc-area-character-fields {
-                    display: grid;
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
-                    gap: 4px;
+                    display: flex;
+                    flex: 1 1 auto;
+                    min-width: 0;
                 }
                 .ebc-area-character-pill label {
+                    flex: 1 1 auto;
                     display: flex;
-                    flex-direction: column;
+                    flex-direction: row;
                     align-items: center;
                     gap: 2px;
                     min-width: 0;
                     height: auto;
-                    color: #777993;
-                    font-size: 9px;
-                    font-weight: 1000;
-                    text-align: center;
+                    margin: 0;
                 }
                 .ebc-area-character-pill label > span {
-                    line-height: 1;
-                    white-space: nowrap;
+                    display: none;
                 }
                 .ebc-area-character-input,
                 .ebc-area-character-pill label > input {
                     width: 100%;
                     min-width: 0;
-                    height: 24px;
-                    border-radius: 10px;
-                    background: #ffffff;
+                    height: 44px;
+                    border-radius: 16px;
+                    background: transparent;
                     box-sizing: border-box;
                     overflow: hidden;
-                    box-shadow: inset 0 0 0 1px rgba(71,73,103,0.05);
+                    box-shadow: none;
+                    margin: 0;
                 }
                 .ebc-area-character-input {
                     display: flex;
                     align-items: center;
-                    justify-content: flex-end;
-                    gap: 1px;
-                    padding: 0 4px;
+                    justify-content: space-between;
+                    gap: 4px;
+                    padding: 0 6px;
                 }
                 .ebc-area-character-pill input {
                     width: 100%;
                     min-width: 0;
-                    height: 100%;
+                    height: 44px;
+                    line-height: 44px;
                     border: none;
-                    border-radius: 10px;
-                    background: #ffffff;
+                    border-radius: 16px;
+                    background: transparent;
                     color: #555776;
-                    font-size: 13px;
-                    font-weight: 900;
+                    font-size: 22px;
+                    font-weight: 700;
                     text-align: center;
                     outline: none;
-                    padding: 5px 0 0 0;
+                    padding: 0;
+                    margin: 0;
                     box-sizing: border-box;
                     letter-spacing: 0;
+                    -moz-appearance: textfield;
+                    -webkit-appearance: none;
+                    appearance: none;
                 }
                 .ebc-area-character-input input {
                     flex: 1 1 auto;
                     width: 0;
                     min-width: 0;
                     background: transparent;
-                    text-align: right;
+                    text-align: center;
                 }
                 .ebc-area-character-input b {
                     flex: 0 0 auto;
-                    min-width: 9px;
                     color: #555776;
-                    font-size: 10px;
-                    font-weight: 900;
-                    text-align: right;
+                    font-size: 20px;
+                    font-weight: 700;
+                    line-height: 44px;
+                    white-space: nowrap;
+                }
+                .ebc-char-tab {
+                    background: transparent;
+                    border: none;
+                    font-size: 13px;
+                    font-weight: 800;
+                    color: #777993;
+                    cursor: pointer;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                }
+                .ebc-char-tab.active {
+                    background: #dedfeb;
+                    color: #474967;
+                }
                     line-height: 1;
                     white-space: nowrap;
                 }
@@ -2656,7 +2696,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     font-weight: 800;
                     color: #1e293b;
                     outline: none;
-                    text-align: right;
+                    text-align: center;
                     box-sizing: border-box;
                 }
                 .ebc-input-suffix {
@@ -2951,7 +2991,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     .ebc-area-game-grid.units,
                     .ebc-area-game-grid.attrs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
                     .ebc-area-unit-header { width: calc((100% - 12px) / 2); min-width: 0; }
-                    .ebc-area-character-grid { grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); }
+                    .ebc-area-unit-header { width: calc((100% - 12px) / 2); min-width: 0; }
                     .ebc-power-detail-modal { min-height: min(560px, 92vh); border-radius: 14px; }
                     .ebc-power-detail-body { padding: 62px 24px 24px; gap: 24px; }
                     .ebc-power-detail-total { font-size: 22px; gap: 12px; }
@@ -3003,16 +3043,13 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     .ebc-area-pill-input.gate { padding: 0 6px; }
                     .ebc-area-pill-input.gate input { font-size: 15px; }
                     .ebc-area-pill-input.gate b { font-size: 10px; min-width: 20px; }
-                    .ebc-area-character-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; align-items: start; }
-                    .ebc-area-character-pill { border-radius: 12px; padding: 4px 3px 2px; gap: 3px; height: fit-content; }
-                    .ebc-area-character-face { font-size: 10px; gap: 3px; }
-                    .ebc-area-character-face img { width: 34px; height: 34px; box-shadow: 0 0 0 3px #ececf5, 0 2px 4px rgba(31,35,60,0.12); }
-                    .ebc-area-character-fields { gap: 3px; }
-                    .ebc-area-character-pill label { font-size: 8px; gap: 1px; }
-                    .ebc-area-character-input,
-                    .ebc-area-character-pill label > input { height: 22px; border-radius: 8px; }
-                    .ebc-area-character-pill input { font-size: 12px; border-radius: 8px; padding: 4px 0 0 0; }
-                    .ebc-area-character-input b { font-size: 9px; min-width: 8px; }
+                    .ebc-area-character-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; align-items: start; justify-items: stretch; }
+                    .ebc-area-character-pill { width: 100%; padding: 1px 4px 1px 1px; gap: 4px; border-radius: 14px; }
+                    .ebc-area-character-face { min-width: 20px; flex: 0 0 auto; }
+                    .ebc-area-character-face img { width: 20px; height: 20px; }
+                    .ebc-area-character-input, .ebc-area-character-pill label > input { height: 20px; }
+                    .ebc-area-character-pill input { font-size: 10px; font-weight: 700; height: 20px; line-height: 20px; }
+                    .ebc-area-character-input b { font-size: 10px; font-weight: 700; line-height: 20px; }
                     .ebc-area-floating-footer { padding: 12px 14px 14px; flex-wrap: wrap; }
                     .ebc-power-detail-backdrop { padding: 8px; }
                     .ebc-power-detail-modal { min-height: min(500px, 94vh); border-radius: 14px; }

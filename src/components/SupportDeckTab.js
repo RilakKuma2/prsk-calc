@@ -121,6 +121,29 @@ const calculateMainDeckSlotBonus = (slot) => {
     };
 };
 
+const calculateMainDeckTheoryBonus = () => {
+    const theorySlot = {
+        rarityKey: 'rarity4',
+        masterRank: 5,
+        pickup: true,
+        featured: true,
+        typeMatched: true,
+    };
+
+    return MAIN_DECK_SLOT_COUNT * calculateMainDeckSlotBonus(theorySlot).total;
+};
+
+const calculateScoreDecreasePercent = (currentBonus, theoryBonus) => {
+    const currentScoreMultiplier = 100 + Number(currentBonus || 0);
+    const theoryScoreMultiplier = 100 + Number(theoryBonus || 0);
+
+    if (currentScoreMultiplier <= 0 || theoryScoreMultiplier <= currentScoreMultiplier) {
+        return 0;
+    }
+
+    return ((theoryScoreMultiplier - currentScoreMultiplier) / currentScoreMultiplier) * 100;
+};
+
 const getMainDeckPreviewRarity = (rarityKey) => {
     if (rarityKey === 'birthday') return 4;
     if (rarityKey === 'rarity3') return 3;
@@ -137,9 +160,9 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, ca
     const frameName = isBirthday ? 'cardFrame_bd.webp' : isLowRarity ? 'frame_2star.webp' : 'Frame.webp';
     const starName = isBirthday ? 'rairity_birth.webp' : 'afterstar.webp';
     const normalizedMasterRank = Math.max(0, Math.min(5, Number(masterRank) || 0));
-    
+
     // Use actual card face if a card is selected
-    const faceUrl = card 
+    const faceUrl = card
         ? `https://asset.rilaksekai.com/face/res0${String(getCardCharacterId(card) || 1).padStart(2, '0')}_no${String(card?.card_image_id || '001').padStart(3, '0')}_normal.webp`
         : `https://asset.rilaksekai.com/face/res0${String(previewCharId).padStart(2, '0')}_no001_normal.webp`;
 
@@ -467,6 +490,43 @@ const SupportDeckTab = () => {
     const displayTotalBonus = mainDeckBonus + supportEventBonus;
     const displayBadgeBonus = mainDeckBonus + supportBadgeBonus;
     const hasMainDeckBonus = mainDeckBonus > 0;
+    const theoryMainDeckBonus = useMemo(() => calculateMainDeckTheoryBonus(), []);
+    const theorySupportEventBonus = useMemo(() => {
+        const rankedCards = cards
+            .filter(card => (
+                unitMemberIds.includes(getCardCharacterId(card))
+                && getWorldLinkSeason(card) !== 3
+            ))
+            .map(card => ({
+                card,
+                bonus: calculateSupportCardBonus(card, 5, 4, selectedCharId).total,
+                hasWorldLinkBonus: isSupportBonusWorldLinkCard(card, selectedCharId),
+                date: parseSupportDate(card.available_from)?.getTime() || 0,
+            }))
+            .sort((a, b) => {
+                if (b.bonus !== a.bonus) return b.bonus - a.bonus;
+                if (Number(b.hasWorldLinkBonus) !== Number(a.hasWorldLinkBonus)) {
+                    return Number(b.hasWorldLinkBonus) - Number(a.hasWorldLinkBonus);
+                }
+                if (b.date !== a.date) return b.date - a.date;
+                return Number(b.card.id) - Number(a.card.id);
+            });
+
+        const theorySupportBonus = rankedCards
+            .slice(0, SLOT_COUNT)
+            .reduce((sum, result) => sum + result.bonus, 0);
+
+        return theorySupportBonus + (finaleEnabled ? 50 : 0);
+    }, [cards, finaleEnabled, selectedCharId, unitMemberIds]);
+    const theoryDisplayTotalBonus = theoryMainDeckBonus + theorySupportEventBonus;
+    const theoryScoreDecreasePercent = calculateScoreDecreasePercent(displayTotalBonus, theoryDisplayTotalBonus);
+    const isTheoryBonusMatched = Math.abs(theoryDisplayTotalBonus - displayTotalBonus) <= 0.0001;
+    const shouldShowTheoryComparison = (
+        !cardsLoading
+        && !cardsError
+        && theoryDisplayTotalBonus > 0
+        && (isTheoryBonusMatched || (theoryDisplayTotalBonus > displayTotalBonus + 0.0001 && theoryScoreDecreasePercent > 0))
+    );
 
     const selectedCount = useMemo(() => {
         return slotResults.filter(result => result.card).length;
@@ -692,13 +752,75 @@ const SupportDeckTab = () => {
                     align-items: center;
                     gap: 3px;
                     margin-top: 4px;
-                    color: #000;
+                    color: #111827;
                     font-size: 10px;
                     font-weight: 800;
                     line-height: 1.1;
                     font-variant-numeric: tabular-nums;
                     white-space: nowrap;
                     letter-spacing: -0.3px;
+                }
+
+                .support-summary-box .support-summary-detail span {
+                    display: inline;
+                    margin-bottom: 0;
+                    color: inherit;
+                    font-size: 10px;
+                    font-weight: inherit;
+                }
+
+                .support-summary-box .support-summary-detail .support-summary-total {
+                    color: var(--support-blue);
+                }
+
+                .support-theory-loss {
+                    display: block;
+                    margin-top: 5px;
+                    color: #94a3b8;
+                    font-size: 9px;
+                    font-weight: 800;
+                    line-height: 1.18;
+                    font-variant-numeric: tabular-nums;
+                }
+
+                .support-theory-loss b {
+                    font-weight: 900;
+                }
+
+                .support-theory-loss .support-theory-bonus {
+                    color: var(--support-green);
+                }
+
+                .support-theory-loss .support-theory-loss-value {
+                    color: #dc2626;
+                }
+
+                .support-theory-loss .support-theory-perfect {
+                    color: var(--support-blue);
+                }
+
+                .support-summary-box .support-theory-loss .support-theory-loss-line {
+                    display: inline-flex;
+                    align-items: baseline;
+                    gap: 3px;
+                    font-size: inherit;
+                    white-space: nowrap;
+                }
+
+                .support-summary-box .support-theory-loss b {
+                    font-size: inherit;
+                }
+
+                .support-summary-box .support-theory-loss .support-theory-loss-line span {
+                    display: inline;
+                    margin-bottom: 0;
+                    color: inherit;
+                    font-size: inherit;
+                    font-weight: inherit;
+                }
+
+                .support-theory-loss-break {
+                    display: block;
                 }
 
                 .support-toolbar {
@@ -1590,7 +1712,27 @@ const SupportDeckTab = () => {
                         {hasMainDeckBonus && (
                             <small className="support-summary-detail" style={{ whiteSpace: 'nowrap' }}>
                                 <span>+{formatSupportPercent(mainDeckBonus)} =</span>
-                                <span style={{ color: 'var(--support-blue)' }}>{formatSupportPercent(displayTotalBonus)}</span>
+                                <span className="support-summary-total">{formatSupportPercent(displayTotalBonus)}</span>
+                            </small>
+                        )}
+                        {shouldShowTheoryComparison && (
+                            <small className="support-theory-loss">
+                                <span className="support-theory-loss-line">
+                                    <span>{t('support.theory_compare_prefix')}</span>
+                                    <b className="support-theory-bonus">{formatSupportPercent(theoryDisplayTotalBonus)}</b>
+                                    <span>{t('support.theory_compare_middle')}</span>
+                                </span>
+                                <br className="support-theory-loss-break" />
+                                <span className="support-theory-loss-line">
+                                    {isTheoryBonusMatched ? (
+                                        <b className="support-theory-perfect">{t('support.theory_perfect')}</b>
+                                    ) : (
+                                        <>
+                                            <b className="support-theory-loss-value">{formatSupportPercent(theoryScoreDecreasePercent)}</b>
+                                            <span>{t('support.theory_compare_suffix')}</span>
+                                        </>
+                                    )}
+                                </span>
                             </small>
                         )}
                     </div>
@@ -1600,7 +1742,7 @@ const SupportDeckTab = () => {
                         {hasMainDeckBonus && (
                             <small className="support-summary-detail" style={{ whiteSpace: 'nowrap' }}>
                                 <span>+{formatSupportPercent(mainDeckBonus)} =</span>
-                                <span style={{ color: 'var(--support-blue)' }}>{formatSupportPercent(displayBadgeBonus)}</span>
+                                <span className="support-summary-total">{formatSupportPercent(displayBadgeBonus)}</span>
                             </small>
                         )}
                     </div>
@@ -1756,7 +1898,7 @@ const SupportDeckTab = () => {
                                                 <strong>{formatSupportPercent(bonus.total)}</strong>
                                             </div>
 
-                                            <div 
+                                            <div
                                                 className="support-main-preview-wrap"
                                                 style={{ cursor: 'pointer', transition: 'transform 0.1s' }}
                                                 onClick={() => {
