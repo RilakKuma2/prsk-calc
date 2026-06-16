@@ -152,7 +152,7 @@ const getMainDeckPreviewRarity = (rarityKey) => {
     return rarityKey ? 4 : 0;
 };
 
-const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, card = null }) => {
+const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, card = null, skillText = 'SLV.4', emptyText = '비움' }) => {
     const publicUrl = process.env.PUBLIC_URL || '';
     const rarity = getMainDeckPreviewRarity(rarityKey);
     const isBirthday = rarityKey === 'birthday';
@@ -212,7 +212,7 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, ca
                     ))}
                 </div>
             )}
-            <div className="support-skill-badge">{rarityKey ? 'SLV.4' : '비움'}</div>
+            <div className="support-skill-badge">{rarityKey ? skillText : emptyText}</div>
             {normalizedMasterRank > 0 && (
                 <img
                     className="support-mastery-badge"
@@ -225,9 +225,10 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, ca
     );
 };
 
-const NumberDropdown = ({ value, options, onChange, prefix, suffix = '' }) => {
+const NumberDropdown = ({ value, options, onChange, prefix, suffix = '', formatOption }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const displayValue = (option) => formatOption ? formatOption(option) : `${option}${suffix}`;
 
     useEffect(() => {
         if (!isOpen) return undefined;
@@ -250,7 +251,7 @@ const NumberDropdown = ({ value, options, onChange, prefix, suffix = '' }) => {
                 onClick={() => setIsOpen(prev => !prev)}
             >
                 <span>{prefix}</span>
-                <strong>{value}{suffix}</strong>
+                <strong>{displayValue(value)}</strong>
             </button>
             {isOpen && (
                 <div className="support-select-menu">
@@ -264,7 +265,7 @@ const NumberDropdown = ({ value, options, onChange, prefix, suffix = '' }) => {
                                 setIsOpen(false);
                             }}
                         >
-                            {option}{suffix}
+                            {displayValue(option)}
                         </button>
                     ))}
                 </div>
@@ -531,6 +532,9 @@ const SupportDeckTab = () => {
     const selectedCount = useMemo(() => {
         return slotResults.filter(result => result.card).length;
     }, [slotResults]);
+
+    const getSlotLabel = (index) => t('support.slot_label', { n: index + 1 });
+    const getSlotTitle = (index) => t('support.slot', { n: index + 1 });
 
     const updateSlot = (index, updater) => {
         setDecks(prev => {
@@ -1800,7 +1804,7 @@ const SupportDeckTab = () => {
                                     onChange={e => setBulkSkillLevel(Number(e.target.value))}
                                     style={{ height: 30, width: 72, borderRadius: 7, border: '1px solid #d5deea', padding: '0 4px', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
                                 >
-                                    {SKILL_LEVEL_OPTIONS.map(v => <option key={v} value={v}>{t('support.skill_level').replace('{{v}}', v)}</option>)}
+                                    {SKILL_LEVEL_OPTIONS.map(v => <option key={v} value={v}>{t('support.skill_level', { v })}</option>)}
                                 </select>
                                 <button type="button" className="support-bulk-apply" onClick={applyBulk}>
                                     {t('support.apply')}
@@ -1818,7 +1822,7 @@ const SupportDeckTab = () => {
                             type="button"
                             className="support-slot-card"
                             onClick={() => openCardPicker(index)}
-                            aria-label={`${t('support.slot_label', { n: index + 1 }).replace('{{n}}', index + 1)} 카드 선택`}
+                            aria-label={`${getSlotLabel(index)} ${t('support.card_select')}`}
                         >
                             {card ? (
                                 <SupportCardThumbnail
@@ -1850,7 +1854,7 @@ const SupportDeckTab = () => {
                                 options={SKILL_LEVEL_OPTIONS}
                                 onChange={(value) => updateSlot(index, { skillLevel: value })}
                                 prefix={t('support.skill')}
-                                suffix="렙"
+                                formatOption={(value) => t('support.skill_level', { v: value })}
                             />
                         </div>
                     </div>
@@ -1894,7 +1898,7 @@ const SupportDeckTab = () => {
                                     return (
                                         <div className="support-main-slot" key={index}>
                                             <div className="support-main-slot-header">
-                                                <span>{t('support.slot_label', { n: index + 1 }).replace('{{n}}', index + 1)}</span>
+                                                <span>{getSlotLabel(index)}</span>
                                                 <strong>{formatSupportPercent(bonus.total)}</strong>
                                             </div>
 
@@ -1907,13 +1911,15 @@ const SupportDeckTab = () => {
                                                 }}
                                                 onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                                                 onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                                title="카드 선택"
+                                                title={t('support.card_select')}
                                             >
                                                 <MainDeckPreviewCard
                                                     rarityKey={slot.rarityKey}
                                                     masterRank={slot.masterRank}
                                                     previewCharId={selectedCharId}
                                                     card={slot.card}
+                                                    skillText={t('support.skill_level', { v: 4 })}
+                                                    emptyText={t('support.empty')}
                                                 />
                                             </div>
 
@@ -1961,7 +1967,7 @@ const SupportDeckTab = () => {
                                                 </button>
                                             </div>
 
-                                            <div className="support-main-breakdown" aria-label={`${t('support.slot_label', { n: index + 1 }).replace('{{n}}', index + 1)} 메인덱 보너스`}>
+                                            <div className="support-main-breakdown" aria-label={`${getSlotTitle(index)} ${t('support.main_deck')}`}>
                                                 <span>{t('support.member')} <b>{formatSupportPercent(bonus.member)}</b></span>
                                                 <span>{t('support.featured')} <b>{formatSupportPercent(bonus.character)}</b></span>
                                                 <span>{t('support.type')} <b>{formatSupportPercent(bonus.type)}</b></span>

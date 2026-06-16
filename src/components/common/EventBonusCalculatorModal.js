@@ -369,9 +369,10 @@ const calculateMainDeckSlotBonus = (slot, isWorldLink) => {
     };
 };
 
-const NumberDropdown = ({ value, options, onChange, prefix, suffix = '', hidePrefixOnMobile = false }) => {
+const NumberDropdown = ({ value, options, onChange, prefix, suffix = '', hidePrefixOnMobile = false, formatOption }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const displayValue = (option) => formatOption ? formatOption(option) : `${option}${suffix}`;
 
     useEffect(() => {
         if (!isOpen) return;
@@ -386,13 +387,13 @@ const NumberDropdown = ({ value, options, onChange, prefix, suffix = '', hidePre
         <div className="ebc-select" ref={dropdownRef}>
             <button type="button" className={`ebc-select-button ${isOpen ? 'open' : ''}`} onClick={() => setIsOpen(!isOpen)}>
                 <span className={`ebc-prefix-label ${hidePrefixOnMobile ? 'hide-on-mobile' : ''}`}>{prefix}</span>
-                <strong>{value}{suffix}</strong>
+                <strong>{displayValue(value)}</strong>
             </button>
             {isOpen && (
                 <div className="ebc-select-menu">
                     {options.map(opt => (
                         <button key={opt} type="button" className={opt === value ? 'selected' : ''} onClick={() => { onChange(opt); setIsOpen(false); }}>
-                            {opt}{suffix}
+                            {displayValue(opt)}
                         </button>
                     ))}
                 </div>
@@ -434,7 +435,7 @@ const OptionDropdown = ({ value, options, onChange, prefix, hidePrefixOnMobile =
     );
 };
 
-const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, emptyText = '비움', previewCharId = 21, card = null, isAwakened = true }) => {
+const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, skillText = null, emptyText = '비움', previewCharId = 21, card = null, isAwakened = true }) => {
     const publicUrl = process.env.PUBLIC_URL || '';
 
     const getMainDeckPreviewRarity = (key) => {
@@ -486,7 +487,7 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, emptyT
                     ))}
                 </div>
             )}
-            <div className="ebc-skill-badge">{rarityKey ? `SLV.${skillLevel}` : emptyText}</div>
+            <div className="ebc-skill-badge">{rarityKey ? (skillText || `SLV.${skillLevel}`) : emptyText}</div>
             {normalizedMasterRank > 0 && (
                 <img className="ebc-mastery-badge" src={`${publicUrl}/assets/card_style/masterRank_S_${normalizedMasterRank}.webp`} alt="" />
             )}
@@ -1336,7 +1337,15 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                             title={t('support.select_card') || "카드 선택"}
                                         >
-                                            <MainDeckPreviewCard rarityKey={slot.rarityKey} masterRank={slot.masterRank} skillLevel={slot.skillLevel || 1} emptyText={t('support.empty')} card={slot.card} isAwakened={slot.isAwakened !== false} />
+                                            <MainDeckPreviewCard
+                                                rarityKey={slot.rarityKey}
+                                                masterRank={slot.masterRank}
+                                                skillLevel={slot.skillLevel || 1}
+                                                skillText={t('support.skill_level', { v: slot.skillLevel || 1 })}
+                                                emptyText={t('support.empty')}
+                                                card={slot.card}
+                                                isAwakened={slot.isAwakened !== false}
+                                            />
                                         </div>
                                         <div className="ebc-slot-power-row">
                                             <button
@@ -1362,7 +1371,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                         </div>
                                         <div className="ebc-control-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                                             <OptionDropdown value={slot.rarityKey} options={MAIN_DECK_RARITY_OPTIONS} onChange={v => updateSlot(index, { rarityKey: v })} />
-                                            <NumberDropdown value={slot.skillLevel || 1} options={[1, 2, 3, 4]} onChange={v => updateSlot(index, { skillLevel: v })} />
+                                            <NumberDropdown value={slot.skillLevel || 1} options={[1, 2, 3, 4]} onChange={v => updateSlot(index, { skillLevel: v })} formatOption={v => t('support.skill_level', { v })} />
                                             <NumberDropdown value={slot.masterRank} options={MASTER_RANK_OPTIONS} onChange={v => updateSlot(index, { masterRank: v })} />
                                         </div>
                                         <div className="ebc-toggle-row">
@@ -2025,6 +2034,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 activeSlotCardId={activeMainSlotIndex !== null ? slots[activeMainSlotIndex]?.card?.id : null}
                 eventOverride={eventOverride}
                 isManualEvent={isManualEvent}
+                showSkillBadge
             />
 
 

@@ -77,6 +77,22 @@ const applyLatestEventToEventInfo = (eventInfo, latestEvent, now = Date.now()) =
   };
 };
 
+const findPlayerLevelInfo = (level) => playerLevelData.find(d => {
+  if (d.range === String(level)) return true;
+  if (d.range.includes('~')) {
+    const [min, max] = d.range.split('~').map(Number);
+    return level >= min && level <= max;
+  }
+  return false;
+});
+
+const getLiveRankExpBonus = (rank) => {
+  if (rank === 'A') return 1400;
+  if (rank === 'B') return 1200;
+  if (rank === 'C') return 1000;
+  return 1600;
+};
+
 const mergeRankingsByHighestScore = (rankings = []) => {
   const byRank = new Map();
 
@@ -615,6 +631,23 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     return fireaMap[firea] !== undefined ? fireaMap[firea] : 0;
   }
 
+  const calculateLevelUpFireNeeded = () => {
+    const expLeft = parseInt(remainingExp, 10);
+    if (!Number.isFinite(expLeft) || expLeft <= 0) return null;
+
+    let nextConsumption = getFireaValue(parseInt(firea, 10) || 0);
+    if (fires2 !== "none") {
+      nextConsumption = getFireaValue(parseInt(fires2, 10) || 0);
+    }
+    if (nextConsumption === 0) nextConsumption = 1;
+
+    const xpPerRun = nextConsumption * getLiveRankExpBonus(liveRank);
+    if (xpPerRun <= 0) return null;
+
+    return Math.ceil(expLeft / xpPerRun) * nextConsumption;
+  };
+
+  const levelUpFireNeeded = calculateLevelUpFireNeeded();
 
   useEffect(() => {
     const newSurveyData = {
@@ -839,11 +872,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       let simExp = parseInt(remainingExp);
       let simEarnedScore = 0;
 
-      // Rank Bonus
-      let rankExpBonus = 1600; // S
-      if (liveRank === 'A') rankExpBonus = 1400;
-      if (liveRank === 'B') rankExpBonus = 1200;
-      if (liveRank === 'C') rankExpBonus = 1000;
+      const rankExpBonus = getLiveRankExpBonus(liveRank);
 
       let safeGuard = 0;
       const MAX_LOOPS = 20000; // Protection
@@ -874,15 +903,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           simFire += 10; // Usage tracking
 
           // Get next level exp
-          const levelData = playerLevelData.find(d => {
-            // Check range
-            if (d.range === String(simLevel)) return true;
-            if (d.range.includes('~')) {
-              const [min, max] = d.range.split('~').map(Number);
-              if (simLevel >= min && simLevel <= max) return true;
-            }
-            return false;
-          });
+          const levelData = findPlayerLevelInfo(simLevel);
 
           if (levelData && levelData.exp) {
             simExp = levelData.exp - overflow;
@@ -956,8 +977,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       mySekaiEPPerDay,
       mySekaiDays,
       totalMySekaiEP,
-      scoreAfter,
-      currentScoreVal,
       scoreAfter,
       currentScoreVal,
       levelUpFire,
@@ -1867,46 +1886,53 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
             {/* Level Up Inputs */}
             {isLevelUpBonusEnabled && (
-              <div className="grid grid-cols-3 gap-2 animate-fade-in px-1 mb-2">
-                {/* Current Level */}
-                <div className="flex flex-col items-center">
-                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_level')}</label>
-                  <input
-                    type="number"
-                    value={currentLevel}
-                    onChange={(e) => setCurrentLevel(e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                    placeholder="300"
-                    className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
+              <>
+                <div className="grid grid-cols-3 gap-2 animate-fade-in px-1 mb-1">
+                  {/* Current Level */}
+                  <div className="flex flex-col items-center">
+                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_level')}</label>
+                    <input
+                      type="number"
+                      value={currentLevel}
+                      onChange={(e) => setCurrentLevel(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      placeholder="300"
+                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                  {/* XP Left */}
+                  <div className="flex flex-col items-center">
+                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_remaining_exp')}</label>
+                    <input
+                      type="number"
+                      value={remainingExp}
+                      onChange={(e) => setRemainingExp(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      placeholder="5000"
+                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                  {/* Live Rank */}
+                  <div className="flex flex-col items-center">
+                    <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_live_rank')}</label>
+                    <select
+                      value={liveRank}
+                      onChange={(e) => setLiveRank(e.target.value)}
+                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 h-[26px]"
+                    >
+                      <option value="S">S</option>
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                    </select>
+                  </div>
                 </div>
-                {/* XP Left */}
-                <div className="flex flex-col items-center">
-                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_remaining_exp')}</label>
-                  <input
-                    type="number"
-                    value={remainingExp}
-                    onChange={(e) => setRemainingExp(e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                    placeholder="5000"
-                    className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                </div>
-                {/* Live Rank */}
-                <div className="flex flex-col items-center">
-                  <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_live_rank')}</label>
-                  <select
-                    value={liveRank}
-                    onChange={(e) => setLiveRank(e.target.value)}
-                    className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 h-[26px]"
-                  >
-                    <option value="S">S</option>
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                  </select>
-                </div>
-              </div>
+                {levelUpFireNeeded !== null && (
+                  <div className="text-center text-[10px] font-bold text-indigo-600 mb-2 animate-fade-in">
+                    {t('fire.levelup_fire_needed', { count: levelUpFireNeeded.toLocaleString() })}
+                  </div>
+                )}
+              </>
             )}
 
             {/* Next Event Fire Inputs - Manual Date/Time */}

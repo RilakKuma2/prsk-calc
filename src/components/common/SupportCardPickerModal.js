@@ -27,6 +27,7 @@ const SupportCardPickerModal = ({
     activeSlotCardId,
     eventOverride,
     isManualEvent,
+    showSkillBadge = false,
 }) => {
     const { t, language } = useTranslation();
     const [isScrolled, setIsScrolled] = useState(false);
@@ -88,7 +89,7 @@ const SupportCardPickerModal = ({
                             {isMain ? t('support.card_select', '카드 선택') : `${getCardCharacterName(selectedCharId, language)} ${t('support.card_select', '카드 선택')}`}
                         </h3>
                         <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-                            {isMain ? t('support.slot_label', { n: activeIndex + 1 }) : t('support.slot', '{{n}}번 슬롯').replace('{{n}}', activeIndex + 1)}
+                            {isMain ? t('support.slot_label', { n: activeIndex + 1 }) : t('support.slot', { n: activeIndex + 1 })}
                         </p>
                     </div>
                     <div className="support-modal-actions" style={{ display: 'flex', gap: '6px' }}>
@@ -152,6 +153,7 @@ const SupportCardPickerModal = ({
                                                     card={card} 
                                                     selected={Number(activeSlotCardId) === Number(card.id)} 
                                                     picker 
+                                                    showSkillBadge={showSkillBadge}
                                                 />
                                             </button>
                                         ))}

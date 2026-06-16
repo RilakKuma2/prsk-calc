@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../contexts/LanguageContext';
 import { getCardCharacterId } from '../../utils/supportCardUtils';
 
 const getFaceSuffix = (card) => {
@@ -15,13 +16,13 @@ const getCardImageUrl = (card, suffix = getFaceSuffix(card)) => {
 
 const getSkillBadgeInfo = (effect) => {
     if (!effect) return null;
-    if (effect.includes('페스')) return { label: '컬페', bg: '#ff3388' };
-    if (effect.includes('블페') || effect.includes('월링')) return { label: '블페', bg: '#8b5cf6' };
-    if (effect.includes('퍼스업')) return { label: '퍼펙트', bg: '#06b6d4' };
-    if (effect.includes('스업') || effect === '스코어') return { label: '스코어', bg: '#3b82f6' };
-    if (effect.includes('힐') || effect.includes('회복') || effect.includes('라이프')) return { label: '회복', bg: '#22c55e' };
-    if (effect.includes('판강') || effect.includes('판정')) return { label: '판강', bg: '#f59e0b' };
-    if (effect.includes('버싱한정') || effect.includes('결정')) return { label: '결정', bg: '#6366f1' };
+    if (effect.includes('페스')) return { type: 'color_fes', bg: '#ff3388' };
+    if (effect.includes('블페') || effect.includes('월링')) return { type: 'bloom_fes', bg: '#8b5cf6' };
+    if (effect.includes('퍼스업')) return { type: 'perfect', bg: '#06b6d4' };
+    if (effect.includes('스업') || effect === '스코어') return { type: 'score', bg: '#3b82f6' };
+    if (effect.includes('힐') || effect.includes('회복') || effect.includes('라이프')) return { type: 'heal', bg: '#22c55e' };
+    if (effect.includes('판강') || effect.includes('판정')) return { type: 'judgment', bg: '#f59e0b' };
+    if (effect.includes('버싱한정') || effect.includes('결정')) return { type: 'decision', bg: '#6366f1' };
     return { label: effect, bg: '#64748b' };
 };
 
@@ -31,11 +32,22 @@ const SupportCardThumbnail = ({
     compact = false,
     picker = false,
     showLevels = false,
+    showSkillBadge = false,
     masterRank = 0,
     skillLevel = 1,
 }) => {
+    const { t } = useTranslation();
     const [imageSrc, setImageSrc] = useState(() => getCardImageUrl(card));
     const publicUrl = process.env.PUBLIC_URL || '';
+    const skillBadgeLabels = {
+        color_fes: t('support.skill_badge_color_fes'),
+        bloom_fes: t('support.skill_badge_bloom_fes'),
+        perfect: t('support.skill_badge_perfect'),
+        score: t('support.skill_badge_score'),
+        heal: t('support.skill_badge_heal'),
+        judgment: t('support.skill_badge_judgment'),
+        decision: t('support.skill_badge_decision'),
+    };
 
     useEffect(() => {
         setImageSrc(getCardImageUrl(card));
@@ -94,9 +106,10 @@ const SupportCardThumbnail = ({
                     <div className="support-card-skill-level">Lv.{normalizedSkillLevel}</div>
                 </>
             )}
-            {picker && card?.skill_effect && (() => {
+            {picker && showSkillBadge && card?.skill_effect && (() => {
                 const badge = getSkillBadgeInfo(card.skill_effect);
                 if (!badge) return null;
+                const label = badge.type ? skillBadgeLabels[badge.type] : badge.label;
                 return (
                     <div style={{
                         position: 'absolute',
@@ -113,7 +126,7 @@ const SupportCardThumbnail = ({
                         zIndex: 10,
                         lineHeight: '1.2'
                     }}>
-                        {badge.label}
+                        {label}
                     </div>
                 );
             })()}

@@ -4,6 +4,15 @@ import { kizunaData } from '../data/kizunaData';
 import { useTranslation } from '../contexts/LanguageContext';
 import playerLevelData from '../data/player_levels.json';
 
+const findPlayerLevelInfo = (level) => playerLevelData.find(d => {
+  if (d.range === String(level)) return true;
+  if (d.range.includes('~')) {
+    const [min, max] = d.range.split('~').map(Number);
+    return level >= min && level <= max;
+  }
+  return false;
+});
+
 const KizunaTab = ({ surveyData, setSurveyData }) => {
   const { t } = useTranslation();
   const [currentLevel, setCurrentLevel] = useState(surveyData.kizunaCurrentLevel || '');
@@ -140,14 +149,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
             tempLevelUpFire += 10;
             simFire += 10;
 
-            const levelData = playerLevelData.find(d => {
-              if (d.range === String(simLevel)) return true;
-              if (d.range.includes('~')) {
-                const [min, max] = d.range.split('~').map(Number);
-                if (simLevel >= min && simLevel <= max) return true;
-              }
-              return false;
-            });
+            const levelData = findPlayerLevelInfo(simLevel);
 
             if (levelData && levelData.exp) {
               simExp = levelData.exp - overflow;
