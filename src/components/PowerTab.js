@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import MySekaiTable from './MySekaiTable';
 import AllSongsTable from './AllSongsTable';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
-import { LiveCalculator, EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import { getSongOptionsSync, getMusicMetasSync, preloadMusicMetas } from '../utils/dataLoader';
-import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
+import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
+import { getMusicMetaSync, preloadMusicMetas, searchSongOptionsSync } from '../utils/dataLoader';
+import { InputTableWrapper, InputRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -347,39 +347,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
       return;
     }
 
-    const normalize = (str) => {
-      if (!str) return '';
-      return str.normalize('NFC').toLowerCase()
-        .replace(/\s+/g, '')
-        .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
-    };
-
-    const query = normalize(searchQuery);
-
-    const results = getSongOptionsSync().filter(song => {
-      const name = normalize(song.name);
-      const titleJp = normalize(song.title_jp);
-      const titleEn = normalize(song.title_en);
-      const titleHi = normalize(song.title_hi);
-      const titleHangul = normalize(song.title_hangul);
-
-      if (name.includes(query)) return true;
-      if (titleHi && titleHi.includes(query)) return true;
-      if (titleHangul && titleHangul.includes(query)) return true;
-
-      if (language === 'ko') {
-        if (titleJp && titleJp.includes(query)) return true;
-        if (titleEn && titleEn.includes(query)) return true;
-      } else if (language === 'ja') {
-        if (titleJp && titleJp.includes(query)) return true;
-      } else {
-        if (titleEn && titleEn.includes(query)) return true;
-      }
-
-      return false;
-    }).slice(0, 5);
-
-    setSearchResults(results);
+    setSearchResults(searchSongOptionsSync(searchQuery, language, 5));
     setIsDropdownVisible(true);
   }, [searchQuery, language]);
 
@@ -509,7 +477,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
           const result = calculateScoreRange(input, liveType);
           if (!result) return { min: 0, max: 0 };
 
-          const musicMeta = getMusicMetasSync().find(m => m.music_id === songId && m.difficulty === difficulty);
+          const musicMeta = getMusicMetaSync(songId, difficulty);
           if (!musicMeta) return { min: 0, max: 0 };
 
           const multiplier = FIRE_MULTIPLIERS[fireCount] || 1;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
-import { getMusicMetas, getSongOptionsSync } from '../utils/dataLoader';
+import { buildMusicMetaLookup, getMusicMetas, getSongOptionsSync, searchSongOptionsSync } from '../utils/dataLoader';
 import { LiveType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -144,6 +144,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
     const [targetSongs, setTargetSongs] = useState(null);
     const [batchResults, setBatchResults] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'max', direction: 'desc' });
+    const musicMetaLookup = useMemo(() => buildMusicMetaLookup(musicMetas), [musicMetas]);
+    const songsById = useMemo(() => new Map(getSongOptionsSync().map(song => [Number(song.id), song])), []);
 
     // Search State
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -196,39 +198,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             return;
         }
 
-        const normalize = (str) => {
-            if (!str) return '';
-            return str.toLowerCase()
-                .replace(/\s+/g, '')
-                .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
-        };
-
-        const query = normalize(searchQuery);
-
-        const results = getSongOptionsSync().filter(song => {
-            const name = normalize(song.name);
-            const titleJp = normalize(song.title_jp);
-            const titleEn = normalize(song.title_en);
-            const titleHi = normalize(song.title_hi);
-            const titleHangul = normalize(song.title_hangul);
-
-            if (name.includes(query)) return true;
-            if (titleHi && titleHi.includes(query)) return true;
-            if (titleHangul && titleHangul.includes(query)) return true;
-
-            if (language === 'ko') {
-                if (titleJp && titleJp.includes(query)) return true;
-                if (titleEn && titleEn.includes(query)) return true;
-            } else if (language === 'ja') {
-                if (titleJp && titleJp.includes(query)) return true;
-            } else {
-                if (titleEn && titleEn.includes(query)) return true;
-            }
-
-            return false;
-        }).slice(0, 5);
-
-        setSearchResults(results);
+        setSearchResults(searchSongOptionsSync(searchQuery, language, 5));
         setIsDropdownVisible(true);
     }, [searchQuery, language]);
 
@@ -242,7 +212,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
     useEffect(() => {
         if (!selectedSong || !musicMetas) return;
 
-        const musicMeta = musicMetas.find(m => m.music_id === selectedSong.id && m.difficulty === searchDifficulty);
+        const musicMeta = musicMetaLookup.get(`${Number(selectedSong.id)}:${searchDifficulty}`);
         if (!musicMeta) {
             setCustomResult(null);
             return;
@@ -275,7 +245,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             console.error(e);
         }
 
-    }, [selectedSong, searchDifficulty, deck, language, musicMetas]);
+    }, [selectedSong, searchDifficulty, deck, language, musicMetas, musicMetaLookup]);
 
 
     // Ensure default data exists
@@ -298,12 +268,11 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         }
 
         const results = [];
-        const songsById = new Map(getSongOptionsSync().map(song => [Number(song.id), song]));
 
         targetSongs.forEach(target => {
             const song = songsById.get(target.id);
             if (!song) return;
-            const musicMeta = musicMetas.find(m => m.music_id === target.id && m.difficulty === target.difficulty);
+            const musicMeta = musicMetaLookup.get(`${Number(target.id)}:${target.difficulty}`);
             if (!musicMeta) return;
 
             const input = {
@@ -338,7 +307,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         });
 
         setBatchResults(results);
-    }, [targetSongs, musicMetas, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, language]);
+    }, [targetSongs, musicMetas, musicMetaLookup, songsById, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';

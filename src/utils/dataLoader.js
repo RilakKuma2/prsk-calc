@@ -5,18 +5,98 @@ import { SONG_OPTIONS as localSongOptions } from './songs';
 let cachedMusicMetas = null;
 let musicMetasPromise = null;
 let cachedSongOptions = null;
+let musicMetaLookupSource = null;
+let cachedMusicMetaLookup = null;
+let filteredSongOptionsSource = null;
+let cachedFilteredSongOptions = null;
+let searchableSongOptionsSource = null;
+let cachedSearchableSongOptions = null;
 
 const MUSIC_METAS_URL = 'https://asset.rilaksekai.com/music_metas.json';
 const MUSIC_METAS_TIMEOUT_MS = 6000;
+const SONG_FILTER_DATE = new Date('2026-04-22T23:59:59+09:00');
+const EXCLUDED_SONG_IDS = new Set([707, 708, 709]);
+const makeMusicMetaKey = (songId, difficulty) => `${Number(songId)}:${difficulty}`;
 
 function applyDateFilter(songs) {
     if (!songs) return songs;
     const now = new Date();
-    const filterDate = new Date('2026-04-22T23:59:59+09:00');
-    if (now > filterDate) {
-        return songs.filter(song => ![707, 708, 709].includes(song.id));
+    if (now <= SONG_FILTER_DATE) {
+        return songs;
     }
-    return songs;
+    if (filteredSongOptionsSource === songs && cachedFilteredSongOptions) {
+        return cachedFilteredSongOptions;
+    }
+    filteredSongOptionsSource = songs;
+    cachedFilteredSongOptions = songs.filter(song => !EXCLUDED_SONG_IDS.has(Number(song.id)));
+    return cachedFilteredSongOptions;
+}
+
+export function normalizeSearchText(str) {
+    if (!str) return '';
+    return String(str).normalize('NFC').toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+}
+
+export function buildMusicMetaLookup(musicMetas) {
+    const lookup = new Map();
+    for (const meta of musicMetas || []) {
+        lookup.set(makeMusicMetaKey(meta.music_id, meta.difficulty), meta);
+    }
+    return lookup;
+}
+
+function getCachedMusicMetaLookup(musicMetas = getMusicMetasSync()) {
+    if (musicMetaLookupSource === musicMetas && cachedMusicMetaLookup) {
+        return cachedMusicMetaLookup;
+    }
+    musicMetaLookupSource = musicMetas;
+    cachedMusicMetaLookup = buildMusicMetaLookup(musicMetas);
+    return cachedMusicMetaLookup;
+}
+
+function getSearchableSongOptionsSync() {
+    const songs = getSongOptionsSync();
+    if (searchableSongOptionsSource === songs && cachedSearchableSongOptions) {
+        return cachedSearchableSongOptions;
+    }
+
+    searchableSongOptionsSource = songs;
+    cachedSearchableSongOptions = songs.map(song => ({
+        song,
+        name: normalizeSearchText(song.name),
+        titleJp: normalizeSearchText(song.title_jp),
+        titleEn: normalizeSearchText(song.title_en),
+        titleHi: normalizeSearchText(song.title_hi),
+        titleHangul: normalizeSearchText(song.title_hangul),
+    }));
+    return cachedSearchableSongOptions;
+}
+
+export function searchSongOptionsSync(searchQuery, language, limit = 5) {
+    const query = normalizeSearchText(searchQuery);
+    if (!query) return [];
+
+    const results = [];
+    for (const entry of getSearchableSongOptionsSync()) {
+        if (entry.name.includes(query) || entry.titleHi.includes(query) || entry.titleHangul.includes(query)) {
+            results.push(entry.song);
+        } else if (language === 'ko') {
+            if (entry.titleJp.includes(query) || entry.titleEn.includes(query)) {
+                results.push(entry.song);
+            }
+        } else if (language === 'ja') {
+            if (entry.titleJp.includes(query)) {
+                results.push(entry.song);
+            }
+        } else if (entry.titleEn.includes(query)) {
+            results.push(entry.song);
+        }
+
+        if (limit && results.length >= limit) break;
+    }
+    return results;
 }
 
 /**
@@ -122,6 +202,10 @@ export async function getSongOptions() {
  */
 export function getMusicMetasSync() {
     return cachedMusicMetas || ESSENTIAL_MUSIC_METAS;
+}
+
+export function getMusicMetaSync(songId, difficulty) {
+    return getCachedMusicMetaLookup().get(makeMusicMetaKey(songId, difficulty));
 }
 
 export function getSongOptionsSync() {

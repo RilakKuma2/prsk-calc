@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { calculateScoreRange } from '../utils/calculator';
-import { getSongOptions, getMusicMetas, getSongOptionsSync, getMusicMetasSync } from '../utils/dataLoader';
+import { buildMusicMetaLookup, getSongOptions, getMusicMetas, normalizeSearchText } from '../utils/dataLoader';
 import { LiveType, EventCalculator, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -65,6 +65,8 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
     const [show3DOnly, setShow3DOnly] = useState(false);
     const [songOptions, setSongOptions] = useState([]);
     const [musicMetas, setMusicMetas] = useState([]);
+    const musicMetaLookup = useMemo(() => buildMusicMetaLookup(musicMetas), [musicMetas]);
+    const normalizedSearchQuery = useMemo(() => normalizeSearchText(searchQuery), [searchQuery]);
 
     const itemsPerPage = 10;
 
@@ -79,36 +81,22 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
     }, []);
 
     useEffect(() => {
-        if (isVisible) {
+        if (isVisible && songOptions.length > 0 && musicMetaLookup.size > 0) {
             handleRefresh();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isVisible, targetDifficulty, sortOrder, sortKey]); // Added targetDifficulty, sortOrder, sortKey to dependencies
+    }, [isVisible, targetDifficulty, songOptions, musicMetaLookup]);
 
     // Reset pagination when search query changes
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery, show3DOnly]);
 
-    const normalize = (str) => {
-        if (!str) return '';
-        return str.normalize('NFC').toLowerCase()
-            .replace(/\s+/g, '')
-            .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
-    };
-
     const filteredResults = useMemo(() => {
         let finalResults = results;
 
-        if (searchQuery) {
-            const term = normalize(searchQuery);
-            finalResults = finalResults.filter(row =>
-                (row.name && normalize(row.name).includes(term)) ||
-                (row.title_jp && normalize(row.title_jp).includes(term)) ||
-                (row.title_hi && normalize(row.title_hi).includes(term)) ||
-                (row.title_hangul && normalize(row.title_hangul).includes(term))
-            );
+        if (normalizedSearchQuery) {
+            finalResults = finalResults.filter(row => (row.searchText || '').includes(normalizedSearchQuery));
         }
 
         if (show3DOnly) {
@@ -157,7 +145,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
         }
 
         return finalResults;
-    }, [results, searchQuery, show3DOnly, isEfficiencyOrder, isAutoMode, sortKey, sortOrder]);
+    }, [results, normalizedSearchQuery, show3DOnly, isEfficiencyOrder, isAutoMode, sortKey, sortOrder]);
 
     // Re-trigger calculation
     const handleRefresh = () => {
@@ -171,6 +159,10 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
     };
 
     const calculateAll = () => {
+        if (songOptions.length === 0 || musicMetaLookup.size === 0) {
+            setIsCalculating(false);
+            return;
+        }
         // Defaults if empty
         // Power: 25.5k -> 255000
         // Effi: 250%
@@ -213,8 +205,6 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
         // Skills: passed prop is array. If simplistic "200" logic was needed if empty, PowerTab handles it or we trust input.
         // But we need to know what to display.
         // If it's simple mode, all skills are same.
-        const skillLeader = finalSkills && finalSkills.length > 0 ? finalSkills[0] : 0; // Display purpose
-
         // We assume 5 Fire for Multi efficiency calculation, 1 Fire for Auto
         const fireMultiplier = isAutoMode ? FIRE_MULTIPLIERS[1] : FIRE_MULTIPLIERS[5];
         const currentLiveType = isAutoMode ? LiveType.AUTO : LiveType.MULTI;
@@ -231,7 +221,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
 
             diffsToCheck.forEach(diff => {
                 // Check if meta exists for this diff
-                const meta = musicMetas.find(m => m.music_id === song.id && m.difficulty === diff);
+                const meta = musicMetaLookup.get(`${Number(song.id)}:${diff}`);
                 if (!meta) return;
 
                 try {
@@ -333,6 +323,12 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
                     length: song.length,
                     mv: song.mv,
                     unit: song.unit, // Pass unit info
+                    searchText: [
+                        song.name,
+                        song.title_jp,
+                        song.title_hi,
+                        song.title_hangul
+                    ].map(normalizeSearchText).join('\n'),
                     ...best,
                     allDiffs: songResults
                 });

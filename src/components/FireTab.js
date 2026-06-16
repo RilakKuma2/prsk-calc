@@ -5,7 +5,7 @@ import RankingGraphModal from './RankingGraphModal';
 import { useTranslation } from '../contexts/LanguageContext';
 import { calculateScoreRange } from '../utils/calculator';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import { getMusicMetasSync } from '../utils/dataLoader';
+import { getMusicMetaSync } from '../utils/dataLoader';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import playerLevelData from '../data/player_levels.json';
 import { characterBirthdays } from '../data/characterBirthdays';
@@ -1202,7 +1202,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     const result = calculateScoreRange(inputInput, liveType);
     if (result) {
-      const musicMeta = getMusicMetasSync().find(m => m.music_id === songId && m.difficulty === difficulty);
+      const musicMeta = getMusicMetaSync(songId, difficulty);
       if (musicMeta) {
         // Calculate EP
         const getEP = (score) => EventCalculator.getEventPoint(

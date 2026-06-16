@@ -1,5 +1,5 @@
 import { LiveCalculator, LiveType } from 'sekai-calculator';
-import { getMusicMetasSync } from './dataLoader';
+import { getMusicMetaSync } from './dataLoader';
 
 // Helper to create a dummy card
 export const createDummyCard = (skillScoreUp, power) => {
@@ -70,8 +70,7 @@ export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
         musicMeta: inputMusicMeta,
     } = input;
 
-    const musicMetas = getMusicMetasSync();
-    const musicMeta = inputMusicMeta || musicMetas.find(m => m.music_id === songId && m.difficulty === difficulty);
+    const musicMeta = inputMusicMeta || getMusicMetaSync(songId, difficulty);
 
     if (!musicMeta) {
         console.error(`Calculator: Music meta not found for ID: ${songId}, Difficulty: ${difficulty}`);

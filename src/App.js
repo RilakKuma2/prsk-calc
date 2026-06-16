@@ -1,19 +1,20 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Tabs from './components/Tabs';
-import LevelTab from './components/LevelTab';
-import FireTab from './components/FireTab';
-import ChallengeTab from './components/ChallengeTab';
-import AmatsuyuTab from './components/AmatsuyuTab';
-import DeckTab from './components/DeckTab';
-import ScoreArtTab from './components/ScoreArtTab';
 import UpcomingEvents from './components/UpcomingEvents';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
-import GachaTab from './components/GachaTab';
-import CharacterRankTab from './components/CharacterRankTab';
-import SupportDeckTab from './components/SupportDeckTab';
+
+const LevelTab = lazy(() => import('./components/LevelTab'));
+const FireTab = lazy(() => import('./components/FireTab'));
+const ChallengeTab = lazy(() => import('./components/ChallengeTab'));
+const AmatsuyuTab = lazy(() => import('./components/AmatsuyuTab'));
+const DeckTab = lazy(() => import('./components/DeckTab'));
+const ScoreArtTab = lazy(() => import('./components/ScoreArtTab'));
+const GachaTab = lazy(() => import('./components/GachaTab'));
+const CharacterRankTab = lazy(() => import('./components/CharacterRankTab'));
+const SupportDeckTab = lazy(() => import('./components/SupportDeckTab'));
 
 // Main tab to path mapping
 const TAB_PATHS = {
@@ -49,6 +50,12 @@ const getTabFromPathname = (path) => {
   // Default to deck (Event Deck)
   return { mainTab: 'deck', subPath: null };
 };
+
+const TabFallback = () => (
+  <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+  </div>
+);
 
 const AppContent = () => {
   const { t, language } = useTranslation();
@@ -139,17 +146,29 @@ const AppContent = () => {
     }
   };
 
-  const tabComponents = {
-    level: <LevelTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
-    deck: <DeckTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
-    fire: <FireTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
-    challenge: <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
-    amatsuyu: <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
-    scoreArt: <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
-    gacha: <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />,
-    rank: <CharacterRankTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />,
-    support: <SupportDeckTab key={loadVersion} />,
-  };
+  const activeTabElement = useMemo(() => {
+    switch (currentTab) {
+      case 'level':
+        return <LevelTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
+      case 'fire':
+        return <FireTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />;
+      case 'challenge':
+        return <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
+      case 'amatsuyu':
+        return <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />;
+      case 'scoreArt':
+        return <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />;
+      case 'gacha':
+        return <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
+      case 'rank':
+        return <CharacterRankTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />;
+      case 'support':
+        return <SupportDeckTab key={loadVersion} />;
+      case 'deck':
+      default:
+        return <DeckTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
+    }
+  }, [currentTab, loadVersion, surveyData, setSurveyData, subPath]);
 
   const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });
   const timerRef1 = React.useRef(null);
@@ -232,7 +251,9 @@ const AppContent = () => {
       ) : (
         <>
           <Tabs currentTab={currentTab} setCurrentTab={handleTabChange} />
-          {tabComponents[currentTab]}
+          <Suspense fallback={<TabFallback />}>
+            {activeTabElement}
+          </Suspense>
         </>
       )}
 

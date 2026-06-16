@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
-import { getSongOptionsSync, getMusicMetas } from '../utils/dataLoader';
+import { buildMusicMetaLookup, getSongOptionsSync, getMusicMetas } from '../utils/dataLoader';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
@@ -89,6 +89,8 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
     const [sortConfig, setSortConfig] = useState({ key: 'eventPoint', direction: 'desc' });
     const [showAllSongsTable, setShowAllSongsTable] = useState(false);
     const [musicMetas, setMusicMetas] = useState(null);
+    const musicMetaLookup = useMemo(() => buildMusicMetaLookup(musicMetas), [musicMetas]);
+    const songsById = useMemo(() => new Map(getSongOptionsSync().map(song => [Number(song.id), song])), []);
 
     useEffect(() => {
         let cancelled = false;
@@ -115,9 +117,9 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
         const results = [];
 
         TARGET_SONGS.forEach(target => {
-            const song = getSongOptionsSync().find(s => s.id === target.id);
+            const song = songsById.get(target.id);
             if (!song) return;
-            const musicMeta = musicMetas.find(m => m.music_id === target.id && m.difficulty === target.difficulty);
+            const musicMeta = musicMetaLookup.get(`${Number(target.id)}:${target.difficulty}`);
             if (!musicMeta) return;
 
             const input = {
@@ -175,7 +177,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
         });
 
         setBatchResults(results);
-    }, [musicMetas, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, language]);
+    }, [musicMetas, musicMetaLookup, songsById, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';
