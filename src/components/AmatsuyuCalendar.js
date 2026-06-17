@@ -1,9 +1,36 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { characterBirthdays } from '../data/characterBirthdays';
+import eventExchangeEndTimes from '../data/eventExchangeEndTimes.json';
 import { useTranslation } from '../contexts/LanguageContext';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+const normalizeTimestampMs = (value) => {
+    const timestamp = Number(value);
+    if (!Number.isFinite(timestamp) || timestamp <= 0) return null;
+    return timestamp < 1000000000000 ? timestamp * 1000 : timestamp;
+};
+
+const getDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const NO_EVENT_DATE_KEYS = new Set(
+    eventExchangeEndTimes
+        .map(summary => {
+            const endMs = normalizeTimestampMs(summary?.endAt);
+            if (!endMs) return null;
+
+            const noEventDate = new Date(endMs);
+            noEventDate.setDate(noEventDate.getDate() + 1);
+            return getDateKey(noEventDate);
+        })
+        .filter(Boolean)
+);
 
 const isAcquisitionDate = (date, birthday) => {
     if (!date) return false;
@@ -29,7 +56,7 @@ const isBirthday = (date, birthday) => {
 
 const getRelevantAcqs = (date) => {
     if (!date) return [];
-    return characterBirthdays.filter(b => isAcquisitionDate(date, b));
+    return characterBirthdays.filter(b => isAcquisitionDate(date, b) && !isBirthday(date, b));
 };
 
 const hasIntersection = (acqs1, acqs2) => {
@@ -41,7 +68,9 @@ const isBrightColor = (color) => {
     return ['#ffee11', '#ffcc11', '#ffdd43', '#ffbb00', '#ffccaa', '#99eedd', '#ddaacc'].includes(color.toLowerCase());
 };
 
-const MonthView = ({ year, month, t, index, setRef, language }) => {
+const isNoEventDate = (date) => date && NO_EVENT_DATE_KEYS.has(getDateKey(date));
+
+const MonthView = ({ year, month, index, setRef, language }) => {
     const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
     const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
 
@@ -214,6 +243,17 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
         );
     };
 
+    const renderNoEventMark = (date) => {
+        if (!isNoEventDate(date)) return null;
+
+        return (
+            <div className="absolute inset-1.5 pointer-events-none z-[6]">
+                <div className="absolute left-1/2 top-1/2 h-1 w-10 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-full bg-red-300/65" />
+                <div className="absolute left-1/2 top-1/2 h-1 w-10 -translate-x-1/2 -translate-y-1/2 -rotate-45 rounded-full bg-red-300/65" />
+            </div>
+        );
+    };
+
     return (
         <div className="mb-4" ref={(el) => setRef(el, index)}>
             {/* Label Row aligned with grid */}
@@ -231,6 +271,7 @@ const MonthView = ({ year, month, t, index, setRef, language }) => {
                         key={idx}
                         className="relative h-12 flex items-center justify-center text-lg font-medium"
                     >
+                        {renderNoEventMark(date)}
                         {date && (
                             <div
                                 className={`absolute h-1.5 bottom-1 transition-all ${getRoundedClass(date)}`}
@@ -261,11 +302,14 @@ const AmatsuyuCalendar = ({ onClose }) => {
     const monthRefs = useRef([]);
 
     // Generate list of months
-    const monthsToDisplay = [];
-    for (let i = 0; i < 12; i++) {
-        const d = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
-        monthsToDisplay.push({ year: d.getFullYear(), month: d.getMonth() });
-    }
+    const monthsToDisplay = useMemo(() => {
+        const months = [];
+        for (let i = 0; i < 12; i++) {
+            const d = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+            months.push({ year: d.getFullYear(), month: d.getMonth() });
+        }
+        return months;
+    }, [currentDate]);
 
     const setMonthRef = (el, index) => {
         monthRefs.current[index] = el;
@@ -283,7 +327,7 @@ const AmatsuyuCalendar = ({ onClose }) => {
         return `${m + 1}`;
     };
 
-    const handleScroll = () => {
+    const handleScroll = useCallback(() => {
         if (!containerRef.current) return;
 
         const containerTop = containerRef.current.scrollTop;
@@ -301,13 +345,12 @@ const AmatsuyuCalendar = ({ onClose }) => {
                 }
             }
         }
-    };
+    }, [monthsToDisplay]);
 
     // Set initial display date on mount
     useEffect(() => {
         handleScroll();
-    }, []);
-
+    }, [handleScroll]);
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
@@ -327,7 +370,7 @@ const AmatsuyuCalendar = ({ onClose }) => {
                             <span className="text-base font-semibold text-black leading-none mb-0.5" style={{ fontFamily: "'Roboto', sans-serif" }}>
                                 {formatYear(displayDate.year)}
                             </span>
-                            <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                            <span className="text-[9px] text-gray-400 leading-none whitespace-nowrap" style={{ fontFamily: "'Roboto', sans-serif" }}>
                                 {t('amatsuyu.legend_underline')}
                             </span>
                         </div>
@@ -360,7 +403,6 @@ const AmatsuyuCalendar = ({ onClose }) => {
                             key={idx}
                             year={m.year}
                             month={m.month}
-                            t={t}
                             language={language}
                             index={idx}
                             setRef={setMonthRef}
