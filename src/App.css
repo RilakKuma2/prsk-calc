@@ -712,10 +712,25 @@ select {
     width: 74%;
 }
 
+.support-card-thumb.with-levels .support-card-stars.thumbnail-with-levels {
+    bottom: 8%;
+    left: 5%;
+    width: 90%;
+}
+
+.support-card-thumb.with-levels .support-card-birthday.thumbnail-with-levels {
+    bottom: 8%;
+    left: 5%;
+}
+
 .support-card-stars img {
     width: 13%;
     aspect-ratio: 1 / 1;
     object-fit: contain;
+}
+
+.support-card-stars.thumbnail-with-levels img {
+    width: 17%;
 }
 
 .support-card-birthday {

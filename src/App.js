@@ -281,7 +281,7 @@ const AppContent = () => {
         </button>
         <button
           className="link-button"
-          onClick={() => window.open(language === 'ko' ? 'https://best.rilaksekai.com' : 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing', '_blank')}
+          onClick={() => window.open(language === 'ko' ? 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing' : 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing', '_blank')}
         >
           {t('app.summary_button')}
         </button>
@@ -370,7 +370,7 @@ const AppContent = () => {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div 
+        <div
           className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 flex items-center gap-2 whitespace-nowrap ${toast.fadingOut ? 'animate-fade-out' : 'animate-toast-fade-in-up'}`}
           style={{ zIndex: 99999 }}
         >

@@ -158,7 +158,7 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, ca
     const isBirthday = rarityKey === 'birthday';
     const isLowRarity = rarity > 0 && rarity <= 2;
     const frameName = isBirthday ? 'cardFrame_bd.webp' : isLowRarity ? 'frame_2star.webp' : 'Frame.webp';
-    const starName = isBirthday ? 'rairity_birth.webp' : 'afterstar.webp';
+    const starName = isBirthday ? 'rairity_birth.webp' : isLowRarity ? 'star_normal.webp' : 'afterstar.webp';
     const normalizedMasterRank = Math.max(0, Math.min(5, Number(masterRank) || 0));
 
     // Use actual card face if a card is selected
@@ -1147,10 +1147,14 @@ const SupportDeckTab = () => {
                     width: 74%;
                 }
 
-                .support-card-stars img {
-                    width: 13%;
-                    aspect-ratio: 1 / 1;
-                    object-fit: contain;
+                .support-card-thumb.with-levels .support-card-stars.thumbnail-with-levels {
+                    bottom: 8%;
+                    left: 6%;
+                    width: 90%;
+                }
+
+                .support-card-stars.thumbnail-with-levels img {
+                    width: 14%;
                 }
 
                 .support-card-birthday {
@@ -1165,6 +1169,12 @@ const SupportDeckTab = () => {
 
                 .support-card-thumb.with-levels .support-card-birthday {
                     bottom: 18%;
+                }
+
+                .support-card-thumb.with-levels .support-card-birthday.thumbnail-with-levels {
+                    bottom: 8%;
+                    left: 7%;
+                    width : 20%;
                 }
 
                 .support-wl-badge {

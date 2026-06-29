@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { formatDuration } from '../utils/time';
 import RankingGraphModal from './RankingGraphModal';
+import EventShopSimulator from './EventShopSimulator';
 import { useTranslation } from '../contexts/LanguageContext';
 import { calculateScoreRange } from '../utils/calculator';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
@@ -178,9 +179,27 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [worldPass, setWorldPass] = useState(surveyData.worldPass || false);
   const [mySekaiScore, setMySekaiScore] = useState(surveyData.mySekaiScore || ''); // Default empty, used as 2500 if empty
   const [importMenuOpen, setImportMenuOpen] = useState(false);
+  const [isShopSimulatorOpen, setIsShopSimulatorOpen] = useState(false);
 
-  // Level Up Bonus State (토글은 항상 OFF로 시작, 나머지 값은 저장됨)
-  const [isLevelUpBonusEnabled, setIsLevelUpBonusEnabled] = useState(false);
+  useEffect(() => {
+    if (!isShopSimulatorOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setIsShopSimulatorOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isShopSimulatorOpen]);
+
+  // Level Up Bonus State
+  const [isLevelUpBonusEnabled, setIsLevelUpBonusEnabled] = useState(surveyData.isLevelUpBonusEnabled || false);
   const [currentLevel, setCurrentLevel] = useState(surveyData.fireCurrentLevel || '');
   const [remainingExp, setRemainingExp] = useState(surveyData.fireRemainingExp || '');
   const [liveRank, setLiveRank] = useState(surveyData.fireLiveRank || 'S');
@@ -649,11 +668,39 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
   const levelUpFireNeeded = calculateLevelUpFireNeeded();
 
+  const handleShopNaturalSettingsChange = (updates) => {
+    if (Object.prototype.hasOwnProperty.call(updates, 'currentNaturalFire')) {
+      setCurrentNaturalFire(updates.currentNaturalFire);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'challengeScore')) {
+      setChallengeScore(updates.challengeScore);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'mySekaiScore')) {
+      setMySekaiScore(updates.mySekaiScore);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'worldPass')) {
+      setWorldPass(updates.worldPass);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'isLevelUpBonusEnabled')) {
+      setIsLevelUpBonusEnabled(updates.isLevelUpBonusEnabled);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'currentLevel')) {
+      setCurrentLevel(updates.currentLevel);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'remainingExp')) {
+      setRemainingExp(updates.remainingExp);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'liveRank')) {
+      setLiveRank(updates.liveRank);
+    }
+  };
+
   useEffect(() => {
     const newSurveyData = {
       ...surveyData,
       score1, score2, score3, rounds1, firea, fires2,
       currentNaturalFire, challengeScore, worldPass, mySekaiScore,
+      isLevelUpBonusEnabled,
       fireCurrentLevel: currentLevel, fireRemainingExp: remainingExp, fireLiveRank: liveRank
     };
     setSurveyData(newSurveyData);
@@ -1664,6 +1711,23 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         </button>
       </div>
 
+      <div className="w-[85%] max-w-[260px] mx-auto mb-2">
+        <button
+          onClick={() => setIsShopSimulatorOpen(open => !open)}
+          className={`w-full border font-bold py-2 px-3 rounded-xl shadow-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${isShopSimulatorOpen
+              ? 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600'
+              : 'bg-white border-pink-100 text-pink-500 hover:bg-pink-50 hover:text-pink-600'
+            }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+            <path d="M3 6h18" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          <span className="text-xs leading-none">{t('fire.shop_simulator_button')}</span>
+        </button>
+      </div>
+
       {/* Natural Fire Input Box - New Blue Box */}
       {isNaturalFireOpen && (
         <div className="w-[85%] max-w-[260px] mx-auto mb-2 animate-fade-in">
@@ -2175,6 +2239,48 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         </div>
 
       </div>
+
+      {isShopSimulatorOpen && (
+        <div
+          className="fixed inset-0 z-[1000] bg-slate-900/35 backdrop-blur-[2px] flex items-start sm:items-center justify-center p-3 sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setIsShopSimulatorOpen(false);
+          }}
+        >
+          <div className="relative w-full max-w-4xl mt-10 sm:mt-0">
+            <button
+              type="button"
+              onClick={() => setIsShopSimulatorOpen(false)}
+              className="absolute -top-3 -right-2 sm:-top-4 sm:-right-4 z-10 w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-500 shadow-lg hover:text-pink-500 hover:border-pink-200 active:scale-95 transition-all flex items-center justify-center"
+              title={t('fire.shop_close')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+            <EventShopSimulator
+              eventInfo={eventInfo}
+              scorePerRoundMan={score3}
+              roundsPerInterval={rounds1}
+              currentFireOption={firea}
+              changedFireOption={fires2}
+              naturalSettings={{
+                currentNaturalFire,
+                challengeScore,
+                mySekaiScore,
+                worldPass,
+                isLevelUpBonusEnabled,
+                currentLevel,
+                remainingExp,
+                liveRank,
+              }}
+              onNaturalSettingsChange={handleShopNaturalSettingsChange}
+              onImport={handleImport}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Room Search Dropdown (Below Result) - Minimal Margin */}
       <div className={`w-[95%] sm:w-[90%] max-w-[340px] mx-auto flex justify-between mt-0.5 items-center gap-2`} ref={dropdownRef}>

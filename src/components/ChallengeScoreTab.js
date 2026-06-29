@@ -941,7 +941,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
             <div className="mt-6 text-center text-lg">
                 <span style={{ fontWeight: 'bold' }}>
-                    <a target="_blank" rel="noopener noreferrer" href={language === 'ko' ? "https://best.rilaksekai.com/card/theory/challenge" : "https://3-3.dev/sekai/top-deck"} className="text-blue-500 hover:underline">
+                    <a target="_blank" rel="noopener noreferrer" href={language === 'ko' ? "https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing/card/theory/challenge" : "https://3-3.dev/sekai/top-deck"} className="text-blue-500 hover:underline">
                         {t('challenge_score.theory_deck_link')}
                     </a>
                 </span>

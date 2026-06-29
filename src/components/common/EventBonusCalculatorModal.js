@@ -292,9 +292,40 @@ const getAreaPowerSummary = (slots, areaSettings) => {
         const charRankBonus = Math.min(Number.isFinite(charRank) ? charRank : 0, 50) * 0.1;
         const characterAreaPercent = Number(charSettings.area || 0);
         const furniturePercent = Number(charSettings.nui || 0);
-        const unitBonus = Number(areaSettings.units?.[unit] || 0) * (allSameUnit ? 2 : 1);
+        const isVsChar = charId >= 21;
+        const hasSubUnit = isVsChar && unit !== 'none';
+
+        let unitBonus;
+        let gateBonusPercent;
+
+        if (isVsChar) {
+            if (hasSubUnit) {
+                // 서브유닛 있는 버싱: 게이트는 서브유닛 게이트
+                const rawGate = Number(areaSettings.gates?.[unit] || 0);
+                gateBonusPercent = rawGate * GATE_LEVEL_POWER_BONUS;
+
+                // 유닛 에어리어: allSameUnit이면 항상 서브유닛 에어리어(×2), 아니면 max(버싱, 서브유닛)
+                const vsUnitRaw = Number(areaSettings.units?.['none'] || 0);
+                const subUnitRaw = Number(areaSettings.units?.[unit] || 0);
+                if (allSameUnit) {
+                    unitBonus = subUnitRaw * 2;
+                } else {
+                    unitBonus = Math.max(vsUnitRaw, subUnitRaw);
+                }
+            } else {
+                // 서브유닛 없는 버싱: 게이트는 전체 게이트 중 최댓값
+                const allGateValues = AREA_UNIT_OPTIONS.map(opt => Number(areaSettings.gates?.[opt.key] || 0));
+                const maxGate = Math.max(...allGateValues);
+                gateBonusPercent = maxGate * GATE_LEVEL_POWER_BONUS;
+
+                // 유닛 에어리어: 오직 버싱(none) 에어리어만
+                unitBonus = Number(areaSettings.units?.['none'] || 0) * (allSameUnit ? 2 : 1);
+            }
+        } else {
+            unitBonus = Number(areaSettings.units?.[unit] || 0) * (allSameUnit ? 2 : 1);
+            gateBonusPercent = Number(areaSettings.gates?.[unit] || 0) * GATE_LEVEL_POWER_BONUS;
+        }
         const attrBonus = Number(areaSettings.attrs?.[attr] || 0) * (allSameAttr ? 2 : 1);
-        const gateBonusPercent = Number(areaSettings.gates?.[unit] || 0) * GATE_LEVEL_POWER_BONUS;
         const areaItemPercent = characterAreaPercent + unitBonus + attrBonus;
         const areaPercent = areaItemPercent + charRankBonus + gateBonusPercent;
         const areaItemBonus = calculateAreaItemPowerBonus(basePower, characterAreaPercent, unitBonus, attrBonus);
@@ -518,6 +549,10 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
     const [activePreset, setActivePreset] = useState(() => {
         const saved = localStorage.getItem('ebc_active_preset');
         return saved ? Number(saved) : 1;
+    });
+    const [areaSnapshotExists, setAreaSnapshotExists] = useState(() => {
+        const activeNum = localStorage.getItem('ebc_active_area_preset') ? Number(localStorage.getItem('ebc_active_area_preset')) : 1;
+        return !!localStorage.getItem(`ebc_area_snapshot_${activeNum}`);
     });
     const [slots, setSlots] = useState(() => {
         const activeNum = localStorage.getItem('ebc_active_preset') ? Number(localStorage.getItem('ebc_active_preset')) : 1;
@@ -1052,6 +1087,28 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         }
     }, [areaSettings]);
 
+    const untouchedElements = useMemo(() => {
+        const untouched = [];
+        try {
+            if (Object.values(areaSettings.units || {}).every(v => Number(v) === DEFAULT_AREA_VALUES.unit)) untouched.push(t('support.unit') || '유닛');
+            if (Object.values(areaSettings.attrs || {}).every(v => Number(v) === DEFAULT_AREA_VALUES.attr)) untouched.push(t('support.type') || '타입');
+            if (Object.values(areaSettings.gates || {}).every(v => Number(v) === DEFAULT_AREA_VALUES.gate)) untouched.push(t('support.gate') || '게이트');
+            
+            let characterAreaUntouched = true;
+            let characterNuiUntouched = true;
+            for (const charId of Object.keys(areaSettings.characters || {})) {
+                const charS = areaSettings.characters[charId] || {};
+                if (Number(charS.area) !== DEFAULT_AREA_VALUES.characterArea) characterAreaUntouched = false;
+                if (Number(charS.nui) !== DEFAULT_AREA_VALUES.characterNui) characterNuiUntouched = false;
+            }
+            if (characterAreaUntouched) untouched.push(t('support.character') || '캐릭터');
+            if (characterNuiUntouched) untouched.push(t('support.nui') || '누이');
+        } catch (e) {
+            console.error(e);
+        }
+        return untouched;
+    }, [areaSettings, t]);
+
     const powerDetailRows = useMemo(() => {
         return [
             { label: t('support.base_power') || '퍼포먼스', value: powerSummary.basePower || 0 },
@@ -1502,37 +1559,96 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                         <button type="button" onClick={() => setIsSaveModalOpen(true)} className="ebc-btn-save">{t('app.save') || '저장'}</button>
                                         <button type="button" onClick={() => { setLoadJsonText(''); setIsLoadModalOpen(true); }} className="ebc-btn-load">{t('app.load') || '불러오기'}</button>
                                     </div>
-                                    <div className="ebc-toolbar-presets" style={{ margin: 0 }}>
-                                        {[1, 2, 3].map(presetNum => {
-                                            const isActive = activeAreaPreset === presetNum;
-                                            return (
-                                                <button
-                                                    type="button"
-                                                    key={presetNum}
-                                                    className={`ebc-preset-load-btn ${isActive ? 'active' : ''}`}
-                                                    onClick={() => handleAreaPresetClick(presetNum)}
-                                                    title={`${t('support.area_preset') || '에어리어 프리셋'} ${presetNum}`}
-                                                >
-                                                    P{presetNum}
-                                                </button>
-                                            );
-                                        })}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <div className="ebc-toolbar-presets" style={{ margin: 0 }}>
+                                            {[1, 2, 3].map(presetNum => {
+                                                const isActive = activeAreaPreset === presetNum;
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={presetNum}
+                                                        className={`ebc-preset-load-btn ${isActive ? 'active' : ''}`}
+                                                        onClick={() => {
+                                                            handleAreaPresetClick(presetNum);
+                                                            setAreaSnapshotExists(!!localStorage.getItem(`ebc_area_snapshot_${presetNum}`));
+                                                        }}
+                                                        title={`${t('support.area_preset') || '에어리어 프리셋'} ${presetNum}`}
+                                                    >
+                                                        P{presetNum}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="ebc-toolbar-snapshot mobile-only">
+                                            <button
+                                                type="button"
+                                                className="ebc-snapshot-save-btn"
+                                                onClick={() => {
+                                                    localStorage.setItem(`ebc_area_snapshot_${activeAreaPreset}`, JSON.stringify(areaSettings));
+                                                    setAreaSnapshotExists(true);
+                                                    window.dispatchEvent(new CustomEvent('show-toast', { detail: `P${activeAreaPreset} ${t('support.snapshot_saved') || '임시저장 완료'}` }));
+                                                }}
+                                            >
+                                                {t('support.snapshot_save') || '임시저장'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`ebc-snapshot-load-btn ${!areaSnapshotExists ? 'disabled' : ''}`}
+                                                disabled={!areaSnapshotExists}
+                                                onClick={() => {
+                                                    const snap = localStorage.getItem(`ebc_area_snapshot_${activeAreaPreset}`);
+                                                    if (snap) {
+                                                        try { setAreaSettings(mergeAreaSettings(JSON.parse(snap))); } catch(e) {}
+                                                    }
+                                                }}
+                                            >
+                                                {t('support.snapshot_load') || '불러오기'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="ebc-title-power-editor">
-                                    <span>{t('support.title_bonus') || '칭호 보너스'}</span>
-                                    <label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="1"
-                                            value={areaSettings.titlePower ?? ''}
-                                            onChange={(e) => updateTitlePower(e.target.value)}
-                                            onFocus={(e) => e.target.select()}
-                                            aria-label={`${t('support.title_bonus')} ${t('support.total_power')}`}
-                                        />
-                                        <b>{t('support.total_power') || '종합력'}</b>
-                                    </label>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                    <div className="ebc-title-power-editor">
+                                        <span>{t('support.title_bonus') || '칭호 보너스'}</span>
+                                        <label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                value={areaSettings.titlePower ?? ''}
+                                                onChange={(e) => updateTitlePower(e.target.value)}
+                                                onFocus={(e) => e.target.select()}
+                                                aria-label={`${t('support.title_bonus')} ${t('support.total_power')}`}
+                                            />
+                                            <b>{t('support.total_power') || '종합력'}</b>
+                                        </label>
+                                    </div>
+                                    <div className="ebc-toolbar-snapshot pc-only">
+                                        <button
+                                            type="button"
+                                            className="ebc-snapshot-save-btn"
+                                            onClick={() => {
+                                                localStorage.setItem(`ebc_area_snapshot_${activeAreaPreset}`, JSON.stringify(areaSettings));
+                                                setAreaSnapshotExists(true);
+                                                window.dispatchEvent(new CustomEvent('show-toast', { detail: `P${activeAreaPreset} ${t('support.snapshot_saved') || '임시저장 완료'}` }));
+                                            }}
+                                        >
+                                            {t('support.snapshot_save') || '임시저장'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`ebc-snapshot-load-btn ${!areaSnapshotExists ? 'disabled' : ''}`}
+                                            disabled={!areaSnapshotExists}
+                                            onClick={() => {
+                                                const snap = localStorage.getItem(`ebc_area_snapshot_${activeAreaPreset}`);
+                                                if (snap) {
+                                                    try { setAreaSettings(mergeAreaSettings(JSON.parse(snap))); } catch(e) {}
+                                                }
+                                            }}
+                                        >
+                                            {t('support.snapshot_load') || '불러오기'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1613,17 +1729,35 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                             </section>
 
                             <section className="ebc-area-game-section">
-                                <div className="ebc-area-game-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                        <button type="button" className={`ebc-char-tab ${activeCharTab === 'area' ? 'active' : ''}`} onClick={() => setActiveCharTab('area')}>{t('support.area') || '에어리어'}</button>
-                                        <button type="button" className={`ebc-char-tab ${activeCharTab === 'nui' ? 'active' : ''}`} onClick={() => setActiveCharTab('nui')}>{t('support.nui') || '누이'}</button>
-                                        <button type="button" className={`ebc-char-tab ${activeCharTab === 'rank' ? 'active' : ''}`} onClick={() => setActiveCharTab('rank')}>{t('support.character_rank_short') || '캐랭'}</button>
-                                    </div>
-                                    {nuiStats && (
-                                        <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: 'bold' }}>
-                                            현재 누이 {nuiStats.min === nuiStats.max ? `${nuiStats.min}세트` : `${nuiStats.min}~${nuiStats.max}세트`}
-                                        </span>
+                                <div className="ebc-area-game-title" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch' }}>
+                                    {untouchedElements.length > 0 && (
+                                        <div className="mobile-only" style={{ textAlign: 'left' }}>
+                                            <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: 'bold' }}>{untouchedElements.join(', ')}</span>
+                                            <span style={{ fontSize: '13px', color: '#f87171', fontWeight: '600' }}>{t('support.input_prompt') || ' 정보를 입력하세요'}</span>
+                                        </div>
                                     )}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'area' ? 'active' : ''}`} onClick={() => setActiveCharTab('area')}>{t('support.area') || '에어리어'}</button>
+                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'nui' ? 'active' : ''}`} onClick={() => setActiveCharTab('nui')}>{t('support.nui') || '누이'}</button>
+                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'rank' ? 'active' : ''}`} onClick={() => setActiveCharTab('rank')}>{t('support.character_rank_short') || '캐랭'}</button>
+                                            {untouchedElements.length > 0 && (
+                                                <div className="pc-only" style={{ marginLeft: '4px' }}>
+                                                    <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: 'bold' }}>{untouchedElements.join(', ')}</span>
+                                                    <span style={{ fontSize: '13px', color: '#f87171', fontWeight: '600' }}>{t('support.input_prompt') || ' 정보를 입력하세요'}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {nuiStats && (
+                                                <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: 'bold' }}>
+                                                    {nuiStats.min === nuiStats.max
+                                                        ? (t('support.current_nui_single') || '현재 누이 {{val}}세트').replace('{{val}}', nuiStats.min)
+                                                        : (t('support.current_nui') || '현재 누이 {{min}}~{{max}}세트').replace('{{min}}', nuiStats.min).replace('{{max}}', nuiStats.max)}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="ebc-area-character-grid">
                                     {SUPPORT_CHARACTERS.map(character => {
@@ -1784,17 +1918,35 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                 </section>
 
                                 <section className="ebc-area-game-section">
-                                    <div className="ebc-area-game-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'area' ? 'active' : ''}`} onClick={() => setActiveCharTab('area')}>{t('support.area') || '에어리어'}</button>
-                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'nui' ? 'active' : ''}`} onClick={() => setActiveCharTab('nui')}>{t('support.nui') || '누이'}</button>
-                                            <button type="button" className={`ebc-char-tab ${activeCharTab === 'rank' ? 'active' : ''}`} onClick={() => setActiveCharTab('rank')}>{t('support.character_rank_short') || '캐랭'}</button>
-                                        </div>
-                                        {nuiStats && (
-                                            <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: 'bold' }}>
-                                                현재 누이 {nuiStats.min === nuiStats.max ? `${nuiStats.min}세트` : `${nuiStats.min}~${nuiStats.max}세트`}
-                                            </span>
+                                    <div className="ebc-area-game-title" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch' }}>
+                                        {untouchedElements.length > 0 && (
+                                            <div className="mobile-only" style={{ textAlign: 'left' }}>
+                                                <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: 'bold' }}>{untouchedElements.join(', ')}</span>
+                                                <span style={{ fontSize: '13px', color: '#f87171', fontWeight: '600' }}>{t('support.input_prompt') || ' 정보를 입력하세요'}</span>
+                                            </div>
                                         )}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <button type="button" className={`ebc-char-tab ${activeCharTab === 'area' ? 'active' : ''}`} onClick={() => setActiveCharTab('area')}>{t('support.area') || '에어리어'}</button>
+                                                <button type="button" className={`ebc-char-tab ${activeCharTab === 'nui' ? 'active' : ''}`} onClick={() => setActiveCharTab('nui')}>{t('support.nui') || '누이'}</button>
+                                                <button type="button" className={`ebc-char-tab ${activeCharTab === 'rank' ? 'active' : ''}`} onClick={() => setActiveCharTab('rank')}>{t('support.character_rank_short') || '캐랭'}</button>
+                                                {untouchedElements.length > 0 && (
+                                                    <div className="pc-only" style={{ marginLeft: '4px' }}>
+                                                        <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: 'bold' }}>{untouchedElements.join(', ')}</span>
+                                                        <span style={{ fontSize: '13px', color: '#f87171', fontWeight: '600' }}>{t('support.input_prompt') || ' 정보를 입력하세요'}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                {nuiStats && (
+                                                    <span style={{ fontSize: '13px', color: '#6366f1', fontWeight: 'bold' }}>
+                                                        {nuiStats.min === nuiStats.max
+                                                            ? (t('support.current_nui_single') || '현재 누이 {{val}}세트').replace('{{val}}', nuiStats.min)
+                                                            : (t('support.current_nui') || '현재 누이 {{min}}~{{max}}세트').replace('{{min}}', nuiStats.min).replace('{{max}}', nuiStats.max)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="ebc-area-character-grid" style={{ gridTemplateColumns: '1fr' }}>
                                         <div className="ebc-area-character-pill">
@@ -2823,6 +2975,52 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     background: #fee2e2;
                     border-color: #fca5a5;
                 }
+                .ebc-toolbar-snapshot.mobile-only {
+                    display: none;
+                }
+                .ebc-toolbar-snapshot.pc-only {
+                    display: flex;
+                }
+                .ebc-toolbar-snapshot {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                }
+                .ebc-snapshot-save-btn {
+                    background: #f0fdf4;
+                    color: #16a34a;
+                    border: 1px solid #bbf7d0;
+                    border-radius: 6px;
+                    padding: 5px 12px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+                .ebc-snapshot-save-btn:hover {
+                    background: #dcfce7;
+                    border-color: #86efac;
+                }
+                .ebc-snapshot-load-btn {
+                    background: #eff6ff;
+                    color: #2563eb;
+                    border: 1px solid #bfdbfe;
+                    border-radius: 6px;
+                    padding: 5px 12px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+                .ebc-snapshot-load-btn:hover:not(:disabled) {
+                    background: #dbeafe;
+                    border-color: #93c5fd;
+                }
+                .ebc-snapshot-load-btn:disabled,
+                .ebc-snapshot-load-btn.disabled {
+                    opacity: 0.4;
+                    cursor: not-allowed;
+                }
                 .ebc-deck-grid {
                     display: grid;
                     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -3076,6 +3274,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     .ebc-canvas-toggle { font-size: 9px; }
                     .ebc-slot-power-row .ebc-slot-base-power { font-size: 10px; padding: 0 5px; }
                     .ebc-breakdown { font-size: 8px; }
+                    .ebc-toolbar-snapshot.pc-only { display: none !important; }
+                    .ebc-toolbar-snapshot.mobile-only { display: flex !important; }
                     .ebc-prefix-label.hide-on-mobile { display: none; }
                     .lang-ja .ebc-slot-header { font-size: 9px; }
                     .lang-ja .ebc-toggle { font-size: 8px; letter-spacing: -1px; }

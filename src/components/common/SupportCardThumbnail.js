@@ -67,7 +67,7 @@ const SupportCardThumbnail = ({
     const isBirthday = card.type === 'Birthday' || card.type === 'Anniversary';
     const isLowRarity = rarity > 0 && rarity <= 2;
     const frameName = isBirthday ? 'cardFrame_bd.webp' : isLowRarity ? 'frame_2star.webp' : 'Frame.webp';
-    const starName = isBirthday ? 'rairity_birth.webp' : 'afterstar.webp';
+    const starName = isBirthday ? 'rairity_birth.webp' : isLowRarity ? 'star_normal.webp' : 'afterstar.webp';
     const attrName = (card.attr || card.attribute || '').toLowerCase() || 'pure';
 
     const normalizedMasterRank = Math.max(0, Math.min(5, Number(masterRank) || 0));
@@ -88,9 +88,9 @@ const SupportCardThumbnail = ({
             />
             <img className="support-card-frame" src={`${publicUrl}/assets/card_style/${frameName}`} alt="" />
             <img className="support-card-attribute" src={`${publicUrl}/assets/card_style/${attrName}.webp`} alt="" />
-            {isBirthday && <img className="support-card-birthday" src={`${publicUrl}/assets/card_style/${starName}`} alt="" />}
+            {isBirthday && <img className={`support-card-birthday${showLevels ? ' thumbnail-with-levels' : ''}`} src={`${publicUrl}/assets/card_style/${starName}`} alt="" />}
             {!isBirthday && rarity > 0 && (
-                <div className="support-card-stars">
+                <div className={`support-card-stars${showLevels ? ' thumbnail-with-levels' : ''}`}>
                     {Array.from({ length: rarity }).map((_, i) => (
                         <img key={i} src={`${publicUrl}/assets/card_style/${starName}`} alt="" />
                     ))}

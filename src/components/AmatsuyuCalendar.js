@@ -1,10 +1,10 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { characterBirthdays } from '../data/characterBirthdays';
-import eventExchangeEndTimes from '../data/eventExchangeEndTimes.json';
 import { useTranslation } from '../contexts/LanguageContext';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const EVENT_EXCHANGE_SUMMARIES_URL = 'https://asset.rilaksekai.com/suite/eventExchangeSummaries.json';
 
 const normalizeTimestampMs = (value) => {
     const timestamp = Number(value);
@@ -19,8 +19,8 @@ const getDateKey = (date) => {
     return `${year}-${month}-${day}`;
 };
 
-const NO_EVENT_DATE_KEYS = new Set(
-    eventExchangeEndTimes
+const buildNoEventDateKeys = (eventExchangeSummaries) => new Set(
+    (Array.isArray(eventExchangeSummaries) ? eventExchangeSummaries : [])
         .map(summary => {
             const endMs = normalizeTimestampMs(summary?.endAt);
             if (!endMs) return null;
@@ -68,9 +68,9 @@ const isBrightColor = (color) => {
     return ['#ffee11', '#ffcc11', '#ffdd43', '#ffbb00', '#ffccaa', '#99eedd', '#ddaacc'].includes(color.toLowerCase());
 };
 
-const isNoEventDate = (date) => date && NO_EVENT_DATE_KEYS.has(getDateKey(date));
+const isNoEventDate = (date, noEventDateKeys) => date && noEventDateKeys.has(getDateKey(date));
 
-const MonthView = ({ year, month, index, setRef, language }) => {
+const MonthView = ({ year, month, index, setRef, language, noEventDateKeys }) => {
     const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
     const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
 
@@ -244,7 +244,7 @@ const MonthView = ({ year, month, index, setRef, language }) => {
     };
 
     const renderNoEventMark = (date) => {
-        if (!isNoEventDate(date)) return null;
+        if (!isNoEventDate(date, noEventDateKeys)) return null;
 
         return (
             <div className="absolute inset-1.5 pointer-events-none z-[6]">
@@ -297,6 +297,7 @@ const AmatsuyuCalendar = ({ onClose }) => {
     const { t, language } = useTranslation();
     const [currentDate] = useState(new Date());
     const [displayDate, setDisplayDate] = useState({ year: currentDate.getFullYear(), month: currentDate.getMonth() });
+    const [noEventDateKeys, setNoEventDateKeys] = useState(() => new Set());
 
     const containerRef = useRef(null);
     const monthRefs = useRef([]);
@@ -352,6 +353,34 @@ const AmatsuyuCalendar = ({ onClose }) => {
         handleScroll();
     }, [handleScroll]);
 
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadNoEventDates = async () => {
+            try {
+                const response = await fetch(EVENT_EXCHANGE_SUMMARIES_URL, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch event exchange summaries: ${response.status}`);
+                }
+                const eventExchangeSummaries = await response.json();
+                if (isMounted) {
+                    setNoEventDateKeys(buildNoEventDateKeys(eventExchangeSummaries));
+                }
+            } catch (error) {
+                console.warn('Failed to load no-event dates for Amatsuyu calendar:', error);
+                if (isMounted) {
+                    setNoEventDateKeys(new Set());
+                }
+            }
+        };
+
+        loadNoEventDates();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
             <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm flex flex-col h-[600px] max-h-[80vh] overflow-hidden relative font-sans" onClick={e => e.stopPropagation()}>
@@ -406,6 +435,7 @@ const AmatsuyuCalendar = ({ onClose }) => {
                             language={language}
                             index={idx}
                             setRef={setMonthRef}
+                            noEventDateKeys={noEventDateKeys}
                         />
                     ))}
                     <div className="h-20"></div>

@@ -125,6 +125,7 @@ function normalizeSong(apiSong) {
         mv: mv,
         unit: apiSong.unit_code || apiSong.unit,
         levels: apiSong.levels || {},
+        release_date: apiSong.release_date,
     };
 }
 

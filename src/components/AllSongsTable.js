@@ -107,7 +107,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
             // Sort by Max EP desc, then length asc to ensure best songs are at the top
             const efficiencySorted = [...finalResults].sort((a, b) => {
                 if (b.maxEP !== a.maxEP) return b.maxEP - a.maxEP;
-                return a.length - b.length;
+                return (a.length || Infinity) - (b.length || Infinity);
             });
 
             const topEfficiencyLimit = [];
@@ -115,14 +115,22 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
 
             for (const song of efficiencySorted) {
                 // If this song is at least as fast (or faster) than anything we've seen before, keep it
-                if (song.length <= currentMinLength) {
+                const sLen = song.length || Infinity;
+                if (sLen <= currentMinLength) {
                     topEfficiencyLimit.push(song);
-                    currentMinLength = song.length; // Update the min length threshold
+                    currentMinLength = sLen; // Update the min length threshold
                 }
             }
 
             // Re-apply current sorting requested by user (if they still want to sort by length instead of default maxEP)
             topEfficiencyLimit.sort((a, b) => {
+                if (sortKey === 'release_date') {
+                    const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
+                    const dateB = b.release_date ? new Date(b.release_date).getTime() : 0;
+                    if (sortOrder === 'desc') return dateB - dateA;
+                    return dateA - dateB;
+                }
+
                 if (sortKey === 'rank') {
                     const rankToNum = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
                     const rankA = rankToNum[a.minRank] || -1;
@@ -134,8 +142,8 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
                     return sortOrder === 'desc' ? b.rankGap - a.rankGap : a.rankGap - b.rankGap;
                 }
 
-                let valA = sortKey === 'length' ? a.length : a.maxEP;
-                let valB = sortKey === 'length' ? b.length : b.maxEP;
+                let valA = sortKey === 'length' ? (a.length || Infinity) : a.maxEP;
+                let valB = sortKey === 'length' ? (b.length || Infinity) : b.maxEP;
 
                 if (sortOrder === 'desc') return valB - valA;
                 return valA - valB;
@@ -215,8 +223,6 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
             : [targetDifficulty];
 
         songOptions.forEach(song => {
-            if (!song.length || song.length === 0) return; // Skip songs with 0 length
-
             const songResults = [];
 
             diffsToCheck.forEach(diff => {
@@ -323,6 +329,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
                     length: song.length,
                     mv: song.mv,
                     unit: song.unit, // Pass unit info
+                    release_date: song.release_date,
                     searchText: [
                         song.name,
                         song.title_jp,
@@ -349,6 +356,13 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
 
     const sortResults = (data, key, order) => {
         const sorted = [...data].sort((a, b) => {
+            if (key === 'release_date') {
+                const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
+                const dateB = b.release_date ? new Date(b.release_date).getTime() : 0;
+                if (order === 'desc') return dateB - dateA;
+                return dateA - dateB;
+            }
+
             if (key === 'rank') {
                 // Ranks are S, A, B, C, D (S is best/highest value logically).
                 // We'll map them to numeric values for easy comparison. Null/Undefined = -1.
@@ -366,8 +380,8 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
                 return a.rankGap - b.rankGap;
             }
 
-            let valA = key === 'length' ? a.length : a.maxEP;
-            let valB = key === 'length' ? b.length : b.maxEP;
+            let valA = key === 'length' ? (a.length || Infinity) : a.maxEP;
+            let valB = key === 'length' ? (b.length || Infinity) : b.maxEP;
 
             if (order === 'desc') return valB - valA;
             return valA - valB;
@@ -559,6 +573,20 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
                                     {t('auto.hide_inefficient')}
                                 </button>
                             )}
+                            <button
+                                onClick={() => handleSortToggle('release_date')}
+                                className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] md:text-xs font-bold transition-all whitespace-nowrap border ${sortKey === 'release_date'
+                                    ? 'bg-indigo-50 text-indigo-600 border-indigo-200 shadow-sm'
+                                    : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {language === 'ko' ? '출시순' : (language === 'ja' ? 'リリース順' : 'Release')}
+                                {sortKey === 'release_date' && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                )}
+                            </button>
                         </div>
                     </div>
 
