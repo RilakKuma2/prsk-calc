@@ -3,6 +3,8 @@
  * 친구코드로 덱 데이터를 불러오고 파싱하는 로직 모듈
  */
 
+import { API_BASE_URL, SUITE_ASSET_BASE_URL, joinUrl } from '../config/env';
+
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
 const CHAR_NAME_TO_ID = {
@@ -41,12 +43,12 @@ function charIdToUnit(cid) {
  */
 export async function fetchDeckAssets() {
     const [cardsRes, skillsRes, eventsRes, eventBonusesRes, gcUnitsRes, eventCardsRes] = await Promise.all([
-        fetch('https://api.rilaksekai.com/api/cards'),
-        fetch('https://asset.rilaksekai.com/suite/skills.json'),
-        fetch('https://asset.rilaksekai.com/suite/events.json'),
-        fetch('https://asset.rilaksekai.com/suite/eventDeckBonuses.json'),
-        fetch('https://asset.rilaksekai.com/suite/gameCharacterUnits.json'),
-        fetch('https://asset.rilaksekai.com/suite/eventCards.json').catch(() => null)
+        fetch(joinUrl(API_BASE_URL, 'api/cards')),
+        fetch(joinUrl(SUITE_ASSET_BASE_URL, 'skills.json')),
+        fetch(joinUrl(SUITE_ASSET_BASE_URL, 'events.json')),
+        fetch(joinUrl(SUITE_ASSET_BASE_URL, 'eventDeckBonuses.json')),
+        fetch(joinUrl(SUITE_ASSET_BASE_URL, 'gameCharacterUnits.json')),
+        fetch(joinUrl(SUITE_ASSET_BASE_URL, 'eventCards.json')).catch(() => null)
     ]);
 
     if (!cardsRes.ok || !skillsRes.ok || !eventsRes.ok || !eventBonusesRes.ok || !gcUnitsRes.ok) {
@@ -66,13 +68,13 @@ export async function fetchDeckAssets() {
 
     let eventRarityBonusRates = [];
     try {
-        const errRes = await fetch('https://asset.rilaksekai.com/suite/eventRarityBonusRates.json');
+        const errRes = await fetch(joinUrl(SUITE_ASSET_BASE_URL, 'eventRarityBonusRates.json'));
         if (errRes.ok) eventRarityBonusRates = await errRes.json();
     } catch (e) { /* fallback to hardcoded */ }
 
     let worldBloomDifferentAttributeBonuses = [];
     try {
-        const wbRes = await fetch('https://asset.rilaksekai.com/suite/worldBloomDifferentAttributeBonuses.json');
+        const wbRes = await fetch(joinUrl(SUITE_ASSET_BASE_URL, 'worldBloomDifferentAttributeBonuses.json'));
         if (wbRes.ok) worldBloomDifferentAttributeBonuses = await wbRes.json();
     } catch (e) { /* fallback */ }
 

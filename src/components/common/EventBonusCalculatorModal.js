@@ -8,6 +8,7 @@ import {
     EVENT_ATTRS, EVENT_UNITS, ORIGINAL_CHAR_UNIT, VS_CHAR_IDS,
     DEFAULT_AUTO_EVENT_OVERRIDE, loadAutoEventOverride
 } from '../../utils/eventInfoUtils';
+import { API_BASE_URL, ASSET_BASE_URL, SUITE_ASSET_BASE_URL, joinUrl } from '../../config/env';
 
 export const DEFAULT_AREA_VALUES = {
     unit: 10,
@@ -19,7 +20,7 @@ export const DEFAULT_AREA_VALUES = {
     characterNui: 0,
 };
 
-const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
+const CARD_API_URL = joinUrl(API_BASE_URL, 'api/cards');
 const MASTER_RANK_OPTIONS = [0, 1, 2, 3, 4, 5];
 const MAIN_DECK_SLOT_COUNT = 5;
 const getCanvasPowerBonus = (card) => {
@@ -495,8 +496,8 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, skillT
     const attrName = card ? (card.attr || card.cardAttr || card.attribute || 'pure').toLowerCase() : null;
 
     const faceUrl = card
-        ? `https://asset.rilaksekai.com/face/res0${String(getCardCharacterId(card) || 1).padStart(2, '0')}_no${String(card?.card_image_id || '001').padStart(3, '0')}_${suffix}.webp`
-        : `https://asset.rilaksekai.com/face/res0${String(previewCharId).padStart(2, '0')}_no001_${suffix}.webp`;
+        ? joinUrl(ASSET_BASE_URL, `face/res0${String(getCardCharacterId(card) || 1).padStart(2, '0')}_no${String(card?.card_image_id || '001').padStart(3, '0')}_${suffix}.webp`)
+        : joinUrl(ASSET_BASE_URL, `face/res0${String(previewCharId).padStart(2, '0')}_no001_${suffix}.webp`);
 
     return (
         <div className={`ebc-preview-card ${rarityKey ? '' : 'empty'}`}>
@@ -505,7 +506,7 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, skillT
                 src={faceUrl}
                 alt=""
                 onError={(e) => {
-                    e.target.src = `https://asset.rilaksekai.com/face/res021_no001_normal.webp`;
+                    e.target.src = joinUrl(ASSET_BASE_URL, 'face/res021_no001_normal.webp');
                 }}
             />
             <img className="ebc-card-frame" src={`${publicUrl}/assets/card_style/${frameName}`} alt="" />
@@ -664,7 +665,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
     useEffect(() => {
         let mounted = true;
-        fetch('https://asset.rilaksekai.com/suite/mysekaiFixtures.json', { cache: 'no-cache' })
+        fetch(joinUrl(SUITE_ASSET_BASE_URL, 'mysekaiFixtures.json'), { cache: 'no-cache' })
             .then(res => res.json())
             .then(fixtures => {
                 if (!mounted) return;

@@ -6,8 +6,10 @@
  * 파싱 로직의 백업은 deckLoader_bak.js를 참고하세요.
  */
 
-const WORKER_API = "https://papi.rilaksekai.com/api";
-const FALLBACK_WORKER_API = "https://api2.rilaksekai.com/api";
+import { DECK_FALLBACK_WORKER_API_URL, DECK_WORKER_API_URL } from '../config/env';
+
+const WORKER_API = DECK_WORKER_API_URL;
+const FALLBACK_WORKER_API = DECK_FALLBACK_WORKER_API_URL;
 
 // 오류코드:
 // D01 = 서버 응답이 정상 HTTP 상태가 아님

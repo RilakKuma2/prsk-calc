@@ -3,6 +3,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { characterBirthdays } from '../data/characterBirthdays';
 import playerLevelData from '../data/player_levels.json';
 import { getCardCharacterId as getSupportCardCharacterId } from '../utils/supportCardUtils';
+import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
 
 const findPlayerLevelInfo = (level) => playerLevelData.find(d => {
   if (d.range === String(level)) return true;
@@ -20,7 +21,6 @@ const getLiveRankExpBonus = (rank) => {
   return 1600;
 };
 
-const ASSET_BASE_URL = 'https://asset.rilaksekai.com';
 const SUITE_BASE_URL = `${ASSET_BASE_URL}/suite`;
 const THUMBNAIL_BASE_URL = `${ASSET_BASE_URL}/thumbnail`;
 const EVENT_EXCHANGE_SUMMARIES_URL = `${SUITE_BASE_URL}/eventExchangeSummaries.json`;
@@ -32,7 +32,7 @@ const PRACTICE_TICKETS_URL = `${SUITE_BASE_URL}/practiceTickets.json`;
 const SKILL_PRACTICE_TICKETS_URL = `${SUITE_BASE_URL}/skillPracticeTickets.json`;
 const BOOST_ITEMS_URL = `${SUITE_BASE_URL}/boostItems.json`;
 const GAME_CHARACTERS_URL = `${SUITE_BASE_URL}/gameCharacters.json`;
-const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
+const CARD_API_URL = joinUrl(API_BASE_URL, 'api/cards');
 
 const SHOP_STATE_STORAGE_KEY = 'prskEventShopSimulatorStateV1';
 const SHOP_PRESETS_STORAGE_KEY = 'prskEventShopSimulatorPresetsV1';

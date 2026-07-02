@@ -1,6 +1,6 @@
 {
   "name": "proseka-calculator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "AGPL-3.0",
   "private": true,
   "homepage": "https://rilaksekai.com/",
@@ -50,6 +50,9 @@
     ]
   },
   "devDependencies": {
-    "gh-pages": "^6.3.0"
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "gh-pages": "^6.3.0",
+    "typescript": "^4.9.5"
   }
 }

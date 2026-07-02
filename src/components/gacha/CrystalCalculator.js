@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { BASIC_PASS_REWARDS, PREMIUM_PASS_REWARDS } from '../../data/passRewards'; // Import data
 import { InputTableWrapper, InputRow } from '../common/InputComponents';
+import { API_BASE_URL, joinUrl } from '../../config/env';
 
 const CrystalCalculator = ({ surveyData, setSurveyData }) => {
     const { t } = useTranslation();
@@ -66,7 +67,7 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
     useEffect(() => {
         const fetchEventData = async () => {
             try {
-                const response = await fetch('https://api.rilaksekai.com/api/ranking', { cache: 'reload' });
+                const response = await fetch(joinUrl(API_BASE_URL, 'api/ranking'), { cache: 'reload' });
                 const data = await response.json();
                 if (data && data.latest_event) {
                     setEventData(data.latest_event);

@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
+import {
+    DISCORD_CLIENT_ID,
+    NOTIFICATION_WORKER_URL,
+    TELEGRAM_BOT_USERNAME,
+    VAPID_PUBLIC_KEY
+} from '../config/env';
 
 const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
     const { t, language } = useTranslation();
     const [localSettings, setLocalSettings] = useState(settings);
     const [activeTab, setActiveTab] = useState('web'); // web, discord, telegram
 
-    // VAPID Public Key
-    const VAPID_PUBLIC_KEY = process.env.REACT_APP_VAPID_PUBLIC_KEY;
-    const WORKER_URL = process.env.REACT_APP_WORKER_URL;
-
-    // Discord Client ID
-    const DISCORD_CLIENT_ID = process.env.REACT_APP_DISCORD_CLIENT_ID;
-
-    // Telegram Bot Username
-    const TELEGRAM_BOT_USERNAME = process.env.REACT_APP_TELEGRAM_BOT_USERNAME || 'prsk_bd_bot';
+    const WORKER_URL = NOTIFICATION_WORKER_URL;
 
     function urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -287,7 +285,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
 
                                             // 1. Open Popup
                                             const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
-                                            const popup = window.open(
+                                            window.open(
                                                 `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(cleanUrl + '/auth/discord/callback')}&response_type=code&scope=webhook.incoming%20bot%20applications.commands`,
                                                 'Discord Auth',
                                                 `width=${width},height=${height},top=${top},left=${left}`

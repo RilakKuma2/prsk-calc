@@ -1004,3 +1004,186 @@ select {
     font-size: 14px;
     font-weight: 800;
 }
+.calc-account-menu {
+  position: absolute;
+  z-index: 70;
+  top: 24px;
+  left: 24px;
+}
+
+.calc-account-toggle {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #475569;
+  background: rgba(255, 255, 255, 0.94);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.calc-account-toggle::after {
+  content: '';
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+}
+
+.calc-account-toggle.logged-out {
+  color: #64748b;
+  border-color: #e2e8f0;
+  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.16);
+}
+
+.calc-account-toggle.logged-out::after {
+  background: #94a3b8;
+}
+
+.calc-account-toggle.logged-in {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.24);
+  background: linear-gradient(145deg, #0f766e, #0f172a);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.3);
+}
+
+.calc-account-toggle.logged-in::after {
+  background: #22c55e;
+}
+
+.calc-account-toggle:hover,
+.calc-account-toggle.active {
+  transform: translateY(-1px);
+}
+
+.calc-account-toggle.logged-out:hover,
+.calc-account-toggle.logged-out.active {
+  color: #334155;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.calc-account-toggle.logged-in:hover,
+.calc-account-toggle.logged-in.active {
+  color: #fff;
+  background: linear-gradient(145deg, #115e59, #020617);
+}
+
+.calc-account-toggle > svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.calc-account-lang-badge {
+  position: absolute;
+  right: -10px;
+  bottom: -6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 5px 2px 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  color: #64748b;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.calc-account-lang-badge svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.calc-account-lang-text {
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.calc-account-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(320px, calc(100vw - 32px));
+  padding: 10px;
+  box-sizing: border-box;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 50px rgba(30, 32, 48, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.calc-account-title {
+  padding: 5px 8px 9px;
+  color: #999;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.calc-language-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0 4px 6px;
+}
+
+.calc-language-options button {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+  color: #64748b;
+  background: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.calc-language-options button:hover {
+  color: #334155;
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.calc-language-options button.active {
+  color: #fff;
+  border-color: #0f766e;
+  background: linear-gradient(145deg, #0f766e, #0f172a);
+}
+
+.calc-account-divider {
+  height: 1px;
+  margin: 6px 4px 8px;
+  background: #e5e7eb;
+}
+
+@media (max-width: 600px) {
+  .calc-account-menu {
+    top: 20px;
+    left: 16px;
+  }
+
+  .calc-account-popover {
+    width: min(320px, calc(100vw - 32px));
+  }
+}

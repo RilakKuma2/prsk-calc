@@ -1,3 +1,5 @@
+import { API_BASE_URL, SUITE_ASSET_BASE_URL, joinUrl } from '../config/env';
+
 export const EVENT_ATTRS = [
     { key: 'cool', label: '쿨', file: 'cool.webp', color: 'bg-blue-50 border-blue-200' },
     { key: 'pure', label: '퓨어', file: 'pure.webp', color: 'bg-green-50 border-green-200' },
@@ -24,9 +26,9 @@ export const ORIGINAL_CHAR_UNIT = {
 };
 
 export const VS_CHAR_IDS = [21, 22, 23, 24, 25, 26];
-export const EVENT_ASSET_BASE = 'https://asset.rilaksekai.com/suite';
-export const EVENT_API_URL = 'https://api.rilaksekai.com/api/events';
-export const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
+export const EVENT_ASSET_BASE = SUITE_ASSET_BASE_URL;
+export const EVENT_API_URL = joinUrl(API_BASE_URL, 'api/events');
+export const CARD_API_URL = joinUrl(API_BASE_URL, 'api/cards');
 export const DEFAULT_AUTO_EVENT_OVERRIDE = { attr: '', unit: '', isMix: false, eventCardIds: [] };
 
 export let autoEventOverrideCache = null;

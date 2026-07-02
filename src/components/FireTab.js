@@ -10,6 +10,8 @@ import { getMusicMetaSync } from '../utils/dataLoader';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import playerLevelData from '../data/player_levels.json';
 import { characterBirthdays } from '../data/characterBirthdays';
+import { useAuth } from '../login';
+import { API_BASE_URL, ASSET_BASE_URL, SUITE_ASSET_BASE_URL, joinUrl } from '../config/env';
 
 const GENERAL_ALLOWED_RANKS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -145,6 +147,7 @@ const CurrentScoreWithDelta = ({ score, delta, stacked = false }) => {
 };
 
 const FireTab = ({ surveyData, setSurveyData }) => {
+  const { user } = useAuth();
   const { t, language } = useTranslation();
   const [score1, setScore1] = useState(surveyData.score1 || '');
   const [score2, setScore2] = useState(surveyData.score2 || '');
@@ -330,8 +333,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
       try {
         const [mainResponse, assetResponse] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_BASE_URL}/api/ranking`),
-          fetch('https://api.rilaksekai.com/api/latest_ranking', { cache: 'reload' }).catch(e => null) // Allow asset fetch to fail gently
+          fetch(joinUrl(API_BASE_URL, 'api/ranking')),
+          fetch(joinUrl(API_BASE_URL, 'api/latest_ranking'), { cache: 'reload' }).catch(e => null) // Allow asset fetch to fail gently
         ]);
 
         const mainData = await mainResponse.json();
@@ -486,8 +489,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           try {
             setChaptersData([]);
             const [wlResponse, wbResponse] = await Promise.all([
-              fetch(`${process.env.REACT_APP_API_BASE_URL}/api/wlranking`).catch(() => null),
-              fetch(`https://asset.rilaksekai.com/suite/worldBlooms.json`).catch(() => null)
+              fetch(joinUrl(API_BASE_URL, 'api/wlranking')).catch(() => null),
+              fetch(joinUrl(SUITE_ASSET_BASE_URL, 'worldBlooms.json')).catch(() => null)
             ]);
 
             if (wbResponse && wbResponse.ok) {
@@ -2288,18 +2291,47 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           {language === 'ko' && (
             <>
               {/* Ranking Board Button */}
-              <button
-                onClick={() => window.open('https://run.rilaksekai.com/', '_blank')}
-                className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
-                title={t('fire.ranking_board')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="20" x2="18" y2="10"></line>
-                  <line x1="12" y1="20" x2="12" y2="4"></line>
-                  <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-                <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')}</span>
-              </button>
+              {user && user.canAccessModeling ? (
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => window.open('https://jp.seka.ing/', '_blank')}
+                    className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
+                    title={t('fire.ranking_board')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span className="text-[9px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')} 1</span>
+                  </button>
+                  <button
+                    onClick={() => window.open('https://run.rilaksekai.com/', '_blank')}
+                    className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
+                    title={t('fire.ranking_board')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span className="text-[9px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')} 2</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => window.open('https://jp.seka.ing/', '_blank')}
+                  className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-full"
+                  title={t('fire.ranking_board')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                  <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')}</span>
+                </button>
+              )}
               {/* Refresh Button */}
               <button
                 onClick={() => window.open('https://run.rilaksekai.com/refresh', '_blank')}
@@ -2405,7 +2437,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   {/* Event Name (Center) - Replaced with Banner */}
                   <div className="flex-1 text-center px-0.5 sm:px-1 min-w-0 flex justify-center z-10 -my-3 relative">
                     <img
-                      src={`https://asset.rilaksekai.com/event_story/${eventInfo.asname}/screen_image/banner_event_story.webp`}
+                      src={joinUrl(ASSET_BASE_URL, `event_story/${eventInfo.asname}/screen_image/banner_event_story.webp`)}
                       alt={eventInfo.name}
                       className="h-[80px] w-auto max-w-[140%] sm:max-w-lg shadow-lg object-cover transform scale-105"
                       style={{

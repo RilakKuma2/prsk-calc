@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
 import { calculateRawInternalValue, calculateInternalValue, calculateSlotSkillValues } from '../utils/deckUtils';
 import { loadDeckFromFriendCode } from '../utils/deckLoader';
+import { useAuth } from '../login';
 import { characterBirthdays } from '../data/characterBirthdays';
 import EventBonusCalculatorModal from './common/EventBonusCalculatorModal';
 import EventOverrideDropdown from './common/EventOverrideDropdown';
@@ -121,8 +122,8 @@ const SkillLevelDropdown = ({ value, onChange }) => {
                                     setIsOpen(false);
                                 }}
                                 className={`block w-[60px] rounded-md px-2 py-1.5 text-center text-xs font-medium transition-colors ${Number(value) === option
-                                        ? 'bg-blue-500 text-white'
-                                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                                    ? 'bg-blue-500 text-white'
+                                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
                                     }`}
                             >
                                 SLv.{option}
@@ -138,6 +139,7 @@ const SkillLevelDropdown = ({ value, onChange }) => {
 
 
 function DeckTab({ surveyData, setSurveyData, subPath }) {
+    const { user, updateFriendCode } = useAuth();
     const { t, language } = useTranslation();
     const navigate = useNavigate();
 
@@ -164,6 +166,21 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const [friendCode, setFriendCode] = useState(() => {
         return localStorage.getItem('savedFriendCode') || '';
     });
+    const [saveFriendCode, setSaveFriendCode] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            if (user.saveFriendCode) {
+                setSaveFriendCode(true);
+                if (user.friendCode) {
+                    setFriendCode(user.friendCode);
+                    localStorage.setItem('savedFriendCode', user.friendCode);
+                }
+            } else {
+                setSaveFriendCode(false);
+            }
+        }
+    }, [user?.id]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         localStorage.setItem('savedFriendCode', friendCode);
@@ -1003,6 +1020,11 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         setIsLoadingFriend(true);
         setManualTotalPowerDecks(prev => ({ ...prev, [activeDeckKey]: false }));
         setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
+
+        if (user && saveFriendCode) {
+            updateFriendCode(friendCode, true).catch(console.error);
+        }
+
         try {
             const parsed = await loadDeckFromFriendCode(friendCode, buildEventOverrideForRequest());
             const {
@@ -1217,9 +1239,31 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                     value={friendCode}
                                     onChange={e => setFriendCode(e.target.value)}
                                     placeholder="예: 3939393939393939"
-                                    className="w-full border border-gray-300 rounded px-2 py-1 mb-3 text-sm focus:outline-none focus:border-blue-500"
+                                    className="w-full border border-gray-300 rounded px-2 py-1 mb-2 text-sm focus:outline-none focus:border-blue-500"
                                     style={{ width: '100%' }}
                                 />
+                                {user && (
+                                    <div className="mb-3">
+                                        <label className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={saveFriendCode}
+                                                onChange={(e) => {
+                                                    const checked = e.target.checked;
+                                                    setSaveFriendCode(checked);
+                                                    if (!checked) {
+                                                        updateFriendCode(null, false).catch(console.error);
+                                                    }
+                                                }}
+                                                className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                            />
+                                            <span className="text-xs font-bold text-gray-700">계정에 저장</span>
+                                        </label>
+                                        <div className="text-[10px] text-gray-400 mt-1 pl-5">
+                                            체크를 풀 경우 서버에서 코드가 즉시 삭제됩니다
+                                        </div>
+                                    </div>
+                                )}
                                 {eventOverride.detailOpen && (
                                     <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-2">
                                         <div className="mb-1 text-right text-[10px] font-bold text-gray-400">
@@ -1362,7 +1406,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     side={
                         <div className="flex items-center gap-1.5">
                             {!isEventBonusLoadedControl && <span className="text-gray-600">%</span>}
-                            <button 
+                            <button
                                 onClick={() => setShowEventBonusCalc(true)}
                                 className="inline-flex items-center justify-center h-5 px-2 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-700 transition-colors text-[10px] font-bold"
                                 title={t('support.deck_simulator') || '덱 시뮬레이터'}
@@ -1407,8 +1451,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                 aria-checked={useBloomFes}
                                 onClick={() => updateUseBloomFes(!useBloomFes)}
                                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${useBloomFes
-                                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500'
-                                        : 'bg-gray-200'
+                                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                                    : 'bg-gray-200'
                                     }`}
                             >
                                 <span
@@ -1562,61 +1606,63 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     )}
                 </Suspense>
             </div>
-            <EventBonusCalculatorModal
-                isOpen={showEventBonusCalc}
-                onClose={() => setShowEventBonusCalc(false)}
-                onApply={(totalBonus, calculatedTotalPower) => {
-                    if (calculatedTotalPower !== null && calculatedTotalPower !== undefined) {
-                        updateDeck('totalPower', Math.round(calculatedTotalPower));
-                    }
-                    updateDeck('eventBonus', Number(totalBonus.toFixed(1)));
-                    setShowEventBonusCalc(false);
-                }}
-                onLoadSkill={(slots) => {
-                    if (slots && slots.length === 5) {
-                        const nextSkillLevels = {};
-                        const nextSkillRanges = {};
-                        const skillValues = [];
+            {showEventBonusCalc && (
+                <EventBonusCalculatorModal
+                    isOpen={showEventBonusCalc}
+                    onClose={() => setShowEventBonusCalc(false)}
+                    onApply={(totalBonus, calculatedTotalPower) => {
+                        if (calculatedTotalPower !== null && calculatedTotalPower !== undefined) {
+                            updateDeck('totalPower', Math.round(calculatedTotalPower));
+                        }
+                        updateDeck('eventBonus', Number(totalBonus.toFixed(1)));
+                        setShowEventBonusCalc(false);
+                    }}
+                    onLoadSkill={(slots) => {
+                        if (slots && slots.length === 5) {
+                            const nextSkillLevels = {};
+                            const nextSkillRanges = {};
+                            const skillValues = [];
 
-                        const keys = ['leader', 'member2', 'member3', 'member4', 'member5'];
-                        const computedSkills = calculateSlotSkillValues(slots);
+                            const keys = ['leader', 'member2', 'member3', 'member4', 'member5'];
+                            const computedSkills = calculateSlotSkillValues(slots);
 
-                        slots.forEach((slot, index) => {
-                            const key = keys[index];
-                            const slv = Number(slot.skillLevel) || 1;
-                            nextSkillLevels[key] = slv;
+                            slots.forEach((slot, index) => {
+                                const key = keys[index];
+                                const slv = Number(slot.skillLevel) || 1;
+                                nextSkillLevels[key] = slv;
 
-                            const { ranges, skillValue } = computedSkills[index];
-                            nextSkillRanges[key] = ranges;
-                            skillValues.push(skillValue);
-                        });
+                                const { ranges, skillValue } = computedSkills[index];
+                                nextSkillRanges[key] = ranges;
+                                skillValues.push(skillValue);
+                            });
 
-                        setSurveyData(prev => {
-                            const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
-                            return {
-                                ...prev,
-                                unifiedDecks: {
-                                    ...prev.unifiedDecks,
-                                    [`deck${activeDeckNum}`]: {
-                                        ...currentDeckData,
-                                        skillLeader: skillValues[0],
-                                        skillMember2: skillValues[1],
-                                        skillMember3: skillValues[2],
-                                        skillMember4: skillValues[3],
-                                        skillMember5: skillValues[4],
-                                        loadedSkillLevels: nextSkillLevels,
-                                        loadedSkillRanges: nextSkillRanges,
-                                        loadedBloomFesOriginalMembers: {},
-                                        loadedVSBloomFesMembers: {},
-                                        useBloomFes: false,
+                            setSurveyData(prev => {
+                                const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
+                                return {
+                                    ...prev,
+                                    unifiedDecks: {
+                                        ...prev.unifiedDecks,
+                                        [`deck${activeDeckNum}`]: {
+                                            ...currentDeckData,
+                                            skillLeader: skillValues[0],
+                                            skillMember2: skillValues[1],
+                                            skillMember3: skillValues[2],
+                                            skillMember4: skillValues[3],
+                                            skillMember5: skillValues[4],
+                                            loadedSkillLevels: nextSkillLevels,
+                                            loadedSkillRanges: nextSkillRanges,
+                                            loadedBloomFesOriginalMembers: {},
+                                            loadedVSBloomFesMembers: {},
+                                            useBloomFes: false,
+                                        }
                                     }
-                                }
-                            };
-                        });
-                        setManualEventBonusDecks(prev => ({ ...prev, [`deck${activeDeckNum}`]: true }));
-                    }
-                }}
-            />
+                                };
+                            });
+                            setManualEventBonusDecks(prev => ({ ...prev, [`deck${activeDeckNum}`]: true }));
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 }

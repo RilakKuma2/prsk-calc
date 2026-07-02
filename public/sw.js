@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prsk-calc-v2';
+const CACHE_NAME = 'prsk-calc-v4';
 const urlsToCache = [
     'manifest_ko.json',
     'manifest_ja.json',

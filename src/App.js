@@ -5,6 +5,159 @@ import Tabs from './components/Tabs';
 import UpcomingEvents from './components/UpcomingEvents';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
+import { AUTH_BASE_URL, STORAGE_BASE_URL, joinUrl } from './config/env';
+import {
+  AccountPanel,
+  AccountStateConflictDialog,
+  LoginProvider,
+  useAuth,
+  useAccountState,
+  useUserStateApi,
+  createJsonLocalStorageAdapter,
+} from './login';
+
+const EMPTY_SURVEY_SNAPSHOT = { schemaVersion: 1, data: {} };
+const AUTO_SURVEY_STORAGE_KEY = 'prskCalcAutoSurveyDataV1';
+const AUTO_SAVE_PREFERENCE_STORAGE_KEY = 'prskCalcAutoSavePreferenceV1';
+
+const normalizeSurveySnapshot = (value) => ({
+  schemaVersion: 1,
+  data: value && typeof value.data === 'object' && !Array.isArray(value.data)
+    ? value.data
+    : {},
+});
+
+const createSurveySnapshot = (surveyData) => {
+  const { activeDeckNum, activeResultView, isComparisonMode, ...data } = surveyData;
+  return normalizeSurveySnapshot({ schemaVersion: 1, data });
+};
+
+const autoLoadStorage = createJsonLocalStorageAdapter({
+  key: 'autoLoad',
+  fallback: true,
+});
+
+const surveyAccountStorage = {
+  keys: ['surveyData'],
+  dirtyKey: 'prsk-calc-survey-data:account-dirty',
+  read: () => {
+    try {
+      const data = JSON.parse(localStorage.getItem('surveyData') || '{}');
+      return normalizeSurveySnapshot({ schemaVersion: 1, data });
+    } catch {
+      return EMPTY_SURVEY_SNAPSHOT;
+    }
+  },
+  write: (snapshot) => {
+    localStorage.setItem(
+      'surveyData',
+      JSON.stringify(normalizeSurveySnapshot(snapshot).data),
+    );
+  },
+};
+
+const autoSurveyAccountStorage = {
+  keys: [AUTO_SURVEY_STORAGE_KEY],
+  dirtyKey: 'prsk-calc-auto-survey-data:account-dirty',
+  read: () => {
+    try {
+      return JSON.parse(localStorage.getItem(AUTO_SURVEY_STORAGE_KEY) || 'null')
+        || { schemaVersion: 1, ownerUserId: null, data: {} };
+    } catch {
+      return { schemaVersion: 1, ownerUserId: null, data: {} };
+    }
+  },
+  write: (snapshot) => {
+    localStorage.setItem(AUTO_SURVEY_STORAGE_KEY, JSON.stringify(snapshot));
+  },
+};
+
+const autoSavePreferenceStorage = {
+  keys: [AUTO_SAVE_PREFERENCE_STORAGE_KEY],
+  dirtyKey: 'prsk-calc-auto-save-preference:account-dirty',
+  read: () => {
+    try {
+      return JSON.parse(localStorage.getItem(AUTO_SAVE_PREFERENCE_STORAGE_KEY) || 'null')
+        || { schemaVersion: 1, ownerUserId: null, enabled: false };
+    } catch {
+      return { schemaVersion: 1, ownerUserId: null, enabled: false };
+    }
+  },
+  write: (preference) => {
+    localStorage.setItem(AUTO_SAVE_PREFERENCE_STORAGE_KEY, JSON.stringify(preference));
+  },
+};
+
+const AUTO_ACCOUNT_STORAGE_KEYS = new Set([
+  'language',
+  'amatsuyu_notify_settings',
+  'roomSearchEngine',
+  'showRecentHourlySpeed',
+  'savedFriendCode',
+  'charRankInputs',
+  'charRankAddInputs',
+  'charRankSelectedId',
+  'calcPreviewCharId',
+  'supportDeckState',
+  'prskCalcSurveyData',
+  'prskEventShopSimulatorStateV1',
+  'prskEventShopSimulatorPresetsV1',
+  'prskEventShopSimulatorItemCountsV1',
+]);
+
+const isAutoAccountStorageKey = (key) => (
+  AUTO_ACCOUNT_STORAGE_KEYS.has(key) || key.startsWith('ebc_')
+);
+
+const normalizeAutoAccountSnapshot = (value) => {
+  const source = value && typeof value.entries === 'object' && !Array.isArray(value.entries)
+    ? value.entries
+    : {};
+  const entries = {};
+  Object.keys(source).sort().forEach((key) => {
+    if (isAutoAccountStorageKey(key) && typeof source[key] === 'string') {
+      entries[key] = source[key];
+    }
+  });
+  return { schemaVersion: 1, entries };
+};
+
+const autoAccountStorage = {
+  keys: [...AUTO_ACCOUNT_STORAGE_KEYS, 'ebc_*'],
+  dirtyKey: 'prsk-calc-auto-settings:account-dirty',
+  read: () => {
+    const entries = {};
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key || !isAutoAccountStorageKey(key)) continue;
+      const value = localStorage.getItem(key);
+      if (value !== null) entries[key] = value;
+    }
+    return normalizeAutoAccountSnapshot({ schemaVersion: 1, entries });
+  },
+  write: (snapshot) => {
+    const normalized = normalizeAutoAccountSnapshot(snapshot);
+    const existingKeys = [];
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (key && isAutoAccountStorageKey(key)) existingKeys.push(key);
+    }
+    existingKeys.forEach((key) => {
+      if (!(key in normalized.entries)) localStorage.removeItem(key);
+    });
+    Object.entries(normalized.entries).forEach(([key, value]) => {
+      localStorage.setItem(key, value);
+    });
+  },
+};
+
+const reloadAfterAccountRestore = () => window.location.reload();
+
+const unwrapAccountStatePayload = (value) => (
+  value && typeof value === 'object' && value.__wrapped
+    ? value.payload
+    : value
+);
 
 const LevelTab = lazy(() => import('./components/LevelTab'));
 const FireTab = lazy(() => import('./components/FireTab'));
@@ -35,6 +188,58 @@ const PATH_TO_TAB = Object.entries(TAB_PATHS).reduce((acc, [tab, path]) => {
   return acc;
 }, {});
 
+const ACCOUNT_UI_TEXT = {
+  ko: {
+    language: '언어',
+    account: '계정',
+    languageSettingsAria: '언어 설정',
+    accountButtonLoggedOut: '로그인 및 계정 설정',
+    accountButtonTitleLoggedOut: '로그인하지 않음',
+    accountButtonTitleLoggedIn: '로그인됨',
+    savedDataTitle: '프로세카 계산기 저장 데이터',
+    autoDataTitle: '프로세카 계산기 자동 저장 데이터',
+    combinedDataTitle: '프로세카 계산기 동기화 알림',
+    itemCount: (count) => `${count}개 항목`,
+    mergeHintSaved: '같은 항목은 이 브라우저의 로컬 값이 우선합니다.',
+    mergeHintAuto: '같은 설정은 이 브라우저의 값이 우선하며, 적용 후 화면을 한 번 새로고침합니다.',
+    combinedMergeHint: '같은 항목 및 설정은 이 브라우저의 값이 우선하며, 적용 후 화면을 한 번 새로고침합니다.',
+  },
+  ja: {
+    language: '言語',
+    account: 'アカウント',
+    languageSettingsAria: '言語設定',
+    accountButtonLoggedOut: 'ログインとアカウント設定',
+    accountButtonTitleLoggedOut: '未ログイン',
+    accountButtonTitleLoggedIn: 'ログイン中',
+    savedDataTitle: 'プロセカ計算機の保存データ',
+    autoDataTitle: 'プロセカ計算機の自動保存データ',
+    combinedDataTitle: 'プロセカ計算機の同期通知',
+    itemCount: (count) => `${count}件`,
+    mergeHintSaved: '同じ項目はこのブラウザのローカル値が優先されます。',
+    mergeHintAuto: '同じ設定はこのブラウザの値が優先され、適用後に画面を一度再読み込みします。',
+    combinedMergeHint: '同じ項目および設定はこのブラウザの値が優先され、適用後に画面を一度再読み込みします。',
+  },
+  en: {
+    language: 'Language',
+    account: 'Account',
+    languageSettingsAria: 'Language settings',
+    accountButtonLoggedOut: 'Sign in and account settings',
+    accountButtonTitleLoggedOut: 'Signed out',
+    accountButtonTitleLoggedIn: 'Signed in',
+    savedDataTitle: 'Prsk Calc saved data',
+    autoDataTitle: 'Prsk Calc auto-save data',
+    combinedDataTitle: 'Prsk Calc Sync Notification',
+    itemCount: (count) => `${count} items`,
+    mergeHintSaved: 'For matching entries, this browser’s local value takes priority.',
+    mergeHintAuto: 'For matching settings, this browser’s value takes priority and the page reloads once after applying.',
+    combinedMergeHint: 'For matching entries and settings, this browser’s value takes priority and the page reloads once after applying.',
+  },
+};
+
+const normalizeAccountLocale = (language) => (
+  language === 'ja' ? 'ja' : language === 'en' ? 'en' : 'ko'
+);
+
 const getTabFromPathname = (path) => {
   // Check for exact match first
   if (PATH_TO_TAB[path]) {
@@ -58,7 +263,9 @@ const TabFallback = () => (
 );
 
 const AppContent = () => {
-  const { t, language } = useTranslation();
+  const { t, language, changeLanguage } = useTranslation();
+  const { user } = useAuth();
+  const { getUserState } = useUserStateApi();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -77,6 +284,23 @@ const AppContent = () => {
       }
     };
     preload();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const unbanToken = urlParams.get('unban_token');
+    if (unbanToken) {
+      fetch(`${joinUrl(AUTH_BASE_URL, 'api/unban/verify')}?token=${unbanToken}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid) {
+            document.cookie = "__cf_banned=;path=/;max-age=0";
+            document.cookie = "__cf_banned_v2=;path=/;max-age=0";
+          }
+        })
+        .catch(() => { })
+        .finally(() => {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
+    }
   }, []);
 
   const routeTabInfo = useMemo(() => getTabFromPathname(location.pathname), [location.pathname]);
@@ -104,8 +328,316 @@ const AppContent = () => {
       navigate(path);
     }
   }, [location.pathname, navigate]);
+
+  const autoLoadSync = useAccountState({
+    namespace: 'prsk-calc-autoload-preference',
+    storage: autoLoadStorage,
+    normalize: (val) => typeof val === 'boolean' ? val : true,
+    validate: (val) => typeof val === 'boolean',
+    isEmpty: () => false,
+    hasLocalOnly: () => false,
+    isConflict: () => false,
+    merge: (local, remote) => remote,
+    enabled: Boolean(user),
+    saveDelayMs: 0,
+    logLabel: '자동 불러오기 설정',
+  });
+  const autoLoadEnabled = autoLoadSync.value;
+
   const [surveyData, setSurveyData] = useState({});
   const [loadVersion, setLoadVersion] = useState(0);
+  const normalizeOwnedAutoSavePreference = useCallback((value) => {
+    const ownerUserId = user?.id || null;
+    if (
+      !ownerUserId
+      || value?.ownerUserId !== ownerUserId
+      || typeof value?.enabled !== 'boolean'
+    ) {
+      return { schemaVersion: 1, ownerUserId, enabled: false };
+    }
+    return {
+      schemaVersion: 1,
+      ownerUserId,
+      enabled: value.enabled,
+    };
+  }, [user?.id]);
+  const autoSavePreferenceSync = useAccountState({
+    namespace: 'prsk-calc-auto-save-preference',
+    storage: autoSavePreferenceStorage,
+    normalize: normalizeOwnedAutoSavePreference,
+    validate: (value) => (
+      Boolean(value)
+      && value.schemaVersion === 1
+      && typeof value.ownerUserId === 'string'
+      && typeof value.enabled === 'boolean'
+    ),
+    isEmpty: () => false,
+    hasLocalOnly: () => false,
+    isConflict: () => false,
+    merge: (local) => local,
+    enabled: Boolean(user),
+    saveDelayMs: 0,
+    logLabel: '프로세카 계산기 자동 저장 사용 설정',
+  });
+  const {
+    value: autoSavePreference,
+    setValue: setAutoSavePreference,
+    status: autoSavePreferenceStatus,
+  } = autoSavePreferenceSync;
+  const autoSaveEnabled = Boolean(
+    user
+    && autoSavePreferenceStatus === 'ready'
+    && autoSavePreference.ownerUserId === user.id
+    && autoSavePreference.enabled
+  );
+  const handleAutoSavePreferenceChange = useCallback((enabled) => {
+    if (!user) return;
+    setAutoSavePreference({
+      schemaVersion: 1,
+      ownerUserId: user.id,
+      enabled,
+    });
+  }, [setAutoSavePreference, user]);
+
+  useEffect(() => {
+    if (
+      !user
+      || autoSavePreferenceStatus !== 'ready'
+      || autoSaveEnabled
+    ) return undefined;
+
+    let cancelled = false;
+    const restoreExistingAutoSettings = async () => {
+      try {
+        const remoteState = await getUserState('prsk-calc-auto-settings', user.id);
+        if (cancelled || !remoteState) return;
+
+        const remote = normalizeAutoAccountSnapshot(
+          unwrapAccountStatePayload(remoteState.data),
+        );
+        if (Object.keys(remote.entries).length === 0) return;
+
+        const local = normalizeAutoAccountSnapshot(autoAccountStorage.read());
+        const merged = normalizeAutoAccountSnapshot({
+          schemaVersion: 1,
+          entries: { ...remote.entries, ...local.entries },
+        });
+        if (JSON.stringify(merged) === JSON.stringify(local)) return;
+
+        autoAccountStorage.write(merged);
+        if (Object.keys(local.entries).length === 0) {
+          localStorage.removeItem(autoAccountStorage.dirtyKey);
+        } else {
+          localStorage.setItem(autoAccountStorage.dirtyKey, '1');
+        }
+        reloadAfterAccountRestore();
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('프로세카 계산기 기존 자동 저장 설정 복원 실패:', error);
+        }
+      }
+    };
+
+    void restoreExistingAutoSettings();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    autoSaveEnabled,
+    autoSavePreferenceStatus,
+    getUserState,
+    user,
+  ]);
+
+  const savedSurveySync = useAccountState({
+    namespace: 'prsk-calc-survey-data',
+    storage: surveyAccountStorage,
+    normalize: normalizeSurveySnapshot,
+    validate: (value) => (
+      Boolean(value)
+      && value.schemaVersion === 1
+      && typeof value.data === 'object'
+      && !Array.isArray(value.data)
+    ),
+    isEmpty: (snapshot) => Object.keys(snapshot.data).length === 0,
+    hasLocalOnly: (local, remote, dirty) => {
+      if (!dirty) return false;
+      return Object.keys(local.data).length > 0
+        && JSON.stringify(local.data) !== JSON.stringify(remote.data);
+    },
+    isConflict: (local, remote, dirty) => {
+      if (!dirty) return false;
+      const localKeys = Object.keys(local.data);
+      if (localKeys.length === 0) return false;
+      const remoteKeys = Object.keys(remote.data);
+      if (localKeys.length !== remoteKeys.length) return true;
+
+      let diffCount = 0;
+      for (const key of localKeys) {
+        if (local.data[key] !== remote.data[key]) {
+          diffCount++;
+          if (diffCount >= 5) return true;
+        }
+      }
+      return false;
+    },
+    merge: (local, remote) => normalizeSurveySnapshot({
+      schemaVersion: 1,
+      data: { ...remote.data, ...local.data },
+    }),
+    logLabel: '프로세카 계산기 저장 데이터',
+  });
+  const autoSettingsSync = useAccountState({
+    namespace: 'prsk-calc-auto-settings',
+    storage: autoAccountStorage,
+    normalize: normalizeAutoAccountSnapshot,
+    validate: (value) => (
+      Boolean(value)
+      && value.schemaVersion === 1
+      && Boolean(value.entries)
+      && typeof value.entries === 'object'
+      && !Array.isArray(value.entries)
+      && Object.values(value.entries).every((entry) => typeof entry === 'string')
+    ),
+    isEmpty: (snapshot) => Object.keys(snapshot.entries).length === 0,
+    hasLocalOnly: (local, remote, dirty) => {
+      if (!dirty) return false;
+      return Object.entries(local.entries)
+        .some(([key, value]) => remote.entries[key] !== value);
+    },
+    isConflict: (local, remote, dirty) => {
+      if (!dirty) return false;
+      let diffCount = 0;
+      const allKeys = new Set([...Object.keys(local.entries), ...Object.keys(remote.entries)]);
+      for (const key of allKeys) {
+        if (local.entries[key] !== remote.entries[key]) {
+          diffCount++;
+          if (diffCount >= 5) return true;
+        }
+      }
+      return false;
+    },
+    merge: (local, remote) => normalizeAutoAccountSnapshot({
+      schemaVersion: 1,
+      entries: { ...remote.entries, ...local.entries },
+    }),
+    enabled: autoSaveEnabled,
+    saveDelayMs: 15_000,
+    localPollMs: 1_000,
+    onExternalStateApplied: reloadAfterAccountRestore,
+    logLabel: '프로세카 계산기 자동 저장 설정',
+  });
+  const normalizeOwnedAutoSurveySnapshot = useCallback((value) => {
+    const ownerUserId = user?.id || null;
+    if (
+      !ownerUserId
+      || value?.ownerUserId !== ownerUserId
+      || typeof value?.data !== 'object'
+      || Array.isArray(value.data)
+    ) {
+      return { schemaVersion: 1, ownerUserId, data: {} };
+    }
+    return {
+      schemaVersion: 1,
+      ownerUserId,
+      data: value.data,
+    };
+  }, [user?.id]);
+  const autoSurveySync = useAccountState({
+    namespace: 'prsk-calc-auto-survey-data',
+    storage: autoSurveyAccountStorage,
+    normalize: normalizeOwnedAutoSurveySnapshot,
+    validate: (value) => (
+      Boolean(value)
+      && value.schemaVersion === 1
+      && typeof value.ownerUserId === 'string'
+      && typeof value.data === 'object'
+      && !Array.isArray(value.data)
+    ),
+    isEmpty: (snapshot) => Object.keys(snapshot.data).length === 0,
+    hasLocalOnly: () => false,
+    isConflict: () => false,
+    merge: (local) => local,
+    enabled: autoSaveEnabled,
+    saveDelayMs: 15_000,
+    logLabel: '프로세카 계산기 계산 데이터 자동 저장',
+  });
+  const {
+    value: autoSurveyValue,
+    setValue: setAutoSurveyValue,
+    status: autoSurveyStatus,
+  } = autoSurveySync;
+  const [autoSurveyRestoredUserId, setAutoSurveyRestoredUserId] = useState(null);
+
+  useEffect(() => {
+    if (!autoSaveEnabled) {
+      setAutoSurveyRestoredUserId(null);
+      return;
+    }
+    if (
+      !user
+      || autoSurveyStatus !== 'ready'
+      || autoSurveyRestoredUserId === user.id
+    ) return;
+
+    const restoredData = autoSurveyValue.data;
+    if (restoredData && Object.keys(restoredData).length > 0) {
+      setSurveyData(restoredData);
+      setLoadVersion((version) => version + 1);
+    }
+    setAutoSurveyRestoredUserId(user.id);
+  }, [
+    autoSaveEnabled,
+    autoSurveyRestoredUserId,
+    autoSurveyStatus,
+    autoSurveyValue,
+    user,
+  ]);
+
+  useEffect(() => {
+    if (
+      !autoSaveEnabled
+      || !user
+      || autoSurveyRestoredUserId !== user.id
+      || autoSurveyStatus === 'loading'
+      || autoSurveyStatus === 'conflict'
+    ) return;
+
+    const surveySnap = createSurveySnapshot(surveyData);
+    const snapshot = {
+      schemaVersion: 1,
+      ownerUserId: user.id,
+      data: surveySnap.data,
+    };
+    if (JSON.stringify(snapshot) !== JSON.stringify(autoSurveyValue)) {
+      setAutoSurveyValue(snapshot);
+    }
+  }, [
+    autoSaveEnabled,
+    autoSurveyRestoredUserId,
+    autoSurveyStatus,
+    autoSurveyValue,
+    setAutoSurveyValue,
+    surveyData,
+    user,
+  ]);
+  const savedSurveyRef = useRef(savedSurveySync.value);
+  savedSurveyRef.current = savedSurveySync.value;
+  const accountMenuRef = useRef(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (event.target instanceof Element && event.target.closest('[data-auth-overlay="true"]')) {
+        return;
+      }
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, []);
 
   // Info Bubble State
   const [showInfo, setShowInfo] = useState(false);
@@ -198,15 +730,13 @@ const AppContent = () => {
   }, []);
 
   const saveData = () => {
-    // Exclude UI state like active deck selection, view selection, and VS mode from save
-    const { activeDeckNum, activeResultView, isComparisonMode, ...dataToSave } = surveyData;
-    localStorage.setItem('surveyData', JSON.stringify(dataToSave));
+    savedSurveySync.setValue(createSurveySnapshot(surveyData));
     showToastMessage(t('app.toast.saved'));
   };
 
   const loadData = useCallback(() => {
-    const savedData = JSON.parse(localStorage.getItem('surveyData'));
-    if (savedData) {
+    const savedData = savedSurveyRef.current.data;
+    if (savedData && Object.keys(savedData).length > 0) {
       setSurveyData(savedData);
       setLoadVersion(v => v + 1);
       showToastMessage(t('app.toast.loaded'));
@@ -216,15 +746,23 @@ const AppContent = () => {
   }, [t]);
 
   const toggleAutoLoad = (e) => {
-    localStorage.setItem('autoLoad', e.target.checked);
+    autoLoadSync.setValue(e.target.checked);
   };
 
+  const hasAutoLoadedRef = useRef(false);
   useEffect(() => {
-    const autoLoad = JSON.parse(localStorage.getItem('autoLoad'));
-    if (autoLoad) {
-      loadData();
+    if (hasAutoLoadedRef.current) return;
+    if (savedSurveySync.status !== 'ready') return;
+    if (autoLoadEnabled) {
+      const savedData = savedSurveySync.value.data;
+      if (savedData && Object.keys(savedData).length > 0) {
+        setSurveyData(savedData);
+        setLoadVersion(v => v + 1);
+        showToastMessage(t('app.toast.loaded'));
+      }
     }
-  }, [loadData]);
+    hasAutoLoadedRef.current = true;
+  }, [savedSurveySync.status, savedSurveySync.value.data, autoLoadEnabled, t]);
 
   // Update page title and iOS app name based on language
   useEffect(() => {
@@ -237,9 +775,67 @@ const AppContent = () => {
     }
   }, [t]);
 
+  const languageOptions = [
+    { code: 'ko', label: '한국어' },
+    { code: 'ja', label: '日本語' },
+    { code: 'en', label: 'English' },
+  ];
+  const accountText = ACCOUNT_UI_TEXT[normalizeAccountLocale(language)];
+
   return (
     <div className={`container relative min-h-screen ${currentTab === 'support' ? 'support-container' : ''}`}>
       <LanguageSwitcher />
+      <div className="calc-account-menu" ref={accountMenuRef}>
+        <button
+          type="button"
+          className={`calc-account-toggle ${user ? 'logged-in' : 'logged-out'} ${accountMenuOpen ? 'active' : ''}`}
+          aria-label={user ? `${user.username} ${accountText.account}` : accountText.accountButtonLoggedOut}
+          aria-expanded={accountMenuOpen}
+          title={user ? `${user.username} · ${accountText.accountButtonTitleLoggedIn}` : accountText.accountButtonTitleLoggedOut}
+          onClick={() => setAccountMenuOpen((open) => !open)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
+          </svg>
+          <div className="calc-account-lang-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              <path d="M2 12h20"></path>
+            </svg>
+            <span className="calc-account-lang-text">{language.toUpperCase()}</span>
+          </div>
+        </button>
+        {accountMenuOpen && (
+          <div className="calc-account-popover">
+            <div className="calc-account-title">{accountText.language}</div>
+            <div className="calc-language-options" role="group" aria-label={accountText.languageSettingsAria}>
+              {languageOptions.map(({ code, label }) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={language === code ? 'active' : ''}
+                  aria-pressed={language === code}
+                  onClick={() => changeLanguage(code)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="calc-account-divider" />
+            <div className="calc-account-title">{accountText.account}</div>
+            <AccountPanel
+              onLogout={() => setAccountMenuOpen(false)}
+              autoSavePreference={user ? {
+                enabled: autoSaveEnabled,
+                disabled: autoSavePreferenceStatus !== 'ready',
+                onChange: handleAutoSavePreferenceChange,
+              } : undefined}
+            />
+          </div>
+        )}
+      </div>
       <UpcomingEvents>
         <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
       </UpcomingEvents>
@@ -267,7 +863,7 @@ const AppContent = () => {
             type="checkbox"
             id="auto-load-checkbox"
             onChange={toggleAutoLoad}
-            defaultChecked={JSON.parse(localStorage.getItem('autoLoad'))}
+            checked={autoLoadEnabled}
           />
           {t('app.auto_load')}
         </label>
@@ -281,7 +877,13 @@ const AppContent = () => {
         </button>
         <button
           className="link-button"
-          onClick={() => window.open(language === 'ko' ? 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing' : 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing', '_blank')}
+          onClick={() => {
+            if (user && user.canAccessModeling) {
+              window.open('https://rilakbest.com', '_blank');
+            } else {
+              window.open(language === 'ko' ? 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing' : 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing', '_blank');
+            }
+          }}
         >
           {t('app.summary_button')}
         </button>
@@ -378,6 +980,34 @@ const AppContent = () => {
           {toast.message}
         </div>
       )}
+      <AccountStateConflictDialog
+        open={Boolean(savedSurveySync.conflict || autoSettingsSync.conflict)}
+        title={
+          savedSurveySync.conflict && autoSettingsSync.conflict ? accountText.combinedDataTitle :
+            savedSurveySync.conflict ? accountText.savedDataTitle :
+              accountText.autoDataTitle
+        }
+        localSummary={
+          savedSurveySync.conflict && autoSettingsSync.conflict ? `${accountText.itemCount(Object.keys(savedSurveySync.conflict.local.data || {}).length)} + Setting ${Object.keys(autoSettingsSync.conflict.local.entries || {}).length}` :
+            savedSurveySync.conflict ? accountText.itemCount(Object.keys(savedSurveySync.conflict.local.data || {}).length) :
+              accountText.itemCount(Object.keys(autoSettingsSync.conflict?.local.entries || {}).length)
+        }
+        remoteSummary={
+          savedSurveySync.conflict && autoSettingsSync.conflict ? `${accountText.itemCount(Object.keys(savedSurveySync.conflict.remote.data || {}).length)} + Setting ${Object.keys(autoSettingsSync.conflict.remote.entries || {}).length}` :
+            savedSurveySync.conflict ? accountText.itemCount(Object.keys(savedSurveySync.conflict.remote.data || {}).length) :
+              accountText.itemCount(Object.keys(autoSettingsSync.conflict?.remote.entries || {}).length)
+        }
+        busy={savedSurveySync.status === 'saving' || autoSettingsSync.status === 'saving'}
+        mergeHint={
+          savedSurveySync.conflict && autoSettingsSync.conflict ? accountText.combinedMergeHint :
+            savedSurveySync.conflict ? accountText.mergeHintSaved :
+              accountText.mergeHintAuto
+        }
+        onChoose={async (choice) => {
+          if (savedSurveySync.conflict) await savedSurveySync.resolveConflict(choice);
+          if (autoSettingsSync.conflict) await autoSettingsSync.resolveConflict(choice);
+        }}
+      />
     </div>
   );
 }
@@ -385,8 +1015,24 @@ const AppContent = () => {
 function App() {
   return (
     <LanguageProvider>
-      <AppContent />
+      <LoginScopedApp />
     </LanguageProvider>
+  );
+}
+
+function LoginScopedApp() {
+  const { language } = useTranslation();
+
+  return (
+    <LoginProvider
+      authBaseUrl={AUTH_BASE_URL}
+      storageBaseUrl={STORAGE_BASE_URL}
+      cacheKey="sekai-auth-cache-v2"
+      locale={language}
+      showInviteCode={language === 'ko'}
+    >
+      <AppContent />
+    </LoginProvider>
   );
 }
 

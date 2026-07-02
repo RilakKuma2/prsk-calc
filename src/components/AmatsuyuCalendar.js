@@ -2,9 +2,10 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { characterBirthdays } from '../data/characterBirthdays';
 import { useTranslation } from '../contexts/LanguageContext';
+import { SUITE_ASSET_BASE_URL, joinUrl } from '../config/env';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const EVENT_EXCHANGE_SUMMARIES_URL = 'https://asset.rilaksekai.com/suite/eventExchangeSummaries.json';
+const EVENT_EXCHANGE_SUMMARIES_URL = joinUrl(SUITE_ASSET_BASE_URL, 'eventExchangeSummaries.json');
 
 const normalizeTimestampMs = (value) => {
     const timestamp = Number(value);

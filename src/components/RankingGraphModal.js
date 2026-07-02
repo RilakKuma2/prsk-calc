@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as Plot from "@observablehq/plot";
+import { API_BASE_URL, joinUrl } from '../config/env';
 
 
 // Standard ranks supported by the data source
@@ -210,7 +211,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
         setError(null);
 
         const isChapter = selectedChapter && selectedChapter !== 'all';
-        const apiUrl = isChapter ? "https://api.rilaksekai.com/api/wlranking" : "https://api.rilaksekai.com/api/ranking";
+        const apiUrl = joinUrl(API_BASE_URL, isChapter ? 'api/wlranking' : 'api/ranking');
 
         // Fetch from custom API
         fetch(apiUrl, { cache: 'reload' })

@@ -16,12 +16,13 @@ import {
     formatSupportPercent,
     getSupportRarityKey,
 } from '../utils/supportCardUtils';
+import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
 
 const SLOT_COUNT = 25;
 const MAIN_DECK_SLOT_COUNT = 5;
 const MASTER_RANK_OPTIONS = [0, 1, 2, 3, 4, 5];
 const SKILL_LEVEL_OPTIONS = [1, 2, 3, 4];
-const CARD_API_URL = 'https://api.rilaksekai.com/api/cards';
+const CARD_API_URL = joinUrl(API_BASE_URL, 'api/cards');
 const PICKER_GROUPS = [
     { key: 'rarity4', label: '4성', matches: (card) => Number(card?.rarity) === 4 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
     { key: 'birthday', label: '생일', matches: (card) => card?.type === 'Birthday' || card?.type === 'Anniversary' },
@@ -163,8 +164,8 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, ca
 
     // Use actual card face if a card is selected
     const faceUrl = card
-        ? `https://asset.rilaksekai.com/face/res0${String(getCardCharacterId(card) || 1).padStart(2, '0')}_no${String(card?.card_image_id || '001').padStart(3, '0')}_normal.webp`
-        : `https://asset.rilaksekai.com/face/res0${String(previewCharId).padStart(2, '0')}_no001_normal.webp`;
+        ? joinUrl(ASSET_BASE_URL, `face/res0${String(getCardCharacterId(card) || 1).padStart(2, '0')}_no${String(card?.card_image_id || '001').padStart(3, '0')}_normal.webp`)
+        : joinUrl(ASSET_BASE_URL, `face/res0${String(previewCharId).padStart(2, '0')}_no001_normal.webp`);
 
     return (
         <div className={`support-card-thumb support-main-preview-card with-levels ${rarityKey ? '' : 'empty'}`}>
@@ -175,7 +176,7 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, previewCharId = 21, ca
                 loading="lazy"
                 onError={(e) => {
                     // Fallback to 1-star face if something fails
-                    e.target.src = `https://asset.rilaksekai.com/face/res0${String(previewCharId).padStart(2, '0')}_no001_normal.webp`;
+                    e.target.src = joinUrl(ASSET_BASE_URL, `face/res0${String(previewCharId).padStart(2, '0')}_no001_normal.webp`);
                 }}
             />
             <img

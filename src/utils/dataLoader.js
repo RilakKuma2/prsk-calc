@@ -1,6 +1,7 @@
 // Fallback data
 import { ESSENTIAL_MUSIC_METAS } from '../data/essentialMusicMetas';
 import { SONG_OPTIONS as localSongOptions } from './songs';
+import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
 
 let cachedMusicMetas = null;
 let musicMetasPromise = null;
@@ -12,7 +13,7 @@ let cachedFilteredSongOptions = null;
 let searchableSongOptionsSource = null;
 let cachedSearchableSongOptions = null;
 
-const MUSIC_METAS_URL = 'https://asset.rilaksekai.com/music_metas.json';
+const MUSIC_METAS_URL = joinUrl(ASSET_BASE_URL, 'music_metas.json');
 const MUSIC_METAS_TIMEOUT_MS = 6000;
 const SONG_FILTER_DATE = new Date('2026-04-22T23:59:59+09:00');
 const EXCLUDED_SONG_IDS = new Set([707, 708, 709]);
@@ -184,7 +185,7 @@ export async function getSongOptions() {
     if (cachedSongOptions) return applyDateFilter(cachedSongOptions);
 
     try {
-        const response = await fetch('https://api.rilaksekai.com/api/songs');
+        const response = await fetch(joinUrl(API_BASE_URL, 'api/songs'));
         if (!response.ok) throw new Error('Fetch failed');
         const apiData = await response.json();
         // API 응답을 로컬 형식으로 변환

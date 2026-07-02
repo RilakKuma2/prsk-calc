@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { getCardCharacterId } from '../../utils/supportCardUtils';
+import { ASSET_BASE_URL, joinUrl } from '../../config/env';
 
 const getFaceSuffix = (card) => {
     const rarity = Number(card?.rarity) || 0;
@@ -11,7 +12,7 @@ const getFaceSuffix = (card) => {
 const getCardImageUrl = (card, suffix = getFaceSuffix(card)) => {
     const characterId = String(getCardCharacterId(card) || 1).padStart(2, '0');
     const cardImageId = String(card?.card_image_id || '001').padStart(3, '0');
-    return `https://asset.rilaksekai.com/face/res0${characterId}_no${cardImageId}_${suffix}.webp`;
+    return joinUrl(ASSET_BASE_URL, `face/res0${characterId}_no${cardImageId}_${suffix}.webp`);
 };
 
 const getSkillBadgeInfo = (effect) => {
