@@ -381,6 +381,7 @@ const en = {
         current_level: 'Current Level',
         target_level: 'Target Level',
         current_points: 'Current Points',
+        remaining_points: 'Next Lvl Points',
         card_multiplier: 'BD Card Multiplier',
         gacha_seal: 'Gacha Seal Exchange',
         points_per_item: 'Points per Item',

@@ -27,14 +27,19 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
     }, [showTooltip]);
 
     // Inputs
-    const [currentTotal, setCurrentTotal] = useState(surveyData.crystalCurrentTotal || '');
-    const [currentPaid, setCurrentPaid] = useState(surveyData.crystalCurrentPaid || '');
-    const [passPoints, setPassPoints] = useState(surveyData.crystalPassPoints || 0);
-    const [passRenewalDate, setPassRenewalDate] = useState(surveyData.crystalPassRenewalDate || 1); // New State: 1-31
-    const [worldPassRenewalDate, setWorldPassRenewalDate] = useState(surveyData.crystalWorldPassRenewalDate || 1); // World Pass Renewal
+    const currentTotal = surveyData.crystalCurrentTotal || '';
+    const setCurrentTotal = (val) => setSurveyData(prev => ({ ...prev, crystalCurrentTotal: typeof val === 'function' ? val(prev.crystalCurrentTotal || '') : val }));
+    const currentPaid = surveyData.crystalCurrentPaid || '';
+    const setCurrentPaid = (val) => setSurveyData(prev => ({ ...prev, crystalCurrentPaid: typeof val === 'function' ? val(prev.crystalCurrentPaid || '') : val }));
+    const passPoints = surveyData.crystalPassPoints || 0;
+    const setPassPoints = (val) => setSurveyData(prev => ({ ...prev, crystalPassPoints: typeof val === 'function' ? val(prev.crystalPassPoints || 0) : val }));
+    const passRenewalDate = surveyData.crystalPassRenewalDate || 1; // New State: 1-31
+    const setPassRenewalDate = (val) => setSurveyData(prev => ({ ...prev, crystalPassRenewalDate: typeof val === 'function' ? val(prev.crystalPassRenewalDate || 1) : val }));
+    const worldPassRenewalDate = surveyData.crystalWorldPassRenewalDate || 1; // World Pass Renewal
+    const setWorldPassRenewalDate = (val) => setSurveyData(prev => ({ ...prev, crystalWorldPassRenewalDate: typeof val === 'function' ? val(prev.crystalWorldPassRenewalDate || 1) : val }));
 
     // Detailed Monthly Settings
-    const [settings, setSettings] = useState(surveyData.crystalSettings || {
+    const settings = surveyData.crystalSettings || {
         // Passes
         premiumPass: false, // +1850 Paid, +5000 Free
         colorfulPass: false, // +2760 Paid, +3000 Free (프레셔스)
@@ -53,12 +58,15 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
         // Monthly paid purchases
         halfPriceCount: 0, // -1500 Paid per count per month
         annuityCount: 0 // -2000 Paid per count per month
-    });
+    };
+    const setSettings = (val) => setSurveyData(prev => ({ ...prev, crystalSettings: typeof val === 'function' ? val(prev.crystalSettings || settings) : val }));
 
     // Gacha Plan - 3 slots per month: early (1-10일), mid (11-20일), late (21-말일)
     // Each slot: { enabled: bool, type: '1ceiling'|'2ceiling'|'birthday', halfPrice: bool, annuity: bool }
-    const [gachaPlan, setGachaPlan] = useState(surveyData.crystalGachaPlan || {});
-    const [usePaidWhenLow, setUsePaidWhenLow] = useState(surveyData.crystalUsePaidWhenLow === true); // Default false
+    const gachaPlan = surveyData.crystalGachaPlan || {};
+    const setGachaPlan = (val) => setSurveyData(prev => ({ ...prev, crystalGachaPlan: typeof val === 'function' ? val(prev.crystalGachaPlan || {}) : val }));
+    const usePaidWhenLow = surveyData.crystalUsePaidWhenLow === true; // Default false
+    const setUsePaidWhenLow = (val) => setSurveyData(prev => ({ ...prev, crystalUsePaidWhenLow: typeof val === 'function' ? val(prev.crystalUsePaidWhenLow === true) : val }));
 
     // Event Data State
     const [eventData, setEventData] = useState(null);
@@ -103,20 +111,7 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
         };
     }, [gachaPopup.open]);
 
-    useEffect(() => {
-        setSurveyData({
-            ...surveyData,
-            crystalCurrentTotal: currentTotal,
-            crystalCurrentPaid: currentPaid,
-            crystalSettings: settings,
-            crystalGachaPlan: gachaPlan,
-            crystalPassPoints: passPoints,
-            crystalPassRenewalDate: passRenewalDate,
-            crystalWorldPassRenewalDate: worldPassRenewalDate,
-            crystalUsePaidWhenLow: usePaidWhenLow
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentTotal, currentPaid, settings, gachaPlan, passPoints, passRenewalDate, worldPassRenewalDate, usePaidWhenLow]);
+
 
     const handleSettingChange = (key) => {
         setSettings(prev => ({ ...prev, [key]: !prev[key] }));

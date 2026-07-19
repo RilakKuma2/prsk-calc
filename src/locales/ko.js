@@ -377,6 +377,7 @@ const ko = {
         current_level: '현재 레벨',
         target_level: '목표 레벨',
         current_points: '현재 포인트',
+        remaining_points: '다음 레벨까지 포인트',
         card_multiplier: '생카 배율',
         gacha_seal: '가챠씰 교환',
         points_per_item: '아마츠유 개당 포인트',

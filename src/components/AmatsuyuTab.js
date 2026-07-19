@@ -8,12 +8,18 @@ import { characterBirthdays } from '../data/characterBirthdays';
 
 const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
-  const [hasCurrentYearCard, setHasCurrentYearCard] = useState(surveyData.hasCurrentYearCard || 'N');
-  const [pastCardsOwned, setPastCardsOwned] = useState(surveyData.pastCardsOwned || '0');
-  const [currentLevel, setCurrentLevel] = useState(surveyData.amatsuyuCurrentLevel || '0');
-  const [targetLevel, setTargetLevel] = useState(surveyData.amatsuyuTargetLevel || '400');
-  const [currentPoints, setCurrentPoints] = useState(surveyData.amatsuyuCurrentPoints || '0');
-  const [gachaSealCount, setGachaSealCount] = useState(surveyData.gachaSealCount || '0');
+  const hasCurrentYearCard = surveyData.hasCurrentYearCard || 'N';
+  const setHasCurrentYearCard = (val) => setSurveyData(prev => ({ ...prev, hasCurrentYearCard: typeof val === 'function' ? val(prev.hasCurrentYearCard || 'N') : val }));
+  const pastCardsOwned = surveyData.pastCardsOwned || '0';
+  const setPastCardsOwned = (val) => setSurveyData(prev => ({ ...prev, pastCardsOwned: typeof val === 'function' ? val(prev.pastCardsOwned || '0') : val }));
+  const currentLevel = surveyData.amatsuyuCurrentLevel || '0';
+  const setCurrentLevel = (val) => setSurveyData(prev => ({ ...prev, amatsuyuCurrentLevel: typeof val === 'function' ? val(prev.amatsuyuCurrentLevel || '0') : val }));
+  const targetLevel = surveyData.amatsuyuTargetLevel || '400';
+  const setTargetLevel = (val) => setSurveyData(prev => ({ ...prev, amatsuyuTargetLevel: typeof val === 'function' ? val(prev.amatsuyuTargetLevel || '400') : val }));
+  const currentPoints = surveyData.amatsuyuCurrentPoints !== undefined ? surveyData.amatsuyuCurrentPoints : '10000';
+  const setCurrentPoints = (val) => setSurveyData(prev => ({ ...prev, amatsuyuCurrentPoints: typeof val === 'function' ? val(prev.amatsuyuCurrentPoints !== undefined ? prev.amatsuyuCurrentPoints : '10000') : val }));
+  const gachaSealCount = surveyData.gachaSealCount || '0';
+  const setGachaSealCount = (val) => setSurveyData(prev => ({ ...prev, gachaSealCount: typeof val === 'function' ? val(prev.gachaSealCount || '0') : val }));
   const [totalNeeded, setTotalNeeded] = useState(0);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
@@ -92,8 +98,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const [highestBirthdayTitle, setHighestBirthdayTitle] = useState('');
 
   useEffect(() => {
-    const newSurveyData = { ...surveyData, hasCurrentYearCard, pastCardsOwned, amatsuyuCurrentLevel: currentLevel, amatsuyuTargetLevel: targetLevel, amatsuyuCurrentPoints: currentPoints, gachaSealCount };
-    setSurveyData(newSurveyData);
+    // Using direct variables from surveyData
 
     // Calculate Birthday Card Bonus
     let bonus = 0;
@@ -114,7 +119,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
     const pointsPerLevel = 10000;
 
     // Store original total points needed
-    const tNeeded = Math.ceil(((targetLvl - currentLvl) * pointsPerLevel - parseInt(currentPoints || '0')) / pointsPerItem);
+    const tNeeded = Math.ceil(((targetLvl - currentLvl - 1) * pointsPerLevel + parseInt(currentPoints !== undefined && currentPoints !== '' ? currentPoints : '10000')) / pointsPerItem);
     setTotalNeeded(tNeeded);
 
     if (targetLvl <= currentLvl) {
@@ -129,7 +134,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
       return;
     }
 
-    const totalPointsNeeded = (targetLvl - currentLvl) * pointsPerLevel - parseInt(currentPoints || '0');
+    const totalPointsNeeded = (targetLvl - currentLvl - 1) * pointsPerLevel + parseInt(currentPoints !== undefined && currentPoints !== '' ? currentPoints : '10000');
     let needed = Math.ceil(totalPointsNeeded / pointsPerItem);
 
     // Subtract Gacha Seals (1 Seal = 150 Amatsuyu)
@@ -230,7 +235,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
           spacer={true}
         />
         <InputRow
-          label={t('amatsuyu.current_points')}
+          label={t('amatsuyu.remaining_points')}
           value={currentPoints}
           onChange={e => {
             const val = parseInt(e.target.value);
@@ -242,7 +247,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
               setCurrentPoints(e.target.value);
             }
           }}
-          placeholder="0"
+          placeholder="10000"
           spacer={true}
         />
         <InputRow

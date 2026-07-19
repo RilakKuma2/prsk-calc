@@ -595,6 +595,8 @@ const EventShopSimulator = ({
   naturalSettings = {},
   onNaturalSettingsChange,
   onImport,
+  surveyData = {},
+  setSurveyData,
 }) => {
   const { t, language } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -627,70 +629,40 @@ const EventShopSimulator = ({
   const [importMenuOpen, setImportMenuOpen] = useState(false);
   const [isTopSectionCollapsed, setIsTopSectionCollapsed] = useState(false);
 
-  const PRSK_CALC_DATA_KEY = 'prskCalcSurveyData';
-  const surveyData = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(PRSK_CALC_DATA_KEY);
-      if (saved) return JSON.parse(saved);
-    }
-    return {};
-  }, []);
-  const [localCurrentNaturalFire, setLocalCurrentNaturalFire] = useState(surveyData.currentNaturalFire || '');
-  const [localIsLevelUpBonusEnabled, setLocalIsLevelUpBonusEnabled] = useState(surveyData.isLevelUpBonusEnabled || false);
-  const [localCurrentLevel, setLocalCurrentLevel] = useState(surveyData.fireCurrentLevel || surveyData.currentLevel || '');
-  const [localRemainingExp, setLocalRemainingExp] = useState(surveyData.fireRemainingExp || surveyData.remainingExp || '');
-  const [localLiveRank] = useState(surveyData.fireLiveRank || surveyData.liveRank || 'S');
-  const [localChallengeScore, setLocalChallengeScore] = useState(surveyData.challengeScore || '');
-  const [localMySekaiScore, setLocalMySekaiScore] = useState(surveyData.mySekaiScore || '');
-  const [localWorldPass, setLocalWorldPass] = useState(surveyData.worldPass || false);
-  const [localIsEventPointAdEnabled, setLocalIsEventPointAdEnabled] = useState(surveyData.isEventPointAdEnabled || false);
   const [isNaturalFireOpen, setIsNaturalFireOpen] = useState(false);
   const getNaturalSetting = (key, fallback) => (
     Object.prototype.hasOwnProperty.call(naturalSettings, key)
       ? naturalSettings[key]
       : fallback
   );
-  const updateNaturalSetting = (key, value, localSetter) => {
-    localSetter(value);
+  
+  const updateNaturalSetting = (key, value) => {
     if (onNaturalSettingsChange) {
       onNaturalSettingsChange({ [key]: value });
     }
   };
-  const currentNaturalFire = getNaturalSetting('currentNaturalFire', localCurrentNaturalFire);
-  const setCurrentNaturalFire = (value) => updateNaturalSetting('currentNaturalFire', value, setLocalCurrentNaturalFire);
-  const isLevelUpBonusEnabled = getNaturalSetting('isLevelUpBonusEnabled', localIsLevelUpBonusEnabled);
-  const setIsLevelUpBonusEnabled = (value) => updateNaturalSetting('isLevelUpBonusEnabled', value, setLocalIsLevelUpBonusEnabled);
-  const currentLevel = getNaturalSetting('currentLevel', localCurrentLevel);
-  const setCurrentLevel = (value) => updateNaturalSetting('currentLevel', value, setLocalCurrentLevel);
-  const remainingExp = getNaturalSetting('remainingExp', localRemainingExp);
-  const setRemainingExp = (value) => updateNaturalSetting('remainingExp', value, setLocalRemainingExp);
-  const liveRank = getNaturalSetting('liveRank', localLiveRank);
-  const challengeScore = getNaturalSetting('challengeScore', localChallengeScore);
-  const setChallengeScore = (value) => updateNaturalSetting('challengeScore', value, setLocalChallengeScore);
-  const mySekaiScore = getNaturalSetting('mySekaiScore', localMySekaiScore);
-  const setMySekaiScore = (value) => updateNaturalSetting('mySekaiScore', value, setLocalMySekaiScore);
-  const worldPass = getNaturalSetting('worldPass', localWorldPass);
-  const setWorldPass = (value) => updateNaturalSetting('worldPass', value, setLocalWorldPass);
-  const isEventPointAdEnabled = localIsEventPointAdEnabled;
-  const setIsEventPointAdEnabled = setLocalIsEventPointAdEnabled;
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const currentData = JSON.parse(localStorage.getItem(PRSK_CALC_DATA_KEY) || '{}');
-    const newData = {
-      ...currentData,
-      currentNaturalFire,
-      isLevelUpBonusEnabled,
-      fireCurrentLevel: currentLevel,
-      fireRemainingExp: remainingExp,
-      fireLiveRank: liveRank,
-      challengeScore,
-      mySekaiScore,
-      worldPass,
-      isEventPointAdEnabled
-    };
-    localStorage.setItem(PRSK_CALC_DATA_KEY, JSON.stringify(newData));
-  }, [currentNaturalFire, isLevelUpBonusEnabled, currentLevel, remainingExp, liveRank, challengeScore, mySekaiScore, worldPass, isEventPointAdEnabled]);
+  const currentNaturalFire = getNaturalSetting('currentNaturalFire', surveyData.currentNaturalFire || '');
+  const setCurrentNaturalFire = (value) => updateNaturalSetting('currentNaturalFire', value);
+  const isLevelUpBonusEnabled = getNaturalSetting('isLevelUpBonusEnabled', surveyData.isLevelUpBonusEnabled || false);
+  const setIsLevelUpBonusEnabled = (value) => updateNaturalSetting('isLevelUpBonusEnabled', value);
+  const currentLevel = getNaturalSetting('currentLevel', surveyData.fireCurrentLevel || surveyData.currentLevel || '');
+  const setCurrentLevel = (value) => updateNaturalSetting('currentLevel', value);
+  const remainingExp = getNaturalSetting('remainingExp', surveyData.fireRemainingExp || surveyData.remainingExp || '');
+  const setRemainingExp = (value) => updateNaturalSetting('remainingExp', value);
+  const liveRank = getNaturalSetting('liveRank', surveyData.fireLiveRank || surveyData.liveRank || 'S');
+  const challengeScore = getNaturalSetting('challengeScore', surveyData.challengeScore || '');
+  const setChallengeScore = (value) => updateNaturalSetting('challengeScore', value);
+  const mySekaiScore = getNaturalSetting('mySekaiScore', surveyData.mySekaiScore || '');
+  const setMySekaiScore = (value) => updateNaturalSetting('mySekaiScore', value);
+  const worldPass = getNaturalSetting('worldPass', surveyData.worldPass || false);
+  const setWorldPass = (value) => updateNaturalSetting('worldPass', value);
+  
+  const isEventPointAdEnabled = surveyData.isEventPointAdEnabled || false;
+  const setIsEventPointAdEnabled = (val) => {
+    if (setSurveyData) {
+      setSurveyData(prev => ({ ...prev, isEventPointAdEnabled: typeof val === 'function' ? val(prev.isEventPointAdEnabled || false) : val }));
+    }
+  };
 
   useEffect(() => {
     if (scorePerRoundMan !== undefined) setLocalScorePerRoundMan(scorePerRoundMan);

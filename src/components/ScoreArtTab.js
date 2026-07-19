@@ -6,13 +6,20 @@ import { useTranslation } from '../contexts/LanguageContext';
 
 const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const { t } = useTranslation();
-    const [currentEP, setCurrentEP] = useState(surveyData.currentEP || '');
-    const [targetEP, setTargetEP] = useState(surveyData.targetEP || '');
-    const [maxBonus, setMaxBonus] = useState(surveyData.maxBonus || '');
-    const [maxPower, setMaxPower] = useState(surveyData.maxPower || '');
-    const [maxEnvyScore, setMaxEnvyScore] = useState(surveyData.maxEnvyScore || '');
-    const [zeroScoreOnly, setZeroScoreOnly] = useState(surveyData.zeroScoreOnly || false);
-    const [allowNonMod5, setAllowNonMod5] = useState(surveyData.allowNonMod5 || false);
+    const currentEP = surveyData.currentEP || '';
+    const setCurrentEP = (val) => setSurveyData(prev => ({ ...prev, currentEP: typeof val === 'function' ? val(prev.currentEP || '') : val }));
+    const targetEP = surveyData.targetEP || '';
+    const setTargetEP = (val) => setSurveyData(prev => ({ ...prev, targetEP: typeof val === 'function' ? val(prev.targetEP || '') : val }));
+    const maxBonus = surveyData.maxBonus || '';
+    const setMaxBonus = (val) => setSurveyData(prev => ({ ...prev, maxBonus: typeof val === 'function' ? val(prev.maxBonus || '') : val }));
+    const maxPower = surveyData.maxPower || '';
+    const setMaxPower = (val) => setSurveyData(prev => ({ ...prev, maxPower: typeof val === 'function' ? val(prev.maxPower || '') : val }));
+    const maxEnvyScore = surveyData.maxEnvyScore || '';
+    const setMaxEnvyScore = (val) => setSurveyData(prev => ({ ...prev, maxEnvyScore: typeof val === 'function' ? val(prev.maxEnvyScore || '') : val }));
+    const zeroScoreOnly = surveyData.zeroScoreOnly || false;
+    const setZeroScoreOnly = (val) => setSurveyData(prev => ({ ...prev, zeroScoreOnly: typeof val === 'function' ? val(prev.zeroScoreOnly || false) : val }));
+    const allowNonMod5 = surveyData.allowNonMod5 || false;
+    const setAllowNonMod5 = (val) => setSurveyData(prev => ({ ...prev, allowNonMod5: typeof val === 'function' ? val(prev.allowNonMod5 || false) : val }));
 
     const [csvData, setCsvData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -43,18 +50,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
             });
     }, [t]);
 
-    useEffect(() => {
-        setSurveyData(prev => ({
-            ...prev,
-            currentEP,
-            targetEP,
-            maxBonus,
-            maxPower,
-            maxEnvyScore,
-            zeroScoreOnly,
-            allowNonMod5
-        }));
-    }, [currentEP, targetEP, maxBonus, maxPower, maxEnvyScore, zeroScoreOnly, allowNonMod5, setSurveyData]);
+
 
     const calculate = () => {
         setError('');

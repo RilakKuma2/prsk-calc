@@ -149,12 +149,18 @@ const CurrentScoreWithDelta = ({ score, delta, stacked = false }) => {
 const FireTab = ({ surveyData, setSurveyData }) => {
   const { user } = useAuth();
   const { t, language } = useTranslation();
-  const [score1, setScore1] = useState(surveyData.score1 || '');
-  const [score2, setScore2] = useState(surveyData.score2 || '');
-  const [score3, setScore3] = useState(surveyData.score3 || '');
-  const [rounds1, setRounds1] = useState(surveyData.rounds1 || '');
-  const [firea, setFirea] = useState(surveyData.firea || "25");
-  const [fires2, setFires2] = useState(surveyData.fires2 || "none");
+  const score1 = surveyData.score1 || '';
+  const setScore1 = (val) => setSurveyData(prev => ({ ...prev, score1: typeof val === 'function' ? val(prev.score1 || '') : val }));
+  const score2 = surveyData.score2 || '';
+  const setScore2 = (val) => setSurveyData(prev => ({ ...prev, score2: typeof val === 'function' ? val(prev.score2 || '') : val }));
+  const score3 = surveyData.score3 || '';
+  const setScore3 = (val) => setSurveyData(prev => ({ ...prev, score3: typeof val === 'function' ? val(prev.score3 || '') : val }));
+  const rounds1 = surveyData.rounds1 || '';
+  const setRounds1 = (val) => setSurveyData(prev => ({ ...prev, rounds1: typeof val === 'function' ? val(prev.rounds1 || '') : val }));
+  const firea = surveyData.firea || "25";
+  const setFirea = (val) => setSurveyData(prev => ({ ...prev, firea: typeof val === 'function' ? val(prev.firea || "25") : val }));
+  const fires2 = surveyData.fires2 || "none";
+  const setFires2 = (val) => setSurveyData(prev => ({ ...prev, fires2: typeof val === 'function' ? val(prev.fires2 || "none") : val }));
 
   const [neededRounds, setNeededRounds] = useState(0);
   const [neededFires, setNeededFires] = useState(0);
@@ -177,10 +183,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [isRoomSearchOpen, setIsRoomSearchOpen] = useState(false);
   const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('roomSearchEngine') || 'yahoo');
   const [showRecentHourlySpeed, setShowRecentHourlySpeed] = useState(() => localStorage.getItem('showRecentHourlySpeed') !== 'false');
-  const [currentNaturalFire, setCurrentNaturalFire] = useState(surveyData.currentNaturalFire || '');
-  const [challengeScore, setChallengeScore] = useState(surveyData.challengeScore || ''); // Default empty, used as 250 if empty
-  const [worldPass, setWorldPass] = useState(surveyData.worldPass || false);
-  const [mySekaiScore, setMySekaiScore] = useState(surveyData.mySekaiScore || ''); // Default empty, used as 2500 if empty
+  const currentNaturalFire = surveyData.currentNaturalFire || '';
+  const setCurrentNaturalFire = (val) => setSurveyData(prev => ({ ...prev, currentNaturalFire: typeof val === 'function' ? val(prev.currentNaturalFire || '') : val }));
+  const challengeScore = surveyData.challengeScore || ''; // Default empty, used as 250 if empty
+  const setChallengeScore = (val) => setSurveyData(prev => ({ ...prev, challengeScore: typeof val === 'function' ? val(prev.challengeScore || '') : val }));
+  const worldPass = surveyData.worldPass || false;
+  const setWorldPass = (val) => setSurveyData(prev => ({ ...prev, worldPass: typeof val === 'function' ? val(prev.worldPass || false) : val }));
+  const mySekaiScore = surveyData.mySekaiScore || ''; // Default empty, used as 2500 if empty
+  const setMySekaiScore = (val) => setSurveyData(prev => ({ ...prev, mySekaiScore: typeof val === 'function' ? val(prev.mySekaiScore || '') : val }));
   const [importMenuOpen, setImportMenuOpen] = useState(false);
   const [isShopSimulatorOpen, setIsShopSimulatorOpen] = useState(false);
 
@@ -202,10 +212,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   }, [isShopSimulatorOpen]);
 
   // Level Up Bonus State
-  const [isLevelUpBonusEnabled, setIsLevelUpBonusEnabled] = useState(surveyData.isLevelUpBonusEnabled || false);
-  const [currentLevel, setCurrentLevel] = useState(surveyData.fireCurrentLevel || '');
-  const [remainingExp, setRemainingExp] = useState(surveyData.fireRemainingExp || '');
-  const [liveRank, setLiveRank] = useState(surveyData.fireLiveRank || 'S');
+  const isLevelUpBonusEnabled = surveyData.isLevelUpBonusEnabled || false;
+  const setIsLevelUpBonusEnabled = (val) => setSurveyData(prev => ({ ...prev, isLevelUpBonusEnabled: typeof val === 'function' ? val(prev.isLevelUpBonusEnabled || false) : val }));
+  const currentLevel = surveyData.fireCurrentLevel || '';
+  const setCurrentLevel = (val) => setSurveyData(prev => ({ ...prev, fireCurrentLevel: typeof val === 'function' ? val(prev.fireCurrentLevel || '') : val }));
+  const remainingExp = surveyData.fireRemainingExp || '';
+  const setRemainingExp = (val) => setSurveyData(prev => ({ ...prev, fireRemainingExp: typeof val === 'function' ? val(prev.fireRemainingExp || '') : val }));
+  const liveRank = surveyData.fireLiveRank || 'S';
+  const setLiveRank = (val) => setSurveyData(prev => ({ ...prev, fireLiveRank: typeof val === 'function' ? val(prev.fireLiveRank || 'S') : val }));
 
   // Next Event Fire State
   const [isNextEventFireEnabled, setIsNextEventFireEnabled] = useState(false);
@@ -699,14 +713,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   };
 
   useEffect(() => {
-    const newSurveyData = {
-      ...surveyData,
-      score1, score2, score3, rounds1, firea, fires2,
-      currentNaturalFire, challengeScore, worldPass, mySekaiScore,
-      isLevelUpBonusEnabled,
-      fireCurrentLevel: currentLevel, fireRemainingExp: remainingExp, fireLiveRank: liveRank
-    };
-    setSurveyData(newSurveyData);
+
 
     let currentScore = parseFloat(score1 || '0') || 0;
     let targetScore = parseFloat(score2 || '3000') || 0;
@@ -2280,6 +2287,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               }}
               onNaturalSettingsChange={handleShopNaturalSettingsChange}
               onImport={handleImport}
+              surveyData={surveyData}
+              setSurveyData={setSurveyData}
             />
           </div>
         </div>
@@ -2507,8 +2516,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           }
                         }
                         // 종합 (기존 로직)
-                        if (eventInfo && lastUpdated) {
-                          return formatDuration((eventInfo.end * 1000) - lastUpdated, t);
+                        if (eventInfo && (lastUpdated || currentScoreLastUpdated)) {
+                          const refTime = Math.max(lastUpdated || 0, currentScoreLastUpdated || 0);
+                          return formatDuration((eventInfo.end * 1000) - refTime, t);
                         }
                         return timeRemaining !== null ? formatDuration(timeRemaining, t) : null;
                       })()}

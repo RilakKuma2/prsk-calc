@@ -5,11 +5,16 @@ import { useTranslation } from '../contexts/LanguageContext';
 
 const CardLevelTab = ({ surveyData, setSurveyData }) => {
   const { t } = useTranslation();
-  const [currentLevel, setCurrentLevel] = useState(surveyData.currentLevel || '');
-  const [currentExp, setCurrentExp] = useState(surveyData.currentExp || '');
-  const [targetLevel, setTargetLevel] = useState(surveyData.targetLevel || '');
-  const [rank, setRank] = useState(surveyData.rank || '960');
-  const [fires, setFires] = useState(surveyData.fires || '5');
+  const currentLevel = surveyData.currentLevel || '';
+  const setCurrentLevel = (val) => setSurveyData(prev => ({ ...prev, currentLevel: typeof val === 'function' ? val(prev.currentLevel || '') : val }));
+  const currentExp = surveyData.currentExp || '';
+  const setCurrentExp = (val) => setSurveyData(prev => ({ ...prev, currentExp: typeof val === 'function' ? val(prev.currentExp || '') : val }));
+  const targetLevel = surveyData.targetLevel || '';
+  const setTargetLevel = (val) => setSurveyData(prev => ({ ...prev, targetLevel: typeof val === 'function' ? val(prev.targetLevel || '') : val }));
+  const rank = surveyData.rank || '960';
+  const setRank = (val) => setSurveyData(prev => ({ ...prev, rank: typeof val === 'function' ? val(prev.rank || '960') : val }));
+  const fires = surveyData.fires || '5';
+  const setFires = (val) => setSurveyData(prev => ({ ...prev, fires: typeof val === 'function' ? val(prev.fires || '5') : val }));
 
   const [neededExp, setNeededExp] = useState(0);
   const [neededRounds, setNeededRounds] = useState(0);
@@ -17,8 +22,7 @@ const CardLevelTab = ({ surveyData, setSurveyData }) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const newSurveyData = { ...surveyData, currentLevel, currentExp, targetLevel, rank, fires };
-    setSurveyData(newSurveyData);
+
 
     const currentLevelVal = parseInt(currentLevel || '13');
     const currentExpVal = parseInt(currentExp || '5332');

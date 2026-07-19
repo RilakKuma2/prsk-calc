@@ -681,24 +681,24 @@ const AppContent = () => {
   const activeTabElement = useMemo(() => {
     switch (currentTab) {
       case 'level':
-        return <LevelTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
+        return <LevelTab surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
       case 'fire':
-        return <FireTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />;
+        return <FireTab surveyData={surveyData} setSurveyData={setSurveyData} />;
       case 'challenge':
-        return <ChallengeTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
+        return <ChallengeTab surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
       case 'amatsuyu':
-        return <AmatsuyuTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />;
+        return <AmatsuyuTab surveyData={surveyData} setSurveyData={setSurveyData} />;
       case 'scoreArt':
-        return <ScoreArtTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />;
+        return <ScoreArtTab surveyData={surveyData} setSurveyData={setSurveyData} />;
       case 'gacha':
-        return <GachaTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
+        return <GachaTab surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
       case 'rank':
-        return <CharacterRankTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} />;
+        return <CharacterRankTab surveyData={surveyData} setSurveyData={setSurveyData} />;
       case 'support':
-        return <SupportDeckTab key={loadVersion} />;
+        return <SupportDeckTab />;
       case 'deck':
       default:
-        return <DeckTab key={loadVersion} surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
+        return <DeckTab surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
     }
   }, [currentTab, loadVersion, surveyData, setSurveyData, subPath]);
 

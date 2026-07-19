@@ -181,36 +181,58 @@ const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDeta
 const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   const { t, language } = useTranslation();
 
-  // Comparison Mode State (Moved to top to avoid ReferenceError in initializers)
-  const [isComparisonMode, setIsComparisonMode] = useState(surveyData.isComparisonMode || false);
-  const [powerB, setPowerB] = useState(surveyData.powerB || '');
-  const [effiB, setEffiB] = useState(surveyData.effiB || '');
-  const [internalValueB, setInternalValueB] = useState(surveyData.internalValueB || '');
+  // Comparison Mode State
+  const isComparisonMode = surveyData.isComparisonMode || false;
+  const setIsComparisonMode = (val) => setSurveyData(prev => ({ ...prev, isComparisonMode: typeof val === 'function' ? val(prev.isComparisonMode || false) : val }));
+
+  const powerB = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck2
+    ? (surveyData.unifiedDecks.deck2.totalPower ? String(surveyData.unifiedDecks.deck2.totalPower / 10000) : '')
+    : (surveyData.powerB || '');
+  const setPowerB = (val) => setSurveyData(prev => ({ ...prev, powerB: typeof val === 'function' ? val(prev.powerB || '') : val }));
+
+  const effiB = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck2
+    ? (surveyData.unifiedDecks.deck2.eventBonus ? String(surveyData.unifiedDecks.deck2.eventBonus) : '')
+    : (surveyData.effiB || '');
+  const setEffiB = (val) => setSurveyData(prev => ({ ...prev, effiB: typeof val === 'function' ? val(prev.effiB || '') : val }));
+
+  const internalValueB = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck2
+    ? (surveyData.unifiedDecks.deck2.internalValue ? String(surveyData.unifiedDecks.deck2.internalValue) : '')
+    : (surveyData.internalValueB || '');
+  const setInternalValueB = (val) => setSurveyData(prev => ({ ...prev, internalValueB: typeof val === 'function' ? val(prev.internalValueB || '') : val }));
 
   // Main State
-  const [power, setPower] = useState(surveyData.power || '');
-  const [effi, setEffi] = useState(surveyData.effi || '');
-  const [internalValue, setInternalValue] = useState(surveyData.internalValue || '');
+  const power = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1 
+    ? (surveyData.unifiedDecks.deck1.totalPower ? String(surveyData.unifiedDecks.deck1.totalPower / 10000) : '')
+    : (surveyData.power || '');
+  const setPower = (val) => setSurveyData(prev => ({ ...prev, power: typeof val === 'function' ? val(prev.power || '') : val }));
+
+  const effi = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1 
+    ? (surveyData.unifiedDecks.deck1.eventBonus ? String(surveyData.unifiedDecks.deck1.eventBonus) : '')
+    : (surveyData.effi || '');
+  const setEffi = (val) => setSurveyData(prev => ({ ...prev, effi: typeof val === 'function' ? val(prev.effi || '') : val }));
+
+  const internalValue = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1 
+    ? (surveyData.unifiedDecks.deck1.internalValue ? String(surveyData.unifiedDecks.deck1.internalValue) : '')
+    : (surveyData.internalValue || '');
+  const setInternalValue = (val) => setSurveyData(prev => ({ ...prev, internalValue: typeof val === 'function' ? val(prev.internalValue || '') : val }));
+
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
   const [showAllSongsTable, setShowAllSongsTable] = useState(false);
   const [musicMetasLoadVersion, setMusicMetasLoadVersion] = useState(0);
 
-  // Detailed Input State (declared before useEffect that references them)
-  const [isDetailedInput, setIsDetailedInput] = useState(surveyData.isDetailedInput || false);
-  const [detailedSkills, setDetailedSkills] = useState(surveyData.detailedSkills || {
-    encore: '',
-    member1: '',
-    member2: '',
-    member3: '',
-    member4: ''
-  });
-  const [detailedSkillsB, setDetailedSkillsB] = useState(surveyData.detailedSkillsB || {
-    encore: '',
-    member1: '',
-    member2: '',
-    member3: '',
-    member4: ''
-  });
+  // Detailed Input State
+  const isDetailedInput = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1
+    ? Boolean(surveyData.unifiedDecks.deck1.isDetailedInput)
+    : Boolean(surveyData.isDetailedInput);
+  const setIsDetailedInput = (val) => setSurveyData(prev => ({ ...prev, isDetailedInput: typeof val === 'function' ? val(prev.isDetailedInput || false) : val }));
+
+  const detailedSkills = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1
+    ? (surveyData.unifiedDecks.deck1.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' })
+    : (surveyData.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' });
+  const setDetailedSkills = (val) => setSurveyData(prev => ({ ...prev, detailedSkills: typeof val === 'function' ? val(prev.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' }) : val }));
+
+  const detailedSkillsB = surveyData.detailedSkillsB || { encore: '', member1: '', member2: '', member3: '', member4: '' };
+  const setDetailedSkillsB = (val) => setSurveyData(prev => ({ ...prev, detailedSkillsB: typeof val === 'function' ? val(prev.detailedSkillsB || { encore: '', member1: '', member2: '', member3: '', member4: '' }) : val }));
 
   useEffect(() => {
     let cancelled = false;
@@ -222,58 +244,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     };
   }, []);
 
-  // Sync local state with surveyData when it changes externally (e.g., from DeckTab)
-  useEffect(() => {
-    if (!hideInputs) return;
 
-    if (isComparisonMode && surveyData.unifiedDecks?.deck1) {
-      const d1 = surveyData.unifiedDecks.deck1;
-      // Sync power
-      const powerVal = d1.totalPower !== undefined && d1.totalPower !== null && d1.totalPower !== ''
-        ? String(d1.totalPower / 10000)
-        : '';
-      setPower(powerVal);
-
-      // Sync effi
-      const effiVal = d1.eventBonus !== undefined && d1.eventBonus !== null && d1.eventBonus !== ''
-        ? String(d1.eventBonus)
-        : '';
-      setEffi(effiVal);
-
-      // Sync internalValue
-      const internalVal = d1.internalValue !== undefined && d1.internalValue !== null && d1.internalValue !== ''
-        ? String(d1.internalValue)
-        : '';
-      setInternalValue(internalVal);
-
-      // Sync detailedSkills and isDetailedInput
-      setDetailedSkills(d1.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' });
-      setIsDetailedInput(Boolean(d1.isDetailedInput));
-    } else {
-      if (surveyData.power !== undefined) setPower(surveyData.power);
-      if (surveyData.effi !== undefined) setEffi(surveyData.effi);
-      if (surveyData.internalValue !== undefined) setInternalValue(surveyData.internalValue || '');
-      if (surveyData.detailedSkills) setDetailedSkills(surveyData.detailedSkills);
-      if (surveyData.isDetailedInput !== undefined) setIsDetailedInput(surveyData.isDetailedInput);
-    }
-  }, [hideInputs, isComparisonMode, surveyData.power, surveyData.effi, surveyData.internalValue,
-    surveyData.detailedSkills, surveyData.isDetailedInput, surveyData.unifiedDecks?.deck1]);
-
-  // Sync Deck 2 data when VS mode enabled
-  useEffect(() => {
-    if (!hideInputs || !isComparisonMode || !surveyData.unifiedDecks?.deck2) return;
-
-    const deck2 = surveyData.unifiedDecks.deck2;
-    setPowerB((deck2.totalPower !== undefined && deck2.totalPower !== null && deck2.totalPower !== '')
-      ? String(deck2.totalPower / 10000)
-      : '');
-    setEffiB((deck2.eventBonus !== undefined && deck2.eventBonus !== null && deck2.eventBonus !== '')
-      ? String(deck2.eventBonus)
-      : '');
-    setInternalValueB((deck2.internalValue !== undefined && deck2.internalValue !== null && deck2.internalValue !== '')
-      ? String(deck2.internalValue)
-      : '');
-  }, [hideInputs, isComparisonMode, surveyData.unifiedDecks?.deck2]);
 
   const [showCalculator, setShowCalculator] = useState(false);
 
@@ -285,15 +256,15 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     }
   };
 
-  // Fire Counts State
-  const [fireCounts, setFireCounts] = useState(surveyData.fireCounts || {
+  const fireCounts = surveyData.fireCounts || {
     loAndFound: 5,
     envy: 5,
     omakase: 5,
     creationMyth: 1,
     mySekai: 1,
     custom: 5
-  });
+  };
+  const setFireCounts = (val) => setSurveyData(prev => ({ ...prev, fireCounts: typeof val === 'function' ? val(prev.fireCounts || { loAndFound: 5, envy: 5, omakase: 5, creationMyth: 1, mySekai: 1, custom: 5 }) : val }));
 
   const [multiEff, setMultiEff] = useState(0);
   const [soloEff, setSoloEff] = useState(0);
@@ -391,21 +362,6 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   };
 
   useEffect(() => {
-    setSurveyData(prev => ({
-      ...prev,
-      power,
-      effi,
-      internalValue,
-      isComparisonMode,
-      powerB,
-      effiB,
-      internalValueB,
-      isDetailedInput,
-      detailedSkills,
-      detailedSkillsB,
-      fireCounts
-    }));
-
     const inputsList = [
       {
         p: power, e: effi, i: internalValue, skills: detailedSkills,

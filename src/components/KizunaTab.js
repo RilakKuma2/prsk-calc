@@ -15,17 +15,26 @@ const findPlayerLevelInfo = (level) => playerLevelData.find(d => {
 
 const KizunaTab = ({ surveyData, setSurveyData }) => {
   const { t } = useTranslation();
-  const [currentLevel, setCurrentLevel] = useState(surveyData.kizunaCurrentLevel || '');
-  const [currentExp, setCurrentExp] = useState(surveyData.kizunaCurrentExp || '');
-  const [targetLevel, setTargetLevel] = useState(surveyData.kizunaTargetLevel || '');
-  const [rank, setRank] = useState(surveyData.kizunaRank || '150');
-  const [fires, setFires] = useState(surveyData.kizunaFires || '5');
+  const currentLevel = surveyData.kizunaCurrentLevel || '';
+  const setCurrentLevel = (val) => setSurveyData(prev => ({ ...prev, kizunaCurrentLevel: typeof val === 'function' ? val(prev.kizunaCurrentLevel || '') : val }));
+  const currentExp = surveyData.kizunaCurrentExp || '';
+  const setCurrentExp = (val) => setSurveyData(prev => ({ ...prev, kizunaCurrentExp: typeof val === 'function' ? val(prev.kizunaCurrentExp || '') : val }));
+  const targetLevel = surveyData.kizunaTargetLevel || '';
+  const setTargetLevel = (val) => setSurveyData(prev => ({ ...prev, kizunaTargetLevel: typeof val === 'function' ? val(prev.kizunaTargetLevel || '') : val }));
+  const rank = surveyData.kizunaRank || '150';
+  const setRank = (val) => setSurveyData(prev => ({ ...prev, kizunaRank: typeof val === 'function' ? val(prev.kizunaRank || '150') : val }));
+  const fires = surveyData.kizunaFires || '5';
+  const setFires = (val) => setSurveyData(prev => ({ ...prev, kizunaFires: typeof val === 'function' ? val(prev.kizunaFires || '5') : val }));
 
   // 렙업불 관련 상태
-  const [levelUpEnabled, setLevelUpEnabled] = useState(surveyData.kizunaLevelUpEnabled || false);
-  const [playerLevel, setPlayerLevel] = useState(surveyData.kizunaPlayerLevel || '');
-  const [playerRemainingExp, setPlayerRemainingExp] = useState(surveyData.kizunaPlayerRemainingExp || '');
-  const [playerLiveRank, setPlayerLiveRank] = useState(surveyData.kizunaPlayerLiveRank || 'S');
+  const levelUpEnabled = surveyData.kizunaLevelUpEnabled || false;
+  const setLevelUpEnabled = (val) => setSurveyData(prev => ({ ...prev, kizunaLevelUpEnabled: typeof val === 'function' ? val(prev.kizunaLevelUpEnabled || false) : val }));
+  const playerLevel = surveyData.kizunaPlayerLevel || '';
+  const setPlayerLevel = (val) => setSurveyData(prev => ({ ...prev, kizunaPlayerLevel: typeof val === 'function' ? val(prev.kizunaPlayerLevel || '') : val }));
+  const playerRemainingExp = surveyData.kizunaPlayerRemainingExp || '';
+  const setPlayerRemainingExp = (val) => setSurveyData(prev => ({ ...prev, kizunaPlayerRemainingExp: typeof val === 'function' ? val(prev.kizunaPlayerRemainingExp || '') : val }));
+  const playerLiveRank = surveyData.kizunaPlayerLiveRank || 'S';
+  const setPlayerLiveRank = (val) => setSurveyData(prev => ({ ...prev, kizunaPlayerLiveRank: typeof val === 'function' ? val(prev.kizunaPlayerLiveRank || 'S') : val }));
 
   const [neededExp, setNeededExp] = useState(0);
   const [neededRounds, setNeededRounds] = useState(0);
@@ -36,20 +45,6 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const newSurveyData = {
-      ...surveyData,
-      kizunaCurrentLevel: currentLevel,
-      kizunaCurrentExp: currentExp,
-      kizunaTargetLevel: targetLevel,
-      kizunaRank: rank,
-      kizunaFires: fires,
-      kizunaLevelUpEnabled: levelUpEnabled,
-      kizunaPlayerLevel: playerLevel,
-      kizunaPlayerRemainingExp: playerRemainingExp,
-      kizunaPlayerLiveRank: playerLiveRank
-    };
-    setSurveyData(newSurveyData);
-
     const currentLevelVal = parseInt(currentLevel || '30');
     const currentExpVal = parseInt(currentExp || '159027');
     const targetLevelVal = parseInt(targetLevel || '125');

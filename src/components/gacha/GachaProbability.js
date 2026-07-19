@@ -47,27 +47,21 @@ const GachaProbability = ({ surveyData, setSurveyData }) => {
     const { t } = useTranslation();
 
     // State for inputs
-    const [pickupProb, setPickupProb] = useState(surveyData.pickupProb || '');
-    const [pickupCount, setPickupCount] = useState(surveyData.pickupCount || '');
-    const [attemptCount, setAttemptCount] = useState(surveyData.attemptCount || '');
-    const [pityCount, setPityCount] = useState(surveyData.pityCount || '');
+    const pickupProb = surveyData.pickupProb || '';
+    const setPickupProb = (val) => setSurveyData(prev => ({ ...prev, pickupProb: typeof val === 'function' ? val(prev.pickupProb || '') : val }));
+    const pickupCount = surveyData.pickupCount || '';
+    const setPickupCount = (val) => setSurveyData(prev => ({ ...prev, pickupCount: typeof val === 'function' ? val(prev.pickupCount || '') : val }));
+    const attemptCount = surveyData.attemptCount || '';
+    const setAttemptCount = (val) => setSurveyData(prev => ({ ...prev, attemptCount: typeof val === 'function' ? val(prev.attemptCount || '') : val }));
+    const pityCount = surveyData.pityCount || '';
+    const setPityCount = (val) => setSurveyData(prev => ({ ...prev, pityCount: typeof val === 'function' ? val(prev.pityCount || '') : val }));
 
     // State for results
     const [resultHtml, setResultHtml] = useState([]);
     const chartRef = useRef(null);
     const chartInstance = useRef(null);
 
-    // Update surveyData when inputs change
-    useEffect(() => {
-        setSurveyData({
-            ...surveyData,
-            pickupProb,
-            pickupCount,
-            attemptCount,
-            pityCount
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pickupProb, pickupCount, attemptCount, pityCount]);
+
 
     // Calculation and Chart Update Logic
     useEffect(() => {

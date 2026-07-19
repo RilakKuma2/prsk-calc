@@ -5,17 +5,21 @@ import { useTranslation } from '../contexts/LanguageContext';
 
 const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
     const { t } = useTranslation();
-    const [currentStage, setCurrentStage] = useState(surveyData.currentStage || '');
-    const [remainingScore, setRemainingScore] = useState(surveyData.remainingScore || '');
-    const [targetStage, setTargetStage] = useState(surveyData.targetStage || '');
-    const [challengeScore, setChallengeScore] = useState(surveyData.challengeScore || '');
-    const [pass, setPass] = useState(surveyData.pass || '1');
+    const currentStage = surveyData.currentStage || '';
+    const setCurrentStage = (val) => setSurveyData(prev => ({ ...prev, currentStage: typeof val === 'function' ? val(prev.currentStage || '') : val }));
+    const remainingScore = surveyData.remainingScore || '';
+    const setRemainingScore = (val) => setSurveyData(prev => ({ ...prev, remainingScore: typeof val === 'function' ? val(prev.remainingScore || '') : val }));
+    const targetStage = surveyData.targetStage || '';
+    const setTargetStage = (val) => setSurveyData(prev => ({ ...prev, targetStage: typeof val === 'function' ? val(prev.targetStage || '') : val }));
+    const challengeScore = surveyData.challengeScore || '';
+    const setChallengeScore = (val) => setSurveyData(prev => ({ ...prev, challengeScore: typeof val === 'function' ? val(prev.challengeScore || '') : val }));
+    const pass = surveyData.pass || '1';
+    const setPass = (val) => setSurveyData(prev => ({ ...prev, pass: typeof val === 'function' ? val(prev.pass || '1') : val }));
 
     const [result, setResult] = useState('');
 
     useEffect(() => {
-        const newSurveyData = { ...surveyData, currentStage, remainingScore, targetStage, challengeScore, pass };
-        setSurveyData(newSurveyData);
+
 
         const currentStageVal = parseInt(currentStage || '120') || 0;
         let targetStageVal = targetStage || 'EX';

@@ -381,6 +381,7 @@ const ja = {
         current_level: '現在Lv',
         target_level: '目標レベル',
         current_points: '現在ポイント',
+        remaining_points: '次レベルまでポイント',
         card_multiplier: 'BD倍率',
         gacha_seal: 'ガチャシール交換',
         points_per_item: 'あまつゆ1個P',
