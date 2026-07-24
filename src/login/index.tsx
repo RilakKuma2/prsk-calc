@@ -809,6 +809,10 @@ type UseAccountStateOptions<T> = {
   saveDelayMs?: number;
   retryDelayMs?: number;
   localPollMs?: number;
+  refreshOnFocus?: boolean;
+  refreshDelayMs?: number;
+  refreshMinIntervalMs?: number;
+  flushOnHide?: boolean;
   onExternalStateApplied?: (source: 'remote' | 'merge') => void;
   logLabel?: string;
 };
@@ -836,6 +840,9 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
   const valueRef = useRef(value);
   const changeVersionRef = useRef(0);
   const uploadChainRef = useRef<Promise<void>>(Promise.resolve());
+  const pendingUploadsRef = useRef<Map<string, Promise<void>>>(new Map());
+  const saveTimerRef = useRef<number | undefined>(undefined);
+  const lastRemoteAttemptAtRef = useRef(0);
   const syncReadyRef = useRef(false);
   const lastSyncedRef = useRef('');
   const [syncEpoch, setSyncEpoch] = useState(0);
@@ -880,6 +887,11 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
     if (!user) return;
     const normalized = normalize(next);
     const serialized = serialize(normalized);
+    const pendingUpload = pendingUploadsRef.current.get(serialized);
+    if (pendingUpload) {
+      await pendingUpload;
+      return;
+    }
     const savingVersion = changeVersionRef.current;
     setStatus('saving');
 
@@ -898,7 +910,14 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
     });
 
     uploadChainRef.current = operation;
-    await operation;
+    pendingUploadsRef.current.set(serialized, operation);
+    try {
+      await operation;
+    } finally {
+      if (pendingUploadsRef.current.get(serialized) === operation) {
+        pendingUploadsRef.current.delete(serialized);
+      }
+    }
   }, [dirtyKey, finishBootstrap, normalize, serialize, storageClient, user]);
 
   useEffect(() => {
@@ -913,6 +932,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
     }
     setStatus('loading');
     const bootstrap = async () => {
+      lastRemoteAttemptAtRef.current = Date.now();
       try {
         const remoteState = await storageClient.getState<unknown>(current.namespace, user.id);
         if (cancelled) return;
@@ -1018,14 +1038,21 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
     const serialized = serialize(value);
     if (serialized === lastSyncedRef.current) return undefined;
     const timer = window.setTimeout(() => {
+      if (saveTimerRef.current === timer) saveTimerRef.current = undefined;
+      const latest = valueRef.current;
+      if (serialize(latest) === lastSyncedRef.current) return;
       // Serialize PUTs so older snapshots cannot finish after newer ones.
-      void upload(value)
+      void upload(latest)
         .catch((error) => {
           console.warn(`${current.logLabel || current.namespace} 계정 저장 실패:`, error);
           setStatus('error');
         });
     }, current.saveDelayMs ?? 3_000);
-    return () => window.clearTimeout(timer);
+    saveTimerRef.current = timer;
+    return () => {
+      window.clearTimeout(timer);
+      if (saveTimerRef.current === timer) saveTimerRef.current = undefined;
+    };
   }, [
     dirtyKey,
     normalize,
@@ -1037,6 +1064,98 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
     upload,
     user,
     value,
+  ]);
+
+  useEffect(() => {
+    const current = optionsRef.current;
+    if (
+      !current.flushOnHide
+      || current.enabled === false
+      || !user
+      || !storageClient.configured
+    ) return undefined;
+
+    const flushPendingState = () => {
+      if (
+        document.visibilityState !== 'hidden'
+        || !syncReadyRef.current
+        || window.localStorage.getItem(dirtyKey) !== '1'
+      ) return;
+      if (saveTimerRef.current !== undefined) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = undefined;
+      }
+      const latest = valueRef.current;
+      if (serialize(latest) === lastSyncedRef.current) return;
+      void upload(latest).catch((error) => {
+        console.warn(`${current.logLabel || current.namespace} 계정 저장 실패:`, error);
+        setStatus('error');
+      });
+    };
+
+    document.addEventListener('visibilitychange', flushPendingState);
+    return () => document.removeEventListener('visibilitychange', flushPendingState);
+  }, [
+    dirtyKey,
+    options.enabled,
+    options.flushOnHide,
+    serialize,
+    storageClient,
+    upload,
+    user,
+  ]);
+
+  useEffect(() => {
+    const current = optionsRef.current;
+    if (
+      !current.refreshOnFocus
+      || current.enabled === false
+      || !user
+      || !storageClient.configured
+    ) return undefined;
+
+    let refreshTimer: number | undefined;
+    const scheduleRefresh = () => {
+      if (document.visibilityState === 'hidden') return;
+      if (
+        Date.now() - lastRemoteAttemptAtRef.current
+        < (current.refreshMinIntervalMs ?? 1_000)
+      ) return;
+      if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = undefined;
+        void (async () => {
+          if (window.localStorage.getItem(dirtyKey) === '1') {
+            if (!syncReadyRef.current) return;
+            try {
+              await upload(valueRef.current);
+            } catch (error) {
+              console.warn(`${current.logLabel || current.namespace} 계정 저장 실패:`, error);
+              setStatus('error');
+              return;
+            }
+          }
+          setRetryEpoch((epoch) => epoch + 1);
+        })();
+      }, current.refreshDelayMs ?? 750);
+    };
+
+    window.addEventListener('focus', scheduleRefresh);
+    document.addEventListener('visibilitychange', scheduleRefresh);
+    return () => {
+      window.removeEventListener('focus', scheduleRefresh);
+      document.removeEventListener('visibilitychange', scheduleRefresh);
+      if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
+    };
+  }, [
+    dirtyKey,
+    options.enabled,
+    options.refreshDelayMs,
+    options.refreshMinIntervalMs,
+    options.refreshOnFocus,
+    storageClient,
+    upload,
+    user,
   ]);
 
   useEffect(() => {

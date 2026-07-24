@@ -135,4 +135,15 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+
+  <!-- MySekai Dialogue Checklist -->
+  <url>
+    <loc>https://rilaksekai.com/talks</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://rilaksekai.com/talks"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://rilaksekai.com/talks"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rilaksekai.com/talks"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rilaksekai.com/talks"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>

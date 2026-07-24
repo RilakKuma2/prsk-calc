@@ -3,6 +3,7 @@ import { calculateScoreRange } from '../utils/calculator';
 import { buildMusicMetaLookup, getSongOptions, getMusicMetas, normalizeSearchText } from '../utils/dataLoader';
 import { LiveType, EventCalculator, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
+import { getAutoEventPointMultiplier } from '../utils/autoEnergy';
 
 const FIRE_MULTIPLIERS = {
     0: 1,
@@ -48,7 +49,15 @@ const UNIT_COLORS = {
     'none': '#999999',                   // Other/Instrumental
 };
 
-const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = false }) => {
+const AllSongsTable = ({
+    isVisible,
+    language,
+    power,
+    effi,
+    skills,
+    isAutoMode = false,
+    energyUsed = 1,
+}) => {
     const { t } = useTranslation();
     const [results, setResults] = useState([]);
     const [isCalculating, setIsCalculating] = useState(false);
@@ -85,7 +94,7 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
             handleRefresh();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isVisible, targetDifficulty, songOptions, musicMetaLookup]);
+    }, [isVisible, targetDifficulty, songOptions, musicMetaLookup, energyUsed, isAutoMode]);
 
     // Reset pagination when search query changes
     useEffect(() => {
@@ -213,8 +222,10 @@ const AllSongsTable = ({ isVisible, language, power, effi, skills, isAutoMode = 
         // Skills: passed prop is array. If simplistic "200" logic was needed if empty, PowerTab handles it or we trust input.
         // But we need to know what to display.
         // If it's simple mode, all skills are same.
-        // We assume 5 Fire for Multi efficiency calculation, 1 Fire for Auto
-        const fireMultiplier = isAutoMode ? FIRE_MULTIPLIERS[1] : FIRE_MULTIPLIERS[5];
+        // Multi keeps its existing 5-energy basis; Auto follows the selected energy.
+        const fireMultiplier = isAutoMode
+            ? getAutoEventPointMultiplier(energyUsed)
+            : FIRE_MULTIPLIERS[5];
         const currentLiveType = isAutoMode ? LiveType.AUTO : LiveType.MULTI;
 
         const calculatedResults = [];

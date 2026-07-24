@@ -1,6 +1,16 @@
 import React, { act } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { LoginProvider, useAccountState, useAuth } from './login';
+import {
+  createMysekaiStorageAdapter,
+  getMysekaiSnapshotStats,
+  hasLocalMysekaiItems,
+  hasMysekaiConflict,
+  isMysekaiSnapshot,
+  mergeMysekaiSnapshots,
+  MYSEKAI_SYNC_NAMESPACE,
+  normalizeMysekaiSnapshot,
+} from './utils/mysekaiChecklist';
 
 const cachedUser = {
   id: 'reload-user',
@@ -17,12 +27,15 @@ function AuthProbe() {
 }
 
 describe('shared account-state polling', () => {
+  const originalFetch = global.fetch;
+
   beforeEach(() => {
     jest.useFakeTimers();
     window.localStorage.clear();
   });
 
   afterEach(() => {
+    global.fetch = originalFetch;
     jest.useRealTimers();
   });
 
@@ -74,6 +87,48 @@ describe('shared account-state polling', () => {
 
     expect(writes).toBe(1);
   });
+
+  it('does not make account-state requests for anonymous focus events', () => {
+    global.fetch = jest.fn();
+    const storage = {
+      keys: ['anonymous-setting'],
+      read: () => ({ value: 'local' }),
+      write: jest.fn(),
+    };
+
+    function Probe() {
+      useAccountState({
+        namespace: 'anonymous-setting',
+        storage,
+        isEmpty: () => false,
+        hasLocalOnly: () => false,
+        merge: (local) => local,
+        refreshOnFocus: true,
+        refreshDelayMs: 0,
+        refreshMinIntervalMs: 0,
+        flushOnHide: true,
+      });
+      return null;
+    }
+
+    render(
+      <LoginProvider
+        authBaseUrl="https://apil.rilaksekai.com"
+        storageBaseUrl="https://api.rilakbest.com"
+        cacheKey="anonymous-sync-auth"
+      >
+        <Probe />
+      </LoginProvider>,
+    );
+
+    fireEvent.focus(window);
+    fireEvent(document, new Event('visibilitychange'));
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
 });
 
 describe('shared login session restoration', () => {
@@ -86,6 +141,7 @@ describe('shared login session restoration', () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    jest.restoreAllMocks();
   });
 
   it('restores the cached user on reload and verifies the server session', async () => {
@@ -186,3 +242,200 @@ describe('shared login session restoration', () => {
     expect(window.localStorage.getItem('reload-auth')).toBeNull();
   });
 });
+
+describe('rilaksekai ↔ rilakbest MySekai account state', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    jest.useRealTimers();
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.restoreAllMocks();
+  });
+
+  it('loads the unwrapped rilakbest snapshot and uploads a compatible calculator snapshot', async () => {
+    const remoteSnapshot = normalizeMysekaiSnapshot({
+      schemaVersion: 1,
+      currentPreset: 'P2',
+      presets: {
+        P1: { ownedFixtures: {}, seenDialogues: [] },
+        P2: {
+          ownedFixtures: { 2201: true },
+          seenDialogues: ['bundle:remote-talk'],
+        },
+        P3: { ownedFixtures: {}, seenDialogues: [] },
+      },
+    });
+    const putBodies: any[] = [];
+    let remoteData: unknown = remoteSnapshot;
+
+    window.localStorage.setItem('mysekai-sync-auth', JSON.stringify({
+      user: cachedUser,
+      expiresAt: Date.now() + 60_000,
+    }));
+
+    global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/api/auth/session')) {
+        return mockJsonResponse({ user: cachedUser });
+      }
+      if (url.endsWith('/api/auth/storage-token')) {
+        return mockJsonResponse({
+          accessToken: 'storage-token',
+          expiresIn: 3600,
+          userId: cachedUser.id,
+        });
+      }
+      if (url.endsWith(`/v1/states/${MYSEKAI_SYNC_NAMESPACE}`) && init?.method === 'PUT') {
+        putBodies.push(JSON.parse(String(init.body)));
+        return mockJsonResponse({
+          state: {
+            namespace: MYSEKAI_SYNC_NAMESPACE,
+            data: putBodies[putBodies.length - 1]?.data,
+            revision: 2,
+            updatedAt: new Date().toISOString(),
+          },
+        });
+      }
+      if (url.endsWith(`/v1/states/${MYSEKAI_SYNC_NAMESPACE}`)) {
+        return mockJsonResponse({
+          state: {
+            namespace: MYSEKAI_SYNC_NAMESPACE,
+            data: remoteData,
+            revision: 1,
+            updatedAt: new Date().toISOString(),
+          },
+        });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    }) as jest.Mock;
+
+    function Probe() {
+      const sync = useAccountState({
+        namespace: MYSEKAI_SYNC_NAMESPACE,
+        storage: createMysekaiStorageAdapter(),
+        normalize: normalizeMysekaiSnapshot,
+        validate: (
+          value: unknown,
+        ): value is ReturnType<typeof normalizeMysekaiSnapshot> => isMysekaiSnapshot(value),
+        isEmpty: (value) => getMysekaiSnapshotStats(value).total === 0,
+        hasLocalOnly: hasLocalMysekaiItems,
+        isConflict: hasMysekaiConflict,
+        merge: mergeMysekaiSnapshots,
+        saveDelayMs: 60_000,
+        refreshOnFocus: true,
+        refreshDelayMs: 0,
+        refreshMinIntervalMs: 0,
+        flushOnHide: true,
+      });
+      const snapshot = normalizeMysekaiSnapshot(sync.value);
+      return (
+        <>
+          <output data-testid="sync-status">{sync.status}</output>
+          <output data-testid="sync-preset">{snapshot.currentPreset}</output>
+          <output data-testid="sync-fixtures">
+            {Object.keys(snapshot.presets.P2.ownedFixtures).join(',')}
+          </output>
+          <button
+            type="button"
+            onClick={() => sync.setValue((previous) => {
+              const next = normalizeMysekaiSnapshot(previous);
+              return {
+                ...next,
+                presets: {
+                  ...next.presets,
+                  P2: {
+                    ...next.presets.P2,
+                    ownedFixtures: {
+                      ...next.presets.P2.ownedFixtures,
+                      2202: true,
+                    },
+                  },
+                },
+              };
+            })}
+          >
+            add fixture
+          </button>
+        </>
+      );
+    }
+
+    render(
+      <LoginProvider
+        authBaseUrl="https://apil.rilaksekai.com"
+        storageBaseUrl="https://api.rilakbest.com"
+        cacheKey="mysekai-sync-auth"
+      >
+        <Probe />
+      </LoginProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sync-status').textContent).toBe('ready');
+      expect(screen.getByTestId('sync-preset').textContent).toBe('P2');
+      expect(screen.getByTestId('sync-fixtures').textContent).toBe('2201');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'add fixture' }));
+    expect(window.localStorage.getItem('sekai-cloud-mysekai-dirty-v1')).toBe('1');
+    const visibilityState = jest
+      .spyOn(document, 'visibilityState', 'get')
+      .mockReturnValue('hidden');
+    fireEvent(document, new Event('visibilitychange'));
+
+    await waitFor(() => {
+      expect(putBodies).toHaveLength(1);
+    });
+    expect(putBodies[0]).toMatchObject({
+      data: {
+        __wrapped: true,
+        payload: {
+          schemaVersion: 1,
+          currentPreset: 'P2',
+          presets: {
+            P2: {
+              ownedFixtures: {
+                2201: true,
+                2202: true,
+              },
+              seenDialogues: ['bundle:remote-talk'],
+            },
+          },
+        },
+      },
+    });
+
+    remoteData = normalizeMysekaiSnapshot({
+      ...remoteSnapshot,
+      presets: {
+        ...remoteSnapshot.presets,
+        P2: {
+          ...remoteSnapshot.presets.P2,
+          ownedFixtures: {
+            2201: true,
+            2202: true,
+            2203: true,
+          },
+        },
+      },
+    });
+    visibilityState.mockReturnValue('visible');
+    fireEvent(document, new Event('visibilitychange'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sync-fixtures').textContent).toBe('2201,2202,2203');
+    });
+  });
+});
+
+function mockJsonResponse(body: unknown, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  } as Response;
+}

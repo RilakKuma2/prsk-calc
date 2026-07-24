@@ -5,21 +5,14 @@ import { buildMusicMetaLookup, getSongOptionsSync, getMusicMetas } from '../util
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
+import {
+    AUTO_ENERGY_OPTIONS,
+    calculateMySekaiEnergyScore,
+    getAutoEventPointMultiplier,
+    normalizeAutoEnergy,
+} from '../utils/autoEnergy';
 import AllSongsTable from './AllSongsTable';
-
-const ENERGY_MULTIPLIERS = {
-    0: 1,
-    1: 5,
-    2: 10,
-    3: 15,
-    4: 19,
-    5: 23,
-    6: 26,
-    7: 29,
-    8: 31,
-    9: 33,
-    10: 35
-};
+import CustomSelectDropdown from './common/CustomSelectDropdown';
 
 // Fixed configuration for batch calculation with levels
 const TARGET_SONGS = [
@@ -83,7 +76,22 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
     };
 
     const { totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus = '' } = deck;
-    const energyUsed = 1; // Fixed to 1 as per request
+    const energyUsed = normalizeAutoEnergy(surveyData.autoEnergyUsed);
+    const energyOptions = useMemo(
+        () => AUTO_ENERGY_OPTIONS.map(energy => ({
+            value: energy,
+            label: t('auto.energy_option', { count: energy }),
+        })),
+        [t],
+    );
+
+    const updateEnergyUsed = (value) => {
+        const nextEnergy = normalizeAutoEnergy(value);
+        setSurveyData(prev => ({
+            ...prev,
+            autoEnergyUsed: nextEnergy,
+        }));
+    };
 
     const [batchResults, setBatchResults] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'eventPoint', direction: 'desc' });
@@ -140,7 +148,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                     const minRank = calculateRank(res.min, target.level);
 
                     // Event Point Calculation
-                    const boostRate = ENERGY_MULTIPLIERS[energyUsed] || 1;
+                    const boostRate = getAutoEventPointMultiplier(energyUsed);
 
                     const minEventPoint = EventCalculator.getEventPoint(
                         LiveType.AUTO,
@@ -177,7 +185,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
         });
 
         setBatchResults(results);
-    }, [musicMetas, musicMetaLookup, songsById, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, language]);
+    }, [musicMetas, musicMetaLookup, songsById, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, eventBonus, energyUsed, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';
@@ -285,12 +293,20 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className={`bg-white text-gray-600 uppercase tracking-wider border-b border-gray-200 ${language === 'ja' ? 'text-[9px] md:text-[11px]' : 'text-[10px] md:text-xs'}`}>
-                                    <th className="px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('songName')}>
-                                        <div className="flex items-center justify-center gap-1 md:gap-2">
+                                    <th className="min-w-[136px] px-1 py-2 md:p-4 font-bold cursor-pointer hover:text-gray-900 transition-colors text-center select-none group" onClick={() => handleSort('songName')}>
+                                        <div className="flex flex-nowrap items-center justify-center gap-1">
                                             {t('auto.song_name')}
                                             <span className={`transition-opacity duration-200 ${sortConfig.key === 'songName' ? 'opacity-100 text-pink-500' : 'opacity-0 group-hover:opacity-50'}`}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
+                                            <CustomSelectDropdown
+                                                ariaLabel={t('auto.energy')}
+                                                value={energyUsed}
+                                                options={energyOptions}
+                                                onChange={updateEnergyUsed}
+                                                className="ml-0.5 shrink-0"
+                                                buttonClassName="h-7 min-w-[68px] px-2 text-xs"
+                                            />
                                         </div>
                                     </th>
                                     <th className="px-1 py-2 md:p-4 font-bold text-center min-w-[50px] md:min-w-[80px]">
@@ -460,8 +476,11 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                                         }
                                     }
 
-                                    // My Sekai score = EP (no multiplier)
-                                    const mySekaiEP = highestPossibleScore || 0;
+                                    // MySekai uses a direct score × energy calculation, unlike regular event points.
+                                    const mySekaiEP = calculateMySekaiEnergyScore(highestPossibleScore || 0, energyUsed);
+                                    const nextMySekaiEP = nextScoreOptions
+                                        ? calculateMySekaiEnergyScore(nextScoreOptions.nextScore, energyUsed)
+                                        : null;
 
                                     return (
                                         <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
@@ -472,7 +491,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                                                 <div className="flex flex-col items-center">
                                                     {nextScoreOptions && (
                                                         <div className="text-[10px] md:text-xs text-gray-500 mb-0.5">
-                                                            <span className="font-medium">{nextScoreOptions.nextScore.toLocaleString()}EP :</span>{' '}
+                                                            <span className="font-medium">{nextMySekaiEP.toLocaleString()}EP :</span>{' '}
                                                             {nextScoreOptions.option1 && (
                                                                 <span className="text-blue-600 font-bold">
                                                                     {nextScoreOptions.option1.power}/{nextScoreOptions.option1.effi}
@@ -531,6 +550,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                             skillMember5 || 100
                         ]}
                         isAutoMode={true}
+                        energyUsed={energyUsed}
                     />
                 </div>
             )}

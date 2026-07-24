@@ -13,6 +13,7 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     { id: 'level', name: t('tabs.level') },
     { id: 'rank', name: t('tabs.rank') },
     { id: 'gacha', name: t('tabs.gacha') },
+    { id: 'talks', name: t('tabs.talks') },
   ];
 
   const tabsRef = useRef(null);

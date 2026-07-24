@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import MySekaiTable from './MySekaiTable';
 import AllSongsTable from './AllSongsTable';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
@@ -7,6 +7,17 @@ import { getMusicMetaSync, preloadMusicMetas, searchSongOptionsSync } from '../u
 import { InputTableWrapper, InputRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
+import {
+  AUTO_ENERGY_OPTIONS,
+  calculateMySekaiEnergyScore,
+  getAutoEventPointMultiplier,
+  normalizeAutoEnergy,
+} from '../utils/autoEnergy';
+import {
+  POWER_AUTO_SONG_OPTIONS,
+  getPowerAutoSong,
+} from '../utils/powerAutoSongs';
+import CustomSelectDropdown from './common/CustomSelectDropdown';
 
 const ENVY_REFRESH_GAUGE = 0.199818182;
 const MY_SEKAI_1PERCENT_STAMINA = 94.3;
@@ -24,6 +35,23 @@ const FIRE_MULTIPLIERS = {
   9: 33,
   10: 35
 };
+
+const DEFAULT_FIRE_COUNTS = {
+  loAndFound: 5,
+  envy: 5,
+  omakase: 5,
+  creationMyth: 1,
+  mySekai: 1,
+  custom: 5,
+};
+
+const EMPTY_DETAILED_SKILLS = Object.freeze({
+  encore: '',
+  member1: '',
+  member2: '',
+  member3: '',
+  member4: '',
+});
 
 const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDetailedInput, autoDeck, onUpdateAutoDeck }) => {
   // Initialize with autoDeck skill values (empty string if not set)
@@ -227,11 +255,11 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   const setIsDetailedInput = (val) => setSurveyData(prev => ({ ...prev, isDetailedInput: typeof val === 'function' ? val(prev.isDetailedInput || false) : val }));
 
   const detailedSkills = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1
-    ? (surveyData.unifiedDecks.deck1.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' })
-    : (surveyData.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' });
+    ? (surveyData.unifiedDecks.deck1.detailedSkills || EMPTY_DETAILED_SKILLS)
+    : (surveyData.detailedSkills || EMPTY_DETAILED_SKILLS);
   const setDetailedSkills = (val) => setSurveyData(prev => ({ ...prev, detailedSkills: typeof val === 'function' ? val(prev.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' }) : val }));
 
-  const detailedSkillsB = surveyData.detailedSkillsB || { encore: '', member1: '', member2: '', member3: '', member4: '' };
+  const detailedSkillsB = surveyData.detailedSkillsB || EMPTY_DETAILED_SKILLS;
   const setDetailedSkillsB = (val) => setSurveyData(prev => ({ ...prev, detailedSkillsB: typeof val === 'function' ? val(prev.detailedSkillsB || { encore: '', member1: '', member2: '', member3: '', member4: '' }) : val }));
 
   useEffect(() => {
@@ -256,15 +284,26 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     }
   };
 
-  const fireCounts = surveyData.fireCounts || {
-    loAndFound: 5,
-    envy: 5,
-    omakase: 5,
-    creationMyth: 1,
-    mySekai: 1,
-    custom: 5
+  const fireCounts = useMemo(() => ({
+    ...DEFAULT_FIRE_COUNTS,
+    ...(surveyData.fireCounts || {}),
+  }), [surveyData.fireCounts]);
+  const setFireCounts = (val) => setSurveyData(prev => ({
+    ...prev,
+    fireCounts: typeof val === 'function'
+      ? val({ ...DEFAULT_FIRE_COUNTS, ...(prev.fireCounts || {}) })
+      : val,
+  }));
+  const selectedPowerAutoSong = getPowerAutoSong(surveyData.powerAutoSong);
+  const mySekaiEnergy = normalizeAutoEnergy(fireCounts.mySekai);
+
+  const setSelectedPowerAutoSong = (key) => {
+    const nextSong = getPowerAutoSong(key);
+    setSurveyData(prev => ({
+      ...prev,
+      powerAutoSong: nextSong.key,
+    }));
   };
-  const setFireCounts = (val) => setSurveyData(prev => ({ ...prev, fireCounts: typeof val === 'function' ? val(prev.fireCounts || { loAndFound: 5, envy: 5, omakase: 5, creationMyth: 1, mySekai: 1, custom: 5 }) : val }));
 
   const [multiEff, setMultiEff] = useState(0);
   const [soloEff, setSoloEff] = useState(0);
@@ -436,7 +475,9 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
           const musicMeta = getMusicMetaSync(songId, difficulty);
           if (!musicMeta) return { min: 0, max: 0 };
 
-          const multiplier = FIRE_MULTIPLIERS[fireCount] || 1;
+          const multiplier = liveType === LiveType.AUTO
+            ? getAutoEventPointMultiplier(fireCount)
+            : (FIRE_MULTIPLIERS[fireCount] || 1);
 
           const minEP = EventCalculator.getEventPoint(
             liveType,
@@ -474,8 +515,15 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
       // 3. Omakase (ID 572, Master, Multi)
       setOm(getScoreRange(powerVal, skillsArray, 572, 'master', LiveType.MULTI, fireCounts.omakase));
 
-      // 4. Creation Myth (ID 186, Master, Auto) - Fixed 100% skills
-      setCr(getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, fireCounts.creationMyth));
+      // 4. Selected Auto song - fixed 100% skills
+      setCr(getScoreRange(
+        powerVal,
+        [100, 100, 100, 100, 100],
+        selectedPowerAutoSong.songId,
+        selectedPowerAutoSong.difficulty,
+        LiveType.AUTO,
+        fireCounts.creationMyth
+      ));
 
       // 5. Custom Song
       if (selectedSong) {
@@ -487,11 +535,25 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
       if (calcEff) {
         // Calculate Efficiencies (Only for A)
         const loAndFoundPlus1 = getScoreRange(powerVal + 1, skillsArray, 186, 'hard', LiveType.MULTI, 5);
-        const creationMythPlus1 = getScoreRange(powerVal + 1, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, 1);
+        const creationMythPlus1 = getScoreRange(
+          powerVal + 1,
+          [100, 100, 100, 100, 100],
+          selectedPowerAutoSong.songId,
+          selectedPowerAutoSong.difficulty,
+          LiveType.AUTO,
+          1
+        );
         const appendPlus1 = getScoreRange(powerVal + 1, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
 
         const loAndFoundBase = getScoreRange(powerVal, skillsArray, 186, 'hard', LiveType.MULTI, 5);
-        const creationMythBase = getScoreRange(powerVal, [100, 100, 100, 100, 100], 186, 'master', LiveType.AUTO, 1);
+        const creationMythBase = getScoreRange(
+          powerVal,
+          [100, 100, 100, 100, 100],
+          selectedPowerAutoSong.songId,
+          selectedPowerAutoSong.difficulty,
+          LiveType.AUTO,
+          1
+        );
         const appendBase = getScoreRange(powerVal, [100, 100, 100, 100, 100], 488, 'append', LiveType.SOLO, 1);
 
         let newMultiEff = 0;
@@ -572,7 +634,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB, selectedSong, searchDifficulty, musicMetasLoadVersion]);
+  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB, selectedSong, selectedPowerAutoSong, searchDifficulty, musicMetasLoadVersion]);
 
   const handleDetailedChange = (key, value) => {
     const val = parseInt(value) || 0;
@@ -658,31 +720,19 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     return null;
   };
 
-  const renderFireSelect = (key, minStart = 0) => {
-    const options = [];
-    for (let i = minStart; i <= 10; i++) {
-      options.push(i);
-    }
+  const renderFireSelect = (key, minStart = 0, ariaLabel = t('power.fire')) => {
+    const options = minStart === 1
+      ? AUTO_ENERGY_OPTIONS
+      : [0, ...AUTO_ENERGY_OPTIONS];
     return (
-      <select
+      <CustomSelectDropdown
+        ariaLabel={ariaLabel}
         value={fireCounts[key]}
-        onChange={(e) => handleFireChange(key, e.target.value)}
-        className="font-bold text-gray-700 text-center bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors block mx-auto translate-y-2"
-        style={{
-          padding: '4px 0px',
-          fontSize: '14px',
-          width: '60px',
-          appearance: 'none',
-          WebkitAppearance: 'none',
-          MozAppearance: 'none',
-          textAlign: 'center',
-          textAlignLast: 'center',
-        }}
-      >
-        {options.map(num => (
-          <option key={num} value={num}>{num}</option>
-        ))}
-      </select>
+        options={options.map(num => ({ value: num, label: String(num) }))}
+        onChange={(value) => handleFireChange(key, value)}
+        className="mx-auto translate-y-2"
+        buttonClassName="h-8 min-w-[64px] px-2 text-sm"
+      />
     );
   };
 
@@ -1393,11 +1443,27 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                   )}
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors duration-200 group/row">
-                  <td className="px-4 py-3 font-bold text-gray-800 text-base md:text-base text-center align-middle">
-                    {t('power.songs.creation_myth')}
+                  <td className="px-1 py-1 font-bold text-gray-800 text-base md:px-2 md:py-2 md:text-base text-center align-middle">
+                    <div className="flex items-center justify-center gap-1">
+                      <CustomSelectDropdown
+                        ariaLabel={t('power.auto_song_select')}
+                        value={selectedPowerAutoSong.key}
+                        options={POWER_AUTO_SONG_OPTIONS.map(option => ({
+                          value: option.key,
+                          label: t(option.translationKey),
+                        }))}
+                        onChange={setSelectedPowerAutoSong}
+                        className="shrink-0"
+                        buttonClassName="h-7 rounded-md px-2 text-sm md:text-base"
+                        showChevron={false}
+                      />
+                      <span className="inline-flex items-center rounded bg-pink-100 px-1 py-0.5 text-[9px] font-extrabold leading-tight text-pink-600">
+                        AUTO
+                      </span>
+                    </div>
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    {renderFireSelect('creationMyth', 1)}
+                    {renderFireSelect('creationMyth', 1, t('power.auto_energy'))}
                   </td>
                   <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
                     <div className="flex flex-col items-center justify-center">
@@ -1423,17 +1489,13 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                     {t('power.songs.mysekai')}
                   </td>
                   <td className="px-1 py-1 md:px-4 md:py-2 text-center align-middle">
-                    <div className="flex justify-center items-center w-full h-full">
-                      <span className="font-bold text-gray-700 text-center" style={{ fontSize: '14px', padding: '4px 0px', width: '60px', display: 'inline-block' }}>
-                        1
-                      </span>
-                    </div>
+                    {renderFireSelect('mySekai', 1, t('power.mysekai_energy'))}
                   </td>
                   <td className={`px-1 py-1 md:px-4 md:py-2 text-center align-middle whitespace-nowrap min-w-[80px] md:min-w-[100px] ${isComparisonMode ? 'bg-blue-50/30' : ''}`}>
                     <div className="flex flex-col items-center">
                       {nextMySekaiOptions && (
                         <div className={`${isComparisonMode ? 'text-[9px] md:text-[10px] leading-tight' : 'text-xs md:text-sm'} text-gray-500 mb-0.5`}>
-                          <span className="font-medium">{nextMySekaiOptions.nextScore.toLocaleString()}EP :</span>
+                          <span className="font-medium">{calculateMySekaiEnergyScore(nextMySekaiOptions.nextScore, mySekaiEnergy).toLocaleString()}EP :</span>
                           {isComparisonMode ? <br /> : ' '}
                           {nextMySekaiOptions.option1 && (
                             <span className="text-blue-600 font-bold">
@@ -1449,7 +1511,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                         </div>
                       )}
                       <span className="text-green-600 text-base md:text-lg font-bold tracking-tight">
-                        {mySekaiScore > 0 ? mySekaiScore.toLocaleString() : 'N/A'}
+                        {mySekaiScore > 0 ? calculateMySekaiEnergyScore(mySekaiScore, mySekaiEnergy).toLocaleString() : 'N/A'}
                       </span>
                     </div>
                   </td>
@@ -1458,7 +1520,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                       <div className="flex flex-col items-center">
                         {nextMySekaiOptionsB && (
                           <div className="text-[9px] md:text-[10px] leading-tight text-gray-500 mb-0.5">
-                            <span className="font-medium">{nextMySekaiOptionsB.nextScore.toLocaleString()}EP :</span>
+                            <span className="font-medium">{calculateMySekaiEnergyScore(nextMySekaiOptionsB.nextScore, mySekaiEnergy).toLocaleString()}EP :</span>
                             <br />
                             {nextMySekaiOptionsB.option1 && (
                               <span className="text-blue-600 font-bold">
@@ -1474,7 +1536,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                           </div>
                         )}
                         <span className="text-green-600 text-base md:text-lg font-bold tracking-tight">
-                          {mySekaiScoreB > 0 ? mySekaiScoreB.toLocaleString() : 'N/A'}
+                          {mySekaiScoreB > 0 ? calculateMySekaiEnergyScore(mySekaiScoreB, mySekaiEnergy).toLocaleString() : 'N/A'}
                         </span>
                       </div>
                     </td>
