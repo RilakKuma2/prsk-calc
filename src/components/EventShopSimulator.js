@@ -375,24 +375,6 @@ const createExchangeItems = (summary, resourceBoxes, lookups) => {
     });
 };
 
-const makeManualItem = (shopKey = '') => ({
-  uid: `manual-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  id: null,
-  seq: 9999,
-  name: '',
-  imageUrl: `${THUMBNAIL_BASE_URL}/material/material14.webp`,
-  card: null,
-  itemQuantity: 1,
-  price: 0,
-  limit: '',
-  bought: 0,
-  desired: 0,
-  resourceType: 'material',
-  resourceId: '',
-  costResourceType: 'event_item',
-  costResourceId: shopKey,
-});
-
 const formatNumber = (value) => toPositiveInteger(value).toLocaleString();
 
 const getCharacterName = (gameCharacterId, language, lookups) => {
@@ -670,11 +652,7 @@ const EventShopSimulator = ({
     if (currentFireOption !== undefined) setLocalCurrentFireOption(currentFireOption);
     if (changedFireOption !== undefined) setLocalChangedFireOption(changedFireOption);
   }, [scorePerRoundMan, roundsPerInterval, currentFireOption, changedFireOption]);
-  const [tooltipHover, setTooltipHover] = useState(false);
-  const [tooltipLock, setTooltipLock] = useState(false);
-  const isTooltipVisible = tooltipHover || tooltipLock;
   const importMenuRef = useRef(null);
-  const tooltipRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1071,11 +1049,6 @@ const EventShopSimulator = ({
       }
       return next;
     });
-  };
-
-  const updateNumericItem = (uid, key, rawValue) => {
-    const value = rawValue === '' ? '' : toPositiveInteger(rawValue, 0);
-    updateItem(uid, { [key]: value });
   };
 
   const updateCurrentOwnedBadgePoints = (value) => {

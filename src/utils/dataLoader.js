@@ -22,7 +22,7 @@ const makeMusicMetaKey = (songId, difficulty) => `${Number(songId)}:${difficulty
 function applyDateFilter(songs) {
     if (!songs) return songs;
     const now = new Date();
-    if (now <= SONG_FILTER_DATE) {
+    if (now >= SONG_FILTER_DATE) {
         return songs;
     }
     if (filteredSongOptionsSource === songs && cachedFilteredSongOptions) {

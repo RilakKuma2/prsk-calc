@@ -41,6 +41,7 @@ export type RegisterInput = {
 export type ProfileInput = {
   email?: string;
   inviteCode?: string;
+  currentPassword?: string;
 };
 
 export type AutoSavePreferenceControl = {
@@ -621,8 +622,8 @@ export function LoginProvider({
         setUser(null);
       }
     } catch {
-      cache.clear();
-      setUser(null);
+      // Keep the last verified local user during transient deploy/network
+      // failures. A successful { user: null } response still signs out below.
     } finally {
       setLoading(false);
     }
@@ -1303,6 +1304,7 @@ export function ProfileModal({
   const [email, setEmail] = useState(user?.email || '');
   const [inviteCode, setInviteCode] = useState('');
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(Boolean(autoSavePreference?.enabled));
+  const [currentPassword, setCurrentPassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [error, setError] = useState('');
@@ -1330,9 +1332,13 @@ export function ProfileModal({
       const result = await updateProfile({
         email: email.trim() || undefined,
         inviteCode: showInviteCode ? inviteCode.trim() || undefined : undefined,
+        currentPassword: email.trim().toLowerCase() !== (user.email || '').toLowerCase()
+          ? currentPassword
+          : undefined,
       });
       setNotice(result.message);
       setInviteCode('');
+      setCurrentPassword('');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : text.profileSaveError);
     } finally {
@@ -1371,6 +1377,12 @@ export function ProfileModal({
                 <span>{text.emailLabel} <small>{text.emailOptionalHint}</small></span>
                 <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} placeholder="name@example.com" />
               </label>
+              {email.trim().toLowerCase() !== (user.email || '').toLowerCase() && (
+                <label>
+                  <span>{text.passwordLabel}</span>
+                  <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" minLength={1} maxLength={128} required placeholder={text.passwordPlaceholder} />
+                </label>
+              )}
               {error && <p className="login-message error" role="alert">{error}</p>}
               {notice && <p className="login-message notice" role="status">{notice}</p>}
               <button className="login-submit" type="submit" disabled={submitting}>{submitting ? text.saving : text.saveAction}</button>

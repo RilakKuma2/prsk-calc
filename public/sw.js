@@ -51,8 +51,8 @@ self.addEventListener('push', function (event) {
 
         const options = {
             body: data.body,
-            icon: '/prsk-calc/icon.png', // Adjusted for GitHub Pages
-            badge: '/prsk-calc/icon.png',
+            icon: '/icon.png',
+            badge: '/icon.png',
             data: {
                 url: self.registration.scope
             }

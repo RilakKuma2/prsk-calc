@@ -562,10 +562,6 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         const displayVal = isChallenge && currentVal >= 151 ? 'EX' : (currentVal === 0 ? '' : currentVal);
         const displayAddVal = addVal === 0 ? '' : addVal;
 
-        const getChallengeExp = (val) => Math.max(0, Math.min(val, 151) - 1);
-        const currentExp = isChallenge ? getChallengeExp(currentVal) : currentVal;
-        const addTotalExp = isChallenge ? getChallengeExp(currentVal + addVal) : (currentVal + addVal);
-
         // EX Mode variables
         const hasExMode = !!config.exType;
 
@@ -994,8 +990,6 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                     if (item.isWl3 && !wl3Active) return sum;
                     return sum + item.value;
                 }, 0);
-
-                const totalValue = etcRankItems.reduce((sum, item) => sum + item.value, 0);
 
                 return (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setEtcPopup(false)}>

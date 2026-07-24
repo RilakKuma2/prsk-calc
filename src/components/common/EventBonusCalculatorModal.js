@@ -996,7 +996,10 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
         const a = document.createElement('a');
         a.href = url;
         a.download = 'area_settings.json';
+        document.body.appendChild(a);
         a.click();
+        a.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 0);
     };
 
     const handleAreaPresetClick = (num) => {
@@ -1119,7 +1122,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
             { label: t('support.furniture_bonus') || '가구 보너스', value: powerSummary.furnitureBonus || 0 },
             { label: t('support.gate_bonus') || '게이트 보너스', value: powerSummary.gateBonus || 0 },
         ];
-    }, [powerSummary]);
+    }, [powerSummary, t]);
 
     const effectiveValue = useMemo(() => {
         if (isManualEvent) return null;

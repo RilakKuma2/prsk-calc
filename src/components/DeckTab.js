@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
-import { calculateRawInternalValue, calculateInternalValue, calculateSlotSkillValues } from '../utils/deckUtils';
+import { calculateInternalValue, calculateSlotSkillValues } from '../utils/deckUtils';
 import { loadDeckFromFriendCode } from '../utils/deckLoader';
 import { useAuth } from '../login';
 import { characterBirthdays } from '../data/characterBirthdays';
@@ -180,10 +180,14 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 setSaveFriendCode(false);
             }
         }
-    }, [user?.id]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     useEffect(() => {
-        localStorage.setItem('savedFriendCode', friendCode);
+        if (friendCode) {
+            localStorage.setItem('savedFriendCode', friendCode);
+        } else {
+            localStorage.removeItem('savedFriendCode');
+        }
     }, [friendCode]);
     const [isLoadingFriend, setIsLoadingFriend] = useState(false);
     const [mountedResultViews, setMountedResultViews] = useState(() => ({
@@ -356,40 +360,6 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         member4: ''
     };
 
-    // Update detailed room skill and sync to surveyData
-    const updateDetailedRoomSkill = (key, value) => {
-        const newSkills = { ...detailedRoomSkills, [key]: value };
-        // Update surveyData and unifiedDecks
-        setSurveyData(prev => ({
-            ...prev,
-            unifiedDecks: {
-                ...prev.unifiedDecks,
-                [activeDeckKey]: {
-                    ...prev.unifiedDecks[activeDeckKey],
-                    detailedSkills: newSkills,
-                    isDetailedInput: true
-                }
-            },
-            detailedSkills: newSkills,
-            isDetailedInput: true
-        }));
-    };
-
-    // Toggle detailed input visibility
-    const setShowDetailedInput = (show) => {
-        setSurveyData(prev => ({
-            ...prev,
-            unifiedDecks: {
-                ...prev.unifiedDecks,
-                [activeDeckKey]: {
-                    ...prev.unifiedDecks[activeDeckKey],
-                    isDetailedInput: show
-                }
-            },
-            isDetailedInput: show
-        }));
-    };
-
     // Get current deck for calculations
     const getActiveDeck = () => surveyData.unifiedDecks?.[`deck${activeDeckNum}`] || {};
 
@@ -455,7 +425,6 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             // But usually toggling a feature like this implies we want to see the effect.
             // However, to be consistent with updateDeck, we respect manual override unless it's considered a "skill update".
             // Toggling bloom fes IS a skill update effectively.
-            const isManual = currentDeck?.isManualInternalEdit || false;
             // Let's force update if it affects skills.
             const finalInternalValue = String(internalVal);
             // We force update and reset manual flag because this is a significant mode change affecting skills

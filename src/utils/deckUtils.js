@@ -141,7 +141,7 @@ export const resolveSupportUnit = (card) => {
     if (su && UNIT_NAME_TO_KEY[su]) su = UNIT_NAME_TO_KEY[su];
     
     const cid = getCardCharacterId(card) || card.characterId;
-    if (cid >= 21 && su == null) {
+    if (cid >= 21 && (su === null || su === undefined)) {
         su = (card.unit && UNIT_NAME_TO_KEY[card.unit]) || "none";
     }
     
@@ -159,7 +159,7 @@ export const calculateSlotSkillValues = (slots) => {
         if (card.skill_effect === '버싱한정') {
             const ownUnit = supportUnits[i];
             const otherUnits = supportUnits.filter((_, idx) => idx !== i);
-            const sameUnitCount = otherUnits.filter(u => u != null && u === ownUnit).length;
+            const sameUnitCount = otherUnits.filter(u => u !== null && u !== undefined && u === ownUnit).length;
             const allSame = sameUnitCount === 4;
             unitBonus = sameUnitCount * 10 + (allSame ? 10 : 0);
         }

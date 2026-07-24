@@ -4,12 +4,10 @@ import CharacterSelector from './common/CharacterSelector';
 import SupportCardThumbnail from './common/SupportCardThumbnail';
 import SupportCardPickerModal from './common/SupportCardPickerModal';
 import {
-    SUPPORT_CHARACTERS,
     parseSupportDate,
     getCardCharacterName,
     getCardCharacterId,
     getSupportUnitMemberIds,
-    isWorldLinkCard,
     getWorldLinkSeason,
     isSupportBonusWorldLinkCard,
     calculateSupportCardBonus,
@@ -23,12 +21,6 @@ const MAIN_DECK_SLOT_COUNT = 5;
 const MASTER_RANK_OPTIONS = [0, 1, 2, 3, 4, 5];
 const SKILL_LEVEL_OPTIONS = [1, 2, 3, 4];
 const CARD_API_URL = joinUrl(API_BASE_URL, 'api/cards');
-const PICKER_GROUPS = [
-    { key: 'rarity4', label: '4성', matches: (card) => Number(card?.rarity) === 4 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
-    { key: 'birthday', label: '생일', matches: (card) => card?.type === 'Birthday' || card?.type === 'Anniversary' },
-    { key: 'rarity3', label: '3성', matches: (card) => Number(card?.rarity) === 3 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
-    { key: 'low', label: '2성이하', matches: (card) => Number(card?.rarity) <= 2 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
-];
 const MAIN_DECK_RARITY_OPTIONS = [
     { key: 'rarity4', label: '★4', typeBonus: 25, masterRankBonus: [10, 12.5, 15, 17.5, 20, 25], canPickup: true, memberBonus: 20, pickupBonus: 30 },
     { key: 'birthday', label: 'BN/AN', typeBonus: 25, masterRankBonus: [5, 7, 9, 11, 13, 15], canPickup: false },
@@ -341,8 +333,6 @@ const SupportDeckTab = () => {
     const [bulkOpen, setBulkOpen] = useState(false);
     const [bulkMasterRank, setBulkMasterRank] = useState(5);
     const [bulkSkillLevel, setBulkSkillLevel] = useState(4);
-    const [isCharPickerOpen, setIsCharPickerOpen] = useState(false);
-
     const [calcPreviewCharId, setCalcPreviewCharId] = useState(() => {
         const saved = localStorage.getItem('calcPreviewCharId');
         return saved ? Number(saved) : 21;
@@ -424,26 +414,6 @@ const SupportDeckTab = () => {
     }, [cards]);
 
     const unitMemberIds = useMemo(() => getSupportUnitMemberIds(selectedCharId), [selectedCharId]);
-
-    const pickerCharacterCards = useMemo(() => {
-        return cards
-            .filter(card => getCardCharacterId(card) === Number(pickerCharId))
-            .sort((a, b) => {
-                const dateA = parseSupportDate(a.available_from)?.getTime() || 0;
-                const dateB = parseSupportDate(b.available_from)?.getTime() || 0;
-                if (dateA !== dateB) return dateB - dateA;
-                return Number(b.id) - Number(a.id);
-            });
-    }, [cards, pickerCharId]);
-
-    const modalCards = pickerCharacterCards;
-
-    const modalCardGroups = useMemo(() => {
-        return PICKER_GROUPS.map(group => ({
-            ...group,
-            cards: modalCards.filter(group.matches),
-        })).filter(group => group.cards.length > 0);
-    }, [modalCards]);
 
     const { fourStarCount, hasWl3 } = useMemo(() => {
         let count = 0;

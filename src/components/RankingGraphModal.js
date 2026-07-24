@@ -41,7 +41,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
                 setXDomain([minTfe, 0]); // Always end at 0 (End of event)
             }
         }
-    }, [isOpen, rank, window.sekarunDataLoaded, xDomain]); // Added xDomain to dependency to avoid loop? No, if !xDomain check prevents loop.
+    }, [isOpen, rank, xDomain]);
 
     // Touch State
     const [touchStart, setTouchStart] = useState(null); // { dist, domain, x }
@@ -59,7 +59,6 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
 
     // Dynamic width tracking
     const plotWidthRef = useRef(PLOT_WIDTH_DESKTOP);
-    const isMobile = window.innerWidth < 768;
 
     const handleWheel = (e) => {
         if (!xDomain) return;
@@ -295,18 +294,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
         return () => {
             // Cleanup if needed
         };
-    }, [isOpen]);
-
-
-
-    // Format Y Axis Tick
-    const formatTick = (d) => {
-        if (d >= 10000) {
-            const manStr = (d / 10000).toLocaleString();
-            return `${manStr}${t('fire.suffix_man') || '만'}`;
-        }
-        return d.toLocaleString();
-    };
+    }, [isOpen, selectedChapter]);
 
     // Render Graphs
     useEffect(() => {
@@ -315,13 +303,13 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
         // Responsive Sizing
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
-        // const isMobile = screenWidth < 768; // Already defined in component scope
+        const isMobileViewport = screenWidth < 768;
 
         let plotWidth = PLOT_WIDTH_DESKTOP;
         let plotHeight = 600;
         let axisFontSize = '10px';
 
-        if (isMobile) {
+        if (isMobileViewport) {
             // Mobile: Width = Screen (minus margins), Height = Taller than width (Portrait)
             // Use native pixels, no scaling.
             plotWidth = screenWidth - 24; // Small margin (px-2? say 12px each side approx)
@@ -336,9 +324,6 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
 
         // Update ref for handlers
         plotWidthRef.current = plotWidth;
-
-        const PLOT_INNER_WIDTH = plotWidth - MARGIN_LEFT - MARGIN_RIGHT;
-
 
         // Clear previous content
         contentRef.current.innerHTML = '';
@@ -410,7 +395,10 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
             container.innerText += " (Error rendering graph)";
         }
 
-    }, [isOpen, loading, error, rank, t, xDomain]);
+        // renderPlot is recreated with this render's values. Every value it closes
+        // over and that affects the output is represented below.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, loading, error, rank, t, xDomain, isDragging]);
 
     // Helper to get adjacent ranks
     const getAdjacentRanks = (targetRank) => {

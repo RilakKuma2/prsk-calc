@@ -292,7 +292,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
       // 1. worldBloomsInfo에서 먼저 찾기
       if (worldBloomsInfo && worldBloomsInfo.length > 0 && eventInfo?.id) {
-        const eventChapters = worldBloomsInfo.filter(wb => wb.eventId == eventInfo.id);
+        const eventChapters = worldBloomsInfo.filter(wb => String(wb.eventId) === String(eventInfo.id));
         const currentChapter = eventChapters.find(ch => {
           const start = ch.chapterStartAt || 0;
           const end = ch.chapterEndAt || 0;
@@ -300,7 +300,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         });
         if (currentChapter) {
           // chaptersData에 해당 챕터가 있는지 확인하고 chapter_id 가져오기
-          const matchedChapter = chaptersData.find(ch => ch.chapter_id?.split('-')[1] == currentChapter.chapterNo);
+          const matchedChapter = chaptersData.find(ch => String(ch.chapter_id?.split('-')[1]) === String(currentChapter.chapterNo));
           selected = matchedChapter?.chapter_id || `wl-${currentChapter.chapterNo}`;
         }
       }
@@ -494,7 +494,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         finalData = finalData.filter(item => eventAllowedRanksSet.has(item.rank));
         mergedEventInfo = applyLatestEventToEventInfo(mergedEventInfo, latestEventForRanks);
 
-        setLastUpdated(mainData.updatedAt);
+        setLastUpdated(mergedUpdatedAt);
         setPredictionData(finalData);
         setStaleWarning(isStale);
 
@@ -630,24 +630,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   };
 
   const getFireaValue = (firea) => {
-    const fireaTable = {
-      1: 0,
-      5: 1,
-      10: 2,
-      15: 3,
-      20: 4,
-      25: 5,
-      26: 6,
-      27: 6,
-      28: 7,
-      29: 7,
-      30: 8,
-      31: 9,
-      32: 9,
-      33: 10,
-      34: 10,
-      35: 10,
-    };
     // Correcting the table based on select options values
     // Options: 1, 5, 10, 15, 20, 25, 27, 29, 31, 33, 35
     // Labels: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
@@ -811,7 +793,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       if (eventInfo.event_type === 'world_bloom') {
         let allChapters = [];
         if (worldBloomsInfo && worldBloomsInfo.length > 0 && eventInfo.id) {
-          allChapters = worldBloomsInfo.filter(wb => wb.eventId == eventInfo.id).map(c => c.chapterStartAt);
+          allChapters = worldBloomsInfo.filter(wb => String(wb.eventId) === String(eventInfo.id)).map(c => c.chapterStartAt);
         }
         if (allChapters.length === 0 && chaptersData && chaptersData.length > 0) {
           allChapters = chaptersData.map(c => c.start * 1000);
@@ -1855,7 +1837,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         if (eventInfo.event_type === 'world_bloom') {
                           let allChapters = [];
                           if (worldBloomsInfo && worldBloomsInfo.length > 0 && eventInfo.id) {
-                            allChapters = worldBloomsInfo.filter(wb => wb.eventId == eventInfo.id).map(c => c.chapterStartAt);
+                            allChapters = worldBloomsInfo.filter(wb => String(wb.eventId) === String(eventInfo.id)).map(c => c.chapterStartAt);
                           }
                           if (allChapters.length === 0 && chaptersData && chaptersData.length > 0) {
                             allChapters = chaptersData.map(c => c.start * 1000);
@@ -2303,7 +2285,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               {user && user.canAccessModeling ? (
                 <div className="flex flex-col gap-1">
                   <button
-                    onClick={() => window.open('https://jp.seka.ing/', '_blank')}
+                    onClick={() => window.open('https://jp.seka.ing/', '_blank', 'noopener,noreferrer')}
                     className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
                     title={t('fire.ranking_board')}
                   >
@@ -2315,7 +2297,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     <span className="text-[9px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')} 1</span>
                   </button>
                   <button
-                    onClick={() => window.open('https://run.rilaksekai.com/', '_blank')}
+                    onClick={() => window.open('https://run.rilaksekai.com/', '_blank', 'noopener,noreferrer')}
                     className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
                     title={t('fire.ranking_board')}
                   >
@@ -2329,7 +2311,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 </div>
               ) : (
                 <button
-                  onClick={() => window.open('https://jp.seka.ing/', '_blank')}
+                  onClick={() => window.open('https://jp.seka.ing/', '_blank', 'noopener,noreferrer')}
                   className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-full"
                   title={t('fire.ranking_board')}
                 >
@@ -2343,7 +2325,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               )}
               {/* Refresh Button */}
               <button
-                onClick={() => window.open('https://run.rilaksekai.com/refresh', '_blank')}
+                onClick={() => window.open('https://run.rilaksekai.com/refresh', '_blank', 'noopener,noreferrer')}
                 className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 border border-blue-100 hover:border-blue-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
                 title={t('fire.refresh')}
               >
@@ -2473,7 +2455,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                             chEndMs = selChapter.end * 1000;
                           } else if (eventInfo?.id) {
                             const chNum = selectedChapter.split('-')[1];
-                            const wbChapter = worldBloomsInfo.find(wb => wb.eventId == eventInfo.id && wb.chapterNo == chNum);
+                            const wbChapter = worldBloomsInfo.find(wb => String(wb.eventId) === String(eventInfo.id) && String(wb.chapterNo) === String(chNum));
                             if (wbChapter) {
                               chStartMs = wbChapter.chapterStartAt;
                               chEndMs = wbChapter.chapterEndAt;
@@ -2499,7 +2481,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                             chEndMs = selChapter.end * 1000;
                           } else if (eventInfo?.id) {
                             const chNum = selectedChapter.split('-')[1];
-                            const wbChapter = worldBloomsInfo.find(wb => wb.eventId == eventInfo.id && wb.chapterNo == chNum);
+                            const wbChapter = worldBloomsInfo.find(wb => String(wb.eventId) === String(eventInfo.id) && String(wb.chapterNo) === String(chNum));
                             if (wbChapter) {
                               chStartMs = wbChapter.chapterStartAt;
                               chEndMs = wbChapter.chapterEndAt;
@@ -2544,7 +2526,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     // 2) worldBloomsInfo에서 찾기 (fallback)
                     if (!startSec && eventInfo?.id) {
                       const chNum = selectedChapter.split('-')[1];
-                      const wbChapter = worldBloomsInfo.find(wb => wb.eventId == eventInfo.id && wb.chapterNo == chNum);
+                      const wbChapter = worldBloomsInfo.find(wb => String(wb.eventId) === String(eventInfo.id) && String(wb.chapterNo) === String(chNum));
                       if (wbChapter && wbChapter.chapterStartAt && wbChapter.chapterEndAt) {
                         startSec = wbChapter.chapterStartAt / 1000;
                         totalHours = (wbChapter.chapterEndAt - wbChapter.chapterStartAt) / 3600000;
@@ -2619,7 +2601,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             // worldBloomsInfo에서 현재 이벤트의 모든 챕터 추출
             const eventChaptersFromWB = eventInfo?.id
               ? worldBloomsInfo
-                .filter(wb => wb.eventId == eventInfo.id)
+                .filter(wb => String(wb.eventId) === String(eventInfo.id))
                 .sort((a, b) => a.chapterNo - b.chapterNo)
               : [];
 
@@ -2658,7 +2640,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       // chaptersData에서 매칭되는 챕터 찾기 (선택 시 데이터 표시용)
                       const matchedChapter = chaptersData.find(ch => {
                         const chNum = ch.chapter_id?.split('-')[1];
-                        return chNum == chapterNum;
+                        return String(chNum) === String(chapterNum);
                       });
                       const chapterId = matchedChapter?.chapter_id || `wl-${chapterNum}`;
 
@@ -2714,10 +2696,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       const chapterNum = ch.chapter_id.split('-')[1] || (idx + 1);
 
                       let charData = null;
-                      const eventWorldBloom = worldBloomsInfo.find(wb => wb.id == ch.world_bloom_id || wb.eventId == eventInfo?.id);
+                      const eventWorldBloom = worldBloomsInfo.find(wb => String(wb.id) === String(ch.world_bloom_id) || String(wb.eventId) === String(eventInfo?.id));
                       if (eventWorldBloom && eventWorldBloom.worldBloomChapters) {
                         const targetIdx = parseInt(chapterNum) - 1;
-                        const wbChapter = eventWorldBloom.worldBloomChapters.find(c => c.id == chapterNum)
+                        const wbChapter = eventWorldBloom.worldBloomChapters.find(c => String(c.id) === String(chapterNum))
                           || eventWorldBloom.worldBloomChapters[targetIdx];
                         if (wbChapter && wbChapter.characterId) {
                           const charIdStr = String(wbChapter.characterId).padStart(2, '0');
@@ -2979,7 +2961,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         language === 'ko' && (
           <div className="w-full max-w-2xl mx-auto mt-2 text-center">
             <button
-              onClick={() => window.open('https://x.rilaksekai.com/', '_blank')}
+              onClick={() => window.open('https://x.rilaksekai.com/', '_blank', 'noopener,noreferrer')}
               className="w-full bg-white border border-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-gray-50 hover:text-indigo-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">

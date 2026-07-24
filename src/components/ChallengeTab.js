@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import ChallengeScoreTab from './ChallengeScoreTab';
 import ChallengeStageTab from './ChallengeStageTab';
@@ -14,18 +14,9 @@ const ChallengeTab = ({ surveyData, setSurveyData, subPath }) => {
     return 'score'; // default
   };
 
-  const [activeSubTab, setActiveSubTab] = useState(getSubTabFromPath());
-
-  // Sync with URL changes
-  useEffect(() => {
-    const newSubTab = getSubTabFromPath();
-    if (newSubTab !== activeSubTab) {
-      setActiveSubTab(newSubTab);
-    }
-  }, [subPath]);
+  const activeSubTab = getSubTabFromPath();
 
   const handleSubTabChange = (subTab) => {
-    setActiveSubTab(subTab);
     navigate(`/chall/${subTab}`);
   };
 
@@ -53,4 +44,3 @@ const ChallengeTab = ({ surveyData, setSurveyData, subPath }) => {
 };
 
 export default ChallengeTab;
-

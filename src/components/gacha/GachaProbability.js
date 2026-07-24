@@ -135,6 +135,9 @@ const GachaProbability = ({ surveyData, setSurveyData }) => {
         setResultHtml(newResultHtml);
         updateChart(pro, pickupCountVal);
 
+        // updateChart is evaluated from this render and its only external
+        // dependency, t, is already included.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pickupProb, pickupCount, attemptCount, pityCount, t]);
 
     const updateChart = (pro, pickupCountVal) => {

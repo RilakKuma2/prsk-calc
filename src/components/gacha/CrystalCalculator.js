@@ -113,10 +113,6 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
 
 
 
-    const handleSettingChange = (key) => {
-        setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-    };
-
     // Helper to handle mutually exclusive Pass selection
     const handlePassChange = (type) => {
         setSettings(prev => ({
@@ -293,20 +289,6 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
         : BASE_SONG_REWARDS_PER_SONG;
     const SONG_REWARDS_TOTAL = SONG_REWARDS_PER_SONG * MONTHLY_FREE.newSongsPerMonth;
 
-    const BASE_FREE_GAIN = MONTHLY_FREE.attendance + MONTHLY_FREE.challengeLive + MONTHLY_FREE.basicPass + EVENT_REWARDS_TOTAL + SONG_REWARDS_TOTAL + MONTHLY_FREE.broadcast;
-
-    // Helper: Count remaining specific weekdays (e.g. Sunday = 0)
-    const countRemainingWeekdays = (year, month, currentDay, targetDay) => {
-        let count = 0;
-        const daysInMonth = new Date(year, month, 0).getDate();
-        for (let d = currentDay; d <= daysInMonth; d++) {
-            if (new Date(year, month - 1, d).getDay() === targetDay) {
-                count++;
-            }
-        }
-        return count;
-    };
-
     // Helper: Calculate income for the current specific month (partial) - Targeting Limited Event End
     const calculateCurrentMonthIncome = () => {
         const now = new Date();
@@ -440,8 +422,6 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
 
         return { free, paid };
     };
-    const CEILING_COST = 60000;
-
     // Calculation
     const calculateProjection = () => {
         const projections = [];
@@ -479,20 +459,9 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
         // Helper: Get days in a month
         const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
 
-        // Helper: Count Sundays in a month
-        const getSundaysInMonth = (year, month) => {
-            let count = 0;
-            const daysInMonth = getDaysInMonth(year, month);
-            for (let d = 1; d <= daysInMonth; d++) {
-                if (new Date(year, month - 1, d).getDay() === 0) count++;
-            }
-            return count;
-        };
-
         // Helper: Calculate monthly free for a specific month
         const getMonthlyFreeForMonth = (year, month) => {
             const daysInMonth = getDaysInMonth(year, month);
-            const sundaysInMonth = getSundaysInMonth(year, month);
 
             // Daily-based rewards (adjusted by actual days in month)
             const attendanceForMonth = 50 * daysInMonth;
@@ -626,24 +595,8 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
         const year = now.getFullYear();
         const month = now.getMonth() + 1;
         const daysInMonth = new Date(year, month, 0).getDate();
-        let sundaysInMonth = 0;
-        for (let d = 1; d <= daysInMonth; d++) {
-            if (new Date(year, month - 1, d).getDay() === 0) sundaysInMonth++;
-        }
-        return { daysInMonth, sundaysInMonth };
+        return { daysInMonth };
     })();
-    // Format month gacha cost display
-    const formatMonthGachaCost = (monthIndex) => {
-        const { freeCost, paidCost } = calculateMonthGachaCost(monthIndex);
-        if (freeCost === 0 && paidCost === 0) return null;
-
-        let text = "- " + freeCost.toLocaleString() + " ";
-        if (paidCost !== 0) {
-            const sign = paidCost > 0 ? '+' : '';
-            text += " (" + sign + paidCost.toLocaleString() + " " + t('gacha.paid') + ")";
-        }
-        return text;
-    };
 
     return (
         <div className="p-4 space-y-6">
@@ -984,12 +937,6 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
                                     const currentYear = now.getFullYear();
                                     const currentMonth = now.getMonth() + 1;
                                     const daysInCurrentMonth = new Date(currentYear, currentMonth, 0).getDate();
-
-                                    // Count Sundays in current month
-                                    let sundaysInMonth = 0;
-                                    for (let d = 1; d <= daysInCurrentMonth; d++) {
-                                        if (new Date(currentYear, currentMonth - 1, d).getDay() === 0) sundaysInMonth++;
-                                    }
 
                                     // Calculate displayed total with correct days
                                     let displayTotal = 50 * daysInCurrentMonth; // attendance

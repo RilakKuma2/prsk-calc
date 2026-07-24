@@ -7,6 +7,11 @@ import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
 import { AUTH_BASE_URL, STORAGE_BASE_URL, joinUrl } from './config/env';
 import {
+  AUTO_ACCOUNT_STORAGE_KEYS,
+  isAutoAccountStorageKey,
+  normalizeAutoAccountSnapshot,
+} from './utils/autoAccountStorage';
+import {
   AccountPanel,
   AccountStateConflictDialog,
   LoginProvider,
@@ -86,40 +91,6 @@ const autoSavePreferenceStorage = {
   write: (preference) => {
     localStorage.setItem(AUTO_SAVE_PREFERENCE_STORAGE_KEY, JSON.stringify(preference));
   },
-};
-
-const AUTO_ACCOUNT_STORAGE_KEYS = new Set([
-  'language',
-  'amatsuyu_notify_settings',
-  'roomSearchEngine',
-  'showRecentHourlySpeed',
-  'savedFriendCode',
-  'charRankInputs',
-  'charRankAddInputs',
-  'charRankSelectedId',
-  'calcPreviewCharId',
-  'supportDeckState',
-  'prskCalcSurveyData',
-  'prskEventShopSimulatorStateV1',
-  'prskEventShopSimulatorPresetsV1',
-  'prskEventShopSimulatorItemCountsV1',
-]);
-
-const isAutoAccountStorageKey = (key) => (
-  AUTO_ACCOUNT_STORAGE_KEYS.has(key) || key.startsWith('ebc_')
-);
-
-const normalizeAutoAccountSnapshot = (value) => {
-  const source = value && typeof value.entries === 'object' && !Array.isArray(value.entries)
-    ? value.entries
-    : {};
-  const entries = {};
-  Object.keys(source).sort().forEach((key) => {
-    if (isAutoAccountStorageKey(key) && typeof source[key] === 'string') {
-      entries[key] = source[key];
-    }
-  });
-  return { schemaVersion: 1, entries };
 };
 
 const autoAccountStorage = {
@@ -288,7 +259,14 @@ const AppContent = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const unbanToken = urlParams.get('unban_token');
     if (unbanToken) {
-      fetch(`${joinUrl(AUTH_BASE_URL, 'api/unban/verify')}?token=${unbanToken}`)
+      urlParams.delete('unban_token');
+      const cleanQuery = urlParams.toString();
+      window.history.replaceState(
+        {},
+        document.title,
+        `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ''}${window.location.hash}`,
+      );
+      fetch(`${joinUrl(AUTH_BASE_URL, 'api/unban/verify')}?token=${encodeURIComponent(unbanToken)}`)
         .then(res => res.json())
         .then(data => {
           if (data.valid) {
@@ -296,10 +274,7 @@ const AppContent = () => {
             document.cookie = "__cf_banned_v2=;path=/;max-age=0";
           }
         })
-        .catch(() => { })
-        .finally(() => {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        });
+        .catch(() => { });
     }
   }, []);
 
@@ -871,7 +846,7 @@ const AppContent = () => {
       <div className="button-container">
         <button
           className="link-button"
-          onClick={() => window.open(language === 'ko' ? 'https://chart.rilaksekai.com/' : 'https://sdvx.in/prsk.html', '_blank')}
+          onClick={() => window.open(language === 'ko' ? 'https://chart.rilaksekai.com/' : 'https://sdvx.in/prsk.html', '_blank', 'noopener,noreferrer')}
         >
           {t('app.chart_link')}
         </button>
@@ -879,9 +854,9 @@ const AppContent = () => {
           className="link-button"
           onClick={() => {
             if (user && user.canAccessModeling) {
-              window.open('https://rilakbest.com', '_blank');
+              window.open('https://rilakbest.com', '_blank', 'noopener,noreferrer');
             } else {
-              window.open(language === 'ko' ? 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing' : 'https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing', '_blank');
+              window.open('https://docs.google.com/spreadsheets/d/1YXidERD1mm3LPxvqU7ZLfXZz4AyFzsJ0Id9kcWMXsGg/edit?usp=sharing', '_blank', 'noopener,noreferrer');
             }
           }}
         >

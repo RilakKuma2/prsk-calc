@@ -71,30 +71,6 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
       updateGlider();
     }, 200);
     return () => clearTimeout(timer);
-  }, []);
-
-  // Update glider on window resize
-  useEffect(() => {
-    const debounce = (func, wait) => {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    };
-
-    const debouncedUpdateGlider = debounce(updateGlider, 100);
-
-    window.addEventListener('resize', debouncedUpdateGlider);
-
-    // Cleanup listener on component unmount
-    return () => {
-      window.removeEventListener('resize', debouncedUpdateGlider);
-    };
   }, [updateGlider]);
 
   const [isDragging, setIsDragging] = useState(false);

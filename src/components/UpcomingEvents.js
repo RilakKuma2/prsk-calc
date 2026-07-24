@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { characterBirthdays } from '../data/characterBirthdays';
 import { useTranslation } from '../contexts/LanguageContext';
 
 const UpcomingEvents = ({ children }) => {
-    const { t, language } = useTranslation();
+    const { language } = useTranslation();
     const [isVisible, setIsVisible] = useState(true);
 
     // Calculate events synchronously to avoid flash

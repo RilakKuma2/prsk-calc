@@ -4,7 +4,6 @@ import { useTranslation } from '../contexts/LanguageContext';
 
 import AmatsuyuCalendar from './AmatsuyuCalendar';
 import AmatsuyuNotificationModal from './AmatsuyuNotificationModal';
-import { characterBirthdays } from '../data/characterBirthdays';
 
 const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();

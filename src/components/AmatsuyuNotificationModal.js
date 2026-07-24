@@ -285,7 +285,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
 
                                             // 1. Open Popup
                                             const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
-                                            window.open(
+                                            const popup = window.open(
                                                 `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(cleanUrl + '/auth/discord/callback')}&response_type=code&scope=webhook.incoming%20bot%20applications.commands`,
                                                 'Discord Auth',
                                                 `width=${width},height=${height},top=${top},left=${left}`
@@ -293,13 +293,22 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
 
                                             // 2. Message Listener
                                             const listener = (event) => {
-                                                if (event.data.type === 'DISCORD_WEBHOOK') {
-                                                    setDiscordWebhook(event.data.webhook.url);
-                                                    setDiscordChannelId(event.data.webhook.channel_id);
+                                                const trustedOrigin = new URL(cleanUrl).origin;
+                                                const webhook = event.data?.webhook;
+                                                if (
+                                                    event.origin === trustedOrigin
+                                                    && event.source === popup
+                                                    && event.data?.type === 'DISCORD_WEBHOOK'
+                                                    && typeof webhook?.url === 'string'
+                                                    && /^https:\/\/(?:canary\.|ptb\.)?discord(?:app)?\.com\/api\/webhooks\//.test(webhook.url)
+                                                ) {
+                                                    setDiscordWebhook(webhook.url);
+                                                    setDiscordChannelId(String(webhook.channel_id || ''));
                                                     window.removeEventListener('message', listener);
                                                 }
                                             };
                                             window.addEventListener('message', listener);
+                                            window.setTimeout(() => window.removeEventListener('message', listener), 120000);
                                         }}
                                         className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
                                     >
@@ -329,20 +338,21 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                 <div className="text-center py-2">
                                     <button
                                         onClick={async () => {
-                                            const session = Math.random().toString(36).substring(2, 10);
+                                            const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+                                            const session = Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
                                             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                                             // Open Telegram
                                             if (isMobile) {
                                                 window.location.href = `tg://resolve?domain=${TELEGRAM_BOT_USERNAME}&start=${session}`;
                                             } else {
-                                                window.open(`https://t.me/${TELEGRAM_BOT_USERNAME}?start=${session}`, '_blank');
+                                                window.open(`https://t.me/${encodeURIComponent(TELEGRAM_BOT_USERNAME)}?start=${encodeURIComponent(session)}`, '_blank', 'noopener,noreferrer');
                                             }
 
                                             // Start Polling
                                             const poll = setInterval(async () => {
                                                 try {
                                                     const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
-                                                    const res = await fetch(`${cleanUrl}/auth/telegram/poll?session=${session}`);
+                                                    const res = await fetch(`${cleanUrl}/auth/telegram/poll?session=${encodeURIComponent(session)}`);
                                                     const data = await res.json();
                                                     if (data.status === 'success' && data.chatId) {
                                                         setTelegramChatId(data.chatId);
