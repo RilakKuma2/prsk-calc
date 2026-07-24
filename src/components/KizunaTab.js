@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { kizunaData } from '../data/kizunaData';
 import { useTranslation } from '../contexts/LanguageContext';
 import playerLevelData from '../data/player_levels.json';
+import {
+  createKizunaPresets,
+  getActiveKizunaPreset,
+  KIZUNA_PRESETS,
+  mirrorActiveKizunaPreset,
+  selectKizunaPreset,
+  updateActiveKizunaPreset,
+} from '../utils/kizunaPresets';
 
 const findPlayerLevelInfo = (level) => playerLevelData.find(d => {
   if (d.range === String(level)) return true;
@@ -15,26 +23,54 @@ const findPlayerLevelInfo = (level) => playerLevelData.find(d => {
 
 const KizunaTab = ({ surveyData, setSurveyData }) => {
   const { t } = useTranslation();
-  const currentLevel = surveyData.kizunaCurrentLevel || '';
-  const setCurrentLevel = (val) => setSurveyData(prev => ({ ...prev, kizunaCurrentLevel: typeof val === 'function' ? val(prev.kizunaCurrentLevel || '') : val }));
-  const currentExp = surveyData.kizunaCurrentExp || '';
-  const setCurrentExp = (val) => setSurveyData(prev => ({ ...prev, kizunaCurrentExp: typeof val === 'function' ? val(prev.kizunaCurrentExp || '') : val }));
-  const targetLevel = surveyData.kizunaTargetLevel || '';
-  const setTargetLevel = (val) => setSurveyData(prev => ({ ...prev, kizunaTargetLevel: typeof val === 'function' ? val(prev.kizunaTargetLevel || '') : val }));
-  const rank = surveyData.kizunaRank || '150';
-  const setRank = (val) => setSurveyData(prev => ({ ...prev, kizunaRank: typeof val === 'function' ? val(prev.kizunaRank || '150') : val }));
-  const fires = surveyData.kizunaFires || '5';
-  const setFires = (val) => setSurveyData(prev => ({ ...prev, kizunaFires: typeof val === 'function' ? val(prev.kizunaFires || '5') : val }));
+  const presets = useMemo(
+    () => createKizunaPresets(surveyData),
+    [surveyData],
+  );
+  const activePreset = getActiveKizunaPreset(presets);
+
+  useEffect(() => {
+    if (surveyData.kizunaPresets) return;
+    setSurveyData((previous) => {
+      const initialPresets = createKizunaPresets(previous);
+      return mirrorActiveKizunaPreset(previous, initialPresets);
+    });
+  }, [setSurveyData, surveyData.kizunaPresets]);
+
+  const commitPresets = (transform) => {
+    setSurveyData((previous) => {
+      const currentPresets = createKizunaPresets(previous);
+      const nextPresets = transform(currentPresets);
+      return mirrorActiveKizunaPreset(previous, nextPresets);
+    });
+  };
+
+  const setKizunaData = (updater) => {
+    commitPresets((currentPresets) => (
+      updateActiveKizunaPreset(currentPresets, updater)
+    ));
+  };
+
+  const currentLevel = activePreset.kizunaCurrentLevel || '';
+  const setCurrentLevel = (val) => setKizunaData(prev => ({ ...prev, kizunaCurrentLevel: typeof val === 'function' ? val(prev.kizunaCurrentLevel || '') : val }));
+  const currentExp = activePreset.kizunaCurrentExp || '';
+  const setCurrentExp = (val) => setKizunaData(prev => ({ ...prev, kizunaCurrentExp: typeof val === 'function' ? val(prev.kizunaCurrentExp || '') : val }));
+  const targetLevel = activePreset.kizunaTargetLevel || '';
+  const setTargetLevel = (val) => setKizunaData(prev => ({ ...prev, kizunaTargetLevel: typeof val === 'function' ? val(prev.kizunaTargetLevel || '') : val }));
+  const rank = activePreset.kizunaRank || '150';
+  const setRank = (val) => setKizunaData(prev => ({ ...prev, kizunaRank: typeof val === 'function' ? val(prev.kizunaRank || '150') : val }));
+  const fires = activePreset.kizunaFires || '5';
+  const setFires = (val) => setKizunaData(prev => ({ ...prev, kizunaFires: typeof val === 'function' ? val(prev.kizunaFires || '5') : val }));
 
   // 렙업불 관련 상태
-  const levelUpEnabled = surveyData.kizunaLevelUpEnabled || false;
-  const setLevelUpEnabled = (val) => setSurveyData(prev => ({ ...prev, kizunaLevelUpEnabled: typeof val === 'function' ? val(prev.kizunaLevelUpEnabled || false) : val }));
-  const playerLevel = surveyData.kizunaPlayerLevel || '';
-  const setPlayerLevel = (val) => setSurveyData(prev => ({ ...prev, kizunaPlayerLevel: typeof val === 'function' ? val(prev.kizunaPlayerLevel || '') : val }));
-  const playerRemainingExp = surveyData.kizunaPlayerRemainingExp || '';
-  const setPlayerRemainingExp = (val) => setSurveyData(prev => ({ ...prev, kizunaPlayerRemainingExp: typeof val === 'function' ? val(prev.kizunaPlayerRemainingExp || '') : val }));
-  const playerLiveRank = surveyData.kizunaPlayerLiveRank || 'S';
-  const setPlayerLiveRank = (val) => setSurveyData(prev => ({ ...prev, kizunaPlayerLiveRank: typeof val === 'function' ? val(prev.kizunaPlayerLiveRank || 'S') : val }));
+  const levelUpEnabled = activePreset.kizunaLevelUpEnabled || false;
+  const setLevelUpEnabled = (val) => setKizunaData(prev => ({ ...prev, kizunaLevelUpEnabled: typeof val === 'function' ? val(prev.kizunaLevelUpEnabled || false) : val }));
+  const playerLevel = activePreset.kizunaPlayerLevel || '';
+  const setPlayerLevel = (val) => setKizunaData(prev => ({ ...prev, kizunaPlayerLevel: typeof val === 'function' ? val(prev.kizunaPlayerLevel || '') : val }));
+  const playerRemainingExp = activePreset.kizunaPlayerRemainingExp || '';
+  const setPlayerRemainingExp = (val) => setKizunaData(prev => ({ ...prev, kizunaPlayerRemainingExp: typeof val === 'function' ? val(prev.kizunaPlayerRemainingExp || '') : val }));
+  const playerLiveRank = activePreset.kizunaPlayerLiveRank || 'S';
+  const setPlayerLiveRank = (val) => setKizunaData(prev => ({ ...prev, kizunaPlayerLiveRank: typeof val === 'function' ? val(prev.kizunaPlayerLiveRank || 'S') : val }));
 
   const [neededExp, setNeededExp] = useState(0);
   const [neededRounds, setNeededRounds] = useState(0);
@@ -183,6 +219,30 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
 
   return (
     <div id="kizuna-level-tab" className="p-4 space-y-4">
+      <div
+        className="-mb-1 flex items-center justify-center gap-1"
+        role="group"
+        aria-label={t('kizuna.preset_label')}
+      >
+        {KIZUNA_PRESETS.map((preset, index) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => commitPresets((currentPresets) => (
+              selectKizunaPreset(currentPresets, preset)
+            ))}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+              presets.currentPreset === preset
+                ? 'bg-indigo-500 text-white shadow-md'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+            aria-pressed={presets.currentPreset === preset}
+          >
+            {t('kizuna.preset', { count: index + 1 })}
+          </button>
+        ))}
+      </div>
+
       {/* Input Section */}
       <InputTableWrapper>
         <InputRow

@@ -6,7 +6,8 @@ body {
     font-family: 'Poppins', 'Noto Sans JP', sans-serif;
     min-height: 100vh;
     margin: 0;
-    background-color: #f7f9fc;
+    color: var(--theme-text);
+    background-color: var(--theme-bg);
     /* A lighter, more modern background */
     overflow-y: auto;
     box-sizing: border-box;
@@ -37,14 +38,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--theme-surface-soft);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #888;
+    background: var(--theme-border-strong);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--theme-text-subtle);
 }

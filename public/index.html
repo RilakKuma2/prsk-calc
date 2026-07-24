@@ -5,6 +5,25 @@
   <meta charset="utf-8" />
   <script>
     (function () {
+      try {
+        var preference = localStorage.getItem('sekai-theme');
+        if (preference !== 'light' && preference !== 'dark' && preference !== 'system') {
+          preference = 'system';
+        }
+        var resolved = preference === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : preference;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.dataset.themePreference = preference;
+        document.documentElement.style.colorScheme = resolved;
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+        document.documentElement.dataset.themePreference = 'system';
+      }
+    })();
+  </script>
+  <script>
+    (function () {
       var savedLanguage = localStorage.getItem('language');
       var browserLang = navigator.language || navigator.userLanguage;
       var lang = savedLanguage || (browserLang && browserLang.startsWith('ja') ? 'ja' : 'ko');
@@ -34,7 +53,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/icon.png" />
   <link rel="shortcut icon" href="%PUBLIC_URL%/icon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#6366f1" />
   <meta name="description" content="Project Sekai Calculator" />
 
   <meta name="apple-mobile-web-app-capable" content="yes" />

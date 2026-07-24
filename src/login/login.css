@@ -27,8 +27,8 @@
   box-sizing: border-box;
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 24px;
-  color: #22232a;
-  background: #fff;
+  color: var(--theme-text);
+  background: var(--theme-surface);
   box-shadow: 0 30px 90px rgba(15, 16, 24, 0.28);
   text-align: left;
   animation: login-modal-in 0.2s ease-out;
@@ -56,16 +56,16 @@
   padding: 0 0 2px;
   border: 0;
   border-radius: 50%;
-  color: #777;
-  background: #f2f2f5;
+  color: var(--theme-text-muted);
+  background: var(--theme-surface-soft);
   font-size: 1.45rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .login-modal-close:hover {
-  color: #111;
-  background: #e8e8ed;
+  color: var(--theme-text);
+  background: var(--theme-surface-muted);
 }
 
 .login-modal-brand {
@@ -98,7 +98,7 @@
   border: 1px solid rgba(199, 210, 254, 0.9);
   border-radius: 999px;
   color: #4338ca;
-  background: rgba(255, 255, 255, 0.98);
+  background: rgb(var(--theme-surface-rgb) / 0.98);
   box-shadow: 0 8px 20px rgba(129, 140, 248, 0.22);
   font-size: 0.56rem;
   font-weight: 800;
@@ -117,14 +117,14 @@
 
 .login-modal h2 {
   margin: 0;
-  color: #1e1f25;
+  color: var(--theme-text);
   font-size: 1.45rem;
   text-align: left;
 }
 
 .login-modal-description {
   margin: 8px 0 20px;
-  color: #7b7d86;
+  color: var(--theme-text-muted);
   font-size: 0.84rem;
   line-height: 1.55;
 }
@@ -136,14 +136,14 @@
   margin-bottom: 20px;
   padding: 4px;
   border-radius: 12px;
-  background: #f2f3f6;
+  background: var(--theme-surface-soft);
 }
 
 .login-mode-tabs button {
   padding: 9px;
   border: 0;
   border-radius: 9px;
-  color: #858791;
+  color: var(--theme-text-subtle);
   background: transparent;
   font: inherit;
   font-size: 0.84rem;
@@ -152,8 +152,8 @@
 }
 
 .login-mode-tabs button.active {
-  color: #22232a;
-  background: #fff;
+  color: var(--theme-text);
+  background: var(--theme-surface);
   box-shadow: 0 2px 8px rgba(40, 42, 55, 0.09);
 }
 
@@ -170,7 +170,7 @@
 }
 
 .login-form label > span {
-  color: #454750;
+  color: var(--theme-text);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -181,7 +181,7 @@
 
 .login-form label small {
   margin-left: 3px;
-  color: #aaa;
+  color: var(--theme-text-subtle);
   font-size: 0.7rem;
   font-weight: 600;
 }
@@ -191,11 +191,11 @@
   min-height: 43px;
   padding: 10px 12px;
   box-sizing: border-box;
-  border: 1px solid #dedfe5;
+  border: 1px solid var(--theme-border);
   border-radius: 11px;
   outline: none;
-  color: #22232a;
-  background: #fff;
+  color: var(--theme-text);
+  background: var(--theme-surface);
   font: inherit;
   font-size: 0.88rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -207,12 +207,12 @@
 }
 
 .login-form input:disabled {
-  color: #777a84;
-  background: #f5f5f7;
+  color: var(--theme-text-muted);
+  background: var(--theme-surface-soft);
 }
 
 .login-form input::placeholder {
-  color: #b0b2ba;
+  color: var(--theme-text-subtle);
 }
 
 .login-form label.login-checkbox-field {
@@ -221,9 +221,9 @@
   align-items: start;
   gap: 10px;
   padding: 11px 12px;
-  border: 1px solid #e5e5ea;
+  border: 1px solid var(--theme-border);
   border-radius: 11px;
-  background: #fafafd;
+  background: var(--theme-surface-subtle);
   cursor: pointer;
 }
 
@@ -239,7 +239,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  color: #454750;
+  color: var(--theme-text);
 }
 
 .login-form .login-checkbox-field strong {
@@ -248,7 +248,7 @@
 
 .login-form .login-checkbox-field small {
   margin: 0;
-  color: #8f929c;
+  color: var(--theme-text-subtle);
   font-size: 0.7rem;
   font-weight: 500;
   line-height: 1.45;
@@ -269,7 +269,7 @@
 
 .login-message.notice {
   color: #307453;
-  background: #edf9f3;
+  background: var(--theme-success-soft);
 }
 
 .login-submit {
@@ -298,7 +298,7 @@
   align-self: center;
   padding: 4px 8px;
   border: 0;
-  color: #777a84;
+  color: var(--theme-text-muted);
   background: transparent;
   font: inherit;
   font-size: 0.76rem;
@@ -307,20 +307,20 @@
 }
 
 .login-text-button:hover {
-  color: #22232a;
+  color: var(--theme-text);
   text-decoration: underline;
 }
 
 .login-change-account {
   margin: 15px 0 0;
-  color: #999ba3;
+  color: var(--theme-text-subtle);
   font-size: 0.72rem;
   text-align: center;
 }
 
 .login-account-copy {
   margin: 8px 8px 10px;
-  color: #777a84;
+  color: var(--theme-text-muted);
   font-size: 0.8rem;
   line-height: 1.5;
 }
@@ -352,7 +352,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px;
-  color: #222;
+  color: var(--theme-text);
   text-align: left;
 }
 
@@ -383,7 +383,7 @@
 
 .login-profile small {
   overflow: hidden;
-  color: #92949c;
+  color: var(--theme-text-subtle);
   font-size: 0.73rem;
   font-weight: 500;
   text-overflow: ellipsis;
@@ -391,13 +391,13 @@
 }
 
 .login-account-action {
-  color: #3e4048;
+  color: var(--theme-text);
   text-align: left;
   background: transparent;
 }
 
 .login-account-action:hover {
-  background: #f4f4f7;
+  background: var(--theme-surface-soft);
 }
 
 .login-account-action.danger {
@@ -406,7 +406,7 @@
 
 .login-account-muted {
   padding: 12px 8px;
-  color: #999;
+  color: var(--theme-text-subtle);
   font-size: 0.8rem;
 }
 
@@ -426,8 +426,8 @@
   padding: 22px;
   box-sizing: border-box;
   border-radius: 16px;
-  color: #222;
-  background: #fff;
+  color: var(--theme-text);
+  background: var(--theme-surface);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
   text-align: left;
 }
@@ -439,7 +439,7 @@
 
 .login-conflict-dialog > p {
   margin: 0 0 14px;
-  color: #555;
+  color: var(--theme-text-muted);
   line-height: 1.55;
 }
 
@@ -453,7 +453,7 @@
 .login-conflict-summary > div {
   padding: 10px;
   border-radius: 10px;
-  background: #f8f9fa;
+  background: var(--theme-surface-subtle);
 }
 
 .login-conflict-summary strong {
@@ -463,7 +463,7 @@
 
 .login-conflict-dialog .login-conflict-hint {
   margin: 0 0 12px;
-  color: #666;
+  color: var(--theme-text-muted);
   font-size: 0.85rem;
 }
 
@@ -481,10 +481,10 @@
 
 .login-conflict-actions button {
   padding: 11px 12px;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--theme-border);
   border-radius: 10px;
-  color: #333;
-  background: #fff;
+  color: var(--theme-text);
+  background: var(--theme-surface);
   font: inherit;
   font-weight: 700;
   cursor: pointer;

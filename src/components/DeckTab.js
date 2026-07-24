@@ -1163,7 +1163,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                 }
                                 setShowLoadModal(prev => !prev);
                             }}
-                            className="px-4 py-2 text-sm font-medium rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all duration-200"
+                            className={`deck-friend-load-button px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${showLoadModal ? 'active' : ''}`}
                         >
                             {t('app.load') || '불러오기'}
                         </button>
@@ -1377,7 +1377,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             {!isEventBonusLoadedControl && <span className="text-gray-600">%</span>}
                             <button
                                 onClick={() => setShowEventBonusCalc(true)}
-                                className="inline-flex items-center justify-center h-5 px-2 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-700 transition-colors text-[10px] font-bold"
+                                className="deck-simulator-open-button inline-flex items-center justify-center h-5 px-2 rounded-full transition-colors text-[10px] font-bold"
                                 title={t('support.deck_simulator') || '덱 시뮬레이터'}
                             >
                                 {t('support.deck_sim_btn') || '덱시뮬'}

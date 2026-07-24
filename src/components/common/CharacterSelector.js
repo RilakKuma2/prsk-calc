@@ -10,7 +10,7 @@ const UNITS = [
     { name: 'VIRTUAL SINGER', ids: ['21', '22', '23', '24', '25', '26'], bg: 'bg-gray-50' }
 ];
 
-const CharacterSelector = ({ selectedId, onSelect, language }) => {
+const CharacterSelector = ({ selectedId, onSelect, language, iconOnly = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
 
@@ -65,10 +65,15 @@ const CharacterSelector = ({ selectedId, onSelect, language }) => {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 pl-2 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className={iconOnly
+                    ? 'flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 bg-white p-1 shadow-sm transition-all hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+                    : 'flex items-center gap-2 pl-2 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all'
+                }
+                aria-label={getCharName(selectedChar)}
+                title={getCharName(selectedChar)}
             >
                 {selectedChar && (
-                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                    <div className={`${iconOnly ? 'w-9 h-9' : 'w-8 h-8'} rounded-full overflow-hidden border border-gray-200 flex-shrink-0`}>
                         <img
                             src={`${process.env.PUBLIC_URL}/assets/characters/${selectedChar.image}.webp`}
                             alt={getCharName(selectedChar)}
@@ -77,12 +82,16 @@ const CharacterSelector = ({ selectedId, onSelect, language }) => {
                         />
                     </div>
                 )}
-                <span className="font-bold text-gray-700 text-lg">
-                    {getCharName(selectedChar)}
-                </span>
-                <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                {!iconOnly && (
+                    <>
+                        <span className="font-bold text-gray-700 text-lg">
+                            {getCharName(selectedChar)}
+                        </span>
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </>
+                )}
             </button>
 
             {/* Dropdown Panel - Anchored to button */}

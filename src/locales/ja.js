@@ -445,6 +445,9 @@ const ja = {
     challenge: {
         score: 'スコア',
         stage: 'ステージ',
+        character: 'チャレンジキャラクター',
+        preset: 'チャレンジプリセット',
+        preset_number: 'プリセット{{count}}',
     },
     amatsuyu: {
         current_year_card: '今年BD所持',
@@ -592,6 +595,8 @@ const ja = {
         suffix_round: '回',
     },
     kizuna: {
+        preset_label: 'キズナプリセット',
+        preset: 'プリセット{{count}}',
         error_input: '入力エラー',
         error_target: '目標ランクは現在より高く',
         error_data: 'データ読込失敗',

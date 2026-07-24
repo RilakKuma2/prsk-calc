@@ -4,6 +4,7 @@ import './App.css';
 import Tabs from './components/Tabs';
 import UpcomingEvents from './components/UpcomingEvents';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
 import { AUTH_BASE_URL, STORAGE_BASE_URL, joinUrl } from './config/env';
 import {
@@ -11,6 +12,15 @@ import {
   isAutoAccountStorageKey,
   normalizeAutoAccountSnapshot,
 } from './utils/autoAccountStorage';
+import {
+  createManualSaveSnapshot,
+  getManualSaveSnapshotStats,
+  isManualSaveSnapshot,
+  MANUAL_SAVE_STORAGE_KEY,
+  mergeManualSaveSnapshots,
+  normalizeManualSaveSnapshot,
+  restoreManualSaveSnapshot,
+} from './utils/manualSaveSnapshot';
 import {
   AccountPanel,
   AccountStateConflictDialog,
@@ -21,16 +31,16 @@ import {
   createJsonLocalStorageAdapter,
 } from './login';
 
-const EMPTY_SURVEY_SNAPSHOT = { schemaVersion: 1, data: {} };
+const EMPTY_SURVEY_SNAPSHOT = {
+  schemaVersion: 2,
+  data: {},
+  entries: null,
+  mysekai: null,
+};
 const AUTO_SURVEY_STORAGE_KEY = 'prskCalcAutoSurveyDataV1';
 const AUTO_SAVE_PREFERENCE_STORAGE_KEY = 'prskCalcAutoSavePreferenceV1';
 
-const normalizeSurveySnapshot = (value) => ({
-  schemaVersion: 1,
-  data: value && typeof value.data === 'object' && !Array.isArray(value.data)
-    ? value.data
-    : {},
-});
+const normalizeSurveySnapshot = normalizeManualSaveSnapshot;
 
 const createSurveySnapshot = (surveyData) => {
   const { activeDeckNum, activeResultView, isComparisonMode, ...data } = surveyData;
@@ -43,10 +53,14 @@ const autoLoadStorage = createJsonLocalStorageAdapter({
 });
 
 const surveyAccountStorage = {
-  keys: ['surveyData'],
+  keys: ['surveyData', MANUAL_SAVE_STORAGE_KEY],
   dirtyKey: 'prsk-calc-survey-data:account-dirty',
   read: () => {
     try {
+      const savedSnapshot = JSON.parse(
+        localStorage.getItem(MANUAL_SAVE_STORAGE_KEY) || 'null',
+      );
+      if (savedSnapshot) return normalizeSurveySnapshot(savedSnapshot);
       const data = JSON.parse(localStorage.getItem('surveyData') || '{}');
       return normalizeSurveySnapshot({ schemaVersion: 1, data });
     } catch {
@@ -54,9 +68,14 @@ const surveyAccountStorage = {
     }
   },
   write: (snapshot) => {
+    const normalized = normalizeSurveySnapshot(snapshot);
+    localStorage.setItem(
+      MANUAL_SAVE_STORAGE_KEY,
+      JSON.stringify(normalized),
+    );
     localStorage.setItem(
       'surveyData',
-      JSON.stringify(normalizeSurveySnapshot(snapshot).data),
+      JSON.stringify(normalized.data),
     );
   },
 };
@@ -164,8 +183,13 @@ const PATH_TO_TAB = Object.entries(TAB_PATHS).reduce((acc, [tab, path]) => {
 const ACCOUNT_UI_TEXT = {
   ko: {
     language: '언어',
+    theme: '화면 테마',
     account: '계정',
     languageSettingsAria: '언어 설정',
+    themeSettingsAria: '화면 테마 설정',
+    themeSystem: '시스템 설정',
+    themeLight: '라이트',
+    themeDark: '다크',
     accountButtonLoggedOut: '로그인 및 계정 설정',
     accountButtonTitleLoggedOut: '로그인하지 않음',
     accountButtonTitleLoggedIn: '로그인됨',
@@ -179,8 +203,13 @@ const ACCOUNT_UI_TEXT = {
   },
   ja: {
     language: '言語',
+    theme: '表示テーマ',
     account: 'アカウント',
     languageSettingsAria: '言語設定',
+    themeSettingsAria: '表示テーマ設定',
+    themeSystem: 'システム設定',
+    themeLight: 'ライト',
+    themeDark: 'ダーク',
     accountButtonLoggedOut: 'ログインとアカウント設定',
     accountButtonTitleLoggedOut: '未ログイン',
     accountButtonTitleLoggedIn: 'ログイン中',
@@ -194,8 +223,13 @@ const ACCOUNT_UI_TEXT = {
   },
   en: {
     language: 'Language',
+    theme: 'Theme',
     account: 'Account',
     languageSettingsAria: 'Language settings',
+    themeSettingsAria: 'Theme settings',
+    themeSystem: 'System',
+    themeLight: 'Light',
+    themeDark: 'Dark',
     accountButtonLoggedOut: 'Sign in and account settings',
     accountButtonTitleLoggedOut: 'Signed out',
     accountButtonTitleLoggedIn: 'Signed in',
@@ -237,6 +271,7 @@ const TabFallback = () => (
 
 const AppContent = () => {
   const { t, language, changeLanguage } = useTranslation();
+  const { themePreference, setThemePreference } = useTheme();
   const { user } = useAuth();
   const { getUserState } = useUserStateApi();
   const navigate = useNavigate();
@@ -430,17 +465,12 @@ const AppContent = () => {
     namespace: 'prsk-calc-survey-data',
     storage: surveyAccountStorage,
     normalize: normalizeSurveySnapshot,
-    validate: (value) => (
-      Boolean(value)
-      && value.schemaVersion === 1
-      && typeof value.data === 'object'
-      && !Array.isArray(value.data)
-    ),
-    isEmpty: (snapshot) => Object.keys(snapshot.data).length === 0,
+    validate: isManualSaveSnapshot,
+    isEmpty: (snapshot) => getManualSaveSnapshotStats(snapshot).total === 0,
     hasLocalOnly: (local, remote, dirty) => {
       if (!dirty) return false;
-      return Object.keys(local.data).length > 0
-        && JSON.stringify(local.data) !== JSON.stringify(remote.data);
+      return getManualSaveSnapshotStats(local).total > 0
+        && JSON.stringify(local) !== JSON.stringify(remote);
     },
     isConflict: (local, remote, dirty) => {
       if (!dirty) return false;
@@ -458,10 +488,7 @@ const AppContent = () => {
       }
       return false;
     },
-    merge: (local, remote) => normalizeSurveySnapshot({
-      schemaVersion: 1,
-      data: { ...remote.data, ...local.data },
-    }),
+    merge: mergeManualSaveSnapshots,
     logLabel: '프로세카 계산기 저장 데이터',
   });
   const autoSettingsSync = useAccountState({
@@ -679,13 +706,13 @@ const AppContent = () => {
       default:
         return <DeckTab surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
     }
-  }, [currentTab, loadVersion, surveyData, setSurveyData, subPath]);
+  }, [currentTab, surveyData, setSurveyData, subPath]);
 
   const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });
   const timerRef1 = React.useRef(null);
   const timerRef2 = React.useRef(null);
 
-  const showToastMessage = (message) => {
+  const showToastMessage = useCallback((message) => {
     if (timerRef1.current) clearTimeout(timerRef1.current);
     if (timerRef2.current) clearTimeout(timerRef2.current);
 
@@ -698,7 +725,7 @@ const AppContent = () => {
     timerRef2.current = setTimeout(() => {
       setToast({ show: false, message: '', fadingOut: false });
     }, 1500);
-  };
+  }, []);
 
   useEffect(() => {
     const handleShowToast = (e) => {
@@ -706,23 +733,49 @@ const AppContent = () => {
     };
     window.addEventListener('show-toast', handleShowToast);
     return () => window.removeEventListener('show-toast', handleShowToast);
-  }, []);
+  }, [showToastMessage]);
 
   const saveData = () => {
-    savedSurveySync.setValue(createSurveySnapshot(surveyData));
+    const surveySnapshot = createSurveySnapshot(surveyData);
+    savedSurveySync.setValue(createManualSaveSnapshot(surveySnapshot.data));
     showToastMessage(t('app.toast.saved'));
   };
 
-  const loadData = useCallback(() => {
-    const savedData = savedSurveyRef.current.data;
-    if (savedData && Object.keys(savedData).length > 0) {
-      setSurveyData(savedData);
-      setLoadVersion(v => v + 1);
-      showToastMessage(t('app.toast.loaded'));
-    } else {
-      showToastMessage(t('app.toast.no_data'));
+  const applySavedSnapshot = useCallback((rawSnapshot, showToast = true) => {
+    const snapshot = normalizeSurveySnapshot(rawSnapshot);
+    if (getManualSaveSnapshotStats(snapshot).total === 0) {
+      if (showToast) showToastMessage(t('app.toast.no_data'));
+      return false;
     }
-  }, [t]);
+
+    const restoredData = restoreManualSaveSnapshot(snapshot);
+    const restoredTheme = snapshot.entries?.['sekai-theme'];
+    if (['system', 'light', 'dark'].includes(restoredTheme)) {
+      setThemePreference(restoredTheme);
+    }
+    const restoredLanguage = snapshot.entries?.language;
+    if (
+      ['ko', 'ja', 'en'].includes(restoredLanguage)
+      && restoredLanguage !== language
+    ) {
+      changeLanguage(restoredLanguage);
+    }
+
+    setSurveyData(restoredData);
+    setLoadVersion((version) => version + 1);
+    if (showToast) showToastMessage(t('app.toast.loaded'));
+    return true;
+  }, [
+    changeLanguage,
+    language,
+    setThemePreference,
+    showToastMessage,
+    t,
+  ]);
+
+  const loadData = useCallback(() => {
+    applySavedSnapshot(savedSurveyRef.current);
+  }, [applySavedSnapshot]);
 
   const toggleAutoLoad = (e) => {
     autoLoadSync.setValue(e.target.checked);
@@ -733,15 +786,15 @@ const AppContent = () => {
     if (hasAutoLoadedRef.current) return;
     if (savedSurveySync.status !== 'ready') return;
     if (autoLoadEnabled) {
-      const savedData = savedSurveySync.value.data;
-      if (savedData && Object.keys(savedData).length > 0) {
-        setSurveyData(savedData);
-        setLoadVersion(v => v + 1);
-        showToastMessage(t('app.toast.loaded'));
-      }
+      applySavedSnapshot(savedSurveySync.value);
     }
     hasAutoLoadedRef.current = true;
-  }, [savedSurveySync.status, savedSurveySync.value.data, autoLoadEnabled, t]);
+  }, [
+    applySavedSnapshot,
+    autoLoadEnabled,
+    savedSurveySync.status,
+    savedSurveySync.value,
+  ]);
 
   // Update page title and iOS app name based on language
   useEffect(() => {
@@ -760,6 +813,11 @@ const AppContent = () => {
     { code: 'en', label: 'English' },
   ];
   const accountText = ACCOUNT_UI_TEXT[normalizeAccountLocale(language)];
+  const themeOptions = [
+    { value: 'system', label: accountText.themeSystem },
+    { value: 'light', label: accountText.themeLight },
+    { value: 'dark', label: accountText.themeDark },
+  ];
 
   return (
     <div className={`container relative min-h-screen ${currentTab === 'support' ? 'support-container' : ''}`}>
@@ -803,6 +861,21 @@ const AppContent = () => {
               ))}
             </div>
             <div className="calc-account-divider" />
+            <div className="calc-account-title">{accountText.theme}</div>
+            <div className="calc-theme-options" role="group" aria-label={accountText.themeSettingsAria}>
+              {themeOptions.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={themePreference === value ? 'active' : ''}
+                  aria-pressed={themePreference === value}
+                  onClick={() => setThemePreference(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="calc-account-divider" />
             <div className="calc-account-title">{accountText.account}</div>
             <AccountPanel
               onLogout={() => setAccountMenuOpen(false)}
@@ -827,7 +900,9 @@ const AppContent = () => {
         <>
           <Tabs currentTab={currentTab} setCurrentTab={handleTabChange} />
           <Suspense fallback={<TabFallback />}>
-            {activeTabElement}
+            <React.Fragment key={loadVersion}>
+              {activeTabElement}
+            </React.Fragment>
           </Suspense>
         </>
       )}
@@ -971,13 +1046,13 @@ const AppContent = () => {
               accountText.autoDataTitle
         }
         localSummary={
-          savedSurveySync.conflict && autoSettingsSync.conflict ? `${accountText.itemCount(Object.keys(savedSurveySync.conflict.local.data || {}).length)} + Setting ${Object.keys(autoSettingsSync.conflict.local.entries || {}).length}` :
-            savedSurveySync.conflict ? accountText.itemCount(Object.keys(savedSurveySync.conflict.local.data || {}).length) :
+          savedSurveySync.conflict && autoSettingsSync.conflict ? `${accountText.itemCount(getManualSaveSnapshotStats(savedSurveySync.conflict.local).total)} + Setting ${Object.keys(autoSettingsSync.conflict.local.entries || {}).length}` :
+            savedSurveySync.conflict ? accountText.itemCount(getManualSaveSnapshotStats(savedSurveySync.conflict.local).total) :
               accountText.itemCount(Object.keys(autoSettingsSync.conflict?.local.entries || {}).length)
         }
         remoteSummary={
-          savedSurveySync.conflict && autoSettingsSync.conflict ? `${accountText.itemCount(Object.keys(savedSurveySync.conflict.remote.data || {}).length)} + Setting ${Object.keys(autoSettingsSync.conflict.remote.entries || {}).length}` :
-            savedSurveySync.conflict ? accountText.itemCount(Object.keys(savedSurveySync.conflict.remote.data || {}).length) :
+          savedSurveySync.conflict && autoSettingsSync.conflict ? `${accountText.itemCount(getManualSaveSnapshotStats(savedSurveySync.conflict.remote).total)} + Setting ${Object.keys(autoSettingsSync.conflict.remote.entries || {}).length}` :
+            savedSurveySync.conflict ? accountText.itemCount(getManualSaveSnapshotStats(savedSurveySync.conflict.remote).total) :
               accountText.itemCount(Object.keys(autoSettingsSync.conflict?.remote.entries || {}).length)
         }
         busy={savedSurveySync.status === 'saving' || autoSettingsSync.status === 'saving'}
@@ -997,9 +1072,11 @@ const AppContent = () => {
 
 function App() {
   return (
-    <LanguageProvider>
-      <LoginScopedApp />
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <LoginScopedApp />
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 

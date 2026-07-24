@@ -445,6 +445,9 @@ const en = {
     challenge: {
         score: 'Score',
         stage: 'Stage',
+        character: 'Challenge character',
+        preset: 'Challenge presets',
+        preset_number: 'Preset {{count}}',
     },
     amatsuyu: {
         current_year_card: 'This Year BD Card',
@@ -593,6 +596,8 @@ const en = {
         suffix_round: 'Rounds',
     },
     kizuna: {
+        preset_label: 'Kizuna presets',
+        preset: 'Preset {{count}}',
         error_input: 'Error: Check all inputs.',
         error_target: 'Error: Target rank must be higher than current.',
         error_data: 'Error: Failed to load rank data.',

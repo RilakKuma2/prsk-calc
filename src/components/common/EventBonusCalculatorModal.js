@@ -1146,7 +1146,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
                 <div className="ebc-content">
                     {/* Event Config Row */}
-                    <div style={{ marginBottom: '16px', background: '#f8fafc', padding: '16px', borderRadius: '12px' }}>
+                    <div className="ebc-config-panel">
                         {/* Checkboxes Row */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
                             <label className="ebc-checkbox-label" style={{ margin: 0, fontWeight: 'bold', fontSize: '14px', color: '#334155', display: 'flex', alignItems: 'center' }}>
@@ -1178,7 +1178,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
                         {/* Options Row (Dropdowns & Inputs) */}
                         {(!isManualEvent || isWorldLink) && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+                            <div className="ebc-options-row">
                                 {!isManualEvent && (() => {
                                     const autoAttrOption = EVENT_ATTRS.find(a => a.key === autoEventOverride.attr) || null;
                                     const autoUnitOption = autoEventOverride.unit
@@ -1218,7 +1218,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
                                 {/* 스까 캐릭터 선택 패널 */}
                                 {!isManualEvent && eventOverride.detailOpen && (
-                                    <div style={{ width: '100%', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px', marginTop: '4px' }}>
+                                    <div className="ebc-mix-panel">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>{t('support.select_mix_characters') || '스까 인선 선택'}</span>
                                             <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#6366f1' }}>{(eventOverride.characterOrder || []).length}/5</span>

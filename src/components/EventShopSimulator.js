@@ -1437,7 +1437,7 @@ const EventShopSimulator = ({
           }
         }
       `}} />
-      <div className="rounded-2xl border border-pink-100 bg-gradient-to-b from-white to-pink-50/40 shadow-2xl overflow-hidden max-h-[calc(100vh-4.5rem)] sm:max-h-[88vh] flex flex-col">
+      <div className="event-shop-simulator rounded-2xl border border-pink-100 bg-gradient-to-b from-white to-pink-50/40 shadow-2xl overflow-hidden max-h-[calc(100vh-4.5rem)] sm:max-h-[88vh] flex flex-col">
         <div
           className="px-2 sm:px-4 py-1.5 sm:py-2.5 border-b border-pink-100 bg-white/95 shrink-0"
           onTouchStart={handleTopMenuTouchStart}

@@ -441,6 +441,9 @@ const ko = {
     challenge: {
         score: '스코어',
         stage: '스테이지',
+        character: '챌라 캐릭터',
+        preset: '챌라 프리셋',
+        preset_number: '프리셋 {{count}}',
     },
     amatsuyu: {
         current_year_card: '올해생카 보유',
@@ -594,6 +597,8 @@ const ko = {
         suffix_round: '판',
     },
     kizuna: {
+        preset_label: '키즈나 프리셋',
+        preset: '프리셋 {{count}}',
         error_input: '에러: 모든 입력 값을 정확히 입력해 주세요.',
         error_target: '에러: 목표 랭크는 현재 랭크보다 높아야 합니다.',
         error_data: '에러: 랭크 데이터를 불러오는 데 실패했습니다.',

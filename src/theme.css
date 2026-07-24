@@ -1,0 +1,1182 @@
+:root {
+  --theme-bg: #ffffff;
+  --theme-surface: #ffffff;
+  --theme-surface-rgb: 255 255 255;
+  --theme-surface-subtle: #fafbfc;
+  --theme-surface-soft: #f5f6f8;
+  --theme-surface-muted: #eceef2;
+  --theme-text: #20242b;
+  --theme-text-muted: #666d78;
+  --theme-text-subtle: #8b929e;
+  --theme-border-soft: #eceef2;
+  --theme-border: #dfe3e8;
+  --theme-border-strong: #c8ced7;
+  --theme-shadow: 0 10px 28px rgba(30, 32, 48, 0.12);
+  --theme-overlay: rgba(20, 22, 30, 0.52);
+  --theme-accent: #ff6fa8;
+  --theme-accent-soft: rgba(255, 111, 168, 0.14);
+  --theme-purple-text: #5f34b5;
+  --theme-purple-border: #7e57c2;
+  --theme-on-bright: #303348;
+  --theme-success-soft: #edf9f3;
+  --theme-success-text: #26733d;
+  --theme-success-border: #4f9d69;
+  --theme-warning-soft: #fff9db;
+  --theme-warning-text: #a84f08;
+  --theme-warning-border: #cf8529;
+  --theme-cyan-soft: #f0fbfb;
+  --theme-purple-soft: #f5f1ff;
+  --theme-pink-soft: #fff5fa;
+  --theme-red-soft: #fff9f9;
+  --theme-danger-text: #b42318;
+  --theme-danger-border: #d7635b;
+  --theme-blue-soft: #f9fbff;
+  --theme-blue-text: #1565c0;
+  --theme-blue-border: #438ed1;
+  --theme-hover: rgba(30, 32, 48, 0.05);
+  --theme-hover-strong: rgba(30, 32, 48, 0.1);
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  --theme-bg: #25272c;
+  --theme-surface: #2d3036;
+  --theme-surface-rgb: 45 48 54;
+  --theme-surface-subtle: #31343a;
+  --theme-surface-soft: #353940;
+  --theme-surface-muted: #3c4149;
+  --theme-text: #f3f4f6;
+  --theme-text-muted: #d2d6dd;
+  --theme-text-subtle: #bdc3cc;
+  --theme-border-soft: #515761;
+  --theme-border: #666e79;
+  --theme-border-strong: #7d8794;
+  --theme-shadow: 0 14px 34px rgba(10, 12, 16, 0.28);
+  --theme-overlay: rgba(19, 21, 25, 0.68);
+  --theme-accent: #ff83b3;
+  --theme-accent-soft: rgba(255, 131, 179, 0.16);
+  --theme-purple-text: #c6b0ff;
+  --theme-purple-border: #ad94ef;
+  --theme-on-bright: #303348;
+  --theme-success-soft: #293a32;
+  --theme-success-text: #8edba8;
+  --theme-success-border: #62b87e;
+  --theme-warning-soft: #403925;
+  --theme-warning-text: #ffd08a;
+  --theme-warning-border: #d7a14a;
+  --theme-cyan-soft: #293a3b;
+  --theme-purple-soft: #353044;
+  --theme-pink-soft: #402f37;
+  --theme-red-soft: #412f31;
+  --theme-danger-text: #ffaaa3;
+  --theme-danger-border: #e98780;
+  --theme-blue-soft: #2f3541;
+  --theme-blue-text: #8dc5ff;
+  --theme-blue-border: #5a9fe2;
+  --theme-hover: rgba(255, 255, 255, 0.06);
+  --theme-hover-strong: rgba(255, 255, 255, 0.11);
+  color-scheme: dark;
+}
+
+html,
+body,
+#root,
+.App {
+  background-color: var(--theme-bg);
+  color: var(--theme-text);
+}
+
+body,
+.App,
+.nav-container,
+.settings-popover,
+.modal-content {
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .App,
+  .nav-container,
+  .settings-popover,
+  .modal-content {
+    transition: none;
+  }
+}
+
+/* Opacity variants used by the character-rank cards and sticky summary. */
+html[data-theme='dark'] body :where(
+  [class~='bg-white/95'],
+  [class~='bg-white/90']
+) {
+  background-color: rgb(var(--theme-surface-rgb) / 0.95) !important;
+}
+
+html[data-theme='dark'] body [class~='bg-white/80'] {
+  background-color: rgb(var(--theme-surface-rgb) / 0.8) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='bg-white/50'],
+  [class~='bg-gray-50/50'],
+  [class~='bg-slate-50/50']
+) {
+  background-color: rgb(var(--theme-surface-rgb) / 0.5) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='bg-pink-50/10'],
+  [class~='bg-pink-50/30']
+) {
+  background-color: color-mix(in srgb, var(--theme-pink-soft) 70%, transparent) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='bg-indigo-50/50'],
+  [class~='bg-indigo-50/80'],
+  [class~='bg-purple-50/50']
+) {
+  background-color: color-mix(in srgb, var(--theme-purple-soft) 75%, transparent) !important;
+}
+
+html[data-theme='dark'] body [class~='bg-pink-50/40'] {
+  background-color: color-mix(in srgb, var(--theme-pink-soft) 65%, transparent) !important;
+}
+
+/* React inline slate colors that are not neutral grayscale values. */
+html[data-theme='dark'] body :where(
+  [style*='color: rgb(30, 41, 59)'],
+  [style*='color: rgb(51, 65, 85)'],
+  [style*='color: #1e293b'],
+  [style*='color: #334155']
+) {
+  color: var(--theme-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='color: rgb(71, 85, 105)'],
+  [style*='color: rgb(100, 116, 139)'],
+  [style*='color: #475569'],
+  [style*='color: #64748b']
+) {
+  color: var(--theme-text-muted) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='color: rgb(148, 163, 184)'],
+  [style*='color: #94a3b8']
+) {
+  color: var(--theme-text-muted) !important;
+}
+
+/* Shared themed panels replace one-off inline light backgrounds. */
+.ebc-config-panel {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 12px;
+  color: var(--theme-text);
+  background: var(--theme-surface-subtle);
+}
+
+.ebc-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--theme-border);
+}
+
+.ebc-mix-panel {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  color: var(--theme-text);
+  background: var(--theme-surface-soft);
+}
+
+.deck-simulator-open-button {
+  border: 0 !important;
+  color: var(--theme-purple-text) !important;
+  background: var(--theme-purple-soft) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-purple-border) 42%, transparent);
+}
+
+.deck-simulator-open-button:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-soft) 74%, var(--theme-surface-muted)) !important;
+  box-shadow: inset 0 0 0 1px var(--theme-purple-border);
+}
+
+.deck-friend-load-button {
+  border: 1px solid color-mix(in srgb, var(--theme-blue-border) 62%, var(--theme-border));
+  color: var(--theme-blue-text);
+  background: color-mix(in srgb, var(--theme-blue-soft) 78%, var(--theme-surface));
+  box-shadow: none;
+}
+
+.deck-friend-load-button:hover {
+  border-color: var(--theme-blue-border);
+  color: var(--theme-text);
+  background: color-mix(in srgb, var(--theme-blue-soft) 72%, var(--theme-surface-muted));
+}
+
+.deck-friend-load-button.active {
+  border-color: var(--theme-blue-border);
+  color: var(--theme-text);
+  background: var(--theme-blue-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-blue-border) 38%, transparent);
+}
+
+/* Support-deck surfaces are emitted from a component-local style block. */
+html[data-theme='dark'] .support-tab {
+  --support-border: var(--theme-border);
+  --support-ink: var(--theme-text);
+  --support-muted: var(--theme-text-muted);
+}
+
+html[data-theme='dark'] body :where(
+  .support-summary-box,
+  .support-bulk-panel,
+  .support-slot,
+  .support-select-button,
+  .support-select-menu,
+  .support-main-summary,
+  .support-main-slot,
+  .support-modal,
+  .support-modal-close,
+  .support-modal-clear
+) {
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .support-ghost-button:not(.active):not(.support-main-open-button),
+  .support-main-toggle:not(.active)
+) {
+  border-color: var(--theme-border-strong) !important;
+  color: var(--theme-text-muted) !important;
+  background: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .support-ghost-button:not(.active):not(.support-main-open-button):hover,
+  .support-main-toggle:not(.active):hover,
+  .support-select-button:hover,
+  .support-select-button.open
+) {
+  border-color: var(--theme-blue-border) !important;
+  color: var(--theme-blue-text) !important;
+  background: var(--theme-surface-subtle) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .support-slot-card,
+  .support-empty-card,
+  .support-card-thumb,
+  .support-card-thumb.picker .support-card-face,
+  .support-main-breakdown span,
+  .support-main-toggle:disabled
+) {
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text-muted) !important;
+  background: var(--theme-surface-subtle) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .support-modal-header,
+  .support-modal-tools
+) {
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-surface-subtle) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .support-summary-detail,
+  .support-select-menu button,
+  .support-main-summary,
+  .support-main-breakdown b,
+  .support-picker-heading
+) {
+  color: var(--theme-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .support-slot-meta,
+  .support-select-button span,
+  .support-main-slot-header,
+  .support-main-breakdown,
+  .support-count,
+  .support-empty-list
+) {
+  color: var(--theme-text-muted) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .support-chip
+) {
+  border-color: var(--theme-blue-border) !important;
+  color: var(--theme-blue-text) !important;
+  background: var(--theme-cyan-soft) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .support-ghost-button.active:not(.support-main-open-button),
+  .support-main-toggle.active
+) {
+  border-color: var(--theme-success-border) !important;
+  color: var(--theme-success-text) !important;
+  background: var(--theme-success-soft) !important;
+}
+
+html[data-theme='dark'] .support-select-menu button:hover,
+html[data-theme='dark'] .support-select-menu button.selected {
+  color: var(--theme-blue-text) !important;
+  background: var(--theme-blue-soft) !important;
+}
+
+/* Main-deck simulator and all of its nested dialogs. */
+html[data-theme='dark'] body :where(
+  .ebc-modal,
+  .ebc-area-floating-modal,
+  .ebc-power-detail-modal
+) {
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-header,
+  .ebc-footer-wrapper,
+  .ebc-deck-toolbar
+) {
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-surface-subtle) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-deck-section,
+  .ebc-area-game-pill,
+  .ebc-area-character-pill,
+  .ebc-power-detail-box
+) {
+  color: var(--theme-text) !important;
+  background: var(--theme-surface-soft) !important;
+  box-shadow: inset 0 0 0 1px var(--theme-border) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-area-open-btn:not(.active),
+  .ebc-input-wrapper,
+  .ebc-power-info-btn,
+  .ebc-preset-load-btn:not(.active),
+  .ebc-canvas-toggle:not(.active),
+  .ebc-slot-base-power,
+  .ebc-select-button,
+  .ebc-select-menu,
+  .ebc-toggle:not(.active),
+  .ebc-area-floating-totals span,
+  .ebc-area-floating-totals button,
+  .ebc-title-power-editor label,
+  .ebc-area-pill-input,
+  .ebc-power-detail-footer button
+) {
+  border-color: var(--theme-border-strong) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-area-open-btn:not(.active):hover,
+  .ebc-power-info-btn:hover,
+  .ebc-preset-load-btn:not(.active):hover,
+  .ebc-select-button:hover,
+  .ebc-select-button.open,
+  .ebc-toggle:not(.active):hover
+) {
+  border-color: var(--theme-blue-border) !important;
+  color: var(--theme-blue-text) !important;
+  background: var(--theme-surface-subtle) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-header h2,
+  .ebc-checkbox-label,
+  .ebc-support-input,
+  .ebc-power-total,
+  .ebc-power-total strong,
+  .ebc-slot-base-power,
+  .ebc-select-menu button,
+  .ebc-breakdown b,
+  .ebc-footer-total,
+  .ebc-area-floating-close,
+  .ebc-area-floating-head h3,
+  .ebc-area-floating-totals strong,
+  .ebc-title-power-editor,
+  .ebc-title-power-editor input,
+  .ebc-title-power-editor b,
+  .ebc-area-game-title,
+  .ebc-area-pill-input,
+  .ebc-area-pill-input input,
+  .ebc-area-character-pill input,
+  .ebc-area-character-input b,
+  .ebc-power-detail-total,
+  .ebc-power-detail-total strong,
+  .ebc-power-detail-row,
+  .ebc-power-detail-row strong
+) {
+  color: var(--theme-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-close-btn,
+  .ebc-area-floating-close,
+  .ebc-power-detail-close,
+  .ebc-support-bonus-inline label,
+  .ebc-input-suffix,
+  .ebc-slot-header,
+  .ebc-breakdown,
+  .ebc-area-floating-totals,
+  .ebc-area-unit-header,
+  .ebc-char-tab
+) {
+  color: var(--theme-text-muted) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-close-btn:hover,
+  .ebc-awaken-toggle:not(.awakened):not(.unawakened),
+  .ebc-toggle:disabled,
+  .ebc-breakdown span,
+  .ebc-preview-card
+) {
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text-muted) !important;
+  background: var(--theme-surface-muted) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-btn-cancel,
+  .ebc-char-tab.active
+) {
+  border-color: var(--theme-border-strong) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-surface-muted) !important;
+}
+
+html[data-theme='dark'] .ebc-btn-cancel:hover {
+  background: var(--theme-border) !important;
+}
+
+html[data-theme='dark'] .ebc-area-game-title strong {
+  color: var(--theme-success-text) !important;
+  background: var(--theme-success-soft) !important;
+  box-shadow: inset 0 0 0 1px var(--theme-success-border) !important;
+}
+
+html[data-theme='dark'] .ebc-area-floating-scroll {
+  scrollbar-color: var(--theme-border-strong) var(--theme-surface-soft);
+}
+
+html[data-theme='dark'] .ebc-area-floating-scroll::-webkit-scrollbar-track {
+  background: var(--theme-surface-soft) !important;
+}
+
+html[data-theme='dark'] .ebc-area-floating-scroll::-webkit-scrollbar-thumb {
+  background: var(--theme-border-strong) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-area-open-btn.active,
+  .ebc-canvas-toggle.active,
+  .ebc-toggle.wl-auto.active,
+  .ebc-snapshot-load-btn
+) {
+  border-color: var(--theme-blue-border) !important;
+  color: var(--theme-blue-text) !important;
+  background: var(--theme-blue-soft) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-awaken-toggle.awakened,
+  .ebc-toggle.active:not(.wl-auto),
+  .ebc-snapshot-save-btn
+) {
+  border-color: var(--theme-success-border) !important;
+  color: var(--theme-success-text) !important;
+  background: var(--theme-success-soft) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-awaken-toggle.unawakened,
+  .ebc-btn-reset
+) {
+  border-color: var(--theme-danger-border) !important;
+  color: var(--theme-danger-text) !important;
+  background: var(--theme-red-soft) !important;
+}
+
+html[data-theme='dark'] .ebc-select-menu button:hover,
+html[data-theme='dark'] .ebc-select-menu button.selected {
+  color: var(--theme-purple-text) !important;
+  background: var(--theme-purple-soft) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-area-floating-footer,
+  .ebc-power-detail-footer
+) {
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--theme-surface-rgb) / 0.75),
+    var(--theme-surface) 42%
+  ) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='dark'] body :where(
+  .ebc-area-floating-head h3,
+  .ebc-area-game-title
+) {
+  border-color: var(--theme-border-strong) !important;
+}
+
+html[data-theme='dark'] .ebc-power-detail-row i {
+  background-color: var(--theme-border-strong);
+}
+
+/* Event-shop simulator: its gradient and local injected styles need a theme bridge. */
+html[data-theme='dark'] .event-shop-simulator {
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .event-shop-natural-field,
+  .event-shop-natural-checks,
+  .event-shop-natural-input
+) {
+  border-color: var(--theme-border-strong) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .event-shop-natural-label,
+  .event-shop-natural-checks label
+) {
+  color: var(--theme-purple-text) !important;
+}
+
+html[data-theme='dark'] .event-shop-card-thumb {
+  background: var(--theme-surface-muted) !important;
+}
+
+html[data-theme='dark'] .event-shop-simulator :where(
+  [class~='bg-[#e8ebf5]'],
+  [class~='bg-[#f0f1f5]']
+) {
+  background-color: var(--theme-surface-soft) !important;
+}
+
+html[data-theme='dark'] .event-shop-simulator [class~='bg-[#cbccd6]'] {
+  background-color: var(--theme-surface-muted) !important;
+}
+
+html[data-theme='dark'] .event-shop-simulator :where(
+  [class~='text-[#4f5366]'],
+  [class~='text-[#444]'],
+  [class~='text-[#555]']
+) {
+  color: var(--theme-text) !important;
+}
+
+@media (max-width: 767px) {
+  html[data-theme='dark'] .event-shop-group-scroll::before {
+    background: linear-gradient(
+      90deg,
+      rgb(var(--theme-surface-rgb) / 0.95),
+      rgb(var(--theme-surface-rgb) / 0)
+    ) !important;
+  }
+
+  html[data-theme='dark'] .event-shop-group-scroll::after {
+    background: linear-gradient(
+      270deg,
+      rgb(var(--theme-surface-rgb) / 0.95),
+      rgb(var(--theme-surface-rgb) / 0)
+    ) !important;
+  }
+}
+
+/* Settings theme picker */
+.settings-theme-section {
+  padding: 8px;
+}
+
+.settings-theme-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 9px;
+}
+
+.settings-theme-copy strong {
+  color: var(--theme-text);
+  font-size: 0.93rem;
+  font-weight: 700;
+}
+
+.settings-theme-copy small {
+  color: var(--theme-text-muted);
+  font-size: 0.73rem;
+  font-weight: 500;
+}
+
+.settings-theme-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  background: var(--theme-surface-soft);
+}
+
+.settings-theme-options button {
+  min-width: 0;
+  min-height: 32px;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--theme-text-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.settings-theme-options button:hover {
+  color: var(--theme-text);
+  background: var(--theme-surface-muted);
+}
+
+.settings-theme-options button.active {
+  color: var(--theme-text);
+  background: var(--theme-surface);
+  box-shadow: 0 2px 7px rgba(30, 32, 48, 0.14);
+}
+
+.settings-theme-options button:focus-visible {
+  outline: 3px solid var(--theme-accent-soft);
+  outline-offset: 1px;
+}
+
+/* Shared transparent outline controls for semantic actions. */
+.theme-outline-button {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.theme-outline-button:hover {
+  background: var(--theme-hover) !important;
+}
+
+.theme-outline-button.active {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px currentColor !important;
+}
+
+.theme-outline-button-success {
+  color: var(--theme-success-text) !important;
+  border-color: var(--theme-success-border) !important;
+}
+
+.theme-outline-button-danger {
+  color: var(--theme-danger-text) !important;
+  border-color: var(--theme-danger-border) !important;
+}
+
+/* Shared controls that need a theme-aware state color. */
+.nav-tab.active::after {
+  background-color: var(--theme-text);
+}
+
+.sub-tab-button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--theme-text-subtle);
+}
+
+.sub-tab-button.active {
+  color: var(--sub-tab-active-color, var(--theme-purple-text));
+  border-bottom-color: var(--sub-tab-active-color, var(--theme-purple-border));
+}
+
+html[data-theme='dark'] .sub-tab-button.active {
+  color: #a996d7;
+  color: color-mix(in srgb, var(--sub-tab-active-color, var(--theme-purple-text)) 58%, #ffffff);
+  border-bottom-color: #a996d7;
+  border-bottom-color: color-mix(in srgb, var(--sub-tab-active-color, var(--theme-purple-border)) 58%, #ffffff);
+}
+
+html[data-theme='dark'] :where(
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea
+) {
+  border-color: var(--theme-border-strong);
+  color: var(--theme-text);
+}
+
+html[data-theme='dark'] :where(input, textarea)::placeholder {
+  color: var(--theme-text-subtle);
+}
+
+html[data-theme='dark'] :where(hr, fieldset) {
+  border-color: var(--theme-border);
+}
+
+html[data-theme='dark'] .scroll-to-top-btn {
+  border-color: var(--theme-border-strong);
+  color: var(--theme-text);
+  background: rgba(60, 65, 73, 0.96);
+  box-shadow: 0 5px 16px rgba(10, 12, 16, 0.28);
+}
+
+/* Legacy React inline styles are normalized here by color, not by screen. */
+html[data-theme='dark'] body :where(
+  [style*='background-color: rgb(255, 255, 255)'],
+  [style*='background: rgb(255, 255, 255)'],
+  [style*='background-color: #fff;'],
+  [style*='background-color: #ffffff;'],
+  [style*='background-color: white;'],
+  [style*='background: #fff;'],
+  [style*='background: #ffffff;'],
+  [style*='background: white;']
+):not(.sekai-force-embed *) {
+  background-color: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='background-color: rgb(254, 254, 254)'],
+  [style*='background: rgb(254, 254, 254)'],
+  [style*='background-color: rgb(253, 253, 253)'],
+  [style*='background: rgb(253, 253, 253)'],
+  [style*='background-color: rgb(252, 252, 252)'],
+  [style*='background: rgb(252, 252, 252)'],
+  [style*='background-color: rgb(251, 251, 251)'],
+  [style*='background: rgb(251, 251, 251)'],
+  [style*='background-color: rgb(250, 250, 250)'],
+  [style*='background: rgb(250, 250, 250)'],
+  [style*='background-color: rgb(249, 249, 249)'],
+  [style*='background: rgb(249, 249, 249)'],
+  [style*='background-color: rgb(248, 249, 250)'],
+  [style*='background: rgb(248, 249, 250)'],
+  [style*='background-color: rgb(248, 248, 248)'],
+  [style*='background: rgb(248, 248, 248)']
+):not(.sekai-force-embed *) {
+  background-color: var(--theme-surface-subtle) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='background-color: rgb(247, 247, 247)'],
+  [style*='background: rgb(247, 247, 247)'],
+  [style*='background-color: rgb(246, 247, 251)'],
+  [style*='background: rgb(246, 247, 251)'],
+  [style*='background-color: rgb(246, 246, 246)'],
+  [style*='background: rgb(246, 246, 246)'],
+  [style*='background-color: rgb(245, 245, 245)'],
+  [style*='background: rgb(245, 245, 245)'],
+  [style*='background-color: rgb(244, 244, 244)'],
+  [style*='background: rgb(244, 244, 244)'],
+  [style*='background-color: rgb(243, 243, 243)'],
+  [style*='background: rgb(243, 243, 243)'],
+  [style*='background-color: rgb(242, 243, 246)'],
+  [style*='background: rgb(242, 243, 246)'],
+  [style*='background-color: rgb(242, 242, 242)'],
+  [style*='background: rgb(242, 242, 242)']
+):not(.sekai-force-embed *) {
+  background-color: var(--theme-surface-soft) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='background-color: rgb(241, 243, 245)'],
+  [style*='background: rgb(241, 243, 245)'],
+  [style*='background-color: rgb(241, 241, 241)'],
+  [style*='background: rgb(241, 241, 241)'],
+  [style*='background-color: rgb(240, 240, 240)'],
+  [style*='background: rgb(240, 240, 240)'],
+  [style*='background-color: rgb(238, 238, 238)'],
+  [style*='background: rgb(238, 238, 238)'],
+  [style*='background-color: rgb(236, 236, 240)'],
+  [style*='background: rgb(236, 236, 240)']
+):not(.sekai-force-embed *) {
+  background-color: var(--theme-surface-muted) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='color: rgb(0, 0, 0)'],
+  [style*='color: rgb(17, 17, 17)'],
+  [style*='color: rgb(34, 34, 34)'],
+  [style*='color: rgb(51, 51, 51)'],
+  [style*='color: rgb(68, 68, 68)'],
+  [style*='color: #000;'],
+  [style*='color: #111;'],
+  [style*='color: #222;'],
+  [style*='color: #333;'],
+  [style*='color: #444;'],
+  [style*='color: black;']
+):not([style*='background']):not(.sekai-force-embed *) {
+  color: var(--theme-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='color: rgb(85, 85, 85)'],
+  [style*='color: rgb(102, 102, 102)'],
+  [style*='color: #555;'],
+  [style*='color: #666;']
+):not([style*='background']):not(.sekai-force-embed *) {
+  color: var(--theme-text-muted) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='color: rgb(119, 119, 119)'],
+  [style*='color: rgb(136, 136, 136)'],
+  [style*='color: rgb(153, 153, 153)'],
+  [style*='color: rgb(187, 187, 187)'],
+  [style*='color: #777;'],
+  [style*='color: #888;'],
+  [style*='color: #999;'],
+  [style*='color: #bbb;']
+):not([style*='background']):not(.sekai-force-embed *) {
+  color: var(--theme-text-subtle) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='background-color: rgb(255, 255, 255)'],
+  [style*='background: rgb(255, 255, 255)'],
+  [style*='background-color: rgb(254, 254, 254)'],
+  [style*='background: rgb(254, 254, 254)'],
+  [style*='background-color: rgb(253, 253, 253)'],
+  [style*='background: rgb(253, 253, 253)'],
+  [style*='background-color: rgb(252, 252, 252)'],
+  [style*='background: rgb(252, 252, 252)'],
+  [style*='background-color: rgb(251, 251, 251)'],
+  [style*='background: rgb(251, 251, 251)'],
+  [style*='background-color: rgb(250, 250, 250)'],
+  [style*='background: rgb(250, 250, 250)'],
+  [style*='background-color: rgb(249, 249, 249)'],
+  [style*='background: rgb(249, 249, 249)'],
+  [style*='background-color: rgb(248, 249, 250)'],
+  [style*='background: rgb(248, 249, 250)'],
+  [style*='background-color: rgb(248, 248, 248)'],
+  [style*='background: rgb(248, 248, 248)'],
+  [style*='background-color: rgb(247, 247, 247)'],
+  [style*='background: rgb(247, 247, 247)'],
+  [style*='background-color: rgb(246, 247, 251)'],
+  [style*='background: rgb(246, 247, 251)'],
+  [style*='background-color: rgb(246, 246, 246)'],
+  [style*='background: rgb(246, 246, 246)'],
+  [style*='background-color: rgb(245, 245, 245)'],
+  [style*='background: rgb(245, 245, 245)'],
+  [style*='background-color: rgb(244, 244, 244)'],
+  [style*='background: rgb(244, 244, 244)'],
+  [style*='background-color: rgb(243, 243, 243)'],
+  [style*='background: rgb(243, 243, 243)'],
+  [style*='background-color: rgb(242, 243, 246)'],
+  [style*='background: rgb(242, 243, 246)'],
+  [style*='background-color: rgb(242, 242, 242)'],
+  [style*='background: rgb(242, 242, 242)'],
+  [style*='background-color: rgb(241, 243, 245)'],
+  [style*='background: rgb(241, 243, 245)'],
+  [style*='background-color: rgb(241, 241, 241)'],
+  [style*='background: rgb(241, 241, 241)'],
+  [style*='background-color: rgb(240, 240, 240)'],
+  [style*='background: rgb(240, 240, 240)'],
+  [style*='background-color: rgb(238, 238, 238)'],
+  [style*='background: rgb(238, 238, 238)'],
+  [style*='background-color: rgb(236, 236, 240)'],
+  [style*='background: rgb(236, 236, 240)']
+):where(
+  [style*='color: rgb(0, 0, 0)'],
+  [style*='color: rgb(17, 17, 17)'],
+  [style*='color: rgb(34, 34, 34)'],
+  [style*='color: rgb(51, 51, 51)'],
+  [style*='color: rgb(68, 68, 68)'],
+  [style*='color: rgb(85, 85, 85)'],
+  [style*='color: rgb(102, 102, 102)'],
+  [style*='color: rgb(119, 119, 119)'],
+  [style*='color: rgb(136, 136, 136)'],
+  [style*='color: rgb(153, 153, 153)']
+):not(.sekai-force-embed *) {
+  color: var(--theme-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [style*='border'][style*='rgb(51, 51, 51)'],
+  [style*='border'][style*='rgb(68, 68, 68)'],
+  [style*='border'][style*='rgb(85, 85, 85)'],
+  [style*='border'][style*='rgb(102, 102, 102)'],
+  [style*='border-color: rgb(51, 51, 51)'],
+  [style*='border-color: rgb(68, 68, 68)'],
+  [style*='border-color: rgb(85, 85, 85)'],
+  [style*='border-color: rgb(102, 102, 102)'],
+  [style*='border-color: #333;'],
+  [style*='border-color: #444;'],
+  [style*='border-color: #555;'],
+  [style*='border-color: #666;'],
+  [style*='border: 1px solid rgb(51, 51, 51)'],
+  [style*='border: 1px solid rgb(68, 68, 68)'],
+  [style*='border: 1px solid rgb(85, 85, 85)'],
+  [style*='border: 1px solid rgb(102, 102, 102)'],
+  [style*='border: 1px solid #333;'],
+  [style*='border: 1px solid #444;'],
+  [style*='border: 1px solid #555;'],
+  [style*='border: 1px solid #666;'],
+  [style*='border-bottom: 1px solid rgb(51, 51, 51)'],
+  [style*='border-bottom: 1px solid rgb(68, 68, 68)'],
+  [style*='border-bottom: 1px solid rgb(85, 85, 85)'],
+  [style*='border-bottom: 1px solid rgb(102, 102, 102)'],
+  [style*='border-bottom: 1px solid #333;'],
+  [style*='border-bottom: 1px solid #444;'],
+  [style*='border-bottom: 1px solid #555;'],
+  [style*='border-bottom: 1px solid #666;'],
+  [style*='border-color: rgb(187, 187, 187)'],
+  [style*='border-color: rgb(204, 204, 204)'],
+  [style*='border-color: rgb(208, 208, 208)'],
+  [style*='border-color: rgb(214, 214, 214)'],
+  [style*='border-color: rgb(216, 216, 216)'],
+  [style*='border-color: rgb(221, 221, 221)'],
+  [style*='border-color: rgb(223, 227, 232)'],
+  [style*='border-color: rgb(224, 224, 224)'],
+  [style*='border-color: rgb(225, 225, 225)'],
+  [style*='border-color: rgb(229, 229, 229)'],
+  [style*='border-color: rgb(229, 231, 235)'],
+  [style*='border-color: rgb(230, 230, 230)'],
+  [style*='border-color: rgb(232, 232, 232)'],
+  [style*='border-color: rgb(233, 233, 233)'],
+  [style*='border-color: rgb(238, 238, 238)'],
+  [style*='border: 1px solid rgb(187, 187, 187)'],
+  [style*='border: 1px solid rgb(204, 204, 204)'],
+  [style*='border: 1px solid rgb(208, 208, 208)'],
+  [style*='border: 1px solid rgb(214, 214, 214)'],
+  [style*='border: 1px solid rgb(216, 216, 216)'],
+  [style*='border: 1px solid rgb(221, 221, 221)'],
+  [style*='border: 1px solid rgb(223, 227, 232)'],
+  [style*='border: 1px solid rgb(224, 224, 224)'],
+  [style*='border: 1px solid rgb(225, 225, 225)'],
+  [style*='border: 1px solid rgb(229, 229, 229)'],
+  [style*='border: 1px solid rgb(229, 231, 235)'],
+  [style*='border: 1px solid rgb(230, 230, 230)'],
+  [style*='border: 1px solid rgb(232, 232, 232)'],
+  [style*='border: 1px solid rgb(233, 233, 233)'],
+  [style*='border: 1px solid rgb(238, 238, 238)'],
+  [style*='border-bottom: 1px solid rgb(187, 187, 187)'],
+  [style*='border-bottom: 1px solid rgb(204, 204, 204)'],
+  [style*='border-bottom: 1px solid rgb(221, 221, 221)'],
+  [style*='border-bottom: 1px solid rgb(224, 224, 224)'],
+  [style*='border-bottom: 1px solid rgb(229, 229, 229)'],
+  [style*='border-bottom: 1px solid rgb(229, 231, 235)'],
+  [style*='border-bottom: 1px solid rgb(238, 238, 238)']
+):not(.sekai-force-embed *) {
+  border-color: var(--theme-border) !important;
+}
+
+/* The embedded Sekai Force view owns its own light/dark palette. */
+.sekai-force-embed {
+  color-scheme: normal;
+}
+
+/* Calculator-wide bridge for existing Tailwind utility colors. */
+html[data-theme='dark'] body :where(
+  [class~='bg-white'],
+  [class~='bg-slate-50'],
+  [class~='bg-gray-50']
+) {
+  background-color: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='bg-slate-100'],
+  [class~='bg-gray-100'],
+  [class~='bg-zinc-100']
+) {
+  background-color: var(--theme-surface-soft) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='bg-slate-200'],
+  [class~='bg-gray-200'],
+  [class~='bg-zinc-200']
+) {
+  background-color: var(--theme-surface-muted) !important;
+}
+
+html[data-theme='dark'] body :where([class~='bg-blue-50'], [class~='bg-sky-50']) {
+  background-color: var(--theme-blue-soft) !important;
+}
+
+html[data-theme='dark'] body :where([class~='bg-green-50'], [class~='bg-emerald-50']) {
+  background-color: var(--theme-success-soft) !important;
+}
+
+html[data-theme='dark'] body :where([class~='bg-amber-50'], [class~='bg-yellow-50']) {
+  background-color: var(--theme-warning-soft) !important;
+}
+
+html[data-theme='dark'] body :where([class~='bg-red-50'], [class~='bg-rose-50']) {
+  background-color: var(--theme-red-soft) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='bg-indigo-50'],
+  [class~='bg-purple-50'],
+  [class~='bg-violet-50']
+) {
+  background-color: var(--theme-purple-soft) !important;
+}
+
+html[data-theme='dark'] body :where([class~='bg-pink-50'], [class~='bg-fuchsia-50']) {
+  background-color: var(--theme-pink-soft) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='text-slate-950'],
+  [class~='text-slate-900'],
+  [class~='text-slate-800'],
+  [class~='text-slate-700'],
+  [class~='text-gray-950'],
+  [class~='text-gray-900'],
+  [class~='text-gray-800'],
+  [class~='text-gray-700'],
+  [class~='text-zinc-900'],
+  [class~='text-zinc-800']
+) {
+  color: var(--theme-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='text-slate-600'],
+  [class~='text-slate-500'],
+  [class~='text-gray-600'],
+  [class~='text-gray-500'],
+  [class~='text-zinc-600'],
+  [class~='text-zinc-500']
+) {
+  color: var(--theme-text-muted) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='text-slate-400'],
+  [class~='text-gray-400'],
+  [class~='text-zinc-400']
+) {
+  color: var(--theme-text-subtle) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='border-slate-100'],
+  [class~='border-slate-200'],
+  [class~='border-gray-100'],
+  [class~='border-gray-200'],
+  [class~='border-zinc-200'],
+  [class~='divide-slate-200'],
+  [class~='divide-gray-200']
+) {
+  border-color: var(--theme-border) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='border-slate-300'],
+  [class~='border-gray-300'],
+  [class~='border-zinc-300']
+) {
+  border-color: var(--theme-border-strong) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='text-blue-600'],
+  [class~='text-blue-700'],
+  [class~='text-sky-600'],
+  [class~='text-sky-700']
+) {
+  color: var(--theme-blue-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='text-green-600'],
+  [class~='text-green-700'],
+  [class~='text-emerald-600'],
+  [class~='text-emerald-700']
+) {
+  color: var(--theme-success-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='text-red-600'],
+  [class~='text-red-700'],
+  [class~='text-rose-600'],
+  [class~='text-rose-700']
+) {
+  color: var(--theme-danger-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='text-indigo-600'],
+  [class~='text-indigo-700'],
+  [class~='text-purple-600'],
+  [class~='text-purple-700'],
+  [class~='text-violet-600'],
+  [class~='text-violet-700']
+) {
+  color: var(--theme-purple-text) !important;
+}
+
+html[data-theme='dark'] body :where(
+  [class~='text-amber-600'],
+  [class~='text-amber-700'],
+  [class~='text-yellow-600'],
+  [class~='text-yellow-700'],
+  [class~='text-orange-600'],
+  [class~='text-orange-700']
+) {
+  color: var(--theme-warning-text) !important;
+}
+
+.container,
+.tabs,
+.calc-account-toggle,
+.calc-account-popover,
+.calc-language-options button,
+.calc-theme-options button,
+input,
+select,
+textarea {
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .container,
+  .tabs,
+  .calc-account-toggle,
+  .calc-account-popover,
+  .calc-language-options button,
+  .calc-theme-options button,
+  input,
+  select,
+  textarea {
+    transition: none;
+  }
+}

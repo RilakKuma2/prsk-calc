@@ -936,7 +936,10 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
       try {
         const remoteState = await storageClient.getState<unknown>(current.namespace, user.id);
         if (cancelled) return;
-        const local = normalize(valueRef.current);
+        const storedLocal = normalize(current.storage.read());
+        const local = serialize(storedLocal) === serialize(valueRef.current)
+          ? storedLocal
+          : writeLocal(storedLocal, true);
         if (!remoteState) {
           await upload(local);
           return;
