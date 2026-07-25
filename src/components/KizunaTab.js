@@ -218,9 +218,9 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
   }, [currentLevel, currentExp, targetLevel, rank, fires, levelUpEnabled, playerLevel, playerRemainingExp, playerLiveRank, t]);
 
   return (
-    <div id="kizuna-level-tab" className="p-4 space-y-4">
+    <div id="kizuna-level-tab" className="px-4 pb-4 pt-0 space-y-4">
       <div
-        className="-mb-1 flex items-center justify-center gap-1"
+        className="flex items-center justify-center gap-2"
         role="group"
         aria-label={t('kizuna.preset_label')}
       >
@@ -231,7 +231,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
             onClick={() => commitPresets((currentPresets) => (
               selectKizunaPreset(currentPresets, preset)
             ))}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+            className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
               presets.currentPreset === preset
                 ? 'bg-indigo-500 text-white shadow-md'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'

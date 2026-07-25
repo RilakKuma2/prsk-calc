@@ -107,12 +107,17 @@ describe('AutoTab energy selection', () => {
     test('updates regular auto EP and directly multiplies MySekai EP', async () => {
         render(<AutoTabHarness />);
         await screen.findByText('2,500 EP');
+        const songNameHeader = screen.getByText('곡명').closest('th');
+        expect(songNameHeader?.textContent).toContain('▼');
 
         fireEvent.click(screen.getByRole('combobox', { name: '불 설정' }));
         fireEvent.click(screen.getByRole('option', { name: '3불' }));
 
         expect(await screen.findByText('7,500 EP')).not.toBeNull();
         expect(screen.getByText('9,000EP :')).not.toBeNull();
+        // Selecting the portaled energy option must not trigger the sortable song-name header.
+        expect(songNameHeader?.textContent).toContain('▼');
+        expect(songNameHeader?.textContent).not.toContain('▲');
         await waitFor(() => {
             expect(
                 EventCalculator.getEventPoint.mock.calls.some(call => call[5] === 15),

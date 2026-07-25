@@ -112,6 +112,31 @@ const autoSavePreferenceStorage = {
   },
 };
 
+const readLocalAutoSurveyData = (userId) => {
+  if (!userId) return null;
+  const preference = autoSavePreferenceStorage.read();
+  const snapshot = autoSurveyAccountStorage.read();
+  if (
+    preference.ownerUserId !== userId
+    || preference.enabled !== true
+    || snapshot.ownerUserId !== userId
+    || !snapshot.data
+    || typeof snapshot.data !== 'object'
+    || Array.isArray(snapshot.data)
+    || Object.keys(snapshot.data).length === 0
+  ) {
+    return null;
+  }
+  return snapshot.data;
+};
+
+const readInitialSurveyData = (userId, autoLoadEnabled) => {
+  const automaticData = readLocalAutoSurveyData(userId);
+  if (automaticData) return automaticData;
+  if (autoLoadEnabled) return surveyAccountStorage.read().data;
+  return {};
+};
+
 const autoAccountStorage = {
   keys: [...AUTO_ACCOUNT_STORAGE_KEYS, 'ebc_*'],
   dirtyKey: 'prsk-calc-auto-settings:account-dirty',
@@ -356,7 +381,9 @@ const AppContent = () => {
   });
   const autoLoadEnabled = autoLoadSync.value;
 
-  const [surveyData, setSurveyData] = useState({});
+  const [surveyData, setSurveyData] = useState(
+    () => readInitialSurveyData(user?.id, autoLoadEnabled),
+  );
   const [loadVersion, setLoadVersion] = useState(0);
   const normalizeOwnedAutoSavePreference = useCallback((value) => {
     const ownerUserId = user?.id || null;
@@ -402,6 +429,22 @@ const AppContent = () => {
     && autoSavePreference.ownerUserId === user.id
     && autoSavePreference.enabled
   );
+  const localAutoSaveEnabled = Boolean(
+    user
+    && autoSavePreference.ownerUserId === user.id
+    && autoSavePreference.enabled
+  );
+  const localAutoSurveyHydratedUserRef = useRef(user?.id || null);
+
+  useEffect(() => {
+    if (!user || localAutoSurveyHydratedUserRef.current === user.id) return;
+    localAutoSurveyHydratedUserRef.current = user.id;
+    const localData = readLocalAutoSurveyData(user.id);
+    if (!localData) return;
+    setSurveyData(localData);
+    setLoadVersion((version) => version + 1);
+  }, [user]);
+
   const handleAutoSavePreferenceChange = useCallback((enabled) => {
     if (!user) return;
     setAutoSavePreference({
@@ -785,13 +828,15 @@ const AppContent = () => {
   useEffect(() => {
     if (hasAutoLoadedRef.current) return;
     if (savedSurveySync.status !== 'ready') return;
-    if (autoLoadEnabled) {
+    if (autoLoadEnabled && !localAutoSaveEnabled && !autoSaveEnabled) {
       applySavedSnapshot(savedSurveySync.value);
     }
     hasAutoLoadedRef.current = true;
   }, [
     applySavedSnapshot,
+    autoSaveEnabled,
     autoLoadEnabled,
+    localAutoSaveEnabled,
     savedSurveySync.status,
     savedSurveySync.value,
   ]);

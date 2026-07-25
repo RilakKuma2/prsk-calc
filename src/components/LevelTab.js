@@ -22,7 +22,7 @@ const LevelTab = ({ surveyData, setSurveyData, subPath }) => {
 
   return (
     <div>
-      <div className="flex justify-center gap-2 mb-6">
+      <div className="flex justify-center gap-2 mb-2">
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeSubTab === 'kizuna' ? 'bg-indigo-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           onClick={() => handleSubTabChange('kizuna')}

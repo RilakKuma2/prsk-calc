@@ -131,7 +131,12 @@ const CustomSelectDropdown = ({
                         role="option"
                         aria-selected={isSelected}
                         data-value={option.value}
-                        onClick={() => handleSelect(option.value)}
+                        onClick={(event) => {
+                            // The menu is portaled, but React still bubbles this click through
+                            // the trigger's component tree (for example, a sortable table header).
+                            event.stopPropagation();
+                            handleSelect(option.value);
+                        }}
                         className={`flex w-full items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-bold transition-colors ${
                             isSelected
                                 ? 'bg-indigo-50 text-indigo-700'
