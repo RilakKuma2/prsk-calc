@@ -19,6 +19,7 @@ const CustomSelectDropdown = ({
     buttonClassName = '',
     menuClassName = '',
     showChevron = true,
+    disabled = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [menuPosition, setMenuPosition] = useState(null);
@@ -103,6 +104,7 @@ const CustomSelectDropdown = ({
     }, [isOpen]);
 
     const handleSelect = (nextValue) => {
+        if (disabled) return;
         onChange(nextValue);
         setIsOpen(false);
         triggerRef.current?.focus();
@@ -114,7 +116,7 @@ const CustomSelectDropdown = ({
             id={menuId}
             role="listbox"
             aria-label={ariaLabel}
-            className={`fixed z-[1000] max-h-60 min-w-max overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-xl ring-1 ring-black/5 ${menuClassName}`}
+            className={`fixed z-[1100] max-h-60 min-w-max overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-xl ring-1 ring-black/5 ${menuClassName}`}
             style={{
                 left: menuPosition?.left ?? -9999,
                 minWidth: menuPosition?.minWidth,
@@ -160,11 +162,14 @@ const CustomSelectDropdown = ({
                 aria-haspopup="listbox"
                 aria-controls={menuId}
                 aria-expanded={isOpen}
+                aria-disabled={disabled}
+                disabled={disabled}
                 onClick={(event) => {
                     event.stopPropagation();
+                    if (disabled) return;
                     setIsOpen(open => !open);
                 }}
-                className={`relative inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg border border-gray-300 bg-white ${showChevron ? 'px-7' : 'px-2'} text-sm font-bold normal-case text-gray-700 shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-200 ${buttonClassName}`}
+                className={`relative inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg border border-gray-300 bg-white ${showChevron ? 'px-7' : 'px-2'} text-sm font-bold normal-case text-gray-700 shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-50 ${buttonClassName}`}
             >
                 <span className="grid place-items-center">
                     {options.map(option => {

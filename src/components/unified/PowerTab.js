@@ -7,6 +7,7 @@ import { getSongOptionsSync, getMusicMetasSync, preloadMusicMetas } from '../uti
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
+import CustomSelectDropdown from '../common/CustomSelectDropdown';
 
 const FIRE_MULTIPLIERS = {
   0: 1,
@@ -612,25 +613,14 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
       options.push(i);
     }
     return (
-      <select
+      <CustomSelectDropdown
         value={fireCounts[key]}
-        onChange={(e) => handleFireChange(key, e.target.value)}
-        className="font-bold text-gray-700 text-center bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors block mx-auto translate-y-2"
-        style={{
-          padding: '4px 0px',
-          fontSize: '14px',
-          width: '60px',
-          appearance: 'none',
-          WebkitAppearance: 'none',
-          MozAppearance: 'none',
-          textAlign: 'center',
-          textAlignLast: 'center',
-        }}
-      >
-        {options.map(num => (
-          <option key={num} value={num}>{num}</option>
-        ))}
-      </select>
+        onChange={(value) => handleFireChange(key, value)}
+        ariaLabel={t('power.fire')}
+        className="block w-[60px] mx-auto translate-y-2"
+        buttonClassName="!h-8 !w-[60px] !rounded-md !border-gray-300 !px-5 !text-sm !font-bold !text-gray-700"
+        options={options.map(value => ({ value, label: value }))}
+      />
     );
   };
 
@@ -987,18 +977,20 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                   </div>
                 )}
               </div>
-              <select
+              <CustomSelectDropdown
                 value={searchDifficulty}
-                onChange={(e) => setSearchDifficulty(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white font-medium text-gray-700"
-              >
-                <option value="easy">EASY</option>
-                <option value="normal">NORMAL</option>
-                <option value="hard">HARD</option>
-                <option value="expert">EXPERT</option>
-                <option value="master">MASTER</option>
-                <option value="append">APPEND</option>
-              </select>
+                onChange={setSearchDifficulty}
+                ariaLabel={t('challenge_score.difficulty') || 'Difficulty'}
+                buttonClassName="!h-10 !rounded-lg !border-gray-200 !px-7 !text-sm !font-medium !text-gray-700"
+                options={[
+                  { value: 'easy', label: 'EASY' },
+                  { value: 'normal', label: 'NORMAL' },
+                  { value: 'hard', label: 'HARD' },
+                  { value: 'expert', label: 'EXPERT' },
+                  { value: 'master', label: 'MASTER' },
+                  { value: 'append', label: 'APPEND' },
+                ]}
+              />
             </div>
           </div>
         </div>

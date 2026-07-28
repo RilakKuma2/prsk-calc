@@ -1,4 +1,5 @@
-const CACHE_NAME = 'prsk-calc-v4';
+const buildId = new URL(self.location.href).searchParams.get('v') || 'v5';
+const CACHE_NAME = `prsk-calc-${buildId}`;
 const urlsToCache = [
     'manifest_ko.json',
     'manifest_ja.json',

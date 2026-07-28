@@ -1249,18 +1249,20 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                   </div>
                 )}
               </div>
-              <select
+              <CustomSelectDropdown
                 value={searchDifficulty}
-                onChange={(e) => setSearchDifficulty(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white font-medium text-gray-700"
-              >
-                <option value="easy">EASY</option>
-                <option value="normal">NORMAL</option>
-                <option value="hard">HARD</option>
-                <option value="expert">EXPERT</option>
-                <option value="master">MASTER</option>
-                <option value="append">APPEND</option>
-              </select>
+                onChange={setSearchDifficulty}
+                ariaLabel={t('challenge_score.difficulty') || 'Difficulty'}
+                buttonClassName="!h-10 !rounded-lg !border-gray-200 !px-7 !text-sm !font-medium !text-gray-700"
+                options={[
+                  { value: 'easy', label: 'EASY' },
+                  { value: 'normal', label: 'NORMAL' },
+                  { value: 'hard', label: 'HARD' },
+                  { value: 'expert', label: 'EXPERT' },
+                  { value: 'master', label: 'MASTER' },
+                  { value: 'append', label: 'APPEND' },
+                ]}
+              />
             </div>
           </div>
         </div>

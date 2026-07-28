@@ -3,6 +3,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 import CharacterSelector from './common/CharacterSelector';
 import SupportCardThumbnail from './common/SupportCardThumbnail';
 import SupportCardPickerModal from './common/SupportCardPickerModal';
+import CustomSelectDropdown from './common/CustomSelectDropdown';
 import {
     parseSupportDate,
     getCardCharacterName,
@@ -1772,21 +1773,21 @@ const SupportDeckTab = () => {
                         {bulkOpen && (
                             <div className="support-bulk-panel">
                                 <label>{t('support.master_rank')}</label>
-                                <select
+                                <CustomSelectDropdown
                                     value={bulkMasterRank}
-                                    onChange={e => setBulkMasterRank(Number(e.target.value))}
-                                    style={{ height: 30, width: 56, borderRadius: 7, border: '1px solid #d5deea', padding: '0 4px', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
-                                >
-                                    {MASTER_RANK_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                                </select>
+                                    onChange={value => setBulkMasterRank(Number(value))}
+                                    ariaLabel={t('support.master_rank')}
+                                    buttonClassName="!h-[30px] !w-14 !rounded-[7px] !border-[#d5deea] !px-5 !text-xs !font-extrabold"
+                                    options={MASTER_RANK_OPTIONS.map(value => ({ value, label: value }))}
+                                />
                                 <label>{t('support.skill')}</label>
-                                <select
+                                <CustomSelectDropdown
                                     value={bulkSkillLevel}
-                                    onChange={e => setBulkSkillLevel(Number(e.target.value))}
-                                    style={{ height: 30, width: 72, borderRadius: 7, border: '1px solid #d5deea', padding: '0 4px', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
-                                >
-                                    {SKILL_LEVEL_OPTIONS.map(v => <option key={v} value={v}>{t('support.skill_level', { v })}</option>)}
-                                </select>
+                                    onChange={value => setBulkSkillLevel(Number(value))}
+                                    ariaLabel={t('support.skill')}
+                                    buttonClassName="!h-[30px] !w-[72px] !rounded-[7px] !border-[#d5deea] !px-5 !text-xs !font-extrabold"
+                                    options={SKILL_LEVEL_OPTIONS.map(value => ({ value, label: t('support.skill_level', { v: value }) }))}
+                                />
                                 <button type="button" className="support-bulk-apply" onClick={applyBulk}>
                                     {t('support.apply')}
                                 </button>

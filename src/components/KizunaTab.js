@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
+import CustomSelectDropdown from './common/CustomSelectDropdown';
 import { kizunaData } from '../data/kizunaData';
 import { useTranslation } from '../contexts/LanguageContext';
 import playerLevelData from '../data/player_levels.json';
@@ -343,16 +344,14 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
               {/* Live Rank */}
               <div className="flex flex-col items-center">
                 <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('kizuna.player_live_rank')}</label>
-                <select
+                <CustomSelectDropdown
                   value={playerLiveRank}
-                  onChange={(e) => setPlayerLiveRank(e.target.value)}
-                  className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 h-[26px]"
-                >
-                  <option value="S">S</option>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                </select>
+                  onChange={setPlayerLiveRank}
+                  ariaLabel={t('kizuna.player_live_rank')}
+                  className="w-full"
+                  buttonClassName="!h-[26px] !w-full !rounded-lg !border-gray-200 !bg-gray-50 !px-4 !text-xs !font-medium"
+                  options={['S', 'A', 'B', 'C'].map(value => ({ value, label: value }))}
+                />
               </div>
             </div>
           </div>

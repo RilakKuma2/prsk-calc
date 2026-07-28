@@ -1,4 +1,5 @@
 import React from 'react';
+import CustomSelectDropdown from './CustomSelectDropdown';
 import { useTranslation } from '../../contexts/LanguageContext';
 
 export const SectionHeaderRow = ({ label, spacer, extraHeader }) => (
@@ -123,17 +124,14 @@ export const SelectRow = ({ label, value, onChange, options, className = "", spa
             <label className="whitespace-nowrap font-bold text-gray-700">{label}</label>
         </td>
         <td className="text-left py-0.5">
-            <select
+            <CustomSelectDropdown
                 value={value}
-                onChange={onChange}
-                className={`w-28 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 ${className}`}
-            >
-                {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </option>
-                ))}
-            </select>
+                onChange={(nextValue) => onChange({ target: { value: nextValue } })}
+                ariaLabel={label}
+                className="w-28"
+                buttonClassName={`!h-[34px] !w-28 !rounded-lg !border-gray-300 !px-7 !py-1.5 ${className}`}
+                options={options}
+            />
         </td>
         {spacer && <td className="w-8"></td>}
     </tr>

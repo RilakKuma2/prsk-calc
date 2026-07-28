@@ -5,6 +5,7 @@ import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
 
 let cachedMusicMetas = null;
 let musicMetasPromise = null;
+let bundledMusicMetasPromise = null;
 let cachedSongOptions = null;
 let musicMetaLookupSource = null;
 let cachedMusicMetaLookup = null;
@@ -15,6 +16,7 @@ let cachedSearchableSongOptions = null;
 
 const MUSIC_METAS_URL = joinUrl(ASSET_BASE_URL, 'music_metas.json');
 const MUSIC_METAS_TIMEOUT_MS = 6000;
+const SONG_OPTIONS_TIMEOUT_MS = 2500;
 const SONG_FILTER_DATE = new Date('2026-04-22T23:59:59+09:00');
 const EXCLUDED_SONG_IDS = new Set([707, 708, 709]);
 const makeMusicMetaKey = (songId, difficulty) => `${Number(songId)}:${difficulty}`;
@@ -169,6 +171,20 @@ export async function getMusicMetas() {
     return musicMetasPromise;
 }
 
+// For calculators that must not wait for an API, load the bundled full data
+// directly. This remains a lazy chunk, so it does not inflate the initial page.
+export async function getBundledMusicMetas() {
+    if (cachedMusicMetas) return cachedMusicMetas;
+    if (bundledMusicMetasPromise) return bundledMusicMetasPromise;
+
+    bundledMusicMetasPromise = import('../data/music_metas.json').then(localMusicMetasModule => {
+        cachedMusicMetas = localMusicMetasModule.default || localMusicMetasModule;
+        return cachedMusicMetas;
+    });
+
+    return bundledMusicMetasPromise;
+}
+
 export function preloadMusicMetas() {
     return getMusicMetas().catch(error => {
         console.warn('Failed to preload music_metas:', error.message);
@@ -185,9 +201,10 @@ export async function getSongOptions() {
     if (cachedSongOptions) return applyDateFilter(cachedSongOptions);
 
     try {
-        const response = await fetch(joinUrl(API_BASE_URL, 'api/songs'));
-        if (!response.ok) throw new Error('Fetch failed');
-        const apiData = await response.json();
+        const apiData = await fetchJsonWithTimeout(
+            joinUrl(API_BASE_URL, 'api/songs'),
+            SONG_OPTIONS_TIMEOUT_MS,
+        );
         // API 응답을 로컬 형식으로 변환
         cachedSongOptions = apiData.map(normalizeSong);
         console.log('Loaded songs from external API');

@@ -4,6 +4,7 @@ import { characterBirthdays } from '../data/characterBirthdays';
 import playerLevelData from '../data/player_levels.json';
 import { getCardCharacterId as getSupportCardCharacterId } from '../utils/supportCardUtils';
 import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
+import CustomSelectDropdown from './common/CustomSelectDropdown';
 
 const findPlayerLevelInfo = (level) => playerLevelData.find(d => {
   if (d.range === String(level)) return true;
@@ -1457,18 +1458,18 @@ const EventShopSimulator = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <select
+              <CustomSelectDropdown
                 value={selectedSummaryId}
-                onChange={(event) => setSelectedSummaryId(event.target.value)}
-                className="!w-full sm:!w-48 !mb-0 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-300"
+                onChange={setSelectedSummaryId}
+                ariaLabel={t('fire.shop_simulator_title')}
+                className="!w-full sm:!w-48 !mb-0"
+                buttonClassName="!h-8 !w-full sm:!w-48 !rounded-lg !border-gray-200 !px-7 !text-xs !font-bold !text-gray-600"
                 disabled={loading || visibleSummaries.length === 0}
-              >
-                {visibleSummaries.map(summary => (
-                  <option key={summary.id} value={summary.id}>
-                    {`#${summary.eventId} ${summary.assetbundleName || ''}`}
-                  </option>
-                ))}
-              </select>
+                options={visibleSummaries.map(summary => ({
+                  value: summary.id,
+                  label: `#${summary.eventId} ${summary.assetbundleName || ''}`,
+                }))}
+              />
             </div>
           </div>
 
@@ -1596,18 +1597,19 @@ const EventShopSimulator = ({
                   </div>
                   <div className="w-[104px] sm:w-[82px] flex items-center justify-between gap-1 px-2.5 sm:px-2 py-1.5">
                     <div className="text-[10px] text-gray-400 font-bold whitespace-nowrap">보너스</div>
-                    <select
+                    <CustomSelectDropdown
                       value={localCurrentFireOption}
-                      onChange={e => setLocalCurrentFireOption(e.target.value)}
-                      className="w-14 sm:w-11 text-[14px] sm:text-[13px] font-extrabold text-gray-700 bg-transparent border-b border-gray-200 focus:outline-none focus:border-indigo-400 text-right text-center-last appearance-none cursor-pointer"
-                    >
-                      {[
+                      onChange={setLocalCurrentFireOption}
+                      ariaLabel="보너스"
+                      className="w-14 sm:w-11"
+                      buttonClassName="!h-7 !w-14 sm:!w-11 !rounded-md !border-gray-200 !bg-transparent !px-5 !text-[13px] !font-extrabold !text-gray-700"
+                      options={[
                         { value: "1", label: "0불" }, { value: "5", label: "1불" }, { value: "10", label: "2불" },
                         { value: "15", label: "3불" }, { value: "20", label: "4불" }, { value: "25", label: "5불" },
                         { value: "27", label: "6불" }, { value: "29", label: "7불" }, { value: "31", label: "8불" },
                         { value: "33", label: "9불" }, { value: "35", label: "10불" }
-                      ].map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                    </select>
+                      ]}
+                    />
                   </div>
                 </div>
 

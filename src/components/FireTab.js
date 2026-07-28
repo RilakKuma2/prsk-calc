@@ -1,17 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 import { formatDuration } from '../utils/time';
 import RankingGraphModal from './RankingGraphModal';
 import EventShopSimulator from './EventShopSimulator';
+import CustomSelectDropdown from './common/CustomSelectDropdown';
 import { useTranslation } from '../contexts/LanguageContext';
 import { calculateScoreRange } from '../utils/calculator';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import { getMusicMetaSync } from '../utils/dataLoader';
+import { getBundledMusicMetas, getMusicMetaSync, getSongOptionsSync } from '../utils/dataLoader';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import playerLevelData from '../data/player_levels.json';
 import { characterBirthdays } from '../data/characterBirthdays';
 import { useAuth } from '../login';
 import { API_BASE_URL, ASSET_BASE_URL, SUITE_ASSET_BASE_URL, joinUrl } from '../config/env';
+import { AUTO_ENERGY_OPTIONS, normalizeAutoEnergy } from '../utils/autoEnergy';
+import {
+  getAutoTimeSongPerformances,
+  rankAutoTimeRecommendations,
+} from '../utils/autoTimeRecommendations';
+import {
+  calculateRefreshGauge,
+  calculateRefreshGaugeDecay,
+  REFRESH_GAUGE_CONFIG,
+  getRefreshPlaysPerHour,
+  REFRESH_PRESET_SONG_IDS,
+  REFRESH_SONGS,
+} from '../data/refreshGaugeData';
 
 const GENERAL_ALLOWED_RANKS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -146,6 +160,44 @@ const CurrentScoreWithDelta = ({ score, delta, stacked = false }) => {
   );
 };
 
+const AUTO_DIFFICULTY_LABELS = {
+  easy: 'EASY',
+  normal: 'NRM',
+  hard: 'HRD',
+  expert: 'EX',
+  master: 'MAS',
+  append: 'APD',
+};
+
+// Keep this identical to the difficulty treatment in the event-deck all-song score table.
+const AUTO_DIFFICULTY_BADGE_COLORS = {
+  master: { backgroundColor: '#cc33ff', color: '#FFFFFF' },
+  append: { background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)', color: '#FFFFFF' },
+  expert: { backgroundColor: '#ff4477', color: '#FFFFFF' },
+  hard: { backgroundColor: '#ffcc00', color: '#FFFFFF' },
+  normal: { backgroundColor: '#33ccff', color: '#FFFFFF' },
+  easy: { backgroundColor: '#13d675', color: '#FFFFFF' },
+};
+
+const formatAutoDuration = (seconds, t) => {
+  const totalSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const remainingSeconds = totalSeconds % 60;
+  const parts = [];
+
+  if (hours) parts.push(`${hours}${t('fire.hours_suffix')}`);
+  if (minutes || hours) parts.push(`${minutes}${t('fire.minutes_suffix')}`);
+  if (!hours) parts.push(`${remainingSeconds}${t('fire.seconds_suffix')}`);
+  return parts.join(' ');
+};
+
+const formatRefreshDuration = (hours, t) => {
+  const totalSeconds = Math.max(0, Math.ceil((Number(hours) || 0) * 60 * 60));
+  if (!totalSeconds) return '-';
+  return formatAutoDuration(totalSeconds, t);
+};
+
 const FireTab = ({ surveyData, setSurveyData }) => {
   const { user } = useAuth();
   const { t, language } = useTranslation();
@@ -181,6 +233,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [chapterLiveData, setChapterLiveData] = useState([]);
   const [chapterScoreLastUpdated, setChapterScoreLastUpdated] = useState(null);
   const [isRoomSearchOpen, setIsRoomSearchOpen] = useState(false);
+  const [isRefreshCalculatorOpen, setIsRefreshCalculatorOpen] = useState(false);
   const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('roomSearchEngine') || 'yahoo');
   const [showRecentHourlySpeed, setShowRecentHourlySpeed] = useState(() => localStorage.getItem('showRecentHourlySpeed') !== 'false');
   const currentNaturalFire = surveyData.currentNaturalFire || '';
@@ -193,6 +246,26 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const setMySekaiScore = (val) => setSurveyData(prev => ({ ...prev, mySekaiScore: typeof val === 'function' ? val(prev.mySekaiScore || '') : val }));
   const [importMenuOpen, setImportMenuOpen] = useState(false);
   const [isShopSimulatorOpen, setIsShopSimulatorOpen] = useState(false);
+  const [isAutoTimeOpen, setIsAutoTimeOpen] = useState(false);
+  const [autoTimeSongs, setAutoTimeSongs] = useState(null);
+  const [autoTimeMusicMetas, setAutoTimeMusicMetas] = useState(null);
+  const [autoTimePerformances, setAutoTimePerformances] = useState([]);
+  const [autoTimePerformanceKey, setAutoTimePerformanceKey] = useState('');
+  const [isAutoTimeLoading, setIsAutoTimeLoading] = useState(false);
+  const autoTimeHours = surveyData.autoTimeHours ?? '';
+  const autoTimeMinutes = surveyData.autoTimeMinutes ?? '';
+  const autoTimeEnergyUsed = normalizeAutoEnergy(surveyData.autoTimeEnergy ?? 10);
+  const setAutoTimeHours = (value) => setSurveyData(prev => ({ ...prev, autoTimeHours: value }));
+  const setAutoTimeMinutes = (value) => setSurveyData(prev => ({ ...prev, autoTimeMinutes: value }));
+  const setAutoTimeEnergyUsed = (value) => setSurveyData(prev => ({
+    ...prev,
+    autoTimeEnergy: normalizeAutoEnergy(value),
+  }));
+  const refreshSongId = Number(surveyData.refreshSongId || 74);
+  const setRefreshSongId = (value) => setSurveyData(prev => ({ ...prev, refreshSongId: Number(value) }));
+  const refreshGaugePercent = surveyData.refreshGaugePercent ?? '';
+  const setRefreshGaugePercent = (value) => setSurveyData(prev => ({ ...prev, refreshGaugePercent: value }));
+  const setRefreshPlaysPerHour = (value) => setSurveyData(prev => ({ ...prev, refreshPlaysPerHour: value }));
 
   useEffect(() => {
     if (!isShopSimulatorOpen) return undefined;
@@ -210,6 +283,51 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isShopSimulatorOpen]);
+
+  useEffect(() => {
+    if (!isRefreshCalculatorOpen && !isAutoTimeOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      setIsRefreshCalculatorOpen(false);
+      setIsAutoTimeOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isRefreshCalculatorOpen, isAutoTimeOpen]);
+
+  useEffect(() => {
+    if (!isAutoTimeOpen || (autoTimeSongs !== null && autoTimeMusicMetas !== null)) return undefined;
+
+    let cancelled = false;
+    setIsAutoTimeLoading(true);
+    Promise.all([Promise.resolve(getSongOptionsSync()), getBundledMusicMetas()])
+      .then(([songs, metas]) => {
+        if (cancelled) return;
+        setAutoTimeSongs(songs);
+        setAutoTimeMusicMetas(metas);
+      })
+      .catch((error) => {
+        console.error('Failed to load all-song auto data for event-run auto time', error);
+        if (!cancelled) {
+          setAutoTimeSongs([]);
+          setAutoTimeMusicMetas([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsAutoTimeLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAutoTimeOpen, autoTimeSongs, autoTimeMusicMetas]);
 
   // Level Up Bonus State
   const isLevelUpBonusEnabled = surveyData.isLevelUpBonusEnabled || false;
@@ -390,6 +508,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             rank: item.rank,
             currentScore: item.score,
             predictedScore: 0, // No prediction
+            eventcutPredicted: null,
             scoreDelta1h: item.scoreDelta1h
           })).sort((a, b) => a.rank - b.rank);
           // Can't really update eventInfo properly without metadata, but we follow instruction "display higher event number"
@@ -411,6 +530,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               rank: item.rank,
               currentScore: item.current,
               predictedScore: item.predicted,
+              eventcutPredicted: item.eventcut_predicted ?? null,
               scoreDelta1h: item.scoreDelta1h
             })).sort((a, b) => a.rank - b.rank);
           }
@@ -422,34 +542,21 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           const mainMap = new Map((mainData.data || []).map(i => [i.rank, i]));
           const assetMap = new Map(assetData.map(i => [i.rank, i]));
 
-          // Map to store latest range from mainData.ranks
-          const rankRangeMap = new Map();
-          if (mainData.ranks) {
-            mainData.ranks.forEach(rankObj => {
-              const r = rankObj.rank;
-              // Find the latest point with type 'p' (prediction)
-              const predictionPoints = (rankObj.points || []).filter(p => p.type === 'p');
-              if (predictionPoints.length > 0) {
-                const latest = predictionPoints.reduce((prev, current) => (prev.ts > current.ts) ? prev : current);
-                rankRangeMap.set(r, { l: latest.l || 0, u: latest.u || 0 });
-              }
-            });
-          }
-
-          const allRanks = new Set([...mainMap.keys(), ...assetMap.keys(), ...rankRangeMap.keys()]);
+          const allRanks = new Set([...mainMap.keys(), ...assetMap.keys()]);
 
           finalData = Array.from(allRanks).map(rank => {
             const mainItem = mainMap.get(rank);
             const assetItem = assetMap.get(rank);
-            const rangeItem = rankRangeMap.get(rank);
 
             let currentScore = 0;
             let predictedScore = 0;
+            let eventcutPredicted = null;
             let scoreDelta1h = null;
 
             if (mainItem) {
               currentScore = mainItem.current;
               predictedScore = mainItem.predicted;
+              eventcutPredicted = mainItem.eventcut_predicted ?? null;
               scoreDelta1h = mainItem.scoreDelta1h ?? null;
             }
 
@@ -469,9 +576,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               rank,
               currentScore,
               predictedScore,
-              scoreDelta1h,
-              l: rangeItem?.l || (mainItem?.l) || 0,
-              u: rangeItem?.u || (mainItem?.u) || 0
+              eventcutPredicted,
+              scoreDelta1h
             };
           }).sort((a, b) => a.rank - b.rank);
 
@@ -1094,20 +1200,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     setActiveRank(null);
   };
 
-  const formatKoreanScore = (score) => {
-    if (!score || score <= 0) return '';
-    const eok = Math.floor(score / 100000000);
-    const man = Math.floor((score % 100000000) / 10000);
-
-    const suffixEok = t('fire.suffix_eok') || '억';
-    const suffixMan = t('fire.suffix_man') || '만';
-
-    if (eok > 0) {
-      return `${eok}${suffixEok}${man > 0 ? man.toLocaleString() + suffixMan : ''}`;
-    }
-    return `${man.toLocaleString()}${suffixMan}`;
-  };
-
   // Import Calculation Logic
   const handleImport = (type) => {
     // Check if data exists
@@ -1291,18 +1383,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     const chapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
     const chapterData = chapter?.data || [];
 
-    const rankRangeMap = new Map();
-    if (chapter?.ranks) {
-      chapter.ranks.forEach(rankObj => {
-        const r = rankObj.rank;
-        const predictionPoints = (rankObj.points || []).filter(p => p.type === 'p');
-        if (predictionPoints.length > 0) {
-          const latest = predictionPoints.reduce((prev, current) => (prev.ts > current.ts) ? prev : current);
-          rankRangeMap.set(r, { l: latest.l || 0, u: latest.u || 0 });
-        }
-      });
-    }
-
     // live_chapter_rankings 데이터를 맵으로 변환 (종합의 eventlivejp와 동일한 역할)
     let currentChapterRankings = [];
     const currentEventId = Number(eventInfo?.id || 0);
@@ -1357,10 +1437,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     return Array.from(allRanks).map(rank => {
       const chapterItem = chapterDataMap.get(rank);
       const liveItem = chapterLiveMap.get(rank);
-      const rangeItem = rankRangeMap.get(rank);
 
       let currentScore = chapterItem?.current || 0;
       let predictedScore = chapterItem?.predicted || 0;
+      let eventcutPredicted = chapterItem?.eventcut_predicted ?? null;
       let scoreDelta1h = chapterItem?.scoreDelta1h ?? null;
 
       const liveTs = chapterScoreLastUpdated || 0;
@@ -1379,9 +1459,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         rank,
         currentScore,
         predictedScore,
-        scoreDelta1h,
-        l: rangeItem?.l || 0,
-        u: rangeItem?.u || 0
+        eventcutPredicted,
+        scoreDelta1h
       };
     }).sort((a, b) => a.rank - b.rank);
   })();
@@ -1458,6 +1537,144 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       window.removeEventListener('resize', evaluate);
     };
   }, [scoreDeltaLayoutSignature, showRecentHourlySpeed]);
+
+  const autoTimeAvailableSeconds = useMemo(() => {
+    const hours = Math.max(0, Number(autoTimeHours) || 0);
+    const minutes = Math.min(59, Math.max(0, Number(autoTimeMinutes) || 0));
+    return Math.floor((hours * 60 * 60) + (minutes * 60));
+  }, [autoTimeHours, autoTimeMinutes]);
+
+  const autoTimeEnergyOptions = useMemo(
+    () => AUTO_ENERGY_OPTIONS.map(energy => ({
+      value: energy,
+      label: t('auto.energy_option', { count: energy }),
+    })),
+    [t],
+  );
+
+  const refreshSongs = useMemo(() => REFRESH_PRESET_SONG_IDS
+    .map(id => REFRESH_SONGS.find(song => song.id === id))
+    .filter(Boolean), []);
+
+  const refreshSelectedSong = useMemo(
+    () => refreshSongs.find(song => song.id === refreshSongId) || refreshSongs[0],
+    [refreshSongId, refreshSongs],
+  );
+
+  // New refresh calculators start on Envy at 28 runs/h. Keep a user's own
+  // value intact, while song selection can still fill its recommended value.
+  const refreshPlaysPerHour = surveyData.refreshPlaysPerHour ?? '28';
+  const refreshApproximateRange = '26 ~ 31';
+
+  const refreshGaugeResult = useMemo(() => calculateRefreshGauge({
+    durationSeconds: refreshSelectedSong?.duration,
+    currentPercent: refreshGaugePercent,
+    playsPerHour: refreshPlaysPerHour,
+  }), [refreshSelectedSong, refreshGaugePercent, refreshPlaysPerHour]);
+
+  const refreshGaugeDecay = useMemo(() => calculateRefreshGaugeDecay({
+    currentPercent: refreshGaugePercent,
+  }), [refreshGaugePercent]);
+
+  const selectRefreshSong = (value) => {
+    const id = Number(value);
+    const song = refreshSongs.find(item => item.id === id);
+    setRefreshSongId(id);
+    if (song) {
+      const recommendedRounds = String(getRefreshPlaysPerHour(song.duration));
+      setRefreshPlaysPerHour(recommendedRounds);
+      setRounds1(recommendedRounds);
+    }
+  };
+
+  const autoTimeCalculationKey = useMemo(() => JSON.stringify({
+    totalPower: surveyData.autoDeck?.totalPower ?? '',
+    skillLeader: surveyData.autoDeck?.skillLeader ?? '',
+    skillMember2: surveyData.autoDeck?.skillMember2 ?? '',
+    skillMember3: surveyData.autoDeck?.skillMember3 ?? '',
+    skillMember4: surveyData.autoDeck?.skillMember4 ?? '',
+    skillMember5: surveyData.autoDeck?.skillMember5 ?? '',
+    eventBonus: surveyData.autoDeck?.eventBonus ?? '',
+    energyUsed: autoTimeEnergyUsed,
+  }), [surveyData.autoDeck, autoTimeEnergyUsed]);
+
+  useEffect(() => {
+    if (
+      !isAutoTimeOpen
+      || !autoTimeSongs
+      || !autoTimeMusicMetas
+      || autoTimeAvailableSeconds <= 0
+      || autoTimePerformanceKey === autoTimeCalculationKey
+    ) return undefined;
+
+    let cancelled = false;
+    setIsAutoTimeLoading(true);
+
+    // Let the loading state paint before running the same all-song calculation as AutoTab.
+    const timer = window.setTimeout(() => {
+      try {
+        const performances = getAutoTimeSongPerformances({
+          songs: autoTimeSongs,
+          musicMetas: autoTimeMusicMetas,
+          autoDeck: surveyData.autoDeck || {},
+          energyUsed: autoTimeEnergyUsed,
+        });
+        if (!cancelled) {
+          setAutoTimePerformances(performances);
+          setAutoTimePerformanceKey(autoTimeCalculationKey);
+        }
+      } catch (error) {
+        console.error('Failed to calculate event-run auto time recommendations', error);
+      } finally {
+        if (!cancelled) setIsAutoTimeLoading(false);
+      }
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    isAutoTimeOpen,
+    autoTimeSongs,
+    autoTimeMusicMetas,
+    autoTimeAvailableSeconds,
+    autoTimePerformanceKey,
+    autoTimeCalculationKey,
+    surveyData.autoDeck,
+    autoTimeEnergyUsed,
+  ]);
+
+  const autoTimeRecommendations = useMemo(() => (
+    rankAutoTimeRecommendations({
+      performances: autoTimePerformances,
+      availableSeconds: autoTimeAvailableSeconds,
+      hideInefficient: true,
+    }).slice(0, 5)
+  ), [autoTimePerformances, autoTimeAvailableSeconds]);
+
+  const autoTimeMaximumPlayCount = useMemo(
+    () => Math.max(0, ...autoTimeRecommendations.map(result => result.playCount)),
+    [autoTimeRecommendations],
+  );
+
+  const autoTimeMinimumPlayCount = useMemo(
+    () => Math.min(...autoTimeRecommendations.map(result => result.playCount)),
+    [autoTimeRecommendations],
+  );
+
+  const autoTimeBestResult = autoTimeRecommendations[0] || null;
+
+  const updateAutoTimeValue = (setter, maximum) => (event) => {
+    const rawValue = event.target.value;
+    if (rawValue === '') {
+      setter('');
+      return;
+    }
+    const value = Math.floor(Number(rawValue));
+    if (!Number.isFinite(value)) return;
+    setter(String(Math.min(maximum, Math.max(0, value))));
+  };
 
   return (
 
@@ -1626,13 +1843,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           <div className="flex items-center justify-center gap-1">
             <label className="text-gray-600 text-xs font-bold leading-none">{t('fire.current_fire')}</label>
           </div>
-          <select
+          <CustomSelectDropdown
             value={firea}
-            onChange={e => setFirea(e.target.value)}
-            className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium appearance-none"
-            style={{ backgroundImage: 'none' }} // Remove default arrow if needed, or keep standard
-          >
-            {[
+            onChange={setFirea}
+            ariaLabel={t('fire.current_fire')}
+            className="w-full"
+            buttonClassName="!h-[38px] !w-full !rounded-lg !border-gray-200 !bg-gray-50 !text-sm !font-medium"
+            options={[
               { value: "1", label: "0" },
               { value: "5", label: "1" },
               { value: "10", label: "2" },
@@ -1644,22 +1861,21 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               { value: "31", label: "8" },
               { value: "33", label: "9" },
               { value: "35", label: "10" },
-            ].map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            ]}
+          />
         </div>
 
         <div className="flex flex-col items-center">
           <div className="flex items-center justify-center gap-1">
             <label className="text-gray-600 text-xs font-bold leading-none">{t('fire.change_fire')}</label>
           </div>
-          <select
+          <CustomSelectDropdown
             value={fires2}
-            onChange={e => setFires2(e.target.value)}
-            className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium appearance-none"
-          >
-            {[
+            onChange={setFires2}
+            ariaLabel={t('fire.change_fire')}
+            className="w-full"
+            buttonClassName="!h-[38px] !w-full !rounded-lg !border-gray-200 !bg-gray-50 !text-sm !font-medium"
+            options={[
               { value: "none", label: t('fire.no_change') },
               { value: "1", label: "0" },
               { value: "5", label: "1" },
@@ -1672,10 +1888,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               { value: "31", label: "8" },
               { value: "33", label: "9" },
               { value: "35", label: "10" },
-            ].map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            ]}
+          />
         </div>
 
       </div>
@@ -1971,16 +2185,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   {/* Live Rank */}
                   <div className="flex flex-col items-center">
                     <label className="text-[9px] text-gray-500 font-bold mb-0.5">{t('fire.player_live_rank')}</label>
-                    <select
+                    <CustomSelectDropdown
                       value={liveRank}
-                      onChange={(e) => setLiveRank(e.target.value)}
-                      className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 h-[26px]"
-                    >
-                      <option value="S">S</option>
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                    </select>
+                      onChange={setLiveRank}
+                      ariaLabel={t('fire.player_live_rank')}
+                      className="w-full"
+                      buttonClassName="!h-[26px] !w-full !rounded-lg !border-gray-200 !bg-gray-50 !px-4 !text-xs !font-medium"
+                      options={['S', 'A', 'B', 'C'].map(value => ({ value, label: value }))}
+                    />
                   </div>
                 </div>
                 {levelUpFireNeeded !== null && (
@@ -2279,23 +2491,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       {/* Room Search Dropdown (Below Result) - Minimal Margin */}
       <div className={`w-[95%] sm:w-[90%] max-w-[340px] mx-auto flex justify-between mt-0.5 items-center gap-2`} ref={dropdownRef}>
         <div className="flex gap-1 sm:gap-1.5">
-          {language === 'ko' && (
+          {(language === 'ko' || user?.canAccessModeling) && (
             <>
               {/* Ranking Board Button */}
               {user && user.canAccessModeling ? (
                 <div className="flex flex-col gap-1">
-                  <button
-                    onClick={() => window.open('https://jp.seka.ing/', '_blank', 'noopener,noreferrer')}
-                    className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
-                    title={t('fire.ranking_board')}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="20" x2="18" y2="10"></line>
-                      <line x1="12" y1="20" x2="12" y2="4"></line>
-                      <line x1="6" y1="20" x2="6" y2="14"></line>
-                    </svg>
-                    <span className="text-[9px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')} 1</span>
-                  </button>
                   <button
                     onClick={() => window.open('https://run.rilaksekai.com/', '_blank', 'noopener,noreferrer')}
                     className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
@@ -2306,12 +2506,24 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       <line x1="12" y1="20" x2="12" y2="4"></line>
                       <line x1="6" y1="20" x2="6" y2="14"></line>
                     </svg>
-                    <span className="text-[9px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')} 2</span>
+                    <span className="whitespace-pre-line text-center text-[9px] font-bold leading-[9px]">{t('fire.ranking_board')}</span>
+                  </button>
+                  <button
+                    onClick={() => window.open('https://jp.seka.ing/', '_blank', 'noopener,noreferrer')}
+                    className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
+                    title={t('fire.backup_ranking_board')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span className="whitespace-pre-line text-center text-[9px] font-bold leading-[9px]">{t('fire.backup_ranking_board')}</span>
                   </button>
                 </div>
               ) : (
                 <button
-                  onClick={() => window.open('https://jp.seka.ing/', '_blank', 'noopener,noreferrer')}
+                  onClick={() => window.open('https://run.rilaksekai.com/', '_blank', 'noopener,noreferrer')}
                   className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-full"
                   title={t('fire.ranking_board')}
                 >
@@ -2320,23 +2532,349 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     <line x1="12" y1="20" x2="12" y2="4"></line>
                     <line x1="6" y1="20" x2="6" y2="14"></line>
                   </svg>
-                  <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.ranking_board')}</span>
+                  <span className="whitespace-pre-line text-center text-[10px] font-bold leading-[10px]">{t('fire.ranking_board')}</span>
                 </button>
               )}
-              {/* Refresh Button */}
-              <button
-                onClick={() => window.open('https://run.rilaksekai.com/refresh', '_blank', 'noopener,noreferrer')}
-                className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 border border-blue-100 hover:border-blue-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
-                title={t('fire.refresh')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10"></polyline>
-                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                </svg>
-                <span className="text-[10px] font-bold leading-none pt-[1px]">{t('fire.refresh')}</span>
-              </button>
             </>
           )}
+          
+              <div className="flex flex-col gap-1">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRefreshCalculatorOpen(open => !open);
+                      setIsAutoTimeOpen(false);
+                    }}
+                    className={`h-[22px] w-[112px] shrink-0 px-1.5 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 border ${isRefreshCalculatorOpen
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 border-blue-100 hover:border-blue-200'
+                      }`}
+                    title={t('fire.refresh')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    <span className="whitespace-nowrap text-[10px] font-bold leading-none pt-[1px]">{t('fire.refresh')}</span>
+                  </button>
+
+                  {isRefreshCalculatorOpen && (
+                    <div
+                      className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/35 p-3 backdrop-blur-[2px] sm:p-6"
+                      onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) setIsRefreshCalculatorOpen(false);
+                      }}
+                    >
+                      <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-blue-100 bg-white p-4 shadow-2xl animate-fade-in">
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-sm font-extrabold text-blue-700">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="23 4 23 10 17 10" />
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                          </svg>
+                          {t('fire.refresh_title')}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsRefreshCalculatorOpen(false)}
+                          className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                          aria-label={t('fire.shop_close')}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+                            <path d="m6 6 12 12M18 6 6 18" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <label className="mb-2 block text-[10px] font-bold text-gray-500">
+                        {t('fire.refresh_song')}
+                        <CustomSelectDropdown
+                          value={refreshSelectedSong?.id || ''}
+                          onChange={selectRefreshSong}
+                          ariaLabel={t('fire.refresh_song')}
+                          className="mt-1 block w-full"
+                          buttonClassName="!h-8 !w-full !rounded-lg !border-blue-100 !bg-blue-50/50 !px-7 !text-xs !font-bold !text-gray-800"
+                          menuClassName="!border-blue-100"
+                          options={refreshSongs.map(song => ({
+                            value: song.id,
+                            label: song.id === 74
+                                ? t('fire.refresh_preset_envy')
+                                : song.id === 226
+                                  ? t('fire.refresh_preset_lost_and_found')
+                                  : t('fire.refresh_preset_omakase'),
+                          }))}
+                        />
+                      </label>
+
+                      <div className="mb-2 rounded-lg border border-blue-50 bg-blue-50 px-2.5 py-2 text-[11px] font-medium text-blue-700">
+                        <span className="font-bold">{t('fire.refresh_song_duration')}</span>
+                        <span className="float-right tabular-nums">{refreshSelectedSong?.duration || 0}s</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="text-[10px] font-bold text-gray-500">
+                          {t('fire.refresh_current_gauge')}
+                          <div className="relative mt-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max="99.999"
+                              step="0.001"
+                              value={refreshGaugePercent}
+                              onChange={(event) => setRefreshGaugePercent(event.target.value)}
+                              onFocus={(event) => event.target.select()}
+                              placeholder="0"
+                              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 pr-5 text-center text-xs font-extrabold text-gray-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <span className="pointer-events-none absolute right-2 top-1.5 text-xs font-bold text-gray-400">%</span>
+                          </div>
+                        </label>
+                        <label className="text-[10px] font-bold text-gray-500">
+                          {t('fire.refresh_plays_per_hour')}
+                          <input
+                            type="number"
+                            min="1"
+                            max="999"
+                            step="1"
+                            value={refreshPlaysPerHour}
+                            onChange={(event) => {
+                              setRefreshPlaysPerHour(event.target.value);
+                              setRounds1(event.target.value);
+                            }}
+                            onFocus={(event) => event.target.select()}
+                            className="mt-1 w-full rounded-lg border border-blue-100 bg-blue-50 px-2 py-1.5 text-center text-xs font-extrabold text-blue-700 tabular-nums outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="mb-2 flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2 text-[10px] font-medium text-gray-500">
+                        <span className="font-bold">{t('fire.refresh_approx_rounds')}</span>
+                        <span className="font-extrabold text-blue-600 tabular-nums">{refreshApproximateRange}</span>
+                      </div>
+
+                      <div className="mt-3 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-2.5">
+                        <div className="grid grid-cols-2 gap-2 text-center">
+                          <div className="rounded-lg bg-white/80 px-1.5 py-2">
+                            <div className="text-[10px] font-bold text-blue-500">{t('fire.refresh_needed_time')}</div>
+                            <div className="mt-0.5 text-sm font-extrabold text-blue-700 tabular-nums">
+                              {refreshGaugeResult ? formatRefreshDuration(refreshGaugeResult.hoursNeeded, t) : '-'}
+                            </div>
+                          </div>
+                          <div className="rounded-lg bg-white/80 px-1.5 py-2">
+                            <div className="text-[10px] font-bold text-blue-500">{t('fire.refresh_needed_plays')}</div>
+                            <div className="mt-0.5 text-sm font-extrabold text-blue-700 tabular-nums">
+                              {refreshGaugeResult ? Math.ceil(refreshGaugeResult.playsNeeded).toLocaleString() : '-'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2 rounded-lg bg-white/80 px-2 py-2 text-center">
+                          <div className="text-[10px] font-bold text-blue-500">{t('fire.refresh_to_zero')}</div>
+                          <div className="mt-0.5 text-sm font-extrabold text-blue-700 tabular-nums">
+                            {refreshGaugeDecay.minutesToZero > 0
+                              ? formatRefreshDuration(refreshGaugeDecay.minutesToZero / 60, t)
+                              : `0${t('fire.minutes_suffix')}`}
+                          </div>
+                          {refreshGaugeDecay.lastCheckpointMinutes !== null && (
+                            <div className="mt-0.5 text-[10px] font-medium text-blue-500">
+                              {t('fire.refresh_last_checkpoint', {
+                                time: formatRefreshDuration(refreshGaugeDecay.lastCheckpointMinutes / 60, t),
+                                percent: refreshGaugeDecay.remainingAtLastCheckpoint.toFixed(1),
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 text-center text-[10px] font-medium text-blue-500">
+                          {t('fire.refresh_decay_note', {
+                            minutes: REFRESH_GAUGE_CONFIG.decay.minimumMinutes,
+                            percent: REFRESH_GAUGE_CONFIG.decay.deductedPercent.toFixed(2),
+                          })}
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAutoTimeOpen(open => !open);
+                      setIsRefreshCalculatorOpen(false);
+                    }}
+                    className={`h-[22px] w-[112px] shrink-0 px-1.5 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 border ${isAutoTimeOpen
+                      ? 'bg-violet-500 text-white border-violet-500'
+                      : 'bg-white hover:bg-violet-50 text-violet-600 hover:text-violet-700 border-violet-100 hover:border-violet-200'
+                      }`}
+                    title={t('fire.auto_time_button')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <polyline points="12 7 12 12 15 14" />
+                    </svg>
+                    <span className="whitespace-nowrap text-[10px] font-bold leading-none pt-[1px]">{t('fire.auto_time_button')}</span>
+                  </button>
+
+                  {isAutoTimeOpen && (
+                    <div
+                      className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/35 p-3 backdrop-blur-[2px] sm:p-6"
+                      onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) setIsAutoTimeOpen(false);
+                      }}
+                    >
+                      <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-violet-100 bg-white p-4 shadow-2xl animate-fade-in">
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-sm font-extrabold text-violet-700">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <polyline points="12 7 12 12 15 14" />
+                          </svg>
+                          {t('fire.auto_time_button')}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsAutoTimeOpen(false)}
+                          className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                          aria-label={t('fire.shop_close')}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+                            <path d="m6 6 12 12M18 6 6 18" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="rounded-xl border border-violet-100 bg-violet-50 p-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-violet-800">{t('fire.auto_time_rest')}</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              aria-label={t('fire.auto_time_hours')}
+                              type="number"
+                              min="0"
+                              max="999"
+                              value={autoTimeHours}
+                              onChange={updateAutoTimeValue(setAutoTimeHours, 999)}
+                              onFocus={(event) => event.target.select()}
+                              placeholder="0"
+                              className="w-11 text-center bg-white border border-violet-200 rounded-lg px-1 py-1 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                            />
+                            <span className="text-[11px] font-bold text-violet-700">{t('fire.hours_suffix')}</span>
+                            <input
+                              aria-label={t('fire.auto_time_minutes')}
+                              type="number"
+                              min="0"
+                              max="59"
+                              value={autoTimeMinutes}
+                              onChange={updateAutoTimeValue(setAutoTimeMinutes, 59)}
+                              onFocus={(event) => event.target.select()}
+                              placeholder="0"
+                              className="w-11 text-center bg-white border border-violet-200 rounded-lg px-1 py-1 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                            />
+                            <span className="text-[11px] font-bold text-violet-700">{t('fire.minutes_suffix')}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-violet-100 pt-1.5">
+                          <span className="text-xs font-bold text-violet-800">{t('fire.auto_time_energy')}</span>
+                          <CustomSelectDropdown
+                            ariaLabel={t('fire.auto_time_energy')}
+                            value={autoTimeEnergyUsed}
+                            options={autoTimeEnergyOptions}
+                            onChange={setAutoTimeEnergyUsed}
+                            buttonClassName="h-7 min-w-[64px] px-5 text-xs border-violet-200 text-violet-700 hover:border-violet-300"
+                          />
+                        </div>
+
+                        <div className="mt-2 max-h-96 overflow-y-auto pr-0.5">
+                          {isAutoTimeLoading ? (
+                            <div className="py-4 text-center text-xs font-bold text-violet-500 animate-pulse">
+                              {t('fire.auto_time_loading')}
+                            </div>
+                          ) : autoTimeAvailableSeconds <= 0 ? (
+                            <div className="py-4 text-center text-xs font-medium text-gray-500">
+                              {t('fire.auto_time_empty')}
+                            </div>
+                          ) : autoTimeRecommendations.length > 0 ? (
+                            <div className="space-y-1.5">
+                              <div className="text-[11px] font-extrabold text-gray-700 px-0.5">
+                                {t('fire.auto_time_results')}
+                              </div>
+                              {autoTimeRecommendations.map((result, index) => {
+                                const playCountGap = autoTimeBestResult
+                                  ? result.playCount - autoTimeBestResult.playCount
+                                  : 0;
+                                const pointGap = autoTimeBestResult
+                                  ? Math.floor(result.totalEventPoint) - Math.floor(autoTimeBestResult.totalEventPoint)
+                                  : 0;
+                                const countRange = autoTimeMaximumPlayCount - autoTimeMinimumPlayCount;
+                                const countPosition = countRange > 0
+                                  ? (result.playCount - autoTimeMinimumPlayCount) / countRange
+                                  : 1;
+                                const countLightness = Math.round(56 + (countPosition * 39));
+                                const countStyle = {
+                                  backgroundColor: `hsl(266 74% ${countLightness}%)`,
+                                  borderColor: `hsl(266 62% ${Math.min(88, countLightness + 8)}%)`,
+                                  color: countPosition < 0.35 ? '#FFFFFF' : 'hsl(266 62% 30%)',
+                                };
+                                const formatSignedNumber = (value) => `${value > 0 ? '+' : ''}${value.toLocaleString()}`;
+
+                                return (
+                                <div key={`${result.song.id}-${result.difficulty}`} className="bg-white border border-violet-100 rounded-lg px-2.5 py-2 shadow-sm">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="min-w-0 flex items-center gap-1.5">
+                                      <span className="shrink-0 text-[11px] font-extrabold text-violet-500">#{index + 1}</span>
+                                      <span className="truncate text-xs font-bold text-gray-800">
+                                        {language === 'ko' ? result.song.name : (result.song.title_jp || result.song.name)}
+                                      </span>
+                                      <span
+                                        className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide shadow-sm"
+                                        style={AUTO_DIFFICULTY_BADGE_COLORS[result.difficulty] || AUTO_DIFFICULTY_BADGE_COLORS.master}
+                                      >
+                                        {AUTO_DIFFICULTY_LABELS[result.difficulty]}
+                                      </span>
+                                    </div>
+                                    <span className="shrink-0 text-xs font-extrabold text-violet-600">
+                                      {Math.floor(result.totalEventPoint).toLocaleString()}P
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 flex items-center justify-between gap-2 text-[10px] font-medium text-gray-500">
+                                    <div className="flex min-w-0 items-center gap-1 whitespace-nowrap">
+                                      <span
+                                        className="rounded-md border px-1.5 py-0.5 text-[11px] font-extrabold tabular-nums"
+                                        style={countStyle}
+                                      >
+                                        {t('fire.auto_time_count', { count: result.playCount })}
+                                      </span>
+                                      {index > 0 && (
+                                        <>
+                                          <span className="font-bold tabular-nums text-violet-600">
+                                            {formatSignedNumber(pointGap)}P
+                                          </span>
+                                          <span className="font-bold tabular-nums text-rose-500">
+                                            {t('fire.auto_time_count', { count: formatSignedNumber(playCountGap) })}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                    <span className="shrink-0 whitespace-nowrap">{t('fire.auto_time_duration')}: {formatAutoDuration(result.totalDurationSeconds, t)}</span>
+                                  </div>
+                                </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="py-4 text-center text-xs font-medium text-gray-500">
+                              {t('fire.auto_time_unavailable')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
         </div>
         <div className="flex gap-1 sm:gap-2 items-center">
 
@@ -2849,9 +3387,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                             <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.graph')}</span>
                                           </button>
                                         </div>
-                                        {row.l > 0 && row.u > 0 && (
+                                        {Number(row.eventcutPredicted) > 0 && (
                                           <div className="text-sm sm:text-base text-indigo-700 font-bold pr-1">
-                                            {t('fire.prediction_cut_range')}: {formatKoreanScore(row.l)} ~ {formatKoreanScore(row.u)}
+                                            {Math.floor(Number(row.eventcutPredicted)).toLocaleString()} ({t('fire.new_model')})
                                           </div>
                                         )}
                                       </div>
@@ -2913,9 +3451,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                   <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.graph')}</span>
                                 </button>
                               </div>
-                              {row.l > 0 && row.u > 0 && (
+                              {Number(row.eventcutPredicted) > 0 && (
                                 <div className="text-sm sm:text-base text-gray-600 font-bold pr-1">
-                                  {t('fire.prediction_cut_range')}: {formatKoreanScore(row.l)} ~ {formatKoreanScore(row.u)}
+                                  {Math.floor(Number(row.eventcutPredicted)).toLocaleString()} ({t('fire.new_model')})
                                 </div>
                               )}
                             </div>

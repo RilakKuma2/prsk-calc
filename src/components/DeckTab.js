@@ -7,6 +7,7 @@ import { useAuth } from '../login';
 import { characterBirthdays } from '../data/characterBirthdays';
 import EventBonusCalculatorModal from './common/EventBonusCalculatorModal';
 import EventOverrideDropdown from './common/EventOverrideDropdown';
+import CustomSelectDropdown from './common/CustomSelectDropdown';
 import {
     EVENT_ATTRS, EVENT_UNITS, ORIGINAL_CHAR_UNIT, VS_CHAR_IDS,
     DEFAULT_AUTO_EVENT_OVERRIDE, loadAutoEventOverride, autoEventOverrideCache
@@ -1058,17 +1059,19 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     const renderBloomLevelSelect = (memberKey) => (
         useBloomFes ? (
-            <select
+            <CustomSelectDropdown
                 value={bloomLevels[memberKey] || 0}
-                onChange={(e) => updateBloomLevel(memberKey, Number(e.target.value))}
-                className="text-sm px-2 py-1 border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-300 min-w-[60px]"
-            >
-                <option value={0}>{t('auto.bloom_level_none') || 'X'}</option>
-                <option value={1}>{t('auto.bloom_level_1') || 'LV.1'}</option>
-                <option value={2}>{t('auto.bloom_level_2') || 'LV.2'}</option>
-                <option value={3}>{t('auto.bloom_level_3') || 'LV.3'}</option>
-                <option value={4}>{t('auto.bloom_level_4') || 'LV.4'}</option>
-            </select>
+                onChange={(value) => updateBloomLevel(memberKey, Number(value))}
+                ariaLabel={t('auto.bloom_fes_awakening')}
+                buttonClassName="!h-8 !min-w-[60px] !rounded-md !border-gray-200 !bg-gray-50 !px-6 !text-sm"
+                options={[
+                    { value: 0, label: t('auto.bloom_level_none') || 'X' },
+                    { value: 1, label: t('auto.bloom_level_1') || 'LV.1' },
+                    { value: 2, label: t('auto.bloom_level_2') || 'LV.2' },
+                    { value: 3, label: t('auto.bloom_level_3') || 'LV.3' },
+                    { value: 4, label: t('auto.bloom_level_4') || 'LV.4' },
+                ]}
+            />
         ) : null
     );
 

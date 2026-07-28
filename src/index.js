@@ -5,6 +5,9 @@ import './index.css';
 import App from './App';
 import './theme.css';
 import reportWebVitals from './reportWebVitals';
+import { installStaleAssetRecovery } from './utils/staleAssetRecovery';
+
+installStaleAssetRecovery();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -20,14 +23,10 @@ root.render(
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 // Register Service Worker for PWA cache and Push
 if ('serviceWorker' in navigator) {
-  const swUrl = `${process.env.PUBLIC_URL}/sw.js`;
-  let refreshing = false;
-
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
-  });
+  // The versioned URL prevents a browser/CDN-cached sw.js from masking a new
+  // Pages deployment. The Worker uses the same value for its own precache.
+  const serviceWorkerBuildId = process.env.REACT_APP_BUILD_ID || 'development';
+  const swUrl = `${process.env.PUBLIC_URL}/sw.js?v=${serviceWorkerBuildId}`;
 
   navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' })
     .then(registration => {
