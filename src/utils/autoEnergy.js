@@ -2,13 +2,14 @@ export const AUTO_ENERGY_OPTIONS = Object.freeze(
     Array.from({ length: 10 }, (_, index) => index + 1)
 );
 
-const AUTO_EVENT_POINT_MULTIPLIERS = Object.freeze({
+export const EVENT_POINT_MULTIPLIERS = Object.freeze({
+    0: 1,
     1: 5,
     2: 10,
     3: 15,
-    4: 19,
-    5: 23,
-    6: 26,
+    4: 20,
+    5: 25,
+    6: 27,
     7: 29,
     8: 31,
     9: 33,
@@ -20,8 +21,12 @@ export const normalizeAutoEnergy = (value) => {
     return AUTO_ENERGY_OPTIONS.includes(energy) ? energy : 1;
 };
 
+export const getEventPointMultiplier = (energy) => (
+    EVENT_POINT_MULTIPLIERS[Number(energy)] ?? 1
+);
+
 export const getAutoEventPointMultiplier = (energy) => (
-    AUTO_EVENT_POINT_MULTIPLIERS[normalizeAutoEnergy(energy)]
+    getEventPointMultiplier(normalizeAutoEnergy(energy))
 );
 
 export const calculateMySekaiEnergyScore = (baseScore, energy) => {

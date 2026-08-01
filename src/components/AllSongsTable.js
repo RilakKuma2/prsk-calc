@@ -3,21 +3,7 @@ import { calculateScoreRange } from '../utils/calculator';
 import { buildMusicMetaLookup, getSongOptions, getMusicMetas, normalizeSearchText } from '../utils/dataLoader';
 import { LiveType, EventCalculator, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
-import { getAutoEventPointMultiplier } from '../utils/autoEnergy';
-
-const FIRE_MULTIPLIERS = {
-    0: 1,
-    1: 5,
-    2: 10,
-    3: 15,
-    4: 20,
-    5: 25,
-    6: 27,
-    7: 29,
-    8: 31,
-    9: 33,
-    10: 35
-};
+import { getAutoEventPointMultiplier, getEventPointMultiplier } from '../utils/autoEnergy';
 const DIFFICULTY_COLORS = {
     master: { backgroundColor: '#cc33ff', color: '#FFFFFF' },
     append: { background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)', color: '#FFFFFF' },
@@ -49,6 +35,8 @@ const UNIT_COLORS = {
     'none': '#999999',                   // Other/Instrumental
 };
 
+const getAverageEventPoint = (minEP, maxEP) => Math.round((minEP + maxEP) / 2);
+
 const AllSongsTable = ({
     isVisible,
     language,
@@ -79,15 +67,24 @@ const AllSongsTable = ({
 
     const itemsPerPage = 10;
 
-    // Load data on mount
+    // Load the full song/meta dataset only when the all-songs table is opened.
     useEffect(() => {
+        if (!isVisible || (songOptions.length > 0 && musicMetas.length > 0)) return undefined;
+
+        let cancelled = false;
         const loadData = async () => {
             const [songs, metas] = await Promise.all([getSongOptions(), getMusicMetas()]);
-            setSongOptions(songs);
-            setMusicMetas(metas);
+            if (!cancelled) {
+                setSongOptions(songs);
+                setMusicMetas(metas);
+            }
         };
         loadData();
-    }, []);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isVisible, songOptions.length, musicMetas.length]);
 
     useEffect(() => {
         if (isVisible && songOptions.length > 0 && musicMetaLookup.size > 0) {
@@ -113,9 +110,9 @@ const AllSongsTable = ({
         }
 
         if (isAutoMode && isEfficiencyOrder) {
-            // Sort by Max EP desc, then length asc to ensure best songs are at the top
+            // Auto efficiency is based on the midpoint of the calculated EP range.
             const efficiencySorted = [...finalResults].sort((a, b) => {
-                if (b.maxEP !== a.maxEP) return b.maxEP - a.maxEP;
+                if (b.averageEP !== a.averageEP) return b.averageEP - a.averageEP;
                 return (a.length || Infinity) - (b.length || Infinity);
             });
 
@@ -131,7 +128,7 @@ const AllSongsTable = ({
                 }
             }
 
-            // Re-apply current sorting requested by user (if they still want to sort by length instead of default maxEP)
+            // Re-apply the current sorting requested by the user.
             topEfficiencyLimit.sort((a, b) => {
                 if (sortKey === 'release_date') {
                     const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
@@ -151,8 +148,8 @@ const AllSongsTable = ({
                     return sortOrder === 'desc' ? b.rankGap - a.rankGap : a.rankGap - b.rankGap;
                 }
 
-                let valA = sortKey === 'length' ? (a.length || Infinity) : a.maxEP;
-                let valB = sortKey === 'length' ? (b.length || Infinity) : b.maxEP;
+                let valA = sortKey === 'length' ? (a.length || Infinity) : a.averageEP;
+                let valB = sortKey === 'length' ? (b.length || Infinity) : b.averageEP;
 
                 if (sortOrder === 'desc') return valB - valA;
                 return valA - valB;
@@ -225,7 +222,7 @@ const AllSongsTable = ({
         // Multi keeps its existing 5-energy basis; Auto follows the selected energy.
         const fireMultiplier = isAutoMode
             ? getAutoEventPointMultiplier(energyUsed)
-            : FIRE_MULTIPLIERS[5];
+            : getEventPointMultiplier(5);
         const currentLiveType = isAutoMode ? LiveType.AUTO : LiveType.MULTI;
 
         const calculatedResults = [];
@@ -271,6 +268,7 @@ const AllSongsTable = ({
                             finalEffi,
                             fireMultiplier
                         );
+                        const averageEP = getAverageEventPoint(minEP, maxEP);
 
                         // Calculate min rank based on EXPERT level
                         let minRank = null;
@@ -309,6 +307,7 @@ const AllSongsTable = ({
                             difficulty: diff,
                             minEP,
                             maxEP,
+                            averageEP,
                             range,
                             minRank,
                             rankGap
@@ -322,9 +321,12 @@ const AllSongsTable = ({
             if (songResults.length > 0) {
                 // Determine representation based on logic
                 // If specific diff, songResults has 1 item (or 0).
-                // If best, sort by maxEP desc, and if tied, minEP desc.
+                // Auto picks the difficulty with the highest average EP; multi keeps
+                // the existing maximum-EP behavior.
                 songResults.sort((a, b) => {
-                    if (b.maxEP !== a.maxEP) return b.maxEP - a.maxEP;
+                    const pointA = isAutoMode ? a.averageEP : a.maxEP;
+                    const pointB = isAutoMode ? b.averageEP : b.maxEP;
+                    if (pointB !== pointA) return pointB - pointA;
                     return b.minEP - a.minEP;
                 });
                 const best = songResults[0];
@@ -391,8 +393,12 @@ const AllSongsTable = ({
                 return a.rankGap - b.rankGap;
             }
 
-            let valA = key === 'length' ? (a.length || Infinity) : a.maxEP;
-            let valB = key === 'length' ? (b.length || Infinity) : b.maxEP;
+            let valA = key === 'length'
+                ? (a.length || Infinity)
+                : (isAutoMode ? a.averageEP : a.maxEP);
+            let valB = key === 'length'
+                ? (b.length || Infinity)
+                : (isAutoMode ? b.averageEP : b.maxEP);
 
             if (order === 'desc') return valB - valA;
             return valA - valB;
@@ -691,7 +697,11 @@ const AllSongsTable = ({
                                         onClick={() => handleSortToggle('maxEP')}
                                     >
                                         <div className="flex items-center justify-center gap-1">
-                                            {language === 'ko' ? '최대 이벤포' : 'Max EP'}
+                                            {language === 'ko'
+                                                ? (isAutoMode ? '평균 이벤포' : '최대 이벤포')
+                                                : language === 'ja'
+                                                    ? (isAutoMode ? '平均EP' : '最大EP')
+                                                    : (isAutoMode ? 'Avg EP' : 'Max EP')}
                                             <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${sortKey === 'maxEP' ? (sortOrder === 'asc' ? 'rotate-180' : '') : 'opacity-0 group-hover:opacity-50'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                             </svg>
@@ -770,7 +780,7 @@ const AllSongsTable = ({
                                                 </td>
                                                 <td className="px-1 py-1 md:px-2 md:py-2 text-center align-middle">
                                                     <span className="text-blue-600 text-sm md:text-lg font-bold tracking-tight">
-                                                        {res.maxEP.toLocaleString()}
+                                                        {(isAutoMode ? res.averageEP : res.maxEP).toLocaleString()}
                                                     </span>
                                                 </td>
                                             </tr>

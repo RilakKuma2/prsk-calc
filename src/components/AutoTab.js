@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
-import { buildMusicMetaLookup, getSongOptionsSync, getMusicMetas } from '../utils/dataLoader';
+import {
+    buildMusicMetaLookup,
+    getSongOptionsSync,
+    getMiniMusicMetas,
+    preloadMusicMetasWhenIdle,
+} from '../utils/dataLoader';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
@@ -25,6 +30,7 @@ const TARGET_SONGS = [
     { id: 186, difficulty: 'master', level: 28 },  // 개벽 (Creation Myth)
     { id: 47, difficulty: 'master', level: 25 },  // 멜트
     { id: 691, difficulty: 'append', level: 31 },  // 0.034
+    { id: 765, difficulty: 'expert', level: 22 },  // 렘
 ];
 
 const calculateRank = (score, level) => {
@@ -102,9 +108,12 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
 
     useEffect(() => {
         let cancelled = false;
-        getMusicMetas()
+        getMiniMusicMetas()
             .then(metas => {
-                if (!cancelled) setMusicMetas(metas);
+                if (!cancelled) {
+                    setMusicMetas(metas);
+                    preloadMusicMetasWhenIdle();
+                }
             })
             .catch(error => {
                 console.error('Failed to load music metas for auto tab', error);
@@ -340,7 +349,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                                                 <div className="flex items-center justify-center gap-1 md:gap-2">
                                                     {res.songName}
                                                     <span
-                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${res.difficulty === 'master' || res.difficulty === 'append' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
+                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${res.difficulty === 'master' || res.difficulty === 'append' || res.difficulty === 'expert' ? '' : 'bg-gray-100 text-gray-600 border border-gray-200 shadow-sm'
                                                             }`}
                                                         style={
                                                             res.difficulty === 'master' ? {
@@ -348,6 +357,9 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                                                                 color: '#FFFFFF',
                                                             } : res.difficulty === 'append' ? {
                                                                 background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)',
+                                                                color: '#FFFFFF',
+                                                            } : res.difficulty === 'expert' ? {
+                                                                backgroundColor: '#ff4477',
                                                                 color: '#FFFFFF',
                                                             } : res.difficulty === 'hard' ? {
                                                                 border: '2px solid #ffcc00', // Adjusted border width for balance
@@ -364,7 +376,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                                                             } : {}
                                                         }
                                                     >
-                                                        {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty}
+                                                        {res.difficulty === 'master' ? 'MAS' : res.difficulty === 'append' ? 'APD' : res.difficulty === 'expert' ? 'EX' : res.difficulty}
                                                     </span>
                                                 </div>
                                                 {/* {res.songId === 488 && (

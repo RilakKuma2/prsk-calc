@@ -335,6 +335,23 @@ html[data-theme='dark'] body :where(
   background: var(--theme-success-soft) !important;
 }
 
+html[data-theme='dark'] body .support-main-open-button,
+html[data-theme='dark'] body .support-main-open-button.active {
+  border-color: color-mix(in srgb, var(--theme-success-border) 72%, var(--theme-border)) !important;
+  color: var(--theme-success-text) !important;
+  background: color-mix(in srgb, var(--theme-success-border) 18%, var(--theme-surface-soft)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-success-border) 42%, transparent),
+    0 4px 12px rgba(10, 12, 16, 0.18) !important;
+}
+
+html[data-theme='dark'] body .support-main-open-button:hover,
+html[data-theme='dark'] body .support-main-open-button.active:hover {
+  border-color: var(--theme-success-border) !important;
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-success-border) 27%, var(--theme-surface-soft)) !important;
+}
+
 html[data-theme='dark'] .support-select-menu button:hover,
 html[data-theme='dark'] .support-select-menu button.selected {
   color: var(--theme-blue-text) !important;
@@ -473,6 +490,19 @@ html[data-theme='dark'] body :where(
 
 html[data-theme='dark'] .ebc-btn-cancel:hover {
   background: var(--theme-border) !important;
+}
+
+html[data-theme='dark'] body .ebc-btn-apply {
+  color: var(--theme-blue-text) !important;
+  background: color-mix(in srgb, var(--theme-blue-border) 18%, var(--theme-surface-soft)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-blue-border) 58%, transparent),
+    0 4px 12px rgba(10, 12, 16, 0.18) !important;
+}
+
+html[data-theme='dark'] body .ebc-btn-apply:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-blue-border) 27%, var(--theme-surface-soft)) !important;
 }
 
 html[data-theme='dark'] .ebc-area-game-title strong {
@@ -1142,6 +1172,276 @@ html[data-theme='dark'] body :where(
   [class~='text-violet-700']
 ) {
   color: var(--theme-purple-text) !important;
+}
+
+/* Keep active pill tabs distinct without carrying the light theme's vivid fill. */
+html[data-theme='dark'] body button[class~='rounded-full'][class~='bg-indigo-500'] {
+  color: var(--theme-purple-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 22%, var(--theme-surface-soft)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-purple-border) 62%, transparent),
+    0 4px 12px rgba(10, 12, 16, 0.2) !important;
+}
+
+html[data-theme='dark'] body button[class~='rounded-full'][class~='bg-indigo-500']:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 30%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .calc-save-load-button {
+  color: var(--theme-purple-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 16%, var(--theme-surface-soft)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-purple-border) 56%, transparent),
+    0 5px 14px rgba(10, 12, 16, 0.2) !important;
+}
+
+html[data-theme='dark'] body .calc-save-load-button:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 25%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .calc-score-table-button {
+  box-shadow: 0 4px 12px rgba(10, 12, 16, 0.18) !important;
+}
+
+html[data-theme='dark'] body .calc-score-table-button-blue {
+  color: var(--theme-blue-text) !important;
+  background: color-mix(in srgb, var(--theme-blue-border) 18%, var(--theme-surface-soft)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-blue-border) 58%, transparent),
+    0 4px 12px rgba(10, 12, 16, 0.18) !important;
+}
+
+html[data-theme='dark'] body .calc-score-table-button-blue:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-blue-border) 27%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .calc-score-table-button-purple {
+  color: var(--theme-purple-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 18%, var(--theme-surface-soft)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-purple-border) 58%, transparent),
+    0 4px 12px rgba(10, 12, 16, 0.18) !important;
+}
+
+html[data-theme='dark'] body .calc-score-table-button-purple:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 27%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .calc-power-search-toggle:hover {
+  border-color: var(--theme-purple-border) !important;
+  color: var(--theme-purple-text) !important;
+  background: var(--theme-surface-muted) !important;
+}
+
+html[data-theme='dark'] body .calc-power-search-toggle.is-active {
+  border-color: color-mix(in srgb, var(--theme-purple-border) 72%, var(--theme-border)) !important;
+  color: var(--theme-purple-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 20%, var(--theme-surface-soft)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-purple-border) 46%, transparent),
+    0 4px 12px rgba(10, 12, 16, 0.18) !important;
+}
+
+html[data-theme='dark'] body :where(
+  .calc-power-search-panel,
+  .challenge-score-search-panel,
+  .challenge-score-search-menu,
+  .challenge-score-custom-result-body
+) {
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+}
+
+html[data-theme='dark'] body .calc-power-search-result-row {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-soft) 68%, var(--theme-surface)) !important;
+}
+
+html[data-theme='dark'] body .calc-power-search-result-row:hover {
+  background: color-mix(in srgb, var(--theme-purple-soft) 82%, var(--theme-surface-muted)) !important;
+}
+
+html[data-theme='dark'] body .challenge-score-search-option:hover {
+  color: var(--theme-purple-text) !important;
+  background: var(--theme-purple-soft) !important;
+}
+
+html[data-theme='dark'] body .challenge-score-search-toggle {
+  color: var(--theme-text-muted) !important;
+  background: transparent !important;
+}
+
+html[data-theme='dark'] body .challenge-score-search-toggle:hover,
+html[data-theme='dark'] body .challenge-score-search-toggle.is-active {
+  color: var(--theme-purple-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 18%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .challenge-score-custom-result {
+  border-color: color-mix(in srgb, var(--theme-purple-border) 58%, var(--theme-border)) !important;
+  color: var(--theme-text) !important;
+  background: var(--theme-purple-soft) !important;
+}
+
+html[data-theme='dark'] body .challenge-score-custom-result-header {
+  border-color: color-mix(in srgb, var(--theme-purple-border) 48%, var(--theme-border)) !important;
+  color: var(--theme-purple-text) !important;
+  background: color-mix(in srgb, var(--theme-purple-border) 18%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .character-rank-reset-all {
+  color: var(--theme-danger-text) !important;
+  background: var(--theme-red-soft) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-danger-border) 58%, transparent) !important;
+}
+
+html[data-theme='dark'] body .character-rank-reset-all:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-danger-border) 22%, var(--theme-red-soft)) !important;
+}
+
+html[data-theme='dark'] body .character-rank-reset-added {
+  color: var(--theme-warning-text) !important;
+  background: var(--theme-warning-soft) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-warning-border) 58%, transparent) !important;
+}
+
+html[data-theme='dark'] body .character-rank-reset-added:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-warning-border) 22%, var(--theme-warning-soft)) !important;
+}
+
+html[data-theme='dark'] body .deck-loaded-reset-button {
+  color: var(--theme-danger-text) !important;
+  background: var(--theme-red-soft) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-danger-border) 58%, transparent) !important;
+}
+
+html[data-theme='dark'] body .deck-loaded-reset-button:hover {
+  color: var(--theme-text) !important;
+  background: color-mix(in srgb, var(--theme-danger-border) 22%, var(--theme-red-soft)) !important;
+}
+
+/* Gacha calculator settings, monthly badges, and the per-month editor. */
+html[data-theme='dark'] body .gacha-crystal-calculator :where(
+  [class~='bg-purple-100'],
+  [class~='bg-indigo-100']
+) {
+  background: color-mix(in srgb, var(--theme-purple-border) 20%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='bg-indigo-200'] {
+  background: color-mix(in srgb, var(--theme-purple-border) 28%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator :where(
+  [class~='bg-blue-50'],
+  [class~='bg-cyan-50']
+) {
+  background: var(--theme-cyan-soft) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator :where(
+  [class~='bg-blue-100'],
+  [class~='bg-cyan-100']
+) {
+  background: color-mix(in srgb, var(--theme-blue-border) 20%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='bg-pink-100'] {
+  background: var(--theme-pink-soft) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='bg-yellow-100'] {
+  background: var(--theme-warning-soft) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='bg-green-100'] {
+  background: var(--theme-success-soft) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='bg-red-100'] {
+  background: var(--theme-red-soft) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator :where(
+  [class~='border-purple-100'],
+  [class~='border-purple-200'],
+  [class~='border-purple-300'],
+  [class~='border-indigo-200'],
+  [class~='border-indigo-300']
+) {
+  border-color: color-mix(in srgb, var(--theme-purple-border) 66%, var(--theme-border)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator :where(
+  [class~='border-blue-300'],
+  [class~='border-cyan-200'],
+  [class~='border-cyan-300']
+) {
+  border-color: color-mix(in srgb, var(--theme-blue-border) 66%, var(--theme-border)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='border-pink-300'] {
+  border-color: color-mix(in srgb, var(--theme-accent) 64%, var(--theme-border)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='border-yellow-300'] {
+  border-color: color-mix(in srgb, var(--theme-warning-border) 70%, var(--theme-border)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='border-green-300'] {
+  border-color: color-mix(in srgb, var(--theme-success-border) 70%, var(--theme-border)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator :where(
+  [class~='text-cyan-600'],
+  [class~='text-cyan-700']
+) {
+  color: color-mix(in srgb, var(--theme-blue-text) 64%, var(--theme-success-text)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='text-pink-700'] {
+  color: var(--theme-accent) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator :where(
+  [class~='text-red-400'],
+  [class~='text-red-500']
+) {
+  color: var(--theme-danger-text) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='text-indigo-500'] {
+  color: var(--theme-purple-text) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='text-gray-300'] {
+  color: var(--theme-text-subtle) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator :where(
+  [class~='hover:bg-gray-50']:hover,
+  [class~='hover:bg-gray-100']:hover
+) {
+  background: var(--theme-surface-muted) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='hover:bg-indigo-50']:hover {
+  background: var(--theme-purple-soft) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='hover:bg-indigo-100']:hover {
+  background: color-mix(in srgb, var(--theme-purple-border) 28%, var(--theme-surface-soft)) !important;
+}
+
+html[data-theme='dark'] body .gacha-crystal-calculator [class~='hover:bg-red-100']:hover {
+  background: color-mix(in srgb, var(--theme-danger-border) 22%, var(--theme-red-soft)) !important;
 }
 
 html[data-theme='dark'] body :where(

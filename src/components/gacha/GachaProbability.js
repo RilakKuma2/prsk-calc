@@ -3,6 +3,7 @@ import { Chart } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { InputTableWrapper, InputRow } from '../common/InputComponents';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Register the plugin
 Chart.register(ChartDataLabels);
@@ -45,6 +46,7 @@ function numberToKorean(number) {
 
 const GachaProbability = ({ surveyData, setSurveyData }) => {
     const { t } = useTranslation();
+    const { resolvedTheme } = useTheme();
 
     // State for inputs
     const pickupProb = surveyData.pickupProb || '';
@@ -135,10 +137,10 @@ const GachaProbability = ({ surveyData, setSurveyData }) => {
         setResultHtml(newResultHtml);
         updateChart(pro, pickupCountVal);
 
-        // updateChart is evaluated from this render and its only external
-        // dependency, t, is already included.
+        // updateChart is evaluated from this render and its external
+        // dependencies are already included below.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pickupProb, pickupCount, attemptCount, pityCount, t]);
+    }, [pickupProb, pickupCount, attemptCount, pityCount, resolvedTheme, t]);
 
     const updateChart = (pro, pickupCountVal) => {
         if (!chartRef.current) return;
@@ -209,6 +211,9 @@ const GachaProbability = ({ surveyData, setSurveyData }) => {
                     datalabels: {
                         anchor: 'end',
                         align: 'start',
+                        color: resolvedTheme === 'dark' ? '#f3f4f6' : '#666d78',
+                        textStrokeColor: resolvedTheme === 'dark' ? 'rgba(10, 12, 16, 0.72)' : 'transparent',
+                        textStrokeWidth: resolvedTheme === 'dark' ? 2 : 0,
                         font: {
                             size: 11,
                             weight: 'bold',

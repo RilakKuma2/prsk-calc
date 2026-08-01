@@ -1402,7 +1402,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                 rarityKey={slot.rarityKey}
                                                 masterRank={slot.masterRank}
                                                 skillLevel={slot.skillLevel || 1}
-                                                skillText={t('support.skill_level', { v: slot.skillLevel || 1 })}
+                                                skillText={String(slot.skillLevel || 1)}
                                                 emptyText={t('support.empty')}
                                                 card={slot.card}
                                                 isAwakened={slot.isAwakened !== false}
@@ -1432,7 +1432,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                         </div>
                                         <div className="ebc-control-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                                             <OptionDropdown value={slot.rarityKey} options={MAIN_DECK_RARITY_OPTIONS} onChange={v => updateSlot(index, { rarityKey: v })} />
-                                            <NumberDropdown value={slot.skillLevel || 1} options={[1, 2, 3, 4]} onChange={v => updateSlot(index, { skillLevel: v })} formatOption={v => t('support.skill_level', { v })} />
+                                            <NumberDropdown value={slot.skillLevel || 1} options={[1, 2, 3, 4]} onChange={v => updateSlot(index, { skillLevel: v })} />
                                             <NumberDropdown value={slot.masterRank} options={MASTER_RANK_OPTIONS} onChange={v => updateSlot(index, { masterRank: v })} />
                                         </div>
                                         <div className="ebc-toggle-row">

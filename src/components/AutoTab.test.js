@@ -37,16 +37,31 @@ jest.mock('../utils/dataLoader', () => ({
     buildMusicMetaLookup: metas => new Map(
         (metas || []).map(meta => [`${meta.music_id}:${meta.difficulty}`, meta]),
     ),
-    getSongOptionsSync: () => [{
-        id: 11,
-        name: '테스트곡',
-        title_jp: 'テスト曲',
-    }],
-    getMusicMetas: () => Promise.resolve([{
-        music_id: 11,
-        difficulty: 'append',
-        event_rate: 100,
-    }]),
+    getSongOptionsSync: () => [
+        {
+            id: 11,
+            name: '테스트곡',
+            title_jp: 'テスト曲',
+        },
+        {
+            id: 765,
+            name: '렘',
+            title_jp: 'レム',
+        },
+    ],
+    getMiniMusicMetas: () => Promise.resolve([
+        {
+            music_id: 11,
+            difficulty: 'append',
+            event_rate: 100,
+        },
+        {
+            music_id: 765,
+            difficulty: 'expert',
+            event_rate: 106,
+        },
+    ]),
+    preloadMusicMetasWhenIdle: () => {},
 }));
 
 jest.mock('sekai-calculator', () => ({
@@ -95,6 +110,8 @@ describe('AutoTab energy selection', () => {
         render(<AutoTabHarness />);
 
         const dropdown = await screen.findByRole('combobox', { name: '불 설정' });
+        expect(screen.getByText('렘')).not.toBeNull();
+        expect(screen.getByText('EX')).not.toBeNull();
         expect(dropdown.textContent).toContain('1불');
         expect(dropdown.closest('th')).not.toBeNull();
         fireEvent.click(dropdown);

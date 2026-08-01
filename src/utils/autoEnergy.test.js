@@ -2,6 +2,7 @@ import {
     AUTO_ENERGY_OPTIONS,
     calculateMySekaiEnergyScore,
     getAutoEventPointMultiplier,
+    getEventPointMultiplier,
     normalizeAutoEnergy,
 } from './autoEnergy';
 
@@ -18,9 +19,14 @@ describe('auto energy calculation', () => {
     });
 
     test('uses the game event-point multiplier for regular auto lives', () => {
+        expect(getEventPointMultiplier(0)).toBe(1);
         expect(getAutoEventPointMultiplier(1)).toBe(5);
         expect(getAutoEventPointMultiplier(3)).toBe(15);
+        expect(getAutoEventPointMultiplier(4)).toBe(20);
+        expect(getAutoEventPointMultiplier(5)).toBe(25);
+        expect(getAutoEventPointMultiplier(6)).toBe(27);
         expect(getAutoEventPointMultiplier(10)).toBe(35);
+        expect(getAutoEventPointMultiplier(5)).toBe(getEventPointMultiplier(5));
     });
 
     test('multiplies MySekai score directly by the selected energy', () => {

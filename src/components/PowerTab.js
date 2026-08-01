@@ -3,7 +3,13 @@ import MySekaiTable from './MySekaiTable';
 import AllSongsTable from './AllSongsTable';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import { getMusicMetaSync, preloadMusicMetas, searchSongOptionsSync } from '../utils/dataLoader';
+import {
+  getMusicMetaSync,
+  getMusicMetas,
+  preloadMiniMusicMetas,
+  preloadMusicMetasWhenIdle,
+  searchSongOptionsSync,
+} from '../utils/dataLoader';
 import { InputTableWrapper, InputRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -11,6 +17,7 @@ import {
   AUTO_ENERGY_OPTIONS,
   calculateMySekaiEnergyScore,
   getAutoEventPointMultiplier,
+  getEventPointMultiplier,
   normalizeAutoEnergy,
 } from '../utils/autoEnergy';
 import {
@@ -21,20 +28,6 @@ import CustomSelectDropdown from './common/CustomSelectDropdown';
 
 const ENVY_REFRESH_GAUGE = 0.199818182;
 const MY_SEKAI_1PERCENT_STAMINA = 94.3;
-
-const FIRE_MULTIPLIERS = {
-  0: 1,
-  1: 5,
-  2: 10,
-  3: 15,
-  4: 20,
-  5: 25,
-  6: 27,
-  7: 29,
-  8: 31,
-  9: 33,
-  10: 35
-};
 
 const DEFAULT_FIRE_COUNTS = {
   loAndFound: 5,
@@ -264,8 +257,11 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
 
   useEffect(() => {
     let cancelled = false;
-    preloadMusicMetas().then(() => {
-      if (!cancelled) setMusicMetasLoadVersion(version => version + 1);
+    preloadMiniMusicMetas().then(() => {
+      if (!cancelled) {
+        setMusicMetasLoadVersion(version => version + 1);
+        preloadMusicMetasWhenIdle();
+      }
     });
     return () => {
       cancelled = true;
@@ -401,6 +397,19 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   };
 
   useEffect(() => {
+    if (!selectedSong || getMusicMetaSync(selectedSong.id, searchDifficulty)) return undefined;
+
+    let cancelled = false;
+    getMusicMetas().then(() => {
+      if (!cancelled) setMusicMetasLoadVersion(version => version + 1);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSong, searchDifficulty]);
+
+  useEffect(() => {
     const inputsList = [
       {
         p: power, e: effi, i: internalValue, skills: detailedSkills,
@@ -477,7 +486,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
 
           const multiplier = liveType === LiveType.AUTO
             ? getAutoEventPointMultiplier(fireCount)
-            : (FIRE_MULTIPLIERS[fireCount] || 1);
+            : getEventPointMultiplier(fireCount);
 
           const minEP = EventCalculator.getEventPoint(
             liveType,
@@ -730,7 +739,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
         value={fireCounts[key]}
         options={options.map(num => ({ value: num, label: String(num) }))}
         onChange={(value) => handleFireChange(key, value)}
-        className="mx-auto translate-y-2"
+        className="mx-auto"
         buttonClassName="h-8 min-w-[64px] px-2 text-sm"
       />
     );
@@ -1184,7 +1193,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
         <div className="flex justify-center w-full mb-4 gap-2">
           {/* Search Toggle Button */}
           <button
-            className={`px-3 py-1.5 text-sm font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 flex items-center gap-1 ${isSearchOpen ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+            className={`calc-power-search-toggle px-3 py-1.5 text-sm font-bold rounded-lg shadow-md transition-all duration-200 border border-gray-200 flex items-center gap-1 ${isSearchOpen ? 'is-active bg-indigo-500 text-white border-indigo-600' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
             onClick={() => setIsSearchOpen(!isSearchOpen)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1202,7 +1211,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
           </button>
 
           <button
-            className="px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200"
+            className="calc-score-table-button calc-score-table-button-blue px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md transition-all duration-200"
             onClick={() => setShowMySekaiTable(!showMySekaiTable)}
           >
             {language === 'ko' ? '마이세카이 점수표' : t('power.mysekai_table')}
@@ -1210,7 +1219,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
         </div>
         {/* Search Bar */}
         <div className={`transition-all duration-300 ${isSearchOpen ? 'max-h-40 opacity-100 mb-4 overflow-visible' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-          <div ref={searchContainerRef} className="bg-white rounded-xl shadow-sm border border-indigo-100 p-4 mx-4">
+          <div ref={searchContainerRef} className="calc-power-search-panel bg-white rounded-xl shadow-sm border border-indigo-100 p-4 mx-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <input
@@ -1303,7 +1312,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
               <tbody className="divide-y divide-gray-100">
                 {/* Custom Result Row */}
                 {selectedSong && (
-                  <tr className="hover:bg-indigo-50 transition-colors duration-200 group/row bg-indigo-50/30">
+                  <tr className="calc-power-search-result-row hover:bg-indigo-50 transition-colors duration-200 group/row bg-indigo-50/30">
                     <td className="px-2 py-2 md:px-4 font-bold text-gray-800 text-[15px] md:text-base text-center align-middle relative">
                       <div className="flex flex-wrap items-center justify-center min-h-[40px] gap-1">
                         <span>{language === 'ko' ? selectedSong.name : selectedSong.title_jp}</span>
@@ -1591,7 +1600,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
           <div className="flex justify-end mb-2">
             <button
               onClick={() => setShowAllSongsTable(!showAllSongsTable)}
-              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1"
+              className="calc-score-table-button calc-score-table-button-purple px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />

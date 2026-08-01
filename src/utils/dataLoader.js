@@ -5,7 +5,9 @@ import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
 
 let cachedMusicMetas = null;
 let musicMetasPromise = null;
-let bundledMusicMetasPromise = null;
+let musicMetasIdlePreloadScheduled = false;
+let cachedMiniMusicMetas = null;
+let miniMusicMetasPromise = null;
 let cachedSongOptions = null;
 let musicMetaLookupSource = null;
 let cachedMusicMetaLookup = null;
@@ -15,7 +17,11 @@ let searchableSongOptionsSource = null;
 let cachedSearchableSongOptions = null;
 
 const MUSIC_METAS_URL = joinUrl(ASSET_BASE_URL, 'music_metas.json');
+const LOCAL_MUSIC_METAS_URL = joinUrl(process.env.PUBLIC_URL || '', 'music_metas.json');
+const MINI_MUSIC_METAS_URL = joinUrl(process.env.PUBLIC_URL || '', 'music_metas_min.json');
 const MUSIC_METAS_TIMEOUT_MS = 6000;
+const LOCAL_MUSIC_METAS_TIMEOUT_MS = 10000;
+const MINI_MUSIC_METAS_TIMEOUT_MS = 3000;
 const SONG_OPTIONS_TIMEOUT_MS = 2500;
 const SONG_FILTER_DATE = new Date('2026-04-22T23:59:59+09:00');
 const EXCLUDED_SONG_IDS = new Set([707, 708, 709]);
@@ -148,7 +154,7 @@ async function fetchJsonWithTimeout(url, timeoutMs) {
 /**
  * music_metas.json 가져오기
  * 1. 외부 URL (Remote)
- * 2. 로컬 JSON lazy chunk (Fallback)
+ * 2. public의 정적 JSON (Fallback)
  */
 export async function getMusicMetas() {
     if (cachedMusicMetas) return cachedMusicMetas;
@@ -161,28 +167,47 @@ export async function getMusicMetas() {
             console.log('Loaded music_metas from REMOTE API');
             return cachedMusicMetas;
         } catch (remoteError) {
-            console.warn('Failed to fetch music_metas from REMOTE, using lazy LOCAL fallback:', remoteError.message);
-            const localMusicMetasModule = await import('../data/music_metas.json');
-            cachedMusicMetas = localMusicMetasModule.default || localMusicMetasModule;
-            return cachedMusicMetas;
+            console.warn('Failed to fetch music_metas from REMOTE, using public fallback:', remoteError.message);
+            try {
+                cachedMusicMetas = await fetchJsonWithTimeout(
+                    LOCAL_MUSIC_METAS_URL,
+                    LOCAL_MUSIC_METAS_TIMEOUT_MS,
+                );
+                console.log('Loaded music_metas from PUBLIC fallback');
+                return cachedMusicMetas;
+            } catch (localError) {
+                console.warn('Failed to fetch public music_metas fallback, using essential data:', localError.message);
+                cachedMusicMetas = ESSENTIAL_MUSIC_METAS;
+                return cachedMusicMetas;
+            }
         }
     })();
 
     return musicMetasPromise;
 }
 
-// For calculators that must not wait for an API, load the bundled full data
-// directly. This remains a lazy chunk, so it does not inflate the initial page.
-export async function getBundledMusicMetas() {
+/**
+ * 이벤덱 초기 화면에서 사용하는 고정 곡 메타만 가져온다.
+ * 전체 메타 캐시가 이미 있으면 네트워크 요청 없이 그 캐시를 재사용한다.
+ */
+export async function getMiniMusicMetas() {
     if (cachedMusicMetas) return cachedMusicMetas;
-    if (bundledMusicMetasPromise) return bundledMusicMetasPromise;
+    if (cachedMiniMusicMetas) return cachedMiniMusicMetas;
+    if (miniMusicMetasPromise) return miniMusicMetasPromise;
 
-    bundledMusicMetasPromise = import('../data/music_metas.json').then(localMusicMetasModule => {
-        cachedMusicMetas = localMusicMetasModule.default || localMusicMetasModule;
-        return cachedMusicMetas;
+    miniMusicMetasPromise = fetchJsonWithTimeout(
+        MINI_MUSIC_METAS_URL,
+        MINI_MUSIC_METAS_TIMEOUT_MS,
+    ).then(metas => {
+        cachedMiniMusicMetas = metas;
+        return cachedMiniMusicMetas;
+    }).catch(error => {
+        console.warn('Failed to fetch mini music_metas, using essential data:', error.message);
+        cachedMiniMusicMetas = ESSENTIAL_MUSIC_METAS;
+        return cachedMiniMusicMetas;
     });
 
-    return bundledMusicMetasPromise;
+    return miniMusicMetasPromise;
 }
 
 export function preloadMusicMetas() {
@@ -191,6 +216,26 @@ export function preloadMusicMetas() {
         musicMetasPromise = null;
         return ESSENTIAL_MUSIC_METAS;
     });
+}
+
+export function preloadMusicMetasWhenIdle() {
+    if (cachedMusicMetas || musicMetasPromise || musicMetasIdlePreloadScheduled) return;
+
+    musicMetasIdlePreloadScheduled = true;
+    const load = () => {
+        musicMetasIdlePreloadScheduled = false;
+        preloadMusicMetas();
+    };
+
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(load, { timeout: 3000 });
+    } else {
+        setTimeout(load, 1000);
+    }
+}
+
+export function preloadMiniMusicMetas() {
+    return getMiniMusicMetas();
 }
 
 /**
@@ -220,7 +265,7 @@ export async function getSongOptions() {
  * 동기적으로 사용해야 할 때 캐시된 데이터 또는 로컬 fallback 반환
  */
 export function getMusicMetasSync() {
-    return cachedMusicMetas || ESSENTIAL_MUSIC_METAS;
+    return cachedMusicMetas || cachedMiniMusicMetas || ESSENTIAL_MUSIC_METAS;
 }
 
 export function getMusicMetaSync(songId, difficulty) {

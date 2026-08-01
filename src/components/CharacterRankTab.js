@@ -1066,14 +1066,14 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                 <div className="flex gap-1 sm:gap-2">
                     <button
                         onClick={() => openResetModal('all')}
-                        className="px-2 py-2 bg-red-100 text-red-600 rounded-lg shadow-sm hover:bg-red-200 transition-colors text-xs font-bold whitespace-nowrap"
+                        className="character-rank-reset-all px-2 py-2 bg-red-100 text-red-600 rounded-lg shadow-sm hover:bg-red-200 transition-colors text-xs font-bold whitespace-nowrap"
                         title={t('rank.reset_all_confirm_msg_prefix') + t('rank.reset_all_confirm_msg_highlight') + t('rank.reset_all_confirm_msg_suffix')}
                     >
                         {t('rank.reset_all', '전체 초기화')}
                     </button>
                     <button
                         onClick={() => openResetModal('added')}
-                        className="px-2 py-2 bg-orange-100 text-orange-600 rounded-lg shadow-sm hover:bg-orange-200 transition-colors text-xs font-bold whitespace-nowrap"
+                        className="character-rank-reset-added px-2 py-2 bg-orange-100 text-orange-600 rounded-lg shadow-sm hover:bg-orange-200 transition-colors text-xs font-bold whitespace-nowrap"
                         title={t('rank.reset_added_confirm_msg')}
                     >
                         {t('rank.reset_added', '추가 초기화')}

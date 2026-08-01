@@ -35,7 +35,9 @@ jest.mock('../contexts/LanguageContext', () => ({
 
 jest.mock('../utils/dataLoader', () => ({
   getMusicMetaSync: () => ({ event_rate: 100 }),
-  preloadMusicMetas: () => Promise.resolve(),
+  getMusicMetas: () => Promise.resolve(),
+  preloadMiniMusicMetas: () => Promise.resolve(),
+  preloadMusicMetasWhenIdle: () => {},
   searchSongOptionsSync: () => [],
 }));
 
@@ -143,7 +145,7 @@ describe('PowerTab auto song and MySekai energy controls', () => {
     fireEvent.click(within(autoEnergyListbox).getByRole('option', { name: '4' }));
     await waitFor(() => {
       expect(EventCalculator.getEventPoint.mock.calls.some(call => (
-        call[0] === LiveType.AUTO && call[5] === 19
+        call[0] === LiveType.AUTO && call[5] === 20
       ))).toBe(true);
     });
   });

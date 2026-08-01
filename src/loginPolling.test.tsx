@@ -1,6 +1,6 @@
 import React, { act } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { LoginProvider, useAccountState, useAuth } from './login';
+import { AccountPanel, LoginProvider, useAccountState, useAuth } from './login';
 import {
   createMysekaiStorageAdapter,
   getMysekaiSnapshotStats,
@@ -240,6 +240,36 @@ describe('shared login session restoration', () => {
       expect(screen.getByTestId('auth-state').textContent).toBe('signed-out');
     });
     expect(window.localStorage.getItem('reload-auth')).toBeNull();
+  });
+
+  it('forces the password-change dialog back open for a restored temporary-password session', async () => {
+    const temporaryPasswordUser = {
+      ...cachedUser,
+      mustChangePassword: true,
+    };
+    window.localStorage.setItem('reload-auth', JSON.stringify({
+      user: temporaryPasswordUser,
+      expiresAt: Date.now() + 60_000,
+    }));
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ user: temporaryPasswordUser }),
+    });
+
+    render(
+      <LoginProvider
+        authBaseUrl="https://api.rilakbest.com"
+        storageBaseUrl=""
+        cacheKey="reload-auth"
+      >
+        <AccountPanel />
+      </LoginProvider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: '새 비밀번호 설정' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '닫기' })).toBeNull();
+    expect(screen.getByRole('button', { name: '비밀번호 변경' })).toBeTruthy();
   });
 });
 

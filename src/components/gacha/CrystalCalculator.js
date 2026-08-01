@@ -599,7 +599,7 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
     })();
 
     return (
-        <div className="p-4 space-y-6">
+        <div className="gacha-crystal-calculator p-4 space-y-6">
             {/* Input Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-4">
                 <InputTableWrapper>

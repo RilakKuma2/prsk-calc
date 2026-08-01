@@ -955,8 +955,8 @@ const AppContent = () => {
       {currentTab !== 'talks' && (
         <>
           <div className="button-container relative">
-            <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={saveData}>{t('app.save')}</button>
-            <button className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={loadData}>{t('app.load')}</button>
+            <button className="calc-save-load-button px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={saveData}>{t('app.save')}</button>
+            <button className="calc-save-load-button px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200" onClick={loadData}>{t('app.load')}</button>
           </div>
           <div className="button-container">
             <label className="label">

@@ -173,6 +173,56 @@ export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
     };
 };
 
+export const calculateScoreForSkillOrder = (input, orderedSkills, liveType = LiveType.AUTO) => {
+    const {
+        songId,
+        difficulty,
+        totalPower,
+        skillLeader,
+        skillMember2,
+        skillMember3,
+        skillMember4,
+        skillMember5,
+        musicMeta: inputMusicMeta,
+    } = input;
+
+    const musicMeta = inputMusicMeta || getMusicMetaSync(songId, difficulty);
+    if (!musicMeta) return null;
+
+    let skillScoreCoeffs;
+    if (liveType === LiveType.SOLO) {
+        skillScoreCoeffs = musicMeta.skill_score_solo;
+    } else if (liveType === LiveType.AUTO) {
+        skillScoreCoeffs = musicMeta.skill_score_auto;
+    } else {
+        skillScoreCoeffs = musicMeta.skill_score_multi;
+    }
+    if (!skillScoreCoeffs || skillScoreCoeffs.length < 5) return null;
+
+    const userSkills = [skillLeader, skillMember2, skillMember3, skillMember4, skillMember5].map(Number);
+    const normalizedOrder = Array.isArray(orderedSkills) ? orderedSkills.map(Number) : [];
+    const sortedUserSkills = [...userSkills].sort((a, b) => a - b);
+    const sortedOrderedSkills = [...normalizedOrder].sort((a, b) => a - b);
+    const hasSameSkills = normalizedOrder.length === 5
+        && sortedUserSkills.every((skill, index) => skill === sortedOrderedSkills[index]);
+    if (!hasSameSkills) return null;
+
+    const baseDeck = createDeckDetail(Number(totalPower), userSkills);
+    const skillDetails = constructSkillDetails(normalizedOrder, baseDeck.cards);
+
+    try {
+        return LiveCalculator.getLiveDetailByDeck(
+            baseDeck,
+            musicMeta,
+            liveType,
+            skillDetails
+        ).score;
+    } catch (e) {
+        console.error('Calculator: Error calculating custom skill order', e);
+        return null;
+    }
+};
+
 // Helper to construct skillDetails array
 const constructSkillDetails = (orderedSkills, baseCards) => {
     // orderedSkills: Array of 5 skill values for slots 0-4

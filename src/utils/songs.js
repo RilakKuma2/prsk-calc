@@ -613,4 +613,5 @@ export const SONG_OPTIONS = [
     { id: 691, name: "0.0000034", title_jp: "0.0000034", title_hi: "れいてんれいれいれいれいれいさんよん", title_hangul: "레이텐레이레이레이레이레이산욘", length: 154, unit: "VS" },
     { id: 695, name: "꽃매듭", title_jp: "花結び", title_hi: "はなむすび", title_hangul: "하나무스비", length: 125, unit: "L/n" },
     { id: 696, name: "드림・키스", title_jp: "ドリーム・キス", title_hi: "どりーむ・きす", title_hangul: "도리무・키스", length: 120, unit: "VS" },
+    { id: 765, name: "렘", title_jp: "レム", title_hi: "れむ", title_hangul: "레무", length: 95, unit: "Oth" },
 ];

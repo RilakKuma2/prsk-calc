@@ -1437,7 +1437,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             <button
                                 onClick={handleResetLoadedData}
                                 title="불러온 값 초기화"
-                                className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-600 transition-all duration-150 shadow-sm hover:shadow"
+                                className="deck-loaded-reset-button flex items-center justify-center w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-600 transition-all duration-150 shadow-sm hover:shadow"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"

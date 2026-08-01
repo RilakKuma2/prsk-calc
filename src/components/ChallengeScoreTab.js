@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
-import { calculateScoreRange } from '../utils/calculator';
+import { calculateScoreForSkillOrder, calculateScoreRange } from '../utils/calculator';
 import { buildMusicMetaLookup, getMusicMetas, getSongOptionsSync, searchSongOptionsSync } from '../utils/dataLoader';
 import { LiveType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -123,6 +123,163 @@ const buildTopChallengeTargets = (musicMetas) => {
     return cachedTopChallengeTargets;
 };
 
+const getOrderedMemberIds = (orderedSkills, members) => {
+    const availableMembers = [...members];
+
+    return orderedSkills.map((skill) => {
+        const memberIndex = availableMembers.findIndex(member => member.skill === Number(skill));
+        const [member] = availableMembers.splice(memberIndex >= 0 ? memberIndex : 0, 1);
+        return member.id;
+    });
+};
+
+function SkillOrderEditor({ result, calculationInput }) {
+    const { t } = useTranslation();
+    const members = useMemo(() => ([
+        { id: 'leader', shortLabel: 'L', skill: Number(calculationInput.skillLeader) },
+        { id: 'member2', shortLabel: '2', skill: Number(calculationInput.skillMember2) },
+        { id: 'member3', shortLabel: '3', skill: Number(calculationInput.skillMember3) },
+        { id: 'member4', shortLabel: '4', skill: Number(calculationInput.skillMember4) },
+        { id: 'member5', shortLabel: '5', skill: Number(calculationInput.skillMember5) },
+    ]), [calculationInput]);
+    const optimalOrderIds = useMemo(
+        () => getOrderedMemberIds(result.maxPermutation, members),
+        [result.maxPermutation, members]
+    );
+    const [isEditing, setIsEditing] = useState(false);
+    const [orderedMemberIds, setOrderedMemberIds] = useState(optimalOrderIds);
+    const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
+
+    useEffect(() => {
+        setIsEditing(false);
+        setOrderedMemberIds(optimalOrderIds);
+        setSelectedSlotIndex(null);
+    }, [optimalOrderIds]);
+
+    const membersById = useMemo(
+        () => new Map(members.map(member => [member.id, member])),
+        [members]
+    );
+    const orderedSkills = useMemo(
+        () => orderedMemberIds.map(memberId => membersById.get(memberId)?.skill ?? 0),
+        [orderedMemberIds, membersById]
+    );
+    const customScore = useMemo(
+        () => calculateScoreForSkillOrder(calculationInput, orderedSkills, LiveType.SOLO),
+        [calculationInput, orderedSkills]
+    );
+
+    const handleSlotClick = (slotIndex) => {
+        if (!isEditing) return;
+        if (selectedSlotIndex === null) {
+            setSelectedSlotIndex(slotIndex);
+            return;
+        }
+        if (selectedSlotIndex === slotIndex) {
+            setSelectedSlotIndex(null);
+            return;
+        }
+
+        setOrderedMemberIds(currentOrder => {
+            const nextOrder = [...currentOrder];
+            [nextOrder[selectedSlotIndex], nextOrder[slotIndex]] = [nextOrder[slotIndex], nextOrder[selectedSlotIndex]];
+            return nextOrder;
+        });
+        setSelectedSlotIndex(null);
+    };
+
+    const handleToggleEditing = () => {
+        if (isEditing) {
+            setOrderedMemberIds(optimalOrderIds);
+        }
+        setSelectedSlotIndex(null);
+        setIsEditing(current => !current);
+    };
+
+    return (
+        <div>
+            <div className="flex items-center justify-start gap-2 mb-2">
+                <h4 className="text-sm font-bold text-gray-700">
+                    {isEditing
+                        ? t('challenge_score.custom_skill_order')
+                        : t('challenge_score.optimal_skill_order')}
+                </h4>
+                <button
+                    type="button"
+                    onClick={handleToggleEditing}
+                    className={`shrink-0 rounded-md border px-2 py-1 text-[10px] md:text-xs font-bold transition-colors ${isEditing
+                        ? 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'
+                        : 'border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                        }`}
+                >
+                    {isEditing
+                        ? t('challenge_score.restore_optimal_order')
+                        : t('challenge_score.set_custom_skill_order')}
+                </button>
+            </div>
+            <div className="flex gap-0.5 md:gap-2 overflow-x-auto pb-2 justify-between md:justify-start">
+                {orderedMemberIds.map((memberId, index) => {
+                    const member = membersById.get(memberId);
+                    const isSelected = selectedSlotIndex === index;
+
+                    return (
+                        <div key={index} className="flex flex-col items-center flex-1 min-w-0">
+                            <button
+                                type="button"
+                                disabled={!isEditing}
+                                onClick={() => handleSlotClick(index)}
+                                aria-pressed={isSelected}
+                                aria-label={`${index + 1}${t('challenge_score.suffix_order')} ${member.skill}%`}
+                                className={`relative w-11 h-11 max-[375px]:w-9 max-[375px]:h-9 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center shadow-sm border transition-all ${isSelected
+                                    ? 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200 scale-105'
+                                    : isEditing
+                                        ? 'bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50 active:scale-95'
+                                        : 'bg-white text-gray-700 border-gray-200'
+                                    }`}
+                            >
+                                <span className="font-bold text-sm max-[375px]:text-xs md:text-base leading-none">
+                                    {member.skill}%
+                                </span>
+                                {isEditing && (
+                                    <span className={`mt-0.5 text-[8px] md:text-[9px] font-bold leading-none ${isSelected ? 'text-indigo-100' : 'text-indigo-400'}`}>
+                                        {member.shortLabel}
+                                    </span>
+                                )}
+                            </button>
+                            <span className="text-[10px] max-[375px]:text-[9px] text-gray-500 mt-1 font-medium whitespace-nowrap">
+                                {index + 1}{t('challenge_score.suffix_order')}
+                            </span>
+                        </div>
+                    );
+                })}
+                <div className="flex flex-col items-center flex-1 min-w-0">
+                    <div className="w-11 h-11 max-[375px]:w-9 max-[375px]:h-9 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-sm max-[375px]:text-xs md:text-base shadow-sm border bg-gray-100 text-gray-400 border-gray-200">
+                        {calculationInput.skillLeader}%
+                    </div>
+                    <span className="text-[10px] max-[375px]:text-[9px] text-gray-400 mt-1 font-medium whitespace-nowrap">
+                        {t('challenge_score.encore')}
+                    </span>
+                </div>
+            </div>
+            {isEditing && customScore !== null && (
+                <div className="mt-2">
+                    <p className="mb-1 text-center text-[10px] font-medium text-gray-500">
+                        {t('challenge_score.custom_order_help')}
+                    </p>
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
+                        <span className="text-xs font-bold text-indigo-600">
+                            {t('challenge_score.custom_order_score')}
+                        </span>
+                        <span className="font-mono text-base font-black text-indigo-700">
+                            {customScore.toLocaleString()}
+                        </span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function ChallengeScoreTab({ surveyData, setSurveyData }) {
     const { t, language } = useTranslation();
     // Initialize or read from surveyData
@@ -236,6 +393,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             if (res) {
                 setCustomResult({
                     ...res,
+                    calculationInput: input,
                     songName: getSongDisplayName(selectedSong, language),
                     songId: selectedSong.id,
                     difficulty: searchDifficulty,
@@ -294,6 +452,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                 if (res) {
                     results.push({
                         ...res,
+                        calculationInput: input,
                         songName: getSongDisplayName(song, language),
                         songId: song.id,
                         difficulty: target.difficulty,
@@ -481,7 +640,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
             {/* Search Bar */}
             <div className={`transition-all duration-300 ${isSearchOpen ? 'max-h-40 opacity-100 mb-4 overflow-visible' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-                <div ref={searchContainerRef} className="bg-white rounded-xl shadow-sm border border-indigo-100 p-4 mx-4">
+                <div ref={searchContainerRef} className="challenge-score-search-panel bg-white rounded-xl shadow-sm border border-indigo-100 p-4 mx-4">
                     <div className="flex gap-2">
                         <div className="relative flex-1">
                             <input
@@ -497,12 +656,12 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                             />
                             {/* Autocomplete Dropdown */}
                             {searchResults.length > 0 && isDropdownVisible && (
-                                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-100 z-[100] max-h-60 overflow-y-auto">
+                                <div className="challenge-score-search-menu absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-100 z-[100] max-h-60 overflow-y-auto">
                                     {searchResults.map((song) => (
                                         <div
                                             key={song.id}
                                             onClick={() => handleSelectSong(song)}
-                                            className={`px-4 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-gray-50 last:border-none ${language === 'ko'
+                                            className={`challenge-score-search-option px-4 hover:bg-indigo-50 cursor-pointer transition-colors border-b border-gray-50 last:border-none ${language === 'ko'
                                                 ? 'py-1.5 flex flex-col justify-center items-start'
                                                 : 'py-3 flex justify-between items-center'
                                                 }`}
@@ -541,8 +700,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             {/* Custom Search Result */}
             {customResult && (
                 <div className="w-full mb-6 px-4 animate-fade-in-up">
-                    <div className="bg-indigo-50 rounded-xl border border-indigo-200 overflow-hidden shadow-sm">
-                        <div className="px-4 py-2 bg-indigo-100 border-b border-indigo-200 flex justify-between items-center">
+                    <div className="challenge-score-custom-result bg-indigo-50 rounded-xl border border-indigo-200 overflow-hidden shadow-sm">
+                        <div className="challenge-score-custom-result-header px-4 py-2 bg-indigo-100 border-b border-indigo-200 flex justify-between items-center">
                             <span className="font-bold text-indigo-700 text-sm">SEARCH RESULT</span>
                             <button onClick={() => { setCustomResult(null); setSelectedSong(null); setSearchQuery(''); }} className="text-indigo-400 hover:text-indigo-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -551,7 +710,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                             </button>
                         </div>
                         {/* Reuse Row Structure for Custom Result */}
-                        <div className="bg-white">
+                        <div className="challenge-score-custom-result-body bg-white">
                             <table className="w-full text-left">
                                 <tbody>
                                     <tr
@@ -595,25 +754,10 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                 <div className="bg-gray-50 border-t border-gray-100 p-4">
                                     {/* Details (Copy of row details) */}
                                     <div className="flex flex-col gap-6 max-w-[calc(100vw-60px)] md:max-w-none mx-auto">
-                                        <div>
-                                            <h4 className="text-sm font-bold text-gray-700 mb-2">{t('challenge_score.optimal_skill_order')}</h4>
-                                            <div className="flex gap-0.5 md:gap-2 justify-between overflow-x-auto pb-2">
-                                                {customResult.maxPermutation.map((skill, i) => (
-                                                    <div key={i} className="flex flex-col items-center">
-                                                        <div className="w-12 h-12 rounded-lg flex items-center justify-center font-bold shadow-sm border bg-white text-gray-700 border-gray-200">
-                                                            {skill}%
-                                                        </div>
-                                                        <span className="text-[10px] text-gray-500 mt-1 font-medium">{i + 1}{t('challenge_score.suffix_order')}</span>
-                                                    </div>
-                                                ))}
-                                                <div className="flex flex-col items-center">
-                                                    <div className="w-12 h-12 rounded-lg flex items-center justify-center font-bold shadow-sm border bg-gray-100 text-gray-400 border-gray-200">
-                                                        {skillLeader}%
-                                                    </div>
-                                                    <span className="text-[10px] text-gray-400 mt-1 font-medium">{t('challenge_score.encore')}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <SkillOrderEditor
+                                            result={customResult}
+                                            calculationInput={customResult.calculationInput}
+                                        />
 
                                         {/* Skill Coefficients Graph (Horizontal Stacked Bar) */}
                                         <div>
@@ -685,7 +829,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white text-gray-600 text-[10px] md:text-xs uppercase tracking-wider border-b border-gray-200">
-                                    <th className="w-10 md:w-12 px-1 py-2 md:p-4 font-bold cursor-pointer hover:bg-gray-50 hover:text-indigo-600 transition-colors text-center select-none" onClick={() => setIsSearchOpen(!isSearchOpen)}>
+                                    <th className={`challenge-score-search-toggle w-10 md:w-12 px-1 py-2 md:p-4 font-bold cursor-pointer hover:bg-gray-50 hover:text-indigo-600 transition-colors text-center select-none ${isSearchOpen ? 'is-active' : ''}`} onClick={() => setIsSearchOpen(!isSearchOpen)}>
                                         <div className="flex items-center justify-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -800,31 +944,10 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                     <td colSpan="4" className="p-2 md:p-4 border-t border-gray-100">
                                                         <div className="flex flex-col gap-6 max-w-[calc(100vw-60px)] md:max-w-none mx-auto">
                                                             {/* Optimal Skill Order */}
-                                                            <div>
-                                                                <h4 className="text-sm font-bold text-gray-700 mb-2">{t('challenge_score.optimal_skill_order')}</h4>
-                                                                <div className="flex gap-0.5 md:gap-2 overflow-x-auto pb-2 justify-between md:justify-start">
-                                                                    {/* Slots 1-5 */}
-                                                                    {res.maxPermutation.map((skill, i) => (
-                                                                        <div key={i} className="flex flex-col items-center flex-1 min-w-0">
-                                                                            <div className="w-11 h-11 max-[375px]:w-9 max-[375px]:h-9 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-sm max-[375px]:text-xs md:text-base shadow-sm border bg-white text-gray-700 border-gray-200">
-                                                                                {skill}%
-                                                                            </div>
-                                                                            <span className="text-[10px] max-[375px]:text-[9px] text-gray-500 mt-1 font-medium whitespace-nowrap">
-                                                                                {i + 1}{t('challenge_score.suffix_order')}
-                                                                            </span>
-                                                                        </div>
-                                                                    ))}
-                                                                    {/* Encore Slot */}
-                                                                    <div className="flex flex-col items-center flex-1 min-w-0">
-                                                                        <div className="w-11 h-11 max-[375px]:w-9 max-[375px]:h-9 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-sm max-[375px]:text-xs md:text-base shadow-sm border bg-gray-100 text-gray-400 border-gray-200">
-                                                                            {skillLeader}%
-                                                                        </div>
-                                                                        <span className="text-[10px] max-[375px]:text-[9px] text-gray-400 mt-1 font-medium whitespace-nowrap">
-                                                                            {t('challenge_score.encore')}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                                                            <SkillOrderEditor
+                                                                result={res}
+                                                                calculationInput={res.calculationInput}
+                                                            />
 
                                                             {/* Skill Coefficients Graph (Horizontal Stacked Bar) */}
                                                             <div>

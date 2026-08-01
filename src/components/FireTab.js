@@ -7,7 +7,7 @@ import CustomSelectDropdown from './common/CustomSelectDropdown';
 import { useTranslation } from '../contexts/LanguageContext';
 import { calculateScoreRange } from '../utils/calculator';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import { getBundledMusicMetas, getMusicMetaSync, getSongOptionsSync } from '../utils/dataLoader';
+import { getMusicMetas, getMusicMetaSync, getSongOptionsSync } from '../utils/dataLoader';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import playerLevelData from '../data/player_levels.json';
 import { characterBirthdays } from '../data/characterBirthdays';
@@ -307,7 +307,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     let cancelled = false;
     setIsAutoTimeLoading(true);
-    Promise.all([Promise.resolve(getSongOptionsSync()), getBundledMusicMetas()])
+    Promise.all([Promise.resolve(getSongOptionsSync()), getMusicMetas()])
       .then(([songs, metas]) => {
         if (cancelled) return;
         setAutoTimeSongs(songs);
@@ -2498,7 +2498,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 <div className="flex flex-col gap-1">
                   <button
                     onClick={() => window.open('https://run.rilaksekai.com/', '_blank', 'noopener,noreferrer')}
-                    className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
+                    className={`bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px] ${language === 'ko' ? 'w-[84px] shrink-0' : ''}`}
                     title={t('fire.ranking_board')}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2510,7 +2510,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   </button>
                   <button
                     onClick={() => window.open('https://jp.seka.ing/', '_blank', 'noopener,noreferrer')}
-                    className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px]"
+                    className={`bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-[22px] ${language === 'ko' ? 'w-[84px] shrink-0' : ''}`}
                     title={t('fire.backup_ranking_board')}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2524,7 +2524,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               ) : (
                 <button
                   onClick={() => window.open('https://run.rilaksekai.com/', '_blank', 'noopener,noreferrer')}
-                  className="bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-full"
+                  className={`bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 border border-pink-100 hover:border-pink-200 px-1.5 sm:px-2 py-1.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-1.5 h-full ${language === 'ko' ? 'w-[72px] shrink-0' : ''}`}
                   title={t('fire.ranking_board')}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2532,7 +2532,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     <line x1="12" y1="20" x2="12" y2="4"></line>
                     <line x1="6" y1="20" x2="6" y2="14"></line>
                   </svg>
-                  <span className="whitespace-pre-line text-center text-[10px] font-bold leading-[10px]">{t('fire.ranking_board')}</span>
+                  <span className={`${language === 'ko' ? 'whitespace-nowrap' : 'whitespace-pre-line'} text-center text-[10px] font-bold leading-[10px]`}>{t('fire.ranking_board')}</span>
                 </button>
               )}
             </>
@@ -2546,7 +2546,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       setIsRefreshCalculatorOpen(open => !open);
                       setIsAutoTimeOpen(false);
                     }}
-                    className={`h-[22px] w-[112px] shrink-0 px-1.5 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 border ${isRefreshCalculatorOpen
+                    className={`h-[22px] ${language === 'ja' ? 'w-[112px]' : 'w-[84px]'} shrink-0 px-1.5 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 border ${isRefreshCalculatorOpen
                       ? 'bg-blue-500 text-white border-blue-500'
                       : 'bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 border-blue-100 hover:border-blue-200'
                       }`}
@@ -2703,7 +2703,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       setIsAutoTimeOpen(open => !open);
                       setIsRefreshCalculatorOpen(false);
                     }}
-                    className={`h-[22px] w-[112px] shrink-0 px-1.5 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 border ${isAutoTimeOpen
+                    className={`h-[22px] ${language === 'ja' ? 'w-[112px]' : 'w-[84px]'} shrink-0 px-1.5 py-1 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1 border ${isAutoTimeOpen
                       ? 'bg-violet-500 text-white border-violet-500'
                       : 'bg-white hover:bg-violet-50 text-violet-600 hover:text-violet-700 border-violet-100 hover:border-violet-200'
                       }`}
@@ -2897,7 +2897,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           <div className="relative inline-block text-left">
             <button
               onClick={() => setIsRoomSearchOpen(!isRoomSearchOpen)}
-              className="bg-white hover:bg-gray-50 text-gray-600 font-bold py-1 px-3 rounded-full border border-gray-200 shadow-sm hover:shadow-md transition-all text-xs flex items-center gap-1.5"
+              className={`bg-white hover:bg-gray-50 text-gray-600 font-bold py-1 px-3 rounded-full border border-gray-200 shadow-sm hover:shadow-md transition-all text-xs flex items-center gap-1.5 ${language === 'ko' ? 'w-[80px] shrink-0 justify-center whitespace-nowrap' : ''}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
