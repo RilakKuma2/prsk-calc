@@ -23,10 +23,13 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     if (tabsRef.current) {
       const activeTabElement = tabsRef.current.querySelector('.tab.active');
       if (activeTabElement) {
-        setGliderStyle({
-          left: activeTabElement.offsetLeft,
-          width: activeTabElement.offsetWidth,
-        });
+        const nextLeft = activeTabElement.offsetLeft;
+        const nextWidth = activeTabElement.offsetWidth;
+        setGliderStyle(previous => (
+          previous.left === nextLeft && previous.width === nextWidth
+            ? previous
+            : { left: nextLeft, width: nextWidth }
+        ));
       }
     }
   }, []);
@@ -44,25 +47,17 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
 
   // Update glider on window resize
   useEffect(() => {
-    const debounce = (func, wait) => {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
+    let timeout;
+    const debouncedUpdateGlider = () => {
+      window.clearTimeout(timeout);
+      timeout = window.setTimeout(updateGlider, 100);
     };
-
-    const debouncedUpdateGlider = debounce(updateGlider, 100);
 
     window.addEventListener('resize', debouncedUpdateGlider);
 
-    // Cleanup listener on component unmount
     return () => {
       window.removeEventListener('resize', debouncedUpdateGlider);
+      window.clearTimeout(timeout);
     };
   }, [updateGlider]);
 
@@ -115,6 +110,20 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
     setCurrentTab(tabId);
   };
 
+  const handleTabKeyDown = (event, index) => {
+    let nextIndex;
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabInfo.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabInfo.length) % tabInfo.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = tabInfo.length - 1;
+    else return;
+
+    event.preventDefault();
+    const nextTab = tabInfo[nextIndex];
+    setCurrentTab(nextTab.id);
+    tabsRef.current?.querySelectorAll('.tab')[nextIndex]?.focus();
+  };
+
   return (
     <div 
       className={`tabs ${isDragging ? 'dragging' : ''}`} 
@@ -123,6 +132,8 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
       onMouseLeave={handleMouseLeave}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
+      role="tablist"
+      aria-label={t('app.title')}
       style={{
         cursor: isDragging ? 'grabbing' : 'auto',
         userSelect: isDragging ? 'none' : 'auto',
@@ -130,15 +141,20 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
       }}
     >
       <div className="glider" style={gliderStyle}></div>
-      {tabInfo.map(tab => (
-        <div
+      {tabInfo.map((tab, index) => (
+        <button
+          type="button"
           key={tab.id}
           className={`tab ${currentTab === tab.id ? 'active' : ''}`}
           onClick={(e) => handleTabClick(e, tab.id)}
+          onKeyDown={(event) => handleTabKeyDown(event, index)}
+          role="tab"
+          aria-selected={currentTab === tab.id}
+          tabIndex={currentTab === tab.id ? 0 : -1}
           style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
         >
           {tab.name}
-        </div>
+        </button>
       ))}
     </div>
   );

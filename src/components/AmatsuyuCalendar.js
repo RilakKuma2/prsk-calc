@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { characterBirthdays } from '../data/characterBirthdays';
 import { useTranslation } from '../contexts/LanguageContext';
 import { SUITE_ASSET_BASE_URL, joinUrl } from '../config/env';
+import useModalAccessibility from '../hooks/useModalAccessibility';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const EVENT_EXCHANGE_SUMMARIES_URL = joinUrl(SUITE_ASSET_BASE_URL, 'eventExchangeSummaries.json');
@@ -71,7 +72,7 @@ const isBrightColor = (color) => {
 
 const isNoEventDate = (date, noEventDateKeys) => date && noEventDateKeys.has(getDateKey(date));
 
-const MonthView = ({ year, month, index, setRef, language, noEventDateKeys }) => {
+const MonthView = React.memo(({ year, month, index, setRef, language, noEventDateKeys }) => {
     const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
     const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
 
@@ -292,16 +293,17 @@ const MonthView = ({ year, month, index, setRef, language, noEventDateKeys }) =>
             </div>
         </div>
     );
-};
+});
 
 const AmatsuyuCalendar = ({ onClose }) => {
     const { t, language } = useTranslation();
-    const [currentDate] = useState(new Date());
+    const [currentDate] = useState(() => new Date());
     const [displayDate, setDisplayDate] = useState({ year: currentDate.getFullYear(), month: currentDate.getMonth() });
     const [noEventDateKeys, setNoEventDateKeys] = useState(() => new Set());
 
     const containerRef = useRef(null);
     const monthRefs = useRef([]);
+    const dialogRef = useModalAccessibility({ isOpen: true, onClose });
 
     // Generate list of months
     const monthsToDisplay = useMemo(() => {
@@ -313,9 +315,9 @@ const AmatsuyuCalendar = ({ onClose }) => {
         return months;
     }, [currentDate]);
 
-    const setMonthRef = (el, index) => {
+    const setMonthRef = useCallback((el, index) => {
         monthRefs.current[index] = el;
-    };
+    }, []);
 
     const formatYear = (y) => {
         if (language === 'ko') return `${y}년`;
@@ -342,7 +344,12 @@ const AmatsuyuCalendar = ({ onClose }) => {
                 const { offsetTop, offsetHeight } = el;
                 // If element is in "active" zone (top part of viewport)
                 if (offsetTop <= containerTop + headerOffset && offsetTop + offsetHeight > containerTop + headerOffset) {
-                    setDisplayDate(monthsToDisplay[i]);
+                    const nextDisplayDate = monthsToDisplay[i];
+                    setDisplayDate(previous => (
+                        previous.year === nextDisplayDate.year && previous.month === nextDisplayDate.month
+                            ? previous
+                            : nextDisplayDate
+                    ));
                     break;
                 }
             }
@@ -382,15 +389,25 @@ const AmatsuyuCalendar = ({ onClose }) => {
         };
     }, []);
 
+    const closeLabel = language === 'ja' ? '閉じる' : language === 'en' ? 'Close' : '닫기';
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm flex flex-col h-[600px] max-h-[80vh] overflow-hidden relative font-sans" onClick={e => e.stopPropagation()}>
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="amatsuyu-calendar-title"
+                tabIndex={-1}
+                className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm flex flex-col h-[min(600px,calc(100vh-2rem))] max-h-[calc(100vh-2rem)] supports-[height:100dvh]:h-[min(600px,calc(100dvh-2rem))] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] overflow-hidden relative font-sans"
+                onClick={e => e.stopPropagation()}
+            >
 
                 {/* Unified Sticky Header (Pure White/Translucent) */}
                 <div className="absolute top-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur-md border-b border-gray-200">
                     <div className="px-4 pt-2 pb-0 flex justify-between items-end relative min-h-[40px]">
                         <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-extrabold text-black" style={{ fontFamily: "'Roboto', sans-serif" }}>
+                            <span id="amatsuyu-calendar-title" className="text-2xl font-extrabold text-black" style={{ fontFamily: "'Roboto', sans-serif" }}>
                                 {formatMonth(displayDate.month)}
                             </span>
                         </div>
@@ -405,7 +422,7 @@ const AmatsuyuCalendar = ({ onClose }) => {
                             </span>
                         </div>
 
-                        <button onClick={onClose} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors text-gray-500 mb-1">
+                        <button type="button" onClick={onClose} aria-label={closeLabel} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors text-gray-500 mb-1">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -430,7 +447,7 @@ const AmatsuyuCalendar = ({ onClose }) => {
                 >
                     {monthsToDisplay.map((m, idx) => (
                         <MonthView
-                            key={idx}
+                            key={`${m.year}-${m.month}`}
                             year={m.year}
                             month={m.month}
                             language={language}

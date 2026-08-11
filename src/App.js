@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, laz
 import { useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Tabs from './components/Tabs';
-import UpcomingEvents from './components/UpcomingEvents';
+import ScheduleCalendarHeader from './components/ScheduleCalendarHeader';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
@@ -30,13 +30,14 @@ import {
   useUserStateApi,
   createJsonLocalStorageAdapter,
 } from './login';
+import {
+  readJsonStorage,
+  readStorageEntries,
+  removeStorageItem,
+  writeJsonStorage,
+  writeStorageItem,
+} from './utils/safeStorage';
 
-const EMPTY_SURVEY_SNAPSHOT = {
-  schemaVersion: 2,
-  data: {},
-  entries: null,
-  mysekai: null,
-};
 const AUTO_SURVEY_STORAGE_KEY = 'prskCalcAutoSurveyDataV1';
 const AUTO_SAVE_PREFERENCE_STORAGE_KEY = 'prskCalcAutoSavePreferenceV1';
 
@@ -56,27 +57,15 @@ const surveyAccountStorage = {
   keys: ['surveyData', MANUAL_SAVE_STORAGE_KEY],
   dirtyKey: 'prsk-calc-survey-data:account-dirty',
   read: () => {
-    try {
-      const savedSnapshot = JSON.parse(
-        localStorage.getItem(MANUAL_SAVE_STORAGE_KEY) || 'null',
-      );
-      if (savedSnapshot) return normalizeSurveySnapshot(savedSnapshot);
-      const data = JSON.parse(localStorage.getItem('surveyData') || '{}');
-      return normalizeSurveySnapshot({ schemaVersion: 1, data });
-    } catch {
-      return EMPTY_SURVEY_SNAPSHOT;
-    }
+    const savedSnapshot = readJsonStorage(MANUAL_SAVE_STORAGE_KEY, null);
+    if (savedSnapshot) return normalizeSurveySnapshot(savedSnapshot);
+    const data = readJsonStorage('surveyData', {});
+    return normalizeSurveySnapshot({ schemaVersion: 1, data });
   },
   write: (snapshot) => {
     const normalized = normalizeSurveySnapshot(snapshot);
-    localStorage.setItem(
-      MANUAL_SAVE_STORAGE_KEY,
-      JSON.stringify(normalized),
-    );
-    localStorage.setItem(
-      'surveyData',
-      JSON.stringify(normalized.data),
-    );
+    writeJsonStorage(MANUAL_SAVE_STORAGE_KEY, normalized);
+    writeJsonStorage('surveyData', normalized.data);
   },
 };
 
@@ -84,15 +73,11 @@ const autoSurveyAccountStorage = {
   keys: [AUTO_SURVEY_STORAGE_KEY],
   dirtyKey: 'prsk-calc-auto-survey-data:account-dirty',
   read: () => {
-    try {
-      return JSON.parse(localStorage.getItem(AUTO_SURVEY_STORAGE_KEY) || 'null')
-        || { schemaVersion: 1, ownerUserId: null, data: {} };
-    } catch {
-      return { schemaVersion: 1, ownerUserId: null, data: {} };
-    }
+    return readJsonStorage(AUTO_SURVEY_STORAGE_KEY, null)
+      || { schemaVersion: 1, ownerUserId: null, data: {} };
   },
   write: (snapshot) => {
-    localStorage.setItem(AUTO_SURVEY_STORAGE_KEY, JSON.stringify(snapshot));
+    writeJsonStorage(AUTO_SURVEY_STORAGE_KEY, snapshot);
   },
 };
 
@@ -100,15 +85,11 @@ const autoSavePreferenceStorage = {
   keys: [AUTO_SAVE_PREFERENCE_STORAGE_KEY],
   dirtyKey: 'prsk-calc-auto-save-preference:account-dirty',
   read: () => {
-    try {
-      return JSON.parse(localStorage.getItem(AUTO_SAVE_PREFERENCE_STORAGE_KEY) || 'null')
-        || { schemaVersion: 1, ownerUserId: null, enabled: false };
-    } catch {
-      return { schemaVersion: 1, ownerUserId: null, enabled: false };
-    }
+    return readJsonStorage(AUTO_SAVE_PREFERENCE_STORAGE_KEY, null)
+      || { schemaVersion: 1, ownerUserId: null, enabled: false };
   },
   write: (preference) => {
-    localStorage.setItem(AUTO_SAVE_PREFERENCE_STORAGE_KEY, JSON.stringify(preference));
+    writeJsonStorage(AUTO_SAVE_PREFERENCE_STORAGE_KEY, preference);
   },
 };
 
@@ -142,26 +123,19 @@ const autoAccountStorage = {
   dirtyKey: 'prsk-calc-auto-settings:account-dirty',
   read: () => {
     const entries = {};
-    for (let index = 0; index < localStorage.length; index += 1) {
-      const key = localStorage.key(index);
-      if (!key || !isAutoAccountStorageKey(key)) continue;
-      const value = localStorage.getItem(key);
-      if (value !== null) entries[key] = value;
-    }
+    Object.entries(readStorageEntries()).forEach(([key, value]) => {
+      if (isAutoAccountStorageKey(key)) entries[key] = value;
+    });
     return normalizeAutoAccountSnapshot({ schemaVersion: 1, entries });
   },
   write: (snapshot) => {
     const normalized = normalizeAutoAccountSnapshot(snapshot);
-    const existingKeys = [];
-    for (let index = 0; index < localStorage.length; index += 1) {
-      const key = localStorage.key(index);
-      if (key && isAutoAccountStorageKey(key)) existingKeys.push(key);
-    }
+    const existingKeys = Object.keys(readStorageEntries()).filter(isAutoAccountStorageKey);
     existingKeys.forEach((key) => {
-      if (!(key in normalized.entries)) localStorage.removeItem(key);
+      if (!(key in normalized.entries)) removeStorageItem(key);
     });
     Object.entries(normalized.entries).forEach(([key, value]) => {
-      localStorage.setItem(key, value);
+      writeStorageItem(key, value);
     });
   },
 };
@@ -323,11 +297,11 @@ const AppContent = () => {
     if (unbanToken) {
       urlParams.delete('unban_token');
       const cleanQuery = urlParams.toString();
-      window.history.replaceState(
-        {},
-        document.title,
-        `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ''}${window.location.hash}`,
-      );
+      navigate({
+        pathname: window.location.pathname,
+        search: cleanQuery ? `?${cleanQuery}` : '',
+        hash: window.location.hash,
+      }, { replace: true });
       fetch(`${joinUrl(AUTH_BASE_URL, 'api/unban/verify')}?token=${encodeURIComponent(unbanToken)}`)
         .then(res => res.json())
         .then(data => {
@@ -338,7 +312,7 @@ const AppContent = () => {
         })
         .catch(() => { });
     }
-  }, []);
+  }, [navigate]);
 
   const routeTabInfo = useMemo(() => getTabFromPathname(location.pathname), [location.pathname]);
   const [currentTab, setCurrentTab] = useState(routeTabInfo.mainTab);
@@ -481,9 +455,9 @@ const AppContent = () => {
 
         autoAccountStorage.write(merged);
         if (Object.keys(local.entries).length === 0) {
-          localStorage.removeItem(autoAccountStorage.dirtyKey);
+          removeStorageItem(autoAccountStorage.dirtyKey);
         } else {
-          localStorage.setItem(autoAccountStorage.dirtyKey, '1');
+          writeStorageItem(autoAccountStorage.dirtyKey, '1');
         }
         reloadAfterAccountRestore();
       } catch (error) {
@@ -778,6 +752,11 @@ const AppContent = () => {
     return () => window.removeEventListener('show-toast', handleShowToast);
   }, [showToastMessage]);
 
+  useEffect(() => () => {
+    if (timerRef1.current) clearTimeout(timerRef1.current);
+    if (timerRef2.current) clearTimeout(timerRef2.current);
+  }, []);
+
   const saveData = () => {
     const surveySnapshot = createSurveySnapshot(surveyData);
     savedSurveySync.setValue(createManualSaveSnapshot(surveySnapshot.data));
@@ -791,7 +770,14 @@ const AppContent = () => {
       return false;
     }
 
-    const restoredData = restoreManualSaveSnapshot(snapshot);
+    let restoredData;
+    try {
+      restoredData = restoreManualSaveSnapshot(snapshot);
+    } catch (error) {
+      console.warn('저장 데이터 불러오기 실패:', error);
+      if (showToast) showToastMessage(t('app.toast.load_failed'));
+      return false;
+    }
     const restoredTheme = snapshot.entries?.['sekai-theme'];
     if (['system', 'light', 'dark'].includes(restoredTheme)) {
       setThemePreference(restoredTheme);
@@ -933,9 +919,9 @@ const AppContent = () => {
           </div>
         )}
       </div>
-      <UpcomingEvents>
+      <ScheduleCalendarHeader>
         <h1 className="text-3xl font-extrabold my-6">{t('app.title')}</h1>
-      </UpcomingEvents>
+      </ScheduleCalendarHeader>
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
@@ -997,7 +983,7 @@ const AppContent = () => {
       <div className="absolute bottom-6 right-6 z-50" ref={infoRef}>
         <div className="relative">
           <button
-            className={`p-2 rounded-full transition-colors duration-200 focus:outline-none ${isInfoLocked ? 'bg-gray-100 text-gray-800' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+            className={`p-2 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 ${isInfoLocked ? 'bg-gray-100 text-gray-800' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
             onMouseEnter={handleInfoEnter}
             onMouseLeave={handleInfoLeave}
             onClick={handleInfoClick}
@@ -1076,6 +1062,8 @@ const AppContent = () => {
       {/* Toast Notification */}
       {toast.show && (
         <div
+          role="status"
+          aria-live="polite"
           className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 flex items-center gap-2 whitespace-nowrap ${toast.fadingOut ? 'animate-fade-out' : 'animate-toast-fade-in-up'}`}
           style={{ zIndex: 99999 }}
         >

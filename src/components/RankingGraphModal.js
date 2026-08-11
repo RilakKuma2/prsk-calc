@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as Plot from "@observablehq/plot";
 import { API_BASE_URL, joinUrl } from '../config/env';
+import useModalAccessibility from '../hooks/useModalAccessibility';
 
 
 // Standard ranks supported by the data source
@@ -14,20 +15,45 @@ const SUPPORTED_RANKS = [
 const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const modalRef = useRef(null);
     const contentRef = useRef(null);
+    const dialogRef = useModalAccessibility({ isOpen, onClose });
+    const [viewportSize, setViewportSize] = useState(() => ({
+        width: typeof window === 'undefined' ? 1000 : (window.visualViewport?.width || window.innerWidth),
+        height: typeof window === 'undefined' ? 700 : (window.visualViewport?.height || window.innerHeight),
+    }));
 
     // Zoom State
     const [xDomain, setXDomain] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState(null);
 
-    // Reset domain when rank changes or closes
+    // Reset domain when rank/chapter changes or the modal closes.
     useEffect(() => {
-        if (!isOpen) {
-            setXDomain(null);
-        }
+        setXDomain(null);
     }, [isOpen, rank, selectedChapter]);
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const updateViewportSize = () => {
+            const next = {
+                width: window.visualViewport?.width || window.innerWidth,
+                height: window.visualViewport?.height || window.innerHeight,
+            };
+            setViewportSize(previous => (
+                previous.width === next.width && previous.height === next.height ? previous : next
+            ));
+        };
+
+        updateViewportSize();
+        window.addEventListener('resize', updateViewportSize);
+        window.addEventListener('orientationchange', updateViewportSize);
+        window.visualViewport?.addEventListener('resize', updateViewportSize);
+        return () => {
+            window.removeEventListener('resize', updateViewportSize);
+            window.removeEventListener('orientationchange', updateViewportSize);
+            window.visualViewport?.removeEventListener('resize', updateViewportSize);
+        };
+    }, [isOpen]);
 
     // Initialize domain when data loads
     useEffect(() => {
@@ -205,6 +231,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
     // Load data and logic
     useEffect(() => {
         if (!isOpen) return;
+        const controller = new AbortController();
 
         setLoading(true);
         setError(null);
@@ -213,12 +240,13 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
         const apiUrl = joinUrl(API_BASE_URL, isChapter ? 'api/wlranking' : 'api/ranking');
 
         // Fetch from custom API
-        fetch(apiUrl, { cache: 'reload' })
+        fetch(apiUrl, { cache: 'reload', signal: controller.signal })
             .then(res => {
                 if (!res.ok) throw new Error("Failed to fetch ranking data");
                 return res.json();
             })
             .then(apiData => {
+                if (controller.signal.aborted) return;
                 try {
                     const { event_info } = apiData;
                     
@@ -268,6 +296,10 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
                         });
                     });
 
+                    if (flatData.length === 0) {
+                        throw new Error("Ranking data is empty");
+                    }
+
                     window.data = flatData;
                     window.sekarunDataLoaded = true;
                     setLoading(false);
@@ -280,20 +312,20 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
                     setXDomain([minTfe, 0]);
 
                 } catch (err) {
+                    if (controller.signal.aborted) return;
                     console.error("Error processing API data:", err);
                     setError("Error processing data");
                     setLoading(false);
                 }
             })
             .catch(err => {
+                if (err.name === 'AbortError' || controller.signal.aborted) return;
                 console.error("Fetch error:", err);
                 setError("Failed to load data");
                 setLoading(false);
             });
 
-        return () => {
-            // Cleanup if needed
-        };
+        return () => controller.abort();
     }, [isOpen, selectedChapter]);
 
     // Render Graphs
@@ -301,8 +333,8 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
         if (!isOpen || loading || error || !contentRef.current || !window.sekarunDataLoaded) return;
 
         // Responsive Sizing
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
+        const screenWidth = viewportSize.width;
+        const screenHeight = viewportSize.height;
         const isMobileViewport = screenWidth < 768;
 
         let plotWidth = PLOT_WIDTH_DESKTOP;
@@ -398,7 +430,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
         // renderPlot is recreated with this render's values. Every value it closes
         // over and that affects the output is represented below.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, loading, error, rank, t, xDomain, isDragging]);
+    }, [isOpen, loading, error, rank, t, xDomain, isDragging, viewportSize]);
 
     // Helper to get adjacent ranks
     const getAdjacentRanks = (targetRank) => {
@@ -628,19 +660,25 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-4 animate-fade-in">
             <div
-                ref={modalRef}
-                className="bg-white rounded-none md:rounded-2xl shadow-2xl w-full max-w-6xl max-h-[100dvh] md:max-h-[90vh] overflow-hidden flex flex-col"
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="ranking-graph-title"
+                tabIndex={-1}
+                className="bg-white rounded-none md:rounded-2xl shadow-2xl w-full max-w-6xl max-h-[100vh] supports-[height:100dvh]:max-h-[100dvh] md:max-h-[calc(100vh-2rem)] md:supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col"
             >
                 {/* Header */}
                 <div className="px-4 md:px-10 py-3 md:py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <h2 id="ranking-graph-title" className="text-xl font-bold text-gray-800 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                         </svg>
                         Ranking Trends
                     </h2>
                     <button
+                        type="button"
                         onClick={onClose}
+                        aria-label={t('support.close') || 'Close'}
                         className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -650,7 +688,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto px-2 py-2 md:p-10 bg-white min-h-[400px] relative">
+                <div className="flex-1 overflow-y-auto px-2 py-2 md:p-10 bg-white relative" style={{ minHeight: Math.min(400, Math.max(160, viewportSize.height - 64)) }}>
                     {loading && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
                             <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>

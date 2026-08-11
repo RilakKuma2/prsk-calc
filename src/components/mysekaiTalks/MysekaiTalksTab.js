@@ -33,6 +33,13 @@ import {
   loadMysekaiTalkData,
 } from './mysekaiTalkData';
 import './MysekaiTalksTab.css';
+import {
+  readJsonStorage,
+  readStorageItem,
+  writeJsonStorage,
+  writeStorageItem,
+} from '../../utils/safeStorage';
+import useModalAccessibility from '../../hooks/useModalAccessibility';
 
 const storage = createMysekaiStorageAdapter();
 
@@ -133,13 +140,7 @@ const DialogueModal = ({
   onClose,
   t,
 }) => {
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  const dialogRef = useModalAccessibility({ isOpen: true, onClose });
 
   const participants = talk.scenario.participantCharIds
     || [talk.scenario.primaryCharacterId];
@@ -151,10 +152,12 @@ const DialogueModal = ({
       onMouseDown={onClose}
     >
       <section
+        ref={dialogRef}
         className="mysekai-talk-modal"
         role="dialog"
         aria-modal="true"
         aria-label={talk.fixture.name}
+        tabIndex={-1}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header>
@@ -292,16 +295,13 @@ export const MysekaiTalksView = ({
   const [viewMode, setViewMode] = useState('rank');
   const [isCheckMode, setIsCheckMode] = useState(false);
   const [isTamagotchiExpanded, setIsTamagotchiExpanded] = useState(false);
-  const [ownedTamagotchi, setOwnedTamagotchi] = useState(() => {
-    try {
-      return JSON.parse(window.localStorage.getItem('mysekai_ownedTamagotchi') || 'null')
-        || { 837: false, 838: false, 839: false, 840: false };
-    } catch {
-      return { 837: false, 838: false, 839: false, 840: false };
-    }
-  });
+  const [ownedTamagotchi, setOwnedTamagotchi] = useState(() => readJsonStorage(
+    'mysekai_ownedTamagotchi',
+    { 837: false, 838: false, 839: false, 840: false },
+    value => Boolean(value) && typeof value === 'object' && !Array.isArray(value),
+  ));
   const [hideDuplicateFurniture, setHideDuplicateFurniture] = useState(
-    () => window.localStorage.getItem('mysekai_hideDuplicateFurniture') === 'true',
+    () => readStorageItem('mysekai_hideDuplicateFurniture') === 'true',
   );
   const [selectedTalk, setSelectedTalk] = useState(null);
   const [dialogueLines, setDialogueLines] = useState([]);
@@ -319,23 +319,38 @@ export const MysekaiTalksView = ({
   const dialogueAbortRef = useRef(null);
   const otherDialogueAbortRef = useRef(null);
   const audioRef = useRef(null);
+  const voiceErrorTimerRef = useRef(null);
+  const duplicateDialogRef = useModalAccessibility({
+    isOpen: Boolean(duplicateTalk && canViewDialogues),
+    onClose: () => setDuplicateTalk(null),
+  });
+  const otherTalksDialogRef = useModalAccessibility({
+    isOpen: Boolean(showOtherTalks && canViewDialogues),
+    onClose: () => setShowOtherTalks(false),
+  });
+  const tweetsDialogRef = useModalAccessibility({
+    isOpen: Boolean(showTweetsOnly && canViewDialogues),
+    onClose: () => setShowTweetsOnly(false),
+  });
+  const importDialogRef = useModalAccessibility({
+    isOpen: Boolean(pendingImport),
+    onClose: () => setPendingImport(null),
+  });
   const seenSet = useMemo(() => new Set(seenDialogues), [seenDialogues]);
 
   useEffect(() => {
-    window.localStorage.setItem(
-      'mysekai_ownedTamagotchi',
-      JSON.stringify(ownedTamagotchi),
-    );
+    writeJsonStorage('mysekai_ownedTamagotchi', ownedTamagotchi);
   }, [ownedTamagotchi]);
 
   useEffect(() => {
-    window.localStorage.setItem(
-      'mysekai_hideDuplicateFurniture',
-      String(hideDuplicateFurniture),
-    );
+    writeStorageItem('mysekai_hideDuplicateFurniture', String(hideDuplicateFurniture));
   }, [hideDuplicateFurniture]);
 
   const stopAudio = useCallback(() => {
+    if (voiceErrorTimerRef.current !== null) {
+      window.clearTimeout(voiceErrorTimerRef.current);
+      voiceErrorTimerRef.current = null;
+    }
     audioRef.current?.pause();
     audioRef.current = null;
     setPlayingVoiceName(null);
@@ -356,7 +371,10 @@ export const MysekaiTalksView = ({
     audio.play().catch(() => {
       setVoiceErrorName(voiceName);
       setPlayingVoiceName(null);
-      window.setTimeout(() => setVoiceErrorName(null), 1_000);
+      voiceErrorTimerRef.current = window.setTimeout(() => {
+        voiceErrorTimerRef.current = null;
+        setVoiceErrorName(null);
+      }, 1_000);
     });
   }, [canViewDialogues, playingVoiceName, stopAudio]);
 
@@ -374,6 +392,7 @@ export const MysekaiTalksView = ({
     dialogueAbortRef.current?.abort();
     otherDialogueAbortRef.current?.abort();
     audioRef.current?.pause();
+    if (voiceErrorTimerRef.current !== null) window.clearTimeout(voiceErrorTimerRef.current);
   }, []);
   useEffect(() => {
     if (!canViewDialogues) {
@@ -975,10 +994,12 @@ export const MysekaiTalksView = ({
           onMouseDown={() => setDuplicateTalk(null)}
         >
           <section
+            ref={duplicateDialogRef}
             className="mysekai-talk-simple-modal"
             role="dialog"
             aria-modal="true"
             aria-label={t('talks.duplicate_title')}
+            tabIndex={-1}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <h2>{t('talks.duplicate_title')}</h2>
@@ -1016,15 +1037,17 @@ export const MysekaiTalksView = ({
           onMouseDown={() => setShowOtherTalks(false)}
         >
           <section
+            ref={otherTalksDialogRef}
             className="mysekai-talk-simple-modal"
             role="dialog"
             aria-modal="true"
             aria-label={t('talks.other_talks_title')}
+            tabIndex={-1}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header>
               <h2>{t('talks.other_talks_title')}</h2>
-              <button type="button" onClick={() => setShowOtherTalks(false)}>×</button>
+              <button type="button" onClick={() => setShowOtherTalks(false)} aria-label={t('talks.close')}>×</button>
             </header>
             <div className="mysekai-talk-other-list">
               {characterOtherTalks.map((talk) => {
@@ -1100,15 +1123,17 @@ export const MysekaiTalksView = ({
           onMouseDown={() => setShowTweetsOnly(false)}
         >
           <section
+            ref={tweetsDialogRef}
             className="mysekai-talk-simple-modal"
             role="dialog"
             aria-modal="true"
             aria-label={t('talks.tweets_only_title')}
+            tabIndex={-1}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header>
               <h2>{t('talks.tweets_only_title')}</h2>
-              <button type="button" onClick={() => setShowTweetsOnly(false)}>×</button>
+              <button type="button" onClick={() => setShowTweetsOnly(false)} aria-label={t('talks.close')}>×</button>
             </header>
             <div className="mysekai-talk-tweet-list">
               {characterTweetsOnly.map((item) => (
@@ -1132,10 +1157,12 @@ export const MysekaiTalksView = ({
       {pendingImport && (
         <div className="mysekai-talk-modal-backdrop" role="presentation">
           <section
+            ref={importDialogRef}
             className="mysekai-talk-import-modal"
             role="dialog"
             aria-modal="true"
             aria-label={t('talks.import_title')}
+            tabIndex={-1}
           >
             <h2>{t('talks.import_title')}</h2>
             <p>{pendingImport.fileName}</p>

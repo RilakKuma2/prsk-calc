@@ -20,6 +20,7 @@ import {
   getEventPointMultiplier,
   normalizeAutoEnergy,
 } from '../utils/autoEnergy';
+import { numberOrDefault } from '../utils/numbers';
 import {
   POWER_AUTO_SONG_OPTIONS,
   getPowerAutoSong,
@@ -28,6 +29,10 @@ import CustomSelectDropdown from './common/CustomSelectDropdown';
 
 const ENVY_REFRESH_GAUGE = 0.199818182;
 const MY_SEKAI_1PERCENT_STAMINA = 94.3;
+
+const hasInputValue = value => value !== undefined && value !== null && value !== '';
+const toInputString = value => hasInputValue(value) ? String(value) : '';
+const deckPowerInput = deck => hasInputValue(deck?.totalPower) ? String(Number(deck.totalPower) / 10000) : '';
 
 const DEFAULT_FIRE_COUNTS = {
   loAndFound: 5,
@@ -49,11 +54,11 @@ const EMPTY_DETAILED_SKILLS = Object.freeze({
 const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDetailedInput, autoDeck, onUpdateAutoDeck }) => {
   // Initialize with autoDeck skill values (empty string if not set)
   const initialSkills = [
-    autoDeck?.skillLeader ? String(autoDeck.skillLeader) : '',
-    autoDeck?.skillMember2 ? String(autoDeck.skillMember2) : '',
-    autoDeck?.skillMember3 ? String(autoDeck.skillMember3) : '',
-    autoDeck?.skillMember4 ? String(autoDeck.skillMember4) : '',
-    autoDeck?.skillMember5 ? String(autoDeck.skillMember5) : ''
+    toInputString(autoDeck?.skillLeader),
+    toInputString(autoDeck?.skillMember2),
+    toInputString(autoDeck?.skillMember3),
+    toInputString(autoDeck?.skillMember4),
+    toInputString(autoDeck?.skillMember5)
   ];
 
   const [skills, setSkills] = useState(initialSkills);
@@ -207,35 +212,35 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   const setIsComparisonMode = (val) => setSurveyData(prev => ({ ...prev, isComparisonMode: typeof val === 'function' ? val(prev.isComparisonMode || false) : val }));
 
   const powerB = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck2
-    ? (surveyData.unifiedDecks.deck2.totalPower ? String(surveyData.unifiedDecks.deck2.totalPower / 10000) : '')
-    : (surveyData.powerB || '');
-  const setPowerB = (val) => setSurveyData(prev => ({ ...prev, powerB: typeof val === 'function' ? val(prev.powerB || '') : val }));
+    ? deckPowerInput(surveyData.unifiedDecks.deck2)
+    : toInputString(surveyData.powerB);
+  const setPowerB = (val) => setSurveyData(prev => ({ ...prev, powerB: typeof val === 'function' ? val(toInputString(prev.powerB)) : val }));
 
   const effiB = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck2
-    ? (surveyData.unifiedDecks.deck2.eventBonus ? String(surveyData.unifiedDecks.deck2.eventBonus) : '')
-    : (surveyData.effiB || '');
-  const setEffiB = (val) => setSurveyData(prev => ({ ...prev, effiB: typeof val === 'function' ? val(prev.effiB || '') : val }));
+    ? toInputString(surveyData.unifiedDecks.deck2.eventBonus)
+    : toInputString(surveyData.effiB);
+  const setEffiB = (val) => setSurveyData(prev => ({ ...prev, effiB: typeof val === 'function' ? val(toInputString(prev.effiB)) : val }));
 
   const internalValueB = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck2
-    ? (surveyData.unifiedDecks.deck2.internalValue ? String(surveyData.unifiedDecks.deck2.internalValue) : '')
-    : (surveyData.internalValueB || '');
-  const setInternalValueB = (val) => setSurveyData(prev => ({ ...prev, internalValueB: typeof val === 'function' ? val(prev.internalValueB || '') : val }));
+    ? toInputString(surveyData.unifiedDecks.deck2.internalValue)
+    : toInputString(surveyData.internalValueB);
+  const setInternalValueB = (val) => setSurveyData(prev => ({ ...prev, internalValueB: typeof val === 'function' ? val(toInputString(prev.internalValueB)) : val }));
 
   // Main State
   const power = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1 
-    ? (surveyData.unifiedDecks.deck1.totalPower ? String(surveyData.unifiedDecks.deck1.totalPower / 10000) : '')
-    : (surveyData.power || '');
-  const setPower = (val) => setSurveyData(prev => ({ ...prev, power: typeof val === 'function' ? val(prev.power || '') : val }));
+    ? deckPowerInput(surveyData.unifiedDecks.deck1)
+    : toInputString(surveyData.power);
+  const setPower = (val) => setSurveyData(prev => ({ ...prev, power: typeof val === 'function' ? val(toInputString(prev.power)) : val }));
 
   const effi = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1 
-    ? (surveyData.unifiedDecks.deck1.eventBonus ? String(surveyData.unifiedDecks.deck1.eventBonus) : '')
-    : (surveyData.effi || '');
-  const setEffi = (val) => setSurveyData(prev => ({ ...prev, effi: typeof val === 'function' ? val(prev.effi || '') : val }));
+    ? toInputString(surveyData.unifiedDecks.deck1.eventBonus)
+    : toInputString(surveyData.effi);
+  const setEffi = (val) => setSurveyData(prev => ({ ...prev, effi: typeof val === 'function' ? val(toInputString(prev.effi)) : val }));
 
   const internalValue = hideInputs && isComparisonMode && surveyData.unifiedDecks?.deck1 
-    ? (surveyData.unifiedDecks.deck1.internalValue ? String(surveyData.unifiedDecks.deck1.internalValue) : '')
-    : (surveyData.internalValue || '');
-  const setInternalValue = (val) => setSurveyData(prev => ({ ...prev, internalValue: typeof val === 'function' ? val(prev.internalValue || '') : val }));
+    ? toInputString(surveyData.unifiedDecks.deck1.internalValue)
+    : toInputString(surveyData.internalValue);
+  const setInternalValue = (val) => setSurveyData(prev => ({ ...prev, internalValue: typeof val === 'function' ? val(toInputString(prev.internalValue)) : val }));
 
   const [showMySekaiTable, setShowMySekaiTable] = useState(false);
   const [showAllSongsTable, setShowAllSongsTable] = useState(false);
@@ -447,11 +452,11 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
           ? String(deckForDefaults.eventBonus)
           : '250';
 
-        const leader = Number(deckForDefaults.skillLeader || 120);
-        const m2 = Number(deckForDefaults.skillMember2 || 100);
-        const m3 = Number(deckForDefaults.skillMember3 || 100);
-        const m4 = Number(deckForDefaults.skillMember4 || 100);
-        const m5 = Number(deckForDefaults.skillMember5 || 100);
+        const leader = numberOrDefault(deckForDefaults.skillLeader, 120);
+        const m2 = numberOrDefault(deckForDefaults.skillMember2, 100);
+        const m3 = numberOrDefault(deckForDefaults.skillMember3, 100);
+        const m4 = numberOrDefault(deckForDefaults.skillMember4, 100);
+        const m5 = numberOrDefault(deckForDefaults.skillMember5, 100);
         defaultInternal = String(Math.floor((leader + (m2 + m3 + m4 + m5) * 0.2) / 10) * 10);
       }
 
@@ -903,11 +908,11 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
     if (!deck) return { power: '29.3231', effi: '250', internal: '200' };
 
     // Auto Internal Value
-    const leader = Number(deck.skillLeader || 120);
-    const m2 = Number(deck.skillMember2 || 100);
-    const m3 = Number(deck.skillMember3 || 100);
-    const m4 = Number(deck.skillMember4 || 100);
-    const m5 = Number(deck.skillMember5 || 100);
+    const leader = numberOrDefault(deck.skillLeader, 120);
+    const m2 = numberOrDefault(deck.skillMember2, 100);
+    const m3 = numberOrDefault(deck.skillMember3, 100);
+    const m4 = numberOrDefault(deck.skillMember4, 100);
+    const m5 = numberOrDefault(deck.skillMember5, 100);
     const autoInternal = Math.floor((leader + (m2 + m3 + m4 + m5) * 0.2) / 10) * 10;
 
     return {
@@ -1035,11 +1040,11 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                       <span className="text-xs text-blue-600 font-bold">
                         {Math.floor((() => {
                           const deck = surveyData.unifiedDecks?.deck1 || {};
-                          const leader = Number(deck.skillLeader || 120);
-                          const m2 = Number(deck.skillMember2 || 100);
-                          const m3 = Number(deck.skillMember3 || 100);
-                          const m4 = Number(deck.skillMember4 || 100);
-                          const m5 = Number(deck.skillMember5 || 100);
+                          const leader = numberOrDefault(deck.skillLeader, 120);
+                          const m2 = numberOrDefault(deck.skillMember2, 100);
+                          const m3 = numberOrDefault(deck.skillMember3, 100);
+                          const m4 = numberOrDefault(deck.skillMember4, 100);
+                          const m5 = numberOrDefault(deck.skillMember5, 100);
                           return leader + (m2 + m3 + m4 + m5) * 0.2;
                         })())}%
                       </span>
@@ -1049,11 +1054,11 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
                       <span className="text-xs text-red-600 font-bold">
                         {Math.floor((() => {
                           const deck = surveyData.unifiedDecks?.deck2 || {};
-                          const leader = Number(deck.skillLeader || 120);
-                          const m2 = Number(deck.skillMember2 || 100);
-                          const m3 = Number(deck.skillMember3 || 100);
-                          const m4 = Number(deck.skillMember4 || 100);
-                          const m5 = Number(deck.skillMember5 || 100);
+                          const leader = numberOrDefault(deck.skillLeader, 120);
+                          const m2 = numberOrDefault(deck.skillMember2, 100);
+                          const m3 = numberOrDefault(deck.skillMember3, 100);
+                          const m4 = numberOrDefault(deck.skillMember4, 100);
+                          const m5 = numberOrDefault(deck.skillMember5, 100);
                           return leader + (m2 + m3 + m4 + m5) * 0.2;
                         })())}%
                       </span>

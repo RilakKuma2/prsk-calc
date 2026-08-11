@@ -3,8 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ko from '../locales/ko';
 import ja from '../locales/ja';
 import en from '../locales/en';
+import { readStorageItem, writeStorageItem } from '../utils/safeStorage';
 
 const LanguageContext = createContext();
+const SUPPORTED_LANGUAGES = ['ko', 'ja', 'en'];
 
 export const LanguageProvider = ({ children }) => {
     const location = useLocation();
@@ -13,13 +15,13 @@ export const LanguageProvider = ({ children }) => {
         // 1. Check URL query parameter (Priority)
         const params = new URLSearchParams(window.location.search);
         const urlLang = params.get('lang');
-        if (urlLang && ['ko', 'ja', 'en'].includes(urlLang)) {
+        if (urlLang && SUPPORTED_LANGUAGES.includes(urlLang)) {
             return urlLang;
         }
 
         // 2. Check Local Storage
-        const savedLanguage = localStorage.getItem('language');
-        if (savedLanguage) {
+        const savedLanguage = readStorageItem('language');
+        if (SUPPORTED_LANGUAGES.includes(savedLanguage)) {
             return savedLanguage;
         }
 
@@ -41,13 +43,15 @@ export const LanguageProvider = ({ children }) => {
         if (lang === 'ja') manifestFile = 'manifest_ja.json';
         else if (lang === 'en') manifestFile = 'manifest_en.json';
 
+        const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+        const manifestUrl = `${publicUrl}/${manifestFile}`;
         let link = document.querySelector("link[rel='manifest']");
         if (link) {
-            link.href = manifestFile;
+            link.href = manifestUrl;
         } else {
             link = document.createElement('link');
             link.rel = 'manifest';
-            link.href = manifestFile;
+            link.href = manifestUrl;
             document.head.appendChild(link);
         }
 
@@ -79,8 +83,9 @@ export const LanguageProvider = ({ children }) => {
     }, [language]);
 
     const changeLanguage = (lang) => {
+        if (!SUPPORTED_LANGUAGES.includes(lang)) return;
         setLanguage(lang);
-        localStorage.setItem('language', lang);
+        writeStorageItem('language', lang);
         // document.documentElement.lang = lang; // redundant with useEffect
 
         // Update URL query parameter without reloading
@@ -101,7 +106,7 @@ export const LanguageProvider = ({ children }) => {
 
     const t = (key, replacements = {}) => {
         const keys = key.split('.');
-        let value = translations[language];
+        let value = translations[language] || translations.ko;
 
         for (const k of keys) {
             if (value && value[k] !== undefined) {

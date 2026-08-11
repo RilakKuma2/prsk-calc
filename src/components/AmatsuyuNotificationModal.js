@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
+import useModalAccessibility from '../hooks/useModalAccessibility';
 import {
     DISCORD_CLIENT_ID,
     NOTIFICATION_WORKER_URL,
@@ -11,6 +12,14 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
     const { t, language } = useTranslation();
     const [localSettings, setLocalSettings] = useState(settings);
     const [activeTab, setActiveTab] = useState('web'); // web, discord, telegram
+    const discordListenerRef = useRef(null);
+    const discordTimeoutRef = useRef(null);
+    const telegramPollRef = useRef(null);
+    const telegramTimeoutRef = useRef(null);
+    const telegramAbortRef = useRef(null);
+    const telegramRequestPendingRef = useRef(false);
+    const isMountedRef = useRef(true);
+    const dialogRef = useModalAccessibility({ isOpen: true, onClose });
 
     const WORKER_URL = NOTIFICATION_WORKER_URL;
 
@@ -35,6 +44,55 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
     const [discordWebhook, setDiscordWebhook] = useState(settings?.discordWebhook || '');
     const [discordChannelId, setDiscordChannelId] = useState(settings?.discordChannelId || '');
     const [telegramChatId, setTelegramChatId] = useState(settings?.telegramChatId || '');
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            if (discordListenerRef.current) {
+                window.removeEventListener('message', discordListenerRef.current);
+            }
+            if (discordTimeoutRef.current) window.clearTimeout(discordTimeoutRef.current);
+            if (telegramPollRef.current) window.clearInterval(telegramPollRef.current);
+            if (telegramTimeoutRef.current) window.clearTimeout(telegramTimeoutRef.current);
+            telegramAbortRef.current?.abort();
+        };
+    }, []);
+
+    const waitForServiceWorker = async () => {
+        let timeoutId;
+        try {
+            return await Promise.race([
+                navigator.serviceWorker.ready,
+                new Promise((_, reject) => {
+                    timeoutId = window.setTimeout(
+                        () => reject(new Error(t('amatsuyu.alerts.sw_timeout'))),
+                        10000
+                    );
+                })
+            ]);
+        } finally {
+            if (timeoutId) window.clearTimeout(timeoutId);
+        }
+    };
+
+    const removeWebPushSubscription = async (cleanUrl) => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        const subscription = await registration?.pushManager.getSubscription();
+        if (!subscription) return;
+
+        const endpoint = subscription.endpoint;
+        await subscription.unsubscribe();
+
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+        fetch(`${cleanUrl}/unsubscribe`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint }),
+            signal: controller.signal
+        }).catch(() => undefined).finally(() => window.clearTimeout(timeoutId));
+    };
 
     const handleToggle = (key) => {
         if (key === 'enabled') {
@@ -74,20 +132,11 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                 if (!localSettings.enabled) {
                     // Unsubscribe Logic
                     if ('serviceWorker' in navigator && 'PushManager' in window) {
-                        const registration = await navigator.serviceWorker.ready;
-                        const subscription = await registration.pushManager.getSubscription();
-                        if (subscription) {
-                            await fetch(`${cleanUrl}/unsubscribe`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ endpoint: subscription.endpoint })
-                            });
-                            await subscription.unsubscribe();
-                        }
+                        await removeWebPushSubscription(cleanUrl);
                     }
                 } else {
                     // Subscribe Logic
-                    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
                         alert(t('amatsuyu.alerts.unsupported'));
                         return;
                     }
@@ -108,7 +157,7 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                         return;
                     }
 
-                    const registration = await navigator.serviceWorker.ready;
+                    const registration = await waitForServiceWorker();
                     let subscription = await registration.pushManager.getSubscription();
 
                     if (!subscription) {
@@ -214,12 +263,22 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
         }
     };
 
+    const closeLabel = language === 'ja' ? '閉じる' : language === 'en' ? 'Close' : '닫기';
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm w-[90%] relative font-sans" onClick={e => e.stopPropagation()}>
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="amatsuyu-notification-title"
+                tabIndex={-1}
+                className="bg-white rounded-2xl shadow-xl w-full max-w-sm w-[90%] max-h-[calc(100vh-2rem)] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col relative font-sans"
+                onClick={e => e.stopPropagation()}
+            >
                 <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-                    <h3 className="font-bold text-lg text-gray-800">{t('amatsuyu.notification_settings')}</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                    <h3 id="amatsuyu-notification-title" className="font-bold text-lg text-gray-800">{t('amatsuyu.notification_settings')}</h3>
+                    <button type="button" onClick={onClose} aria-label={closeLabel} className="text-gray-400 hover:text-gray-600">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -227,8 +286,11 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-gray-200">
+                <div className="flex border-b border-gray-200" role="tablist" aria-label={t('amatsuyu.notification_settings')}>
                     <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === 'web'}
                         className={`flex-1 py-3 text-sm font-medium transition-colors relative ${activeTab === 'web' ? 'text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
                         onClick={() => setActiveTab('web')}
                     >
@@ -236,6 +298,9 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                         {activeTab === 'web' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-purple-600" />}
                     </button>
                     <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === 'discord'}
                         className={`flex-1 py-3 text-sm font-medium transition-colors relative ${activeTab === 'discord' ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
                         onClick={() => setActiveTab('discord')}
                     >
@@ -243,6 +308,9 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                         {activeTab === 'discord' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600" />}
                     </button>
                     <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === 'telegram'}
                         className={`flex-1 py-3 text-sm font-medium transition-colors relative ${activeTab === 'telegram' ? 'text-blue-500' : 'text-gray-500 hover:text-gray-700'}`}
                         onClick={() => setActiveTab('telegram')}
                     >
@@ -251,12 +319,16 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                     </button>
                 </div>
 
-                <div className="p-5 space-y-4">
+                <div className="p-5 space-y-4 overflow-y-auto overscroll-contain">
                     {activeTab === 'web' && (
                         <>
                             <div className="flex items-center justify-between">
                                 <span className="font-medium text-gray-700">{t('amatsuyu.enable_notifications')}</span>
                                 <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={localSettings.enabled}
+                                    aria-label={t('amatsuyu.enable_notifications')}
                                     onClick={() => handleToggle('enabled')}
                                     className={`w-12 h-6 rounded-full transition-colors relative ${localSettings.enabled ? 'bg-purple-500' : 'bg-gray-300'}`}
                                 >
@@ -290,6 +362,12 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                                 'Discord Auth',
                                                 `width=${width},height=${height},top=${top},left=${left}`
                                             );
+                                            if (!popup) return;
+
+                                            if (discordListenerRef.current) {
+                                                window.removeEventListener('message', discordListenerRef.current);
+                                            }
+                                            if (discordTimeoutRef.current) window.clearTimeout(discordTimeoutRef.current);
 
                                             // 2. Message Listener
                                             const listener = (event) => {
@@ -305,10 +383,19 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                                     setDiscordWebhook(webhook.url);
                                                     setDiscordChannelId(String(webhook.channel_id || ''));
                                                     window.removeEventListener('message', listener);
+                                                    discordListenerRef.current = null;
+                                                    if (discordTimeoutRef.current) {
+                                                        window.clearTimeout(discordTimeoutRef.current);
+                                                        discordTimeoutRef.current = null;
+                                                    }
                                                 }
                                             };
+                                            discordListenerRef.current = listener;
                                             window.addEventListener('message', listener);
-                                            window.setTimeout(() => window.removeEventListener('message', listener), 120000);
+                                            discordTimeoutRef.current = window.setTimeout(() => {
+                                                window.removeEventListener('message', listener);
+                                                if (discordListenerRef.current === listener) discordListenerRef.current = null;
+                                            }, 120000);
                                         }}
                                         className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
                                     >
@@ -349,20 +436,40 @@ const AmatsuyuNotificationModal = ({ onClose, settings, onSave }) => {
                                             }
 
                                             // Start Polling
-                                            const poll = setInterval(async () => {
+                                            if (telegramPollRef.current) window.clearInterval(telegramPollRef.current);
+                                            if (telegramTimeoutRef.current) window.clearTimeout(telegramTimeoutRef.current);
+                                            telegramAbortRef.current?.abort();
+                                            telegramAbortRef.current = new AbortController();
+                                            telegramRequestPendingRef.current = false;
+                                            const poll = window.setInterval(async () => {
+                                                if (telegramRequestPendingRef.current) return;
+                                                telegramRequestPendingRef.current = true;
                                                 try {
                                                     const cleanUrl = WORKER_URL.endsWith('/') ? WORKER_URL.slice(0, -1) : WORKER_URL;
-                                                    const res = await fetch(`${cleanUrl}/auth/telegram/poll?session=${encodeURIComponent(session)}`);
+                                                    const res = await fetch(`${cleanUrl}/auth/telegram/poll?session=${encodeURIComponent(session)}`, {
+                                                        signal: telegramAbortRef.current.signal
+                                                    });
+                                                    if (!res.ok) return;
                                                     const data = await res.json();
-                                                    if (data.status === 'success' && data.chatId) {
+                                                    if (isMountedRef.current && data.status === 'success' && data.chatId) {
                                                         setTelegramChatId(data.chatId);
-                                                        clearInterval(poll);
+                                                        window.clearInterval(poll);
+                                                        telegramPollRef.current = null;
                                                     }
-                                                } catch (e) { console.error(e); }
+                                                } catch (e) {
+                                                    if (e.name !== 'AbortError') console.error(e);
+                                                } finally {
+                                                    telegramRequestPendingRef.current = false;
+                                                }
                                             }, 2000);
+                                            telegramPollRef.current = poll;
 
                                             // Stop polling after 2 min
-                                            setTimeout(() => clearInterval(poll), 120000);
+                                            telegramTimeoutRef.current = window.setTimeout(() => {
+                                                window.clearInterval(poll);
+                                                telegramAbortRef.current?.abort();
+                                                if (telegramPollRef.current === poll) telegramPollRef.current = null;
+                                            }, 120000);
                                         }}
                                         className="w-full bg-[#24A1DE] hover:bg-[#1B8ABF] text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
                                     >

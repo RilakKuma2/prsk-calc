@@ -87,20 +87,24 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
     const targetLevelVal = parseInt(targetLevel || '125');
     const rankVal = parseInt(rank);
     const firesVal = parseInt(fires);
-
-    if (isNaN(currentLevelVal) || isNaN(currentExpVal) || isNaN(targetLevelVal) || isNaN(rankVal) || isNaN(firesVal)) {
-      setErrorMessage(t('kizuna.error_input'));
+    const resetCalculatedResults = () => {
       setNeededExp(0);
       setNeededRounds(0);
       setExpPerRound(0);
+      setNaturalFiresDays(0);
+      setLevelUpFire(0);
+      setAdjustedDays(0);
+    };
+
+    if (isNaN(currentLevelVal) || isNaN(currentExpVal) || isNaN(targetLevelVal) || isNaN(rankVal) || isNaN(firesVal)) {
+      setErrorMessage(t('kizuna.error_input'));
+      resetCalculatedResults();
       return;
     }
 
     if (currentLevelVal >= targetLevelVal) {
       setErrorMessage(t('kizuna.error_target'));
-      setNeededExp(0);
-      setNeededRounds(0);
-      setExpPerRound(0);
+      resetCalculatedResults();
       return;
     }
 
@@ -110,9 +114,7 @@ const KizunaTab = ({ surveyData, setSurveyData }) => {
 
     if (!currentData || !nextLevelData || !targetData) {
       setErrorMessage(t('kizuna.error_data'));
-      setNeededExp(0);
-      setNeededRounds(0);
-      setExpPerRound(0);
+      resetCalculatedResults();
       return;
     }
 

@@ -5,6 +5,14 @@ import playerLevelData from '../data/player_levels.json';
 import { getCardCharacterId as getSupportCardCharacterId } from '../utils/supportCardUtils';
 import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
 import CustomSelectDropdown from './common/CustomSelectDropdown';
+import { numberOrDefault } from '../utils/numbers';
+import {
+  readJsonStorage,
+  removeStorageItem,
+  writeJsonStorage,
+} from '../utils/safeStorage';
+
+const isPlainObject = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
 const findPlayerLevelInfo = (level) => playerLevelData.find(d => {
   if (d.range === String(level)) return true;
@@ -464,24 +472,18 @@ const getShopItemStorageKey = (item) => {
 
 const readShopItemCountsStorage = () => {
   if (typeof window === 'undefined') return {};
-
-  try {
-    const saved = JSON.parse(localStorage.getItem(SHOP_ITEM_COUNTS_STORAGE_KEY) || '{}');
-    return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
-  } catch (error) {
-    return {};
-  }
+  return readJsonStorage(SHOP_ITEM_COUNTS_STORAGE_KEY, {}, isPlainObject);
 };
 
 const writeShopItemCountsStorage = (value) => {
   if (typeof window === 'undefined') return;
 
   if (!value || Object.keys(value).length === 0) {
-    localStorage.removeItem(SHOP_ITEM_COUNTS_STORAGE_KEY);
+    removeStorageItem(SHOP_ITEM_COUNTS_STORAGE_KEY);
     return;
   }
 
-  localStorage.setItem(SHOP_ITEM_COUNTS_STORAGE_KEY, JSON.stringify(value));
+  writeJsonStorage(SHOP_ITEM_COUNTS_STORAGE_KEY, value);
 };
 
 const getStoredShopItemCounts = (item, storedCounts) => {
@@ -852,37 +854,27 @@ const EventShopSimulator = ({
   }, [shopGroups, selectedShopKey]);
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(SHOP_STATE_STORAGE_KEY) || '{}');
-      if (saved && typeof saved === 'object') {
-        if (saved.ownedBadgePointsByShop && typeof saved.ownedBadgePointsByShop === 'object') {
-          setOwnedBadgePointsByShop(saved.ownedBadgePointsByShop);
-        } else if (saved.ownedBadgePoints !== undefined) {
-          setOwnedBadgePointsByShop({ default: saved.ownedBadgePoints || '' });
-        }
-      }
-    } catch (error) {
-      // Ignore malformed previous state.
+    const saved = readJsonStorage(SHOP_STATE_STORAGE_KEY, {}, isPlainObject);
+    if (isPlainObject(saved.ownedBadgePointsByShop)) {
+      setOwnedBadgePointsByShop(saved.ownedBadgePointsByShop);
+    } else if (saved.ownedBadgePoints !== undefined) {
+      setOwnedBadgePointsByShop({ default: saved.ownedBadgePoints || '' });
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(SHOP_STATE_STORAGE_KEY, JSON.stringify({ ownedBadgePointsByShop }));
+    writeJsonStorage(SHOP_STATE_STORAGE_KEY, { ownedBadgePointsByShop });
   }, [ownedBadgePointsByShop]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const saved = JSON.parse(localStorage.getItem(SHOP_PRESETS_STORAGE_KEY) || '[]');
-      setShopPresets(normalizePresetSlots(saved));
-    } catch (error) {
-      setShopPresets(createPresetSlots());
-    }
+    const saved = readJsonStorage(SHOP_PRESETS_STORAGE_KEY, [], Array.isArray);
+    setShopPresets(normalizePresetSlots(saved));
   }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(SHOP_PRESETS_STORAGE_KEY, JSON.stringify(shopPresets));
+    writeJsonStorage(SHOP_PRESETS_STORAGE_KEY, shopPresets);
   }, [shopPresets]);
 
   const visibleSummaries = useMemo(() => {
@@ -978,7 +970,7 @@ const EventShopSimulator = ({
       naturalShopPoints = naturalRounds * perRoundPoints;
 
       const days = loginFire / 10;
-      const cScoreVal = parseFloat(challengeScore) || 250;
+      const cScoreVal = numberOrDefault(challengeScore, 250);
       const challengeEPPerDay = Math.floor((100 + cScoreVal / 2) * 120);
       const totalChallengeEP = cScoreVal > 0 ? challengeEPPerDay * days : 0;
 
@@ -994,7 +986,7 @@ const EventShopSimulator = ({
         checkMs.setDate(checkMs.getDate() + 1);
       }
 
-      const mScoreVal = parseFloat(mySekaiScore) || 2500;
+      const mScoreVal = numberOrDefault(mySekaiScore, 2500);
       const mySekaiMultiplier = worldPass ? 10 : 2;
       const mySekaiEPPerDay = Math.floor(mySekaiMultiplier * mScoreVal);
       const totalMySekaiEP = mScoreVal > 0 ? mySekaiEPPerDay * mySekaiDays : 0;
@@ -1438,7 +1430,7 @@ const EventShopSimulator = ({
           }
         }
       `}} />
-      <div className="event-shop-simulator rounded-2xl border border-pink-100 bg-gradient-to-b from-white to-pink-50/40 shadow-2xl overflow-hidden max-h-[calc(100vh-4.5rem)] sm:max-h-[88vh] flex flex-col">
+      <div className="event-shop-simulator rounded-2xl border border-pink-100 bg-gradient-to-b from-white to-pink-50/40 shadow-2xl overflow-hidden max-h-[calc(100vh-4.5rem)] supports-[height:100dvh]:max-h-[calc(100dvh-4.5rem)] sm:max-h-[88vh] sm:supports-[height:100dvh]:max-h-[88dvh] flex flex-col">
         <div
           className="px-2 sm:px-4 py-1.5 sm:py-2.5 border-b border-pink-100 bg-white/95 shrink-0"
           onTouchStart={handleTopMenuTouchStart}

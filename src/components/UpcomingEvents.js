@@ -1,41 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { characterBirthdays } from '../data/characterBirthdays';
 import { useTranslation } from '../contexts/LanguageContext';
 
-const UpcomingEvents = ({ children }) => {
+const getUpcomingBirthdays = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return characterBirthdays
+        .map(char => {
+            const [bMonth, bDay] = char.date.split('.').map(Number);
+
+            let nextBirthday = new Date(today.getFullYear(), bMonth - 1, bDay);
+            if (nextBirthday < today) {
+                nextBirthday.setFullYear(today.getFullYear() + 1);
+            }
+
+            const acqDate = new Date(nextBirthday);
+            acqDate.setDate(nextBirthday.getDate() - 3);
+
+            const diffTime = nextBirthday.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            return {
+                ...char,
+                nextBirthday,
+                acqDate,
+                diffDays
+            };
+        })
+        .filter(item => item.diffDays >= 0 && item.diffDays <= 7)
+        .sort((a, b) => a.diffDays - b.diffDays);
+};
+
+const UpcomingEvents = ({ children, calendarAction = null }) => {
     const { language } = useTranslation();
     const [isVisible, setIsVisible] = useState(true);
+    const [events, setEvents] = useState(getUpcomingBirthdays);
 
-    // Calculate events synchronously to avoid flash
-    const [events] = useState(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        return characterBirthdays
-            .map(char => {
-                const [bMonth, bDay] = char.date.split('.').map(Number);
-
-                let nextBirthday = new Date(today.getFullYear(), bMonth - 1, bDay);
-                if (nextBirthday < today) {
-                    nextBirthday.setFullYear(today.getFullYear() + 1);
-                }
-
-                const acqDate = new Date(nextBirthday);
-                acqDate.setDate(nextBirthday.getDate() - 3);
-
-                const diffTime = nextBirthday.getTime() - today.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                return {
-                    ...char,
-                    nextBirthday,
-                    acqDate,
-                    diffDays
-                };
-            })
-            .filter(item => item.diffDays >= 0 && item.diffDays <= 7)
-            .sort((a, b) => a.diffDays - b.diffDays);
-    });
+    // Keep the D-day display correct when the app stays open across midnight.
+    useEffect(() => {
+        let timeoutId;
+        const scheduleRefresh = () => {
+            const now = new Date();
+            const nextMidnight = new Date(now);
+            nextMidnight.setDate(now.getDate() + 1);
+            nextMidnight.setHours(0, 0, 1, 0);
+            timeoutId = window.setTimeout(() => {
+                setEvents(getUpcomingBirthdays());
+                scheduleRefresh();
+            }, nextMidnight.getTime() - now.getTime());
+        };
+        scheduleRefresh();
+        return () => window.clearTimeout(timeoutId);
+    }, []);
 
     const getWeekday = (date) => {
         const daysKo = ['일', '월', '화', '수', '목', '금', '토'];
@@ -49,18 +66,25 @@ const UpcomingEvents = ({ children }) => {
     };
 
     if (events.length === 0 || !isVisible) {
-        return children;
+        return (
+            <div className="schedule-header-title">
+                {children}
+                {calendarAction}
+            </div>
+        );
     }
 
     const isMultiple = events.length > 1;
 
     // Combined Layout for Multiple Events
     return (
-        <div className="mx-16 sm:mx-auto sm:w-full sm:max-w-md mt-2 mb-6 px-0 sm:px-4">
+        <div className="upcoming-events-with-calendar mx-16 sm:mx-auto sm:w-full sm:max-w-md mt-2 mb-6 px-0 sm:px-4">
             <div className="relative overflow-visible rounded-xl shadow-lg border border-gray-100 bg-white">
 
                 {/* Global Close Button */}
                 <button
+                    type="button"
+                    aria-label={language === 'ja' ? '誕生日・あまつゆ通知を閉じる' : '생일·아마츠유 알림 닫기'}
                     onClick={() => setIsVisible(false)}
                     className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md border border-gray-100 text-gray-400 hover:text-gray-600 z-10"
                 >
@@ -73,14 +97,14 @@ const UpcomingEvents = ({ children }) => {
                 {/* If Multiple: Grid 2 Cols side-by-side to save vertical space */}
                 <div className={`${isMultiple ? 'grid grid-cols-2 divide-x divide-gray-100' : 'flex flex-col'}`}>
                     {events.map((event, index) => {
-                        const acqEndDate = new Date(event.nextBirthday);
-                        acqEndDate.setDate(event.nextBirthday.getDate() - 1);
+                            const acqEndDate = new Date(event.nextBirthday);
+                            acqEndDate.setDate(event.nextBirthday.getDate() - 1);
 
-                        return (
-                            <div
-                                key={event.nameKo}
-                                className={`relative flex items-center p-2 ${!isMultiple && index !== events.length - 1 ? 'border-b border-gray-100' : ''}`}
-                            >
+                            return (
+                                <div
+                                    key={event.nameKo}
+                                    className={`relative flex items-center p-2 ${!isMultiple && index !== events.length - 1 ? 'border-b border-gray-100' : ''}`}
+                                >
                                 {/* Background Gradient Strip (Per Row/Cell) */}
                                 <div
                                     className={`absolute left-0 top-0 bottom-0 w-2 
@@ -153,13 +177,14 @@ const UpcomingEvents = ({ children }) => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                                </div>
 
-                        );
+                            );
                     })}
                 </div>
             </div>
-        </div >
+            {calendarAction}
+        </div>
     );
 };
 

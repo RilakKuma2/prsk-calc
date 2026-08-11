@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { InputTableWrapper, InputRow } from './common/InputComponents';
 import { parseEnvyCsv, generateOptions, solveScoreArt, sortSolutions, MY_SEKAI_POWERS, MY_SEKAI_REQ_MULTIPLIERS } from '../utils/scoreArtLogic';
 import { useTranslation } from '../contexts/LanguageContext';
+import useModalAccessibility from '../hooks/useModalAccessibility';
 
 const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const { t } = useTranslation();
@@ -26,9 +27,10 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const [calculating, setCalculating] = useState(false);
     const [hasCalculated, setHasCalculated] = useState(false);
     const [solutions, setSolutions] = useState([]);
-    const [error, setError] = useState('');
+    const [errorKey, setErrorKey] = useState('');
     const [selectedItem, setSelectedItem] = useState(null);
     const [calculatedGap, setCalculatedGap] = useState(0);
+    const calculationTimerRef = useRef(null);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -36,30 +38,40 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
 
     // Load CSV
     useEffect(() => {
-        fetch(process.env.PUBLIC_URL + '/envy.csv')
-            .then(response => response.text())
+        const controller = new AbortController();
+        fetch(process.env.PUBLIC_URL + '/envy.csv', { signal: controller.signal })
+            .then(response => {
+                if (!response.ok) throw new Error(`envy.csv ${response.status}`);
+                return response.text();
+            })
             .then(text => {
                 const parsed = parseEnvyCsv(text);
                 setCsvData(parsed);
                 setLoading(false);
             })
             .catch(err => {
+                if (err.name === 'AbortError') return;
                 console.error("Failed to load envy.csv", err);
-                setError(t('score_art.load_error'));
+                setErrorKey('score_art.load_error');
                 setLoading(false);
             });
-    }, [t]);
+        return () => controller.abort();
+    }, []);
+
+    useEffect(() => () => {
+        if (calculationTimerRef.current) window.clearTimeout(calculationTimerRef.current);
+    }, []);
 
 
 
     const calculate = () => {
-        setError('');
+        setErrorKey('');
         setSolutions([]);
         setHasCalculated(false);
         setCurrentPage(1);
 
         if (!csvData) {
-            setError(t('score_art.data_not_loaded'));
+            setErrorKey('score_art.data_not_loaded');
             return;
         }
 
@@ -70,11 +82,11 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
         const envyLimit = parseFloat(maxEnvyScore || '80');
 
         if (isNaN(cur) || isNaN(tgt)) {
-            setError(t('score_art.input_error'));
+            setErrorKey('score_art.input_error');
             return;
         }
         if (tgt <= cur) {
-            setError(t('score_art.target_error'));
+            setErrorKey('score_art.target_error');
             return;
         }
 
@@ -82,13 +94,13 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
         setCalculatedGap(gap);
 
         if (gap >= 100000) {
-            setError(t('score_art.gap_error'));
+            setErrorKey('score_art.gap_error');
             return;
         }
         setCalculating(true);
 
-        // Async calculation to prevent UI freeze
-        setTimeout(() => {
+        // Let the loading state paint before running the synchronous solver.
+        calculationTimerRef.current = window.setTimeout(() => {
             try {
                 const options = generateOptions(csvData, bonus, zeroScoreOnly, power, envyLimit);
                 const rawSolutions = solveScoreArt(gap, options, allowNonMod5);
@@ -98,9 +110,10 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                 setCalculating(false);
             } catch (err) {
                 console.error(err);
-                setError(t('score_art.calc_error'));
+                setErrorKey('score_art.calc_error');
                 setCalculating(false);
             }
+            calculationTimerRef.current = null;
         }, 50);
     };
 
@@ -130,6 +143,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
     const closeDetails = () => {
         setSelectedItem(null);
     };
+    const dialogRef = useModalAccessibility({ isOpen: Boolean(selectedItem), onClose: closeDetails });
 
     // Pagination Logic
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -263,13 +277,13 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                 </div>
             </div>
 
-            {error && (
+            {errorKey && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-center mb-6 animate-fade-in-up">
-                    {error}
+                    {t(errorKey)}
                 </div>
             )}
 
-            {!loading && !calculating && hasCalculated && solutions.length === 0 && !error && (
+            {!loading && !calculating && hasCalculated && solutions.length === 0 && !errorKey && (
                 <div className="bg-gray-50 border border-gray-200 text-gray-500 px-4 py-8 rounded-xl text-center mb-6 animate-fade-in-up">
                     <div className="text-4xl mb-2">🤔</div>
                     <p className="font-bold text-lg">{t('score_art.no_results')}</p>
@@ -321,7 +335,8 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                                 </div>
                                 <div className="p-4 flex flex-wrap gap-2">
                                     {grouped.map((g, gIdx) => (
-                                        <div
+                                        <button
+                                            type="button"
                                             key={gIdx}
                                             onClick={() => openDetails(g)}
                                             className={`
@@ -336,7 +351,7 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                                             <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${g.item.type === 'mysekai' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
                                                 x{g.count}
                                             </span>
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                             </div>
@@ -373,14 +388,19 @@ const ScoreArtTab = ({ surveyData, setSurveyData }) => {
                     onClick={closeDetails}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-scale-in"
+                        ref={dialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="score-art-detail-title"
+                        tabIndex={-1}
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] animate-scale-in"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                            <h3 className="text-lg font-bold text-gray-800">
+                            <h3 id="score-art-detail-title" className="text-lg font-bold text-gray-800">
                                 {selectedItem.item.ep.toLocaleString()} pt {t('score_art.details')}
                             </h3>
-                            <button onClick={closeDetails} className="text-gray-400 hover:text-gray-600 transition-colors">
+                            <button type="button" onClick={closeDetails} aria-label={t('score_art.close')} className="text-gray-400 hover:text-gray-600 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>

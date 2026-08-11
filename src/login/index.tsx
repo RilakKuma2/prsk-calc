@@ -12,6 +12,14 @@ import React, {
   type SetStateAction,
 } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  readJsonStorage,
+  readStorageItem,
+  removeStorageItem,
+  writeJsonStorage,
+  writeStorageItem,
+} from '../utils/safeStorage';
+import useModalAccessibility from '../hooks/useModalAccessibility';
 import './login.css';
 
 export type AuthUser = {
@@ -547,27 +555,27 @@ function createStorageClient(
 function createSessionCache(key: string, ttlMs: number) {
   const read = () => {
     if (typeof window === 'undefined') return null;
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem(key) || 'null');
-      if (!parsed || parsed.expiresAt <= Date.now()) {
-        window.localStorage.removeItem(key);
-        return null;
-      }
-      return parsed as { user: AuthUser | null; expiresAt: number };
-    } catch {
-      window.localStorage.removeItem(key);
+    const parsed = readJsonStorage(key, null, (value: unknown) => (
+      Boolean(value)
+      && typeof value === 'object'
+      && typeof (value as { expiresAt?: unknown }).expiresAt === 'number'
+      && ('user' in (value as object))
+    ));
+    if (!parsed || parsed.expiresAt <= Date.now()) {
+      removeStorageItem(key);
       return null;
     }
+    return parsed as { user: AuthUser | null; expiresAt: number };
   };
   const write = (user: AuthUser | null) => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(key, JSON.stringify({
+    writeJsonStorage(key, {
       user,
       expiresAt: Date.now() + ttlMs,
-    }));
+    });
   };
   const clear = () => {
-    if (typeof window !== 'undefined') window.localStorage.removeItem(key);
+    if (typeof window !== 'undefined') removeStorageItem(key);
   };
   return { key, read, write, clear };
 }
@@ -781,16 +789,11 @@ export function createJsonLocalStorageAdapter<T>({
     dirtyKey: `${key}:account-dirty`,
     read: () => {
       if (typeof window === 'undefined') return normalize(fallback);
-      try {
-        const raw = window.localStorage.getItem(key);
-        return raw ? normalize(JSON.parse(raw) as T) : normalize(fallback);
-      } catch {
-        return normalize(fallback);
-      }
+      return normalize(readJsonStorage(key, fallback) as T);
     },
     write: (value) => {
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(normalize(value)));
+        writeJsonStorage(key, normalize(value));
       }
     },
   };
@@ -821,10 +824,10 @@ const identity = <T,>(value: T) => value;
 
 const getLoginInstanceId = () => {
   if (typeof window === 'undefined') return '';
-  let id = window.localStorage.getItem('login-instance-id');
+  let id = readStorageItem('login-instance-id');
   if (!id) {
     id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-    window.localStorage.setItem('login-instance-id', id);
+    writeStorageItem('login-instance-id', id);
   }
   return id;
 };
@@ -860,9 +863,15 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
   const writeLocal = useCallback((next: T, markDirty: boolean) => {
     const normalized = normalize(next);
     valueRef.current = normalized;
-    optionsRef.current.storage.write(normalized);
+    try {
+      optionsRef.current.storage.write(normalized);
+    } catch (error) {
+      // Storage can be blocked by privacy settings or fail when its quota is full.
+      // Keep the in-memory state usable even when persistence is unavailable.
+      console.warn(`${optionsRef.current.logLabel || optionsRef.current.namespace} 로컬 저장 실패:`, error);
+    }
     if (markDirty && typeof window !== 'undefined') {
-      window.localStorage.setItem(dirtyKey, '1');
+      writeStorageItem(dirtyKey, '1');
       changeVersionRef.current += 1;
     }
     setValueState(normalized);
@@ -905,7 +914,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
 
       await storageClient.putState(optionsRef.current.namespace, payload as unknown as T, user.id);
       lastSyncedRef.current = serialized;
-      if (savingVersion === changeVersionRef.current) window.localStorage.removeItem(dirtyKey);
+      if (savingVersion === changeVersionRef.current) removeStorageItem(dirtyKey);
       finishBootstrap(normalized);
     });
 
@@ -958,12 +967,12 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
         const remote = normalize(remotePayload as T);
         const localSerialized = serialize(local);
         const remoteSerialized = serialize(remote);
-        const dirty = window.localStorage.getItem(dirtyKey) === '1';
+        const dirty = readStorageItem(dirtyKey) === '1';
 
         if (current.isEmpty(remote)) {
           await upload(local);
         } else if (localSerialized === remoteSerialized) {
-          window.localStorage.removeItem(dirtyKey);
+          removeStorageItem(dirtyKey);
           finishBootstrap(remote);
         } else {
           const instanceId = getLoginInstanceId();
@@ -972,14 +981,14 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
               await upload(local);
             } else {
               writeLocal(remote, false);
-              window.localStorage.removeItem(dirtyKey);
+              removeStorageItem(dirtyKey);
               finishBootstrap(remote);
               current.onExternalStateApplied?.('remote');
             }
           } else {
             if (!dirty || current.isEmpty(local)) {
               writeLocal(remote, false);
-              window.localStorage.removeItem(dirtyKey);
+              removeStorageItem(dirtyKey);
               finishBootstrap(remote);
               current.onExternalStateApplied?.('remote');
             } else {
@@ -993,7 +1002,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
                 current.onExternalStateApplied?.('merge');
               } else {
                 writeLocal(remote, false);
-                window.localStorage.removeItem(dirtyKey);
+                removeStorageItem(dirtyKey);
                 finishBootstrap(remote);
                 current.onExternalStateApplied?.('remote');
               }
@@ -1082,7 +1091,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
       if (
         document.visibilityState !== 'hidden'
         || !syncReadyRef.current
-        || window.localStorage.getItem(dirtyKey) !== '1'
+        || readStorageItem(dirtyKey) !== '1'
       ) return;
       if (saveTimerRef.current !== undefined) {
         window.clearTimeout(saveTimerRef.current);
@@ -1128,7 +1137,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
       refreshTimer = window.setTimeout(() => {
         refreshTimer = undefined;
         void (async () => {
-          if (window.localStorage.getItem(dirtyKey) === '1') {
+          if (readStorageItem(dirtyKey) === '1') {
             if (!syncReadyRef.current) return;
             try {
               await upload(valueRef.current);
@@ -1187,7 +1196,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
     try {
       if (choice === 'remote') {
         writeLocal(conflict.remote, false);
-        window.localStorage.removeItem(dirtyKey);
+        removeStorageItem(dirtyKey);
         finishBootstrap(conflict.remote);
         optionsRef.current.onExternalStateApplied?.('remote');
       } else {
@@ -1237,14 +1246,14 @@ export function AuthModal({
   const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && mode !== 'change') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [mode, onClose]);
+  const authDialogRef = useModalAccessibility({
+    isOpen: true,
+    onClose: mode === 'change' ? undefined : onClose,
+  });
+  const legalDialogRef = useModalAccessibility({
+    isOpen: showLegal,
+    onClose: () => setShowLegal(false),
+  });
 
   const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode);
@@ -1314,7 +1323,7 @@ export function AuthModal({
 
   return renderAuthOverlay(
     <div className="login-modal-backdrop" data-auth-overlay="true" role="presentation" onMouseDown={mode === 'change' ? undefined : onClose}>
-      <section className="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+      <section ref={authDialogRef} className="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
         {mode !== 'change' && <button className="login-modal-close" type="button" onClick={onClose} aria-label={text.close}>×</button>}
         <div className="login-modal-brand" aria-hidden="true">
           <span className="login-modal-brand-letter">S</span>
@@ -1401,10 +1410,10 @@ export function AuthModal({
       </section>
       {showLegal && (
         <div className="login-conflict-backdrop" style={{ zIndex: 9999 }} onMouseDown={(e) => { e.stopPropagation(); setShowLegal(false); }}>
-          <div className="login-modal" onClick={e => e.stopPropagation()} style={{ width: '90%', maxWidth: '600px', height: '80vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+          <div ref={legalDialogRef} className="login-modal login-legal-modal" role="dialog" aria-modal="true" aria-labelledby="login-legal-title" tabIndex={-1} onClick={e => e.stopPropagation()} style={{ width: '90%', maxWidth: '600px', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '16px', borderBottom: '1px solid var(--login-border, #eee)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--login-text-primary, #111)' }}>{text.termsLink}</h3>
-              <button type="button" className="login-modal-close" onClick={() => setShowLegal(false)} style={{ position: 'static' }}>×</button>
+              <h3 id="login-legal-title" style={{ margin: 0, fontSize: '1.2rem', color: 'var(--login-text-primary, #111)' }}>{text.termsLink}</h3>
+              <button type="button" className="login-modal-close" onClick={() => setShowLegal(false)} aria-label={text.close} style={{ position: 'static' }}>×</button>
             </div>
             <iframe src={`/legal_${locale}.html`} style={{ flex: 1, border: 'none', width: '100%', backgroundColor: 'var(--login-bg, #fff)' }} title="Legal terms" />
           </div>
@@ -1425,20 +1434,13 @@ export function ProfileModal({
   const { showInviteCode, text } = useLoginUiOptions();
   const [email, setEmail] = useState(user?.email || '');
   const [inviteCode, setInviteCode] = useState('');
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(Boolean(autoSavePreference?.enabled));
   const [currentPassword, setCurrentPassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  const profileDialogRef = useModalAccessibility({ isOpen: Boolean(user), onClose });
   if (!user) return null;
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -1469,7 +1471,7 @@ export function ProfileModal({
   };
   return renderAuthOverlay(
     <div className="login-modal-backdrop" data-auth-overlay="true" role="presentation" onMouseDown={onClose}>
-      <section className="login-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+      <section ref={profileDialogRef} className="login-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
         <button className="login-modal-close" type="button" onClick={onClose} aria-label={text.close}>×</button>
         <h2 id="profile-modal-title">{isDeleting ? text.deleteAccountTitle : text.profileTitle}</h2>
         <p className="login-modal-description">{isDeleting ? text.deleteAccountDescription : (showInviteCode ? text.profileDescriptionWithInvite : text.profileDescriptionEmailOnly)}</p>
@@ -1605,11 +1607,13 @@ export function AccountStateConflictDialog({
 }) {
   const { text } = useLoginUiOptions();
   const [confirmChoice, setConfirmChoice] = useState<AccountStateConflictChoice | null>(null);
+  const conflictDialogRef = useModalAccessibility({ isOpen: open });
 
-  if (!open) {
-    if (confirmChoice) setConfirmChoice(null);
-    return null;
-  }
+  useEffect(() => {
+    if (!open) setConfirmChoice(null);
+  }, [open]);
+
+  if (!open) return null;
 
   const handleConfirm = () => {
     if (confirmChoice) {
@@ -1648,7 +1652,7 @@ export function AccountStateConflictDialog({
     const isRemote = confirmChoice === 'remote';
     const warningText = isRemote ? text.conflictOverwriteWarningRemote : text.conflictOverwriteWarningLocal;
     return renderAuthOverlay(
-      <div className="login-conflict-backdrop" data-auth-overlay="true" role="dialog" aria-modal="true">
+      <div ref={conflictDialogRef} className="login-conflict-backdrop" data-auth-overlay="true" role="dialog" aria-modal="true" aria-label={text.deleteAccountConfirm || 'Confirm Overwrite'} tabIndex={-1}>
         <div className="login-conflict-dialog" style={{ maxWidth: '400px' }}>
           <h3 style={{ color: 'var(--login-error, #d32f2f)', marginTop: 0 }}>{text.deleteAccountConfirm || 'Confirm Overwrite'}</h3>
           <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
@@ -1666,7 +1670,7 @@ export function AccountStateConflictDialog({
   }
 
   return renderAuthOverlay(
-    <div className="login-conflict-backdrop" data-auth-overlay="true" role="dialog" aria-modal="true" aria-label={title}>
+    <div ref={conflictDialogRef} className="login-conflict-backdrop" data-auth-overlay="true" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
       <div className="login-conflict-dialog">
         <h3>{title}</h3>
         <p>{text.conflictMessage}</p>

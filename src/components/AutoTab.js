@@ -18,6 +18,7 @@ import {
 } from '../utils/autoEnergy';
 import AllSongsTable from './AllSongsTable';
 import CustomSelectDropdown from './common/CustomSelectDropdown';
+import { numberOrDefault } from '../utils/numbers';
 
 // Fixed configuration for batch calculation with levels
 const TARGET_SONGS = [
@@ -142,12 +143,12 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
             const input = {
                 songId: target.id,
                 difficulty: target.difficulty,
-                totalPower: Number(totalPower || '293231'),
-                skillLeader: Number(skillLeader || '120'),
-                skillMember2: Number(skillMember2 || '100'),
-                skillMember3: Number(skillMember3 || '100'),
-                skillMember4: Number(skillMember4 || '100'),
-                skillMember5: Number(skillMember5 || '100'),
+                totalPower: numberOrDefault(totalPower, 293231),
+                skillLeader: numberOrDefault(skillLeader, 120),
+                skillMember2: numberOrDefault(skillMember2, 100),
+                skillMember3: numberOrDefault(skillMember3, 100),
+                skillMember4: numberOrDefault(skillMember4, 100),
+                skillMember5: numberOrDefault(skillMember5, 100),
                 musicMeta,
             };
 
@@ -164,7 +165,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                         EventType.MARATHON,
                         res.min,
                         musicMeta.event_rate,
-                        Number(eventBonus || '250'),
+                        numberOrDefault(eventBonus, 250),
                         boostRate
                     );
 
@@ -173,7 +174,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                         EventType.MARATHON,
                         res.max,
                         musicMeta.event_rate,
-                        Number(eventBonus || '250'),
+                        numberOrDefault(eventBonus, 250),
                         boostRate
                     );
 
@@ -435,8 +436,8 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                                 ))}
                                 {/* My Sekai Row */}
                                 {(() => {
-                                    const powerVal = Number(totalPower || '293231') / 10000;
-                                    const effiVal = Number(eventBonus || '250');
+                                    const powerVal = numberOrDefault(totalPower, 293231) / 10000;
+                                    const effiVal = numberOrDefault(eventBonus, 250);
 
                                     // Find current My Sekai score
                                     let highestPossibleScore = null;
@@ -552,14 +553,14 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                     <AllSongsTable
                         isVisible={showAllSongsTable}
                         language={language}
-                        power={totalPower || '293231'}
-                        effi={eventBonus || '250'}
+                        power={numberOrDefault(totalPower, 293231)}
+                        effi={numberOrDefault(eventBonus, 250)}
                         skills={[
-                            skillLeader || 120,
-                            skillMember2 || 100,
-                            skillMember3 || 100,
-                            skillMember4 || 100,
-                            skillMember5 || 100
+                            numberOrDefault(skillLeader, 120),
+                            numberOrDefault(skillMember2, 100),
+                            numberOrDefault(skillMember3, 100),
+                            numberOrDefault(skillMember4, 100),
+                            numberOrDefault(skillMember5, 100)
                         ]}
                         isAutoMode={true}
                         energyUsed={energyUsed}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { calculateScoreRange } from '../utils/calculator';
 import { buildMusicMetaLookup, getSongOptions, getMusicMetas, normalizeSearchText } from '../utils/dataLoader';
 import { LiveType, EventCalculator, EventType } from 'sekai-calculator';
@@ -62,6 +62,7 @@ const AllSongsTable = ({
     const [show3DOnly, setShow3DOnly] = useState(false);
     const [songOptions, setSongOptions] = useState([]);
     const [musicMetas, setMusicMetas] = useState([]);
+    const refreshTimerRef = useRef(null);
     const musicMetaLookup = useMemo(() => buildMusicMetaLookup(musicMetas), [musicMetas]);
     const normalizedSearchQuery = useMemo(() => normalizeSearchText(searchQuery), [searchQuery]);
 
@@ -163,14 +164,20 @@ const AllSongsTable = ({
 
     // Re-trigger calculation
     const handleRefresh = () => {
+        if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
         setIsCalculating(true);
         setResults([]);
         setUsedParams(null);
         setCurrentPage(1); // Reset page on refresh
-        setTimeout(() => {
+        refreshTimerRef.current = window.setTimeout(() => {
             calculateAll();
+            refreshTimerRef.current = null;
         }, 100);
     };
+
+    useEffect(() => () => {
+        if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
+    }, []);
 
     const calculateAll = () => {
         if (songOptions.length === 0 || musicMetaLookup.size === 0) {

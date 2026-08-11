@@ -1,7 +1,9 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
-import { calculateInternalValue, calculateSlotSkillValues } from '../utils/deckUtils';
+import { calculateInternalValue, calculateSlotSkillValues, getDeckValue } from '../utils/deckUtils';
+import { numberOrDefault } from '../utils/numbers';
+import { readStorageItem, removeStorageItem, writeStorageItem } from '../utils/safeStorage';
 import { loadDeckFromFriendCode } from '../utils/deckLoader';
 import { useAuth } from '../login';
 import { characterBirthdays } from '../data/characterBirthdays';
@@ -164,8 +166,9 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     const [focusedManualSkill, setFocusedManualSkill] = useState(null);
     const [eventOverride, setEventOverride] = useState({ attr: '', unit: '', detailOpen: false, characters: {}, characterOrder: [] });
     const [autoEventOverride, setAutoEventOverride] = useState(DEFAULT_AUTO_EVENT_OVERRIDE);
+    const scrollRestoreFramesRef = useRef({ first: null, second: null });
     const [friendCode, setFriendCode] = useState(() => {
-        return localStorage.getItem('savedFriendCode') || '';
+        return readStorageItem('savedFriendCode', '');
     });
     const [saveFriendCode, setSaveFriendCode] = useState(false);
 
@@ -175,7 +178,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 setSaveFriendCode(true);
                 if (user.friendCode) {
                     setFriendCode(user.friendCode);
-                    localStorage.setItem('savedFriendCode', user.friendCode);
+                    writeStorageItem('savedFriendCode', user.friendCode);
                 }
             } else {
                 setSaveFriendCode(false);
@@ -185,11 +188,27 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     useEffect(() => {
         if (friendCode) {
-            localStorage.setItem('savedFriendCode', friendCode);
+            writeStorageItem('savedFriendCode', friendCode);
         } else {
-            localStorage.removeItem('savedFriendCode');
+            removeStorageItem('savedFriendCode');
         }
     }, [friendCode]);
+
+    useEffect(() => () => {
+        if (scrollRestoreFramesRef.current.first) cancelAnimationFrame(scrollRestoreFramesRef.current.first);
+        if (scrollRestoreFramesRef.current.second) cancelAnimationFrame(scrollRestoreFramesRef.current.second);
+    }, []);
+
+    const scheduleScrollRestore = (scrollY) => {
+        if (scrollRestoreFramesRef.current.first) cancelAnimationFrame(scrollRestoreFramesRef.current.first);
+        if (scrollRestoreFramesRef.current.second) cancelAnimationFrame(scrollRestoreFramesRef.current.second);
+        scrollRestoreFramesRef.current.first = requestAnimationFrame(() => {
+            scrollRestoreFramesRef.current.second = requestAnimationFrame(() => {
+                window.scrollTo(0, scrollY);
+                scrollRestoreFramesRef.current = { first: null, second: null };
+            });
+        });
+    };
     const [isLoadingFriend, setIsLoadingFriend] = useState(false);
     const [mountedResultViews, setMountedResultViews] = useState(() => ({
         [getViewFromSubPath(subPath)]: true,
@@ -379,13 +398,13 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 ...prev,
                 unifiedDecks: {
                     deck1: {
-                        totalPower: prev.autoDeck?.totalPower || '',
-                        skillLeader: prev.autoDeck?.skillLeader || '',
-                        skillMember2: prev.autoDeck?.skillMember2 || '',
-                        skillMember3: prev.autoDeck?.skillMember3 || '',
-                        skillMember4: prev.autoDeck?.skillMember4 || '',
-                        skillMember5: prev.autoDeck?.skillMember5 || '',
-                        eventBonus: prev.autoDeck?.eventBonus || '',
+                        totalPower: getDeckValue(prev.autoDeck, 'totalPower', ''),
+                        skillLeader: getDeckValue(prev.autoDeck, 'skillLeader', ''),
+                        skillMember2: getDeckValue(prev.autoDeck, 'skillMember2', ''),
+                        skillMember3: getDeckValue(prev.autoDeck, 'skillMember3', ''),
+                        skillMember4: getDeckValue(prev.autoDeck, 'skillMember4', ''),
+                        skillMember5: getDeckValue(prev.autoDeck, 'skillMember5', ''),
+                        eventBonus: getDeckValue(prev.autoDeck, 'eventBonus', ''),
                         internalValue: '',
                         isManualInternalEdit: false,
                         detailedSkills: { encore: '', member1: '', member2: '', member3: '', member4: '' },
@@ -530,11 +549,11 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
         // Get all member skills with their effective values
         const memberSkills = {
-            leader: { val: Number(skillLeader) || 120, bloomLevel: bloomLevels.leader },
-            member2: { val: Number(skillMember2) || 100, bloomLevel: bloomLevels.member2 },
-            member3: { val: Number(skillMember3) || 100, bloomLevel: bloomLevels.member3 },
-            member4: { val: Number(skillMember4) || 100, bloomLevel: bloomLevels.member4 },
-            member5: { val: Number(skillMember5) || 100, bloomLevel: bloomLevels.member5 },
+            leader: { val: numberOrDefault(skillLeader, 120), bloomLevel: bloomLevels.leader },
+            member2: { val: numberOrDefault(skillMember2, 100), bloomLevel: bloomLevels.member2 },
+            member3: { val: numberOrDefault(skillMember3, 100), bloomLevel: bloomLevels.member3 },
+            member4: { val: numberOrDefault(skillMember4, 100), bloomLevel: bloomLevels.member4 },
+            member5: { val: numberOrDefault(skillMember5, 100), bloomLevel: bloomLevels.member5 },
         };
 
         // Find the highest skill value among OTHER members
@@ -690,11 +709,11 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         const useBloom = deckData.useBloomFes || false;
         const blooms = deckData.bloomLevels || { leader: 0, member2: 0, member3: 0, member4: 0, member5: 0 };
 
-        const leaderVal = Number(deckData.skillLeader || 120);
-        const m2Val = Number(deckData.skillMember2 || 100);
-        const m3Val = Number(deckData.skillMember3 || 100);
-        const m4Val = Number(deckData.skillMember4 || 100);
-        const m5Val = Number(deckData.skillMember5 || 100);
+        const leaderVal = numberOrDefault(deckData.skillLeader, 120);
+        const m2Val = numberOrDefault(deckData.skillMember2, 100);
+        const m3Val = numberOrDefault(deckData.skillMember3, 100);
+        const m4Val = numberOrDefault(deckData.skillMember4, 100);
+        const m5Val = numberOrDefault(deckData.skillMember5, 100);
 
         const loadedBloomFesOriginal = deckData.loadedBloomFesOriginalMembers || {};
         const loadedVSBloomFes = deckData.loadedVSBloomFesMembers || {};
@@ -908,8 +927,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 },
                 autoDeck: updatedDeck,
                 // For PowerTab real-time update
-                power: String((Number(updatedDeck.totalPower || 293231)) / 10000),
-                effi: String(updatedDeck.eventBonus || 250),
+                power: String(numberOrDefault(updatedDeck.totalPower, 293231) / 10000),
+                effi: String(numberOrDefault(updatedDeck.eventBonus, 250)),
                 internalValue: finalInternalValue,
                 isManualInternalEdit: effectiveIsManual
             };
@@ -952,8 +971,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     ...next,
                     internalValue: activeDeckObjInNext.internalValue,
                     autoDeck: activeDeckObjInNext,
-                    power: String((Number(activeDeckObjInNext.totalPower || 293231)) / 10000),
-                    effi: String(activeDeckObjInNext.eventBonus || 250)
+                    power: String(numberOrDefault(activeDeckObjInNext.totalPower, 293231) / 10000),
+                    effi: String(numberOrDefault(activeDeckObjInNext.eventBonus, 250))
                 };
             }
 
@@ -977,8 +996,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         isDetailedInput: (next.isDetailedInput ?? showDetailedInput)
                     }
                 },
-                power: String((Number(deck.totalPower || 293231)) / 10000),
-                effi: String(deck.eventBonus || 250),
+                power: String(numberOrDefault(deck.totalPower, 293231) / 10000),
+                effi: String(numberOrDefault(deck.eventBonus, 250)),
                 internalValue: newInternalValue,
                 autoDeck: deck
             };
@@ -1036,8 +1055,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         },
                     },
                     autoDeck: updatedDeck,
-                    power: String((Number(updatedDeck.totalPower || 293231)) / 10000),
-                    effi: String(updatedDeck.eventBonus || 250),
+                    power: String(numberOrDefault(updatedDeck.totalPower, 293231) / 10000),
+                    effi: String(numberOrDefault(updatedDeck.eventBonus, 250)),
                     internalValue: String(internalVal),
                     isManualInternalEdit: false,
                 };
@@ -1472,11 +1491,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                             // Update URL without scroll reset
                             navigate(`/event/${view.urlPath}`, { replace: true, preventScrollReset: true });
                             // Restore scroll position after DOM fully updates (double rAF)
-                            requestAnimationFrame(() => {
-                                requestAnimationFrame(() => {
-                                    window.scrollTo(0, scrollY);
-                                });
-                            });
+                            scheduleScrollRestore(scrollY);
                         }}
                         className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${activeResultView === view.key
                             ? 'bg-indigo-500 text-white shadow-md'

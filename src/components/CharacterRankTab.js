@@ -9,6 +9,8 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { characterBirthdays } from '../data/characterBirthdays';
 import ConfirmModal from './common/ConfirmModal';
 import CharacterSelector from './common/CharacterSelector';
+import useModalAccessibility from '../hooks/useModalAccessibility';
+import { readJsonStorage, writeJsonStorage } from '../utils/safeStorage';
 
 const CHARACTER_NAMES_KR = [
     "호시노 이치카", "텐마 사키", "모치즈키 호나미", "히노모리 시호",
@@ -143,33 +145,25 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
 
     // Load saved state from localStorage
     useEffect(() => {
-        try {
-            const savedInputs = JSON.parse(localStorage.getItem('charRankInputs') || '{}');
-            const savedAddInputs = JSON.parse(localStorage.getItem('charRankAddInputs') || '{}');
-            const savedCharId = JSON.parse(localStorage.getItem('charRankSelectedId') || '1');
+        const isRecord = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+        const savedInputs = readJsonStorage('charRankInputs', {}, isRecord);
+        const savedAddInputs = readJsonStorage('charRankAddInputs', {}, isRecord);
+        const savedCharId = Number(readJsonStorage('charRankSelectedId', 1));
 
-            setInputs(savedInputs);
-            setAddInputs(savedAddInputs);
-            setSelectedCharId(Number(savedCharId) || 1);
-            setExpandedEx({});
-        } catch (e) {
-            console.error("Failed to load character rank data", e);
-        } finally {
-            setIsLoaded(true);
-        }
+        setInputs(savedInputs);
+        setAddInputs(savedAddInputs);
+        setSelectedCharId(Number.isSafeInteger(savedCharId) && savedCharId > 0 ? savedCharId : 1);
+        setExpandedEx({});
+        setIsLoaded(true);
     }, []);
 
     // Save state to localStorage whenever it changes
     useEffect(() => {
         if (!isLoaded) return;
-        try {
-            localStorage.setItem('charRankInputs', JSON.stringify(inputs));
-            localStorage.setItem('charRankAddInputs', JSON.stringify(addInputs));
-            localStorage.setItem('charRankSelectedId', JSON.stringify(selectedCharId));
-        } catch (e) {
-            console.error("Failed to save character rank data", e);
-        }
-    }, [inputs, addInputs, selectedCharId, expandedEx, isLoaded]);
+        writeJsonStorage('charRankInputs', inputs);
+        writeJsonStorage('charRankAddInputs', addInputs);
+        writeJsonStorage('charRankSelectedId', selectedCharId);
+    }, [inputs, addInputs, selectedCharId, isLoaded]);
 
     const toggleEx = (type) => {
         setExpandedEx(prev => {
@@ -415,6 +409,8 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
     const expectedRankInfo = getRankInfo(expectedTotalExp);
 
     const [modalConfig, setModalConfig] = useState(null);
+    const detailDialogRef = useModalAccessibility({ isOpen: Boolean(modalConfig), onClose: () => setModalConfig(null) });
+    const etcDialogRef = useModalAccessibility({ isOpen: etcPopup, onClose: () => setEtcPopup(false) });
 
     const openMissionInfo = (type) => {
         const config = MISSION_CONFIG.find(c => c.type === type);
@@ -810,10 +806,10 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         <div className="px-4 pt-2 max-w-4xl mx-auto">
             {modalConfig && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setModalConfig(null)}>
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
+                    <div ref={detailDialogRef} role="dialog" aria-modal="true" aria-labelledby="character-rank-detail-title" tabIndex={-1} className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[calc(100vh-2rem)] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                            <h3 className="font-bold text-gray-800 text-lg">{modalConfig.title}</h3>
-                            <button onClick={() => setModalConfig(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                            <h3 id="character-rank-detail-title" className="font-bold text-gray-800 text-lg">{modalConfig.title}</h3>
+                            <button type="button" onClick={() => setModalConfig(null)} aria-label={t('support.close')} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -993,10 +989,10 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
 
                 return (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setEtcPopup(false)}>
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div ref={etcDialogRef} role="dialog" aria-modal="true" aria-labelledby="character-rank-etc-title" tabIndex={-1} className="bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[calc(100vh-2rem)] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
                             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-amber-50/50">
-                                <h3 className="font-bold text-gray-800 text-lg">{t('rank.etc_rank_data')}</h3>
-                                <button onClick={() => setEtcPopup(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                                <h3 id="character-rank-etc-title" className="font-bold text-gray-800 text-lg">{t('rank.etc_rank_data')}</h3>
+                                <button type="button" onClick={() => setEtcPopup(false)} aria-label={t('support.close')} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
                                         <line x1="18" y1="6" x2="6" y2="18"></line>
                                         <line x1="6" y1="6" x2="18" y2="18"></line>

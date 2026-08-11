@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { getCardCharacterName, getCardTitle, getCardCharacterId } from '../../utils/supportCardUtils';
 import SupportCardThumbnail from './SupportCardThumbnail';
+import useModalAccessibility from '../../hooks/useModalAccessibility';
 
 const PICKER_GROUPS = [
     { key: 'rarity4', label: '4성', matches: (card) => Number(card?.rarity) === 4 && card?.type !== 'Birthday' && card?.type !== 'Anniversary' },
@@ -31,6 +32,7 @@ const SupportCardPickerModal = ({
 }) => {
     const { t, language } = useTranslation();
     const [isScrolled, setIsScrolled] = useState(false);
+    const dialogRef = useModalAccessibility({ isOpen, onClose });
 
     useEffect(() => {
         if (!isOpen) {
@@ -82,10 +84,19 @@ const SupportCardPickerModal = ({
 
     return (
         <div className="support-modal-backdrop ebc-backdrop" onMouseDown={onClose} style={{ zIndex: 10000 }}>
-            <div className="support-modal ebc-modal" onMouseDown={(event) => event.stopPropagation()} style={{ maxWidth: '1040px', padding: 0 }}>
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="support-card-picker-title"
+                tabIndex={-1}
+                className="support-modal ebc-modal"
+                onMouseDown={(event) => event.stopPropagation()}
+                style={{ maxWidth: '1040px', padding: 0 }}
+            >
                 <div className="support-modal-header" style={{ padding: '14px', borderBottom: '1px solid #e2e8f0', background: '#f8fbff', display: 'flex', justifyContent: 'space-between' }}>
                     <div>
-                        <h3 style={{ margin: '0 0 4px', fontSize: '18px', color: '#0f172a' }}>
+                        <h3 id="support-card-picker-title" style={{ margin: '0 0 4px', fontSize: '18px', color: '#0f172a' }}>
                             {isMain ? t('support.card_select', '카드 선택') : `${getCardCharacterName(selectedCharId, language)} ${t('support.card_select', '카드 선택')}`}
                         </h3>
                         <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
@@ -128,7 +139,7 @@ const SupportCardPickerModal = ({
                     </span>
                 </div>
 
-                <div className="support-modal-scroll custom-scrollbar" onScroll={handleScroll} style={{ padding: '10px', overflowY: 'auto', flex: 1, minHeight: '300px' }}>
+                <div className="support-modal-scroll support-card-picker-scroll custom-scrollbar" onScroll={handleScroll} style={{ padding: '10px', overflowY: 'auto', flex: 1 }}>
                     {!cardsLoading && !cardsError && modalCards.length > 0 && (
                         <>
                             {modalCardGroups.map(group => (

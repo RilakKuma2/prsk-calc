@@ -11,6 +11,7 @@ const en = {
         toast: {
             saved: 'Data saved.',
             loaded: 'Data loaded.',
+            load_failed: 'Data could not be loaded. Check your browser storage settings.',
             no_data: 'No saved data found.',
             skill_loaded: 'Skill info has been entered.',
         },

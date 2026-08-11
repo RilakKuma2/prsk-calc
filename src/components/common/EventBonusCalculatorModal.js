@@ -9,6 +9,13 @@ import {
     DEFAULT_AUTO_EVENT_OVERRIDE, loadAutoEventOverride
 } from '../../utils/eventInfoUtils';
 import { API_BASE_URL, ASSET_BASE_URL, SUITE_ASSET_BASE_URL, joinUrl } from '../../config/env';
+import {
+    readJsonStorage,
+    readStorageItem,
+    writeJsonStorage,
+    writeStorageItem,
+} from '../../utils/safeStorage';
+import useModalAccessibility from '../../hooks/useModalAccessibility';
 
 export const DEFAULT_AREA_VALUES = {
     unit: 10,
@@ -83,6 +90,21 @@ const createEmptyMainDeckSlots = () => (
         canvas: false,
     }))
 );
+
+const isPlainObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
+
+const normalizeMainDeckSlots = (value) => {
+    const defaults = createEmptyMainDeckSlots();
+    if (!Array.isArray(value)) return defaults;
+    return defaults.map((fallback, index) => (
+        isPlainObject(value[index]) ? { ...fallback, ...value[index] } : fallback
+    ));
+};
+
+const readPresetNumber = (key) => {
+    const value = Number(readStorageItem(key, '1'));
+    return Number.isInteger(value) && value >= 1 && value <= 3 ? value : 1;
+};
 
 const clampNumber = (value, min, max) => {
     const numeric = Number(value);
@@ -529,61 +551,47 @@ const MainDeckPreviewCard = ({ rarityKey, masterRank = 0, skillLevel = 1, skillT
 
 const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) => {
     const { t, language } = useTranslation();
-    const [isWorldLink, setIsWorldLink] = useState(() => {
-        const saved = localStorage.getItem('ebc_is_world_link');
-        return saved !== null ? JSON.parse(saved) : false;
-    });
-    const [supportBonus, setSupportBonus] = useState(() => {
-        return localStorage.getItem('ebc_support_bonus') || '';
-    });
+    const [isWorldLink, setIsWorldLink] = useState(() => readJsonStorage(
+        'ebc_is_world_link',
+        false,
+        value => typeof value === 'boolean'
+    ));
+    const [supportBonus, setSupportBonus] = useState(() => readStorageItem('ebc_support_bonus', ''));
     const [eventOverride, setEventOverride] = useState(() => {
-        const saved = localStorage.getItem('ebc_event_override');
-        const base = saved ? JSON.parse(saved) : DEFAULT_AUTO_EVENT_OVERRIDE;
+        const base = readJsonStorage('ebc_event_override', DEFAULT_AUTO_EVENT_OVERRIDE, isPlainObject);
         // Ensure detailOpen/characters/characterOrder fields exist
         return { detailOpen: false, characters: {}, characterOrder: [], ...base };
     });
     const [autoEventOverride, setAutoEventOverride] = useState(DEFAULT_AUTO_EVENT_OVERRIDE);
-    const [isManualEvent, setIsManualEvent] = useState(() => {
-        const saved = localStorage.getItem('ebc_is_manual_event');
-        return saved ? JSON.parse(saved) : false;
-    });
-    const [activePreset, setActivePreset] = useState(() => {
-        const saved = localStorage.getItem('ebc_active_preset');
-        return saved ? Number(saved) : 1;
-    });
+    const [isManualEvent, setIsManualEvent] = useState(() => readJsonStorage(
+        'ebc_is_manual_event',
+        false,
+        value => typeof value === 'boolean'
+    ));
+    const [activePreset, setActivePreset] = useState(() => readPresetNumber('ebc_active_preset'));
     const [areaSnapshotExists, setAreaSnapshotExists] = useState(() => {
-        const activeNum = localStorage.getItem('ebc_active_area_preset') ? Number(localStorage.getItem('ebc_active_area_preset')) : 1;
-        return !!localStorage.getItem(`ebc_area_snapshot_${activeNum}`);
+        const activeNum = readPresetNumber('ebc_active_area_preset');
+        return readStorageItem(`ebc_area_snapshot_${activeNum}`) !== null;
     });
     const [slots, setSlots] = useState(() => {
-        const activeNum = localStorage.getItem('ebc_active_preset') ? Number(localStorage.getItem('ebc_active_preset')) : 1;
-        const saved = localStorage.getItem(`ebc_preset_${activeNum}`);
-        if (saved) return JSON.parse(saved);
-        const generalSaved = localStorage.getItem('ebc_main_deck_slots');
-        return generalSaved ? JSON.parse(generalSaved) : createEmptyMainDeckSlots();
+        const activeNum = readPresetNumber('ebc_active_preset');
+        const preset = readJsonStorage(`ebc_preset_${activeNum}`, null, Array.isArray);
+        const saved = preset || readJsonStorage('ebc_main_deck_slots', null, Array.isArray);
+        return normalizeMainDeckSlots(saved);
     });
-    const [activeAreaPreset, setActiveAreaPreset] = useState(() => {
-        return localStorage.getItem('ebc_active_area_preset') ? Number(localStorage.getItem('ebc_active_area_preset')) : 1;
-    });
+    const [activeAreaPreset, setActiveAreaPreset] = useState(() => readPresetNumber('ebc_active_area_preset'));
     const [areaSettings, setAreaSettings] = useState(() => {
-        const activeNum = localStorage.getItem('ebc_active_area_preset') ? Number(localStorage.getItem('ebc_active_area_preset')) : 1;
+        const activeNum = readPresetNumber('ebc_active_area_preset');
         
-        if (activeNum === 1 && !localStorage.getItem('ebc_area_preset_1')) {
-            const oldSettings = localStorage.getItem('ebc_area_settings');
+        if (activeNum === 1 && readStorageItem('ebc_area_preset_1') === null) {
+            const oldSettings = readStorageItem('ebc_area_settings');
             if (oldSettings) {
-                localStorage.setItem('ebc_area_preset_1', oldSettings);
+                writeStorageItem('ebc_area_preset_1', oldSettings);
             }
         }
         
-        const saved = localStorage.getItem(`ebc_area_preset_${activeNum}`);
-        if (saved) {
-            try {
-                return mergeAreaSettings(JSON.parse(saved));
-            } catch (e) {
-                return createDefaultAreaSettings();
-            }
-        }
-        return createDefaultAreaSettings();
+        const saved = readJsonStorage(`ebc_area_preset_${activeNum}`, null, isPlainObject);
+        return saved ? mergeAreaSettings(saved) : createDefaultAreaSettings();
     });
     const [isAreaPanelOpen, setIsAreaPanelOpen] = useState(false);
     const [isPowerDetailOpen, setIsPowerDetailOpen] = useState(false);
@@ -603,12 +611,18 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
     const [activeMainSlotIndex, setActiveMainSlotIndex] = useState(null);
     const [activeCharTab, setActiveCharTab] = useState('area');
     const [pickerCharId, setPickerCharId] = useState(() => {
-        const saved = localStorage.getItem('ebc_last_char_id');
+        const saved = readStorageItem('ebc_last_char_id');
         return saved ? Number(saved) : 21;
     });
     const [cards, setCards] = useState([]);
     const [cardsLoading, setCardsLoading] = useState(false);
     const [cardsError, setCardsError] = useState('');
+    const mainDialogRef = useModalAccessibility({ isOpen, onClose });
+    const areaDialogRef = useModalAccessibility({ isOpen: isAreaPanelOpen, onClose: () => setIsAreaPanelOpen(false) });
+    const batchDialogRef = useModalAccessibility({ isOpen: isBatchAreaModalOpen, onClose: () => setIsBatchAreaModalOpen(false) });
+    const saveDialogRef = useModalAccessibility({ isOpen: isSaveModalOpen, onClose: () => setIsSaveModalOpen(false) });
+    const loadDialogRef = useModalAccessibility({ isOpen: isLoadModalOpen, onClose: () => setIsLoadModalOpen(false) });
+    const powerDialogRef = useModalAccessibility({ isOpen: isPowerDetailOpen, onClose: () => setIsPowerDetailOpen(false) });
 
     useEffect(() => {
         let isMounted = true;
@@ -704,30 +718,30 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('ebc_is_world_link', JSON.stringify(isWorldLink));
+        writeJsonStorage('ebc_is_world_link', isWorldLink);
     }, [isWorldLink]);
 
     useEffect(() => {
-        localStorage.setItem('ebc_support_bonus', supportBonus);
+        writeStorageItem('ebc_support_bonus', supportBonus);
     }, [supportBonus]);
 
     useEffect(() => {
-        localStorage.setItem('ebc_main_deck_slots', JSON.stringify(slots));
-        localStorage.setItem(`ebc_preset_${activePreset}`, JSON.stringify(slots));
+        writeJsonStorage('ebc_main_deck_slots', slots);
+        writeJsonStorage(`ebc_preset_${activePreset}`, slots);
     }, [slots, activePreset]);
 
     useEffect(() => {
-        localStorage.setItem(`ebc_area_preset_${activeAreaPreset}`, JSON.stringify(areaSettings));
+        writeJsonStorage(`ebc_area_preset_${activeAreaPreset}`, areaSettings);
     }, [areaSettings, activeAreaPreset]);
 
 
 
     useEffect(() => {
-        localStorage.setItem('ebc_is_manual_event', JSON.stringify(isManualEvent));
+        writeJsonStorage('ebc_is_manual_event', isManualEvent);
     }, [isManualEvent]);
 
     useEffect(() => {
-        localStorage.setItem('ebc_event_override', JSON.stringify(eventOverride));
+        writeJsonStorage('ebc_event_override', eventOverride);
     }, [eventOverride]);
 
     useEffect(() => {
@@ -891,10 +905,10 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
             // Save skillLevel/masterRank if changed while NOT in manual event
             if (!isManualEvent && current.card && ('skillLevel' in patch || 'masterRank' in patch)) {
                 const savedKey = `ebc_card_stats_${current.card.id}`;
-                const savedData = JSON.parse(localStorage.getItem(savedKey) || '{}');
+                const savedData = readJsonStorage(savedKey, {}, isPlainObject);
                 if ('skillLevel' in patch) savedData.skillLevel = patch.skillLevel;
                 if ('masterRank' in patch) savedData.masterRank = patch.masterRank;
-                localStorage.setItem(savedKey, JSON.stringify(savedData));
+                writeJsonStorage(savedKey, savedData);
             }
 
             if (Object.prototype.hasOwnProperty.call(patch, 'rarityKey')) {
@@ -913,7 +927,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     // Load saved skillLevel/masterRank if available
                     if (!isManualEvent) {
                         const savedKey = `ebc_card_stats_${patch.card.id}`;
-                        const savedData = JSON.parse(localStorage.getItem(savedKey) || '{}');
+                        const savedData = readJsonStorage(savedKey, {}, isPlainObject);
                         if (savedData.skillLevel !== undefined) nextSlot.skillLevel = savedData.skillLevel;
                         if (savedData.masterRank !== undefined) nextSlot.masterRank = savedData.masterRank;
                     }
@@ -1004,18 +1018,10 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
     const handleAreaPresetClick = (num) => {
         if (num === activeAreaPreset) return;
-        const saved = localStorage.getItem(`ebc_area_preset_${num}`);
-        if (saved) {
-            try {
-                setAreaSettings(mergeAreaSettings(JSON.parse(saved)));
-            } catch(e) {
-                setAreaSettings(createDefaultAreaSettings());
-            }
-        } else {
-            setAreaSettings(createDefaultAreaSettings());
-        }
+        const saved = readJsonStorage(`ebc_area_preset_${num}`, null, isPlainObject);
+        setAreaSettings(saved ? mergeAreaSettings(saved) : createDefaultAreaSettings());
         setActiveAreaPreset(num);
-        localStorage.setItem('ebc_active_area_preset', String(num));
+        writeStorageItem('ebc_active_area_preset', String(num));
     };
 
     const applyBatchAreaSettings = () => {
@@ -1138,10 +1144,18 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
     return (
         <div className="ebc-backdrop" onMouseDown={onClose}>
-            <div className={`ebc-modal ${language === 'ja' ? 'lang-ja' : ''}`} onMouseDown={(e) => e.stopPropagation()}>
+            <div
+                ref={mainDialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="ebc-main-title"
+                tabIndex={-1}
+                className={`ebc-modal ${language === 'ja' ? 'lang-ja' : ''}`}
+                onMouseDown={(e) => e.stopPropagation()}
+            >
                 <div className="ebc-header">
-                    <h2>{t('support.deck_simulator') || '덱 시뮬레이터'}</h2>
-                    <button type="button" className="ebc-close-btn" onClick={onClose}>✕</button>
+                    <h2 id="ebc-main-title">{t('support.deck_simulator') || '덱 시뮬레이터'}</h2>
+                    <button type="button" className="ebc-close-btn" onClick={onClose} aria-label={t('support.close') || '닫기'}>✕</button>
                 </div>
 
                 <div className="ebc-content">
@@ -1477,10 +1491,10 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             type="button"
                                             className={`ebc-preset-load-btn ${isActive ? 'active' : ''}`}
                                             onClick={() => {
-                                                const saved = localStorage.getItem(`ebc_preset_${presetNum}`);
-                                                const nextSlots = saved ? JSON.parse(saved) : createEmptyMainDeckSlots();
+                                                const saved = readJsonStorage(`ebc_preset_${presetNum}`, null, Array.isArray);
+                                                const nextSlots = normalizeMainDeckSlots(saved);
                                                 setActivePreset(presetNum);
-                                                localStorage.setItem('ebc_active_preset', String(presetNum));
+                                                writeStorageItem('ebc_active_preset', String(presetNum));
                                                 setSlots(nextSlots);
                                             }}
                                             title={`${t('support.preset') || '프리셋'} ${presetNum}`}
@@ -1544,7 +1558,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                         if (e.target === e.currentTarget) setIsAreaPanelOpen(false);
                     }}
                 >
-                    <div className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()}>
+                    <div ref={areaDialogRef} role="dialog" aria-modal="true" aria-labelledby="ebc-area-title" tabIndex={-1} className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()}>
                         <button
                             type="button"
                             className="ebc-area-floating-close"
@@ -1556,7 +1570,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
 
                         <div className="ebc-area-floating-scroll">
                             <div className="ebc-area-floating-head">
-                                <h3>{t('support.area_settings') || '에어리어'}</h3>
+                                <h3 id="ebc-area-title">{t('support.area_settings') || '에어리어'}</h3>
                                 <div className="ebc-area-floating-totals" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ display: 'flex', gap: '6px' }}>
                                         <button type="button" onClick={() => setIsBatchAreaModalOpen(true)} className="ebc-btn-batch">{t('support.batch_apply') || '일괄적용'}</button>
@@ -1574,7 +1588,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                         className={`ebc-preset-load-btn ${isActive ? 'active' : ''}`}
                                                         onClick={() => {
                                                             handleAreaPresetClick(presetNum);
-                                                            setAreaSnapshotExists(!!localStorage.getItem(`ebc_area_snapshot_${presetNum}`));
+                                                            setAreaSnapshotExists(readStorageItem(`ebc_area_snapshot_${presetNum}`) !== null);
                                                         }}
                                                         title={`${t('support.area_preset') || '에어리어 프리셋'} ${presetNum}`}
                                                     >
@@ -1588,8 +1602,9 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                 type="button"
                                                 className="ebc-snapshot-save-btn"
                                                 onClick={() => {
-                                                    localStorage.setItem(`ebc_area_snapshot_${activeAreaPreset}`, JSON.stringify(areaSettings));
-                                                    setAreaSnapshotExists(true);
+                                                    const saved = writeJsonStorage(`ebc_area_snapshot_${activeAreaPreset}`, areaSettings);
+                                                    setAreaSnapshotExists(saved);
+                                                    if (!saved) return;
                                                     window.dispatchEvent(new CustomEvent('show-toast', { detail: `P${activeAreaPreset} ${t('support.snapshot_saved') || '임시저장 완료'}` }));
                                                 }}
                                             >
@@ -1600,10 +1615,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                                 className={`ebc-snapshot-load-btn ${!areaSnapshotExists ? 'disabled' : ''}`}
                                                 disabled={!areaSnapshotExists}
                                                 onClick={() => {
-                                                    const snap = localStorage.getItem(`ebc_area_snapshot_${activeAreaPreset}`);
-                                                    if (snap) {
-                                                        try { setAreaSettings(mergeAreaSettings(JSON.parse(snap))); } catch(e) {}
-                                                    }
+                                                    const snap = readJsonStorage(`ebc_area_snapshot_${activeAreaPreset}`, null, isPlainObject);
+                                                    if (snap) setAreaSettings(mergeAreaSettings(snap));
                                                 }}
                                             >
                                                 {t('support.snapshot_load') || '불러오기'}
@@ -1632,8 +1645,9 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             type="button"
                                             className="ebc-snapshot-save-btn"
                                             onClick={() => {
-                                                localStorage.setItem(`ebc_area_snapshot_${activeAreaPreset}`, JSON.stringify(areaSettings));
-                                                setAreaSnapshotExists(true);
+                                                const saved = writeJsonStorage(`ebc_area_snapshot_${activeAreaPreset}`, areaSettings);
+                                                setAreaSnapshotExists(saved);
+                                                if (!saved) return;
                                                 window.dispatchEvent(new CustomEvent('show-toast', { detail: `P${activeAreaPreset} ${t('support.snapshot_saved') || '임시저장 완료'}` }));
                                             }}
                                         >
@@ -1644,10 +1658,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                                             className={`ebc-snapshot-load-btn ${!areaSnapshotExists ? 'disabled' : ''}`}
                                             disabled={!areaSnapshotExists}
                                             onClick={() => {
-                                                const snap = localStorage.getItem(`ebc_area_snapshot_${activeAreaPreset}`);
-                                                if (snap) {
-                                                    try { setAreaSettings(mergeAreaSettings(JSON.parse(snap))); } catch(e) {}
-                                                }
+                                                const snap = readJsonStorage(`ebc_area_snapshot_${activeAreaPreset}`, null, isPlainObject);
+                                                if (snap) setAreaSettings(mergeAreaSettings(snap));
                                             }}
                                         >
                                             {t('support.snapshot_load') || '불러오기'}
@@ -1848,7 +1860,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     e.stopPropagation();
                     if (e.target === e.currentTarget) setIsBatchAreaModalOpen(false);
                 }}>
-                    <div className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()}>
+                    <div ref={batchDialogRef} role="dialog" aria-modal="true" aria-labelledby="ebc-batch-title" tabIndex={-1} className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()}>
                         <button
                             type="button"
                             className="ebc-area-floating-close"
@@ -1859,7 +1871,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                         </button>
                         <div className="ebc-area-floating-scroll">
                             <div className="ebc-area-floating-head">
-                                <h3>{t('support.batch_apply') || '일괄 적용'}</h3>
+                                <h3 id="ebc-batch-title">{t('support.batch_apply') || '일괄 적용'}</h3>
                             </div>
                             <div className="ebc-area-floating-body">
                                 <section className="ebc-area-game-section">
@@ -2026,11 +2038,11 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     e.stopPropagation();
                     if (e.target === e.currentTarget) setIsSaveModalOpen(false);
                 }}>
-                    <div className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-                        <button type="button" className="ebc-area-floating-close" onClick={() => setIsSaveModalOpen(false)}>×</button>
+                    <div ref={saveDialogRef} role="dialog" aria-modal="true" aria-labelledby="ebc-save-title" tabIndex={-1} className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <button type="button" className="ebc-area-floating-close" onClick={() => setIsSaveModalOpen(false)} aria-label={t('support.close') || '닫기'}>×</button>
                         <div className="ebc-area-floating-scroll" style={{ padding: '24px 24px 0' }}>
                             <div className="ebc-area-floating-head">
-                                <h3>{t('support.save_area_settings') || '에어리어 설정 저장'}</h3>
+                                <h3 id="ebc-save-title">{t('support.save_area_settings') || '에어리어 설정 저장'}</h3>
                             </div>
                             <div className="ebc-area-floating-body" style={{ padding: '0 0 16px' }}>
                                 <p style={{ fontSize: '13px', color: '#555', marginBottom: '8px' }}>{t('support.save_area_desc') || '현재 설정을 텍스트로 복사하거나 파일로 다운로드합니다.'}</p>
@@ -2065,11 +2077,11 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     e.stopPropagation();
                     if (e.target === e.currentTarget) setIsLoadModalOpen(false);
                 }}>
-                    <div className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-                        <button type="button" className="ebc-area-floating-close" onClick={() => setIsLoadModalOpen(false)}>×</button>
+                    <div ref={loadDialogRef} role="dialog" aria-modal="true" aria-labelledby="ebc-load-title" tabIndex={-1} className="ebc-area-floating-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <button type="button" className="ebc-area-floating-close" onClick={() => setIsLoadModalOpen(false)} aria-label={t('support.close') || '닫기'}>×</button>
                         <div className="ebc-area-floating-scroll" style={{ padding: '24px 24px 0' }}>
                             <div className="ebc-area-floating-head">
-                                <h3>{t('support.load_area_settings') || '에어리어 설정 불러오기'}</h3>
+                                <h3 id="ebc-load-title">{t('support.load_area_settings') || '에어리어 설정 불러오기'}</h3>
                             </div>
                             <div className="ebc-area-floating-body" style={{ padding: '0 0 16px' }}>
                                 <p style={{ fontSize: '13px', color: '#555', marginBottom: '8px' }}>{t('support.load_area_desc') || '복사한 텍스트를 아래에 붙여넣거나 파일을 업로드하세요.'}</p>
@@ -2126,7 +2138,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                         if (e.target === e.currentTarget) setIsPowerDetailOpen(false);
                     }}
                 >
-                    <div className="ebc-power-detail-modal" onMouseDown={(e) => e.stopPropagation()}>
+                    <div ref={powerDialogRef} role="dialog" aria-modal="true" aria-label={t('support.total_power') || '종합력'} tabIndex={-1} className="ebc-power-detail-modal" onMouseDown={(e) => e.stopPropagation()}>
                         <button
                             type="button"
                             className="ebc-power-detail-close"
@@ -2181,7 +2193,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 pickerCharId={pickerCharId}
                 setPickerCharId={(id) => {
                     setPickerCharId(id);
-                    localStorage.setItem('ebc_last_char_id', String(id));
+                    writeStorageItem('ebc_last_char_id', String(id));
                 }}
                 cards={cards}
                 cardsLoading={cardsLoading}
@@ -2214,7 +2226,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     display: flex;
                     flex-direction: column;
                     overflow: hidden;
-                    max-height: 90vh;
+                    max-height: calc(100vh - 40px);
+                    max-height: calc(100dvh - 40px);
                 }
                 .ebc-header {
                     display: flex;
@@ -2289,7 +2302,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 .ebc-area-floating-modal {
                     position: relative;
                     width: min(960px, 100%);
-                    max-height: min(92vh, 820px);
+                    max-height: min(calc(100vh - 32px), 820px);
+                    max-height: min(calc(100dvh - 32px), 820px);
                     border-radius: 18px;
                     background: #f0f0f8;
                     box-shadow: 0 24px 60px rgba(31, 35, 60, 0.28), inset 0 0 0 1px rgba(255,255,255,0.72);
@@ -2715,7 +2729,8 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 .ebc-power-detail-modal {
                     position: relative;
                     width: min(820px, 100%);
-                    min-height: min(640px, 88vh);
+                    min-height: min(640px, calc(100vh - 48px));
+                    min-height: min(640px, calc(100dvh - 48px));
                     border-radius: 18px;
                     background: #f0f0f8;
                     box-shadow: 0 24px 60px rgba(31, 35, 60, 0.32), inset 0 0 0 1px rgba(255,255,255,0.72);
@@ -3191,12 +3206,12 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 
                 @media (max-width: 768px) {
                     .ebc-backdrop { padding: 12px; }
-                    .ebc-modal { border-radius: 8px; max-height: 95vh; }
+                    .ebc-modal { border-radius: 8px; max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); }
                     .ebc-deck-section { padding: 12px; }
                     .ebc-deck-header { align-items: flex-start; flex-direction: column; }
                     .ebc-deck-grid { grid-template-columns: repeat(3, 1fr); }
                     .ebc-area-floating-backdrop { padding: 10px; }
-                    .ebc-area-floating-modal { max-height: 96vh; border-radius: 14px; }
+                    .ebc-area-floating-modal { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); border-radius: 14px; }
                     .ebc-area-floating-scroll { padding: 28px 22px 18px; }
                     .ebc-area-floating-head h3,
                     .ebc-area-game-title { font-size: 22px; }
@@ -3204,7 +3219,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     .ebc-area-game-grid.attrs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
                     .ebc-area-unit-header { width: calc((100% - 12px) / 2); min-width: 0; }
                     .ebc-area-unit-header { width: calc((100% - 12px) / 2); min-width: 0; }
-                    .ebc-power-detail-modal { min-height: min(560px, 92vh); border-radius: 14px; }
+                    .ebc-power-detail-modal { min-height: min(560px, calc(100vh - 32px)); min-height: min(560px, calc(100dvh - 32px)); border-radius: 14px; }
                     .ebc-power-detail-body { padding: 62px 24px 24px; gap: 24px; }
                     .ebc-power-detail-total { font-size: 22px; gap: 12px; }
                     .ebc-power-detail-total strong { font-size: 27px; letter-spacing: 2px; }
@@ -3223,7 +3238,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                 }
                 @media (max-width: 480px) {
                     .ebc-backdrop { padding: 4px; }
-                    .ebc-modal { border-radius: 6px; max-height: 98vh; }
+                    .ebc-modal { border-radius: 6px; max-height: calc(100vh - 8px); max-height: calc(100dvh - 8px); }
                     .ebc-deck-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
                     .ebc-deck-section { padding: 8px; border-radius: 10px; }
                     .ebc-power-total { min-height: 34px; gap: 6px; padding: 0; font-size: 14px; }
@@ -3264,7 +3279,7 @@ const EventBonusCalculatorModal = ({ isOpen, onClose, onApply, onLoadSkill }) =>
                     .ebc-area-character-input b { font-size: 10px; font-weight: 700; line-height: 20px; }
                     .ebc-area-floating-footer { padding: 12px 14px 14px; flex-wrap: wrap; }
                     .ebc-power-detail-backdrop { padding: 8px; }
-                    .ebc-power-detail-modal { min-height: min(500px, 94vh); border-radius: 14px; }
+                    .ebc-power-detail-modal { min-height: min(500px, calc(100vh - 24px)); min-height: min(500px, calc(100dvh - 24px)); border-radius: 14px; }
                     .ebc-power-detail-close { top: 8px; right: 10px; font-size: 38px; width: 34px; height: 34px; line-height: 30px; }
                     .ebc-power-detail-body { padding: 48px 12px 18px; gap: 18px; }
                     .ebc-power-detail-total { font-size: 17px; gap: 8px; }

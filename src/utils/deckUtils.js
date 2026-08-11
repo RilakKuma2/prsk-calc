@@ -3,6 +3,7 @@
  * Shared between DeckTab, PowerTab, and other components
  */
 import { getCardCharacterId } from './supportCardUtils';
+import { numberOrDefault } from './numbers';
 
 /**
  * Calculate raw internal value (effective skill value before flooring)
@@ -11,11 +12,11 @@ import { getCardCharacterId } from './supportCardUtils';
  * @returns {number} Raw internal value
  */
 export const calculateRawInternalValue = (deck) => {
-    const leader = Number(deck?.skillLeader || 120);
-    const m2 = Number(deck?.skillMember2 || 100);
-    const m3 = Number(deck?.skillMember3 || 100);
-    const m4 = Number(deck?.skillMember4 || 100);
-    const m5 = Number(deck?.skillMember5 || 100);
+    const leader = numberOrDefault(deck?.skillLeader, 120);
+    const m2 = numberOrDefault(deck?.skillMember2, 100);
+    const m3 = numberOrDefault(deck?.skillMember3, 100);
+    const m4 = numberOrDefault(deck?.skillMember4, 100);
+    const m5 = numberOrDefault(deck?.skillMember5, 100);
     return leader + (m2 + m3 + m4 + m5) * 0.2;
 };
 
@@ -49,11 +50,11 @@ export const getDeckValue = (deck, key, fallback) => {
  * @returns {number} Sum of all skills
  */
 export const calculateSkillSum = (deck) => {
-    const leader = Number(deck?.skillLeader || 120);
-    const m2 = Number(deck?.skillMember2 || 100);
-    const m3 = Number(deck?.skillMember3 || 100);
-    const m4 = Number(deck?.skillMember4 || 100);
-    const m5 = Number(deck?.skillMember5 || 100);
+    const leader = numberOrDefault(deck?.skillLeader, 120);
+    const m2 = numberOrDefault(deck?.skillMember2, 100);
+    const m3 = numberOrDefault(deck?.skillMember3, 100);
+    const m4 = numberOrDefault(deck?.skillMember4, 100);
+    const m5 = numberOrDefault(deck?.skillMember5, 100);
     return leader + m2 + m3 + m4 + m5;
 };
 

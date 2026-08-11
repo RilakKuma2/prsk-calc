@@ -61,6 +61,29 @@ describe('manualSaveSnapshot', () => {
     expect(window.localStorage.getItem('supportDeckState')).toBeNull();
   });
 
+  test('불러오기 중 저장소 용량 오류가 나면 기존 데이터를 유지한다', () => {
+    window.localStorage.setItem('charRankInputs', '{"old":true}');
+    window.localStorage.setItem('supportDeckState', '{"keep":true}');
+    const originalSetItem = Storage.prototype.setItem;
+    const setItemSpy = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(function setItem(key, value) {
+      if (key === 'charRankInputs' && value === '{"restored":true}') {
+        throw new DOMException('quota full', 'QuotaExceededError');
+      }
+      return originalSetItem.call(this, key, value);
+    });
+
+    expect(() => restoreManualSaveSnapshot({
+      schemaVersion: 2,
+      data: { currentStage: '120' },
+      entries: { charRankInputs: '{"restored":true}' },
+      mysekai: null,
+    })).toThrow('quota full');
+
+    expect(window.localStorage.getItem('charRankInputs')).toBe('{"old":true}');
+    expect(window.localStorage.getItem('supportDeckState')).toBe('{"keep":true}');
+    setItemSpy.mockRestore();
+  });
+
   test('병합 시 계산 데이터와 로컬 자동 저장 데이터를 모두 보존한다', () => {
     const merged = mergeManualSaveSnapshots(
       {

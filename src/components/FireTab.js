@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { formatDuration } from '../utils/time';
 import RankingGraphModal from './RankingGraphModal';
 import EventShopSimulator from './EventShopSimulator';
+import { numberOrDefault } from '../utils/numbers';
 import CustomSelectDropdown from './common/CustomSelectDropdown';
 import { useTranslation } from '../contexts/LanguageContext';
 import { calculateScoreRange } from '../utils/calculator';
@@ -14,6 +15,8 @@ import { characterBirthdays } from '../data/characterBirthdays';
 import { useAuth } from '../login';
 import { API_BASE_URL, ASSET_BASE_URL, SUITE_ASSET_BASE_URL, joinUrl } from '../config/env';
 import { AUTO_ENERGY_OPTIONS, normalizeAutoEnergy } from '../utils/autoEnergy';
+import useModalAccessibility from '../hooks/useModalAccessibility';
+import { readStorageItem, writeStorageItem } from '../utils/safeStorage';
 import {
   getAutoTimeSongPerformances,
   rankAutoTimeRecommendations,
@@ -234,8 +237,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [chapterScoreLastUpdated, setChapterScoreLastUpdated] = useState(null);
   const [isRoomSearchOpen, setIsRoomSearchOpen] = useState(false);
   const [isRefreshCalculatorOpen, setIsRefreshCalculatorOpen] = useState(false);
-  const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('roomSearchEngine') || 'yahoo');
-  const [showRecentHourlySpeed, setShowRecentHourlySpeed] = useState(() => localStorage.getItem('showRecentHourlySpeed') !== 'false');
+  const [searchEngine, setSearchEngine] = useState(() => {
+    const savedEngine = readStorageItem('roomSearchEngine');
+    return savedEngine === 'x' ? 'x' : 'yahoo';
+  });
+  const [showRecentHourlySpeed, setShowRecentHourlySpeed] = useState(() => readStorageItem('showRecentHourlySpeed') !== 'false');
   const currentNaturalFire = surveyData.currentNaturalFire || '';
   const setCurrentNaturalFire = (val) => setSurveyData(prev => ({ ...prev, currentNaturalFire: typeof val === 'function' ? val(prev.currentNaturalFire || '') : val }));
   const challengeScore = surveyData.challengeScore || ''; // Default empty, used as 250 if empty
@@ -266,41 +272,18 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const refreshGaugePercent = surveyData.refreshGaugePercent ?? '';
   const setRefreshGaugePercent = (value) => setSurveyData(prev => ({ ...prev, refreshGaugePercent: value }));
   const setRefreshPlaysPerHour = (value) => setSurveyData(prev => ({ ...prev, refreshPlaysPerHour: value }));
-
-  useEffect(() => {
-    if (!isShopSimulatorOpen) return undefined;
-
-    const previousOverflow = document.body.style.overflow;
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setIsShopSimulatorOpen(false);
-    };
-
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isShopSimulatorOpen]);
-
-  useEffect(() => {
-    if (!isRefreshCalculatorOpen && !isAutoTimeOpen) return undefined;
-
-    const previousOverflow = document.body.style.overflow;
-    const handleKeyDown = (event) => {
-      if (event.key !== 'Escape') return;
-      setIsRefreshCalculatorOpen(false);
-      setIsAutoTimeOpen(false);
-    };
-
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isRefreshCalculatorOpen, isAutoTimeOpen]);
+  const shopDialogRef = useModalAccessibility({
+    isOpen: isShopSimulatorOpen,
+    onClose: () => setIsShopSimulatorOpen(false),
+  });
+  const refreshDialogRef = useModalAccessibility({
+    isOpen: isRefreshCalculatorOpen,
+    onClose: () => setIsRefreshCalculatorOpen(false),
+  });
+  const autoTimeDialogRef = useModalAccessibility({
+    isOpen: isAutoTimeOpen,
+    onClose: () => setIsAutoTimeOpen(false),
+  });
 
   useEffect(() => {
     if (!isAutoTimeOpen || (autoTimeSongs !== null && autoTimeMusicMetas !== null)) return undefined;
@@ -395,11 +378,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
   // Persist Search Engine Preference
   useEffect(() => {
-    localStorage.setItem('roomSearchEngine', searchEngine);
+    writeStorageItem('roomSearchEngine', searchEngine);
   }, [searchEngine]);
 
   useEffect(() => {
-    localStorage.setItem('showRecentHourlySpeed', showRecentHourlySpeed ? 'true' : 'false');
+    writeStorageItem('showRecentHourlySpeed', showRecentHourlySpeed ? 'true' : 'false');
   }, [showRecentHourlySpeed]);
 
   // World Link Chapter Auto-selection
@@ -461,21 +444,42 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [staleWarning, setStaleWarning] = useState(false);
 
   useEffect(() => {
+    let disposed = false;
+    let requestId = 0;
+    let activeController = null;
+
     const fetchPredictionData = async () => {
+      const currentRequestId = ++requestId;
+      activeController?.abort();
+      const controller = new AbortController();
+      activeController = controller;
+      const { signal } = controller;
+      const isCurrentRequest = () => (
+        !disposed && !signal.aborted && currentRequestId === requestId
+      );
 
       try {
         const [mainResponse, assetResponse] = await Promise.all([
-          fetch(joinUrl(API_BASE_URL, 'api/ranking')),
-          fetch(joinUrl(API_BASE_URL, 'api/latest_ranking'), { cache: 'reload' }).catch(e => null) // Allow asset fetch to fail gently
+          fetch(joinUrl(API_BASE_URL, 'api/ranking'), { signal }),
+          fetch(joinUrl(API_BASE_URL, 'api/latest_ranking'), { cache: 'reload', signal })
+            .catch((error) => {
+              if (signal.aborted) throw error;
+              return null;
+            }) // Allow asset fetch to fail gently
         ]);
+        if (!mainResponse.ok) throw new Error(`Ranking request failed (${mainResponse.status})`);
 
         const mainData = await mainResponse.json();
         let assetJson = null;
         if (assetResponse && assetResponse.ok) {
           try {
             assetJson = await assetResponse.json();
-          } catch (e) { console.error(e); }
+          } catch (error) {
+            if (signal.aborted) throw error;
+            console.error(error);
+          }
         }
+        if (!isCurrentRequest()) return;
 
         const assetTop100 = assetJson?.top100?.rankings || [];
         const assetBorders = assetJson?.border?.borderRankings || assetJson?.border?.eventRankingBorders || [];
@@ -609,12 +613,20 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           try {
             setChaptersData([]);
             const [wlResponse, wbResponse] = await Promise.all([
-              fetch(joinUrl(API_BASE_URL, 'api/wlranking')).catch(() => null),
-              fetch(joinUrl(SUITE_ASSET_BASE_URL, 'worldBlooms.json')).catch(() => null)
+              fetch(joinUrl(API_BASE_URL, 'api/wlranking'), { signal }).catch((error) => {
+                if (signal.aborted) throw error;
+                return null;
+              }),
+              fetch(joinUrl(SUITE_ASSET_BASE_URL, 'worldBlooms.json'), { signal }).catch((error) => {
+                if (signal.aborted) throw error;
+                return null;
+              })
             ]);
+            if (!isCurrentRequest()) return;
 
             if (wbResponse && wbResponse.ok) {
               const wbData = await wbResponse.json();
+              if (!isCurrentRequest()) return;
               setWorldBloomsInfo(Array.isArray(wbData) ? wbData : (wbData.data || []));
             }
 
@@ -657,6 +669,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
             if (wlResponse && wlResponse.ok) {
               const wlData = await wlResponse.json();
+              if (!isCurrentRequest()) return;
               const wlEventInfo = normalizeEventInfo(wlData.event_info, wlData.latest_event);
               if (
                 Number(wlEventInfo?.id || 0) === currentEventId &&
@@ -667,6 +680,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               }
             }
           } catch (err) {
+            if (signal.aborted || !isCurrentRequest()) return;
             console.error("Failed to fetch world link ranking data:", err);
           }
         } else if (mainData.chapters && mainData.chapters.length > 0) {
@@ -699,10 +713,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           setTimeRemaining(timeDiff > 0 ? timeDiff : 0);
         }
 
-        setLoading(false);
+        if (isCurrentRequest()) setLoading(false);
       } catch (error) {
+        if (signal.aborted || !isCurrentRequest()) return;
         console.error("Failed to fetch prediction data:", error);
         setLoading(false);
+      } finally {
+        if (activeController === controller) activeController = null;
       }
     };
 
@@ -720,6 +737,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      disposed = true;
+      requestId += 1;
+      activeController?.abort();
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -803,10 +823,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   useEffect(() => {
 
 
-    let currentScore = parseFloat(score1 || '0') || 0;
-    let targetScore = parseFloat(score2 || '3000') || 0;
-    let scorePerRound = parseFloat(score3 || '2.8') || 0;
-    let roundsPerInterval = parseFloat(rounds1 || '28') || 0;
+    const currentScore = numberOrDefault(score1, 0);
+    const targetScore = numberOrDefault(score2, 3000);
+    const scorePerRound = numberOrDefault(score3, 2.8);
+    const roundsPerInterval = numberOrDefault(rounds1, 28);
     let currentFireBonus = parseInt(firea) || 0;
     let changeFireBonus = fires2;
     let firenow = getFireaValue(currentFireBonus);
@@ -822,17 +842,27 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       firenow = getFireaValue(currentFireBonus);
     }
 
-    let rounds = (targetScore - currentScore) / calculationScore;
-    rounds = rounds > 0 ? rounds : 0;
-    rounds = Math.ceil(rounds);
+    const scoreGap = targetScore - currentScore;
+    if (scoreGap <= 0) {
+      setNeededRounds(0);
+      setNeededFires(0);
+      setNeededTime(0);
+      return;
+    }
+    if (!Number.isFinite(calculationScore) || calculationScore <= 0) {
+      setNeededRounds(null);
+      setNeededFires(null);
+      setNeededTime(null);
+      return;
+    }
+
+    const rounds = Math.ceil(scoreGap / calculationScore);
     setNeededRounds(rounds);
 
-    let fires = rounds * firenow;
+    const fires = rounds * firenow;
     setNeededFires(fires);
 
-    let time = rounds / roundsPerInterval;
-    time = time > 0 ? time : 0;
-    setNeededTime(time);
+    setNeededTime(roundsPerInterval > 0 ? rounds / roundsPerInterval : null);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [score1, score2, score3, rounds1, firea, fires2, currentNaturalFire, challengeScore, worldPass, mySekaiScore, isLevelUpBonusEnabled, currentLevel, remainingExp, liveRank]);
@@ -1086,9 +1116,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     }
 
     // Challenge Live Logic
-    const cScoreVal = parseFloat(challengeScore) || 250;
+    const cScoreVal = numberOrDefault(challengeScore, 250);
     const challengeEPPerDay = Math.floor((100 + cScoreVal / 2) * 120);
-    const totalChallengeEP = challengeEPPerDay * days;
+    const totalChallengeEP = cScoreVal > 0 ? challengeEPPerDay * days : 0;
 
     // My Sekai Logic
     let mySekaiDays = 0;
@@ -1103,10 +1133,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       checkMs.setDate(checkMs.getDate() + 1);
     }
 
-    const mScoreVal = parseFloat(mySekaiScore) || 2500;
+    const mScoreVal = numberOrDefault(mySekaiScore, 2500);
     const mySekaiMultiplier = worldPass ? 10 : 2;
     const mySekaiEPPerDay = Math.floor(mySekaiMultiplier * mScoreVal);
-    const totalMySekaiEP = mySekaiEPPerDay * mySekaiDays;
+    const totalMySekaiEP = mScoreVal > 0 ? mySekaiEPPerDay * mySekaiDays : 0;
 
     const scoreAfter = currentScoreVal + earnedScore + (totalChallengeEP / 10000) + (totalMySekaiEP / 10000);
 
@@ -2427,18 +2457,18 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
           <div className="grid grid-cols-2 items-center mb-1 text-center">
             <span className="text-gray-600">{t('fire.needed_rounds')}</span>
-            <span className="font-bold text-blue-600">{Math.ceil(neededRounds).toLocaleString()}{t('fire.rounds_suffix')}</span>
+            <span className="font-bold text-blue-600">{neededRounds === null ? '-' : `${Math.ceil(neededRounds).toLocaleString()}${t('fire.rounds_suffix')}`}</span>
           </div>
           <div className="grid grid-cols-2 items-center mb-1 text-center">
             <span className="text-gray-600">{t('fire.needed_fire')}</span>
             <div>
-              <span className="font-bold text-blue-600">{Math.ceil(neededFires).toLocaleString()}{t('fire.fire_suffix')}</span>
-              <span className="text-xs text-gray-500 ml-1">({Math.ceil(neededFires / 10)} {t('fire.cans_suffix')})</span>
+              <span className="font-bold text-blue-600">{neededFires === null ? '-' : `${Math.ceil(neededFires).toLocaleString()}${t('fire.fire_suffix')}`}</span>
+              {neededFires !== null && <span className="text-xs text-gray-500 ml-1">({Math.ceil(neededFires / 10)} {t('fire.cans_suffix')})</span>}
             </div>
           </div>
           <div className="grid grid-cols-2 items-center pt-1 border-t mt-1 text-center">
             <span className="text-gray-600">{t('fire.needed_time')}</span>
-            <span className="font-bold text-blue-600">{neededTime.toFixed(1)}{t('fire.hours_suffix')}</span>
+            <span className="font-bold text-blue-600">{neededTime === null ? '-' : `${neededTime.toFixed(1)}${t('fire.hours_suffix')}`}</span>
           </div>
         </div>
 
@@ -2451,12 +2481,20 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             if (event.target === event.currentTarget) setIsShopSimulatorOpen(false);
           }}
         >
-          <div className="relative w-full max-w-4xl mt-10 sm:mt-0">
+          <div
+            ref={shopDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('fire.shop_simulator_title')}
+            tabIndex={-1}
+            className="relative w-full max-w-4xl mt-10 sm:mt-0"
+          >
             <button
               type="button"
               onClick={() => setIsShopSimulatorOpen(false)}
               className="absolute -top-3 -right-2 sm:-top-4 sm:-right-4 z-10 w-9 h-9 rounded-full bg-white border border-gray-200 text-gray-500 shadow-lg hover:text-pink-500 hover:border-pink-200 active:scale-95 transition-all flex items-center justify-center"
               title={t('fire.shop_close')}
+              aria-label={t('fire.shop_close')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 6 6 18" />
@@ -2566,7 +2604,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         if (event.target === event.currentTarget) setIsRefreshCalculatorOpen(false);
                       }}
                     >
-                      <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-blue-100 bg-white p-4 shadow-2xl animate-fade-in">
+                      <div
+                        ref={refreshDialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={t('fire.refresh_title')}
+                        tabIndex={-1}
+                        className="max-h-[calc(100vh-1.5rem)] supports-[height:100dvh]:max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-blue-100 bg-white p-4 shadow-2xl animate-fade-in"
+                      >
                       <div className="mb-3 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 text-sm font-extrabold text-blue-700">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2723,7 +2768,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         if (event.target === event.currentTarget) setIsAutoTimeOpen(false);
                       }}
                     >
-                      <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-violet-100 bg-white p-4 shadow-2xl animate-fade-in">
+                      <div
+                        ref={autoTimeDialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={t('fire.auto_time_button')}
+                        tabIndex={-1}
+                        className="max-h-[calc(100vh-1.5rem)] supports-[height:100dvh]:max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-violet-100 bg-white p-4 shadow-2xl animate-fade-in"
+                      >
                       <div className="mb-3 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 text-sm font-extrabold text-violet-700">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

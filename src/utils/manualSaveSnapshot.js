@@ -6,6 +6,11 @@ import {
   MYSEKAI_DIRTY_KEY,
   normalizeMysekaiSnapshot,
 } from './mysekaiChecklist';
+import {
+  readStorageItem,
+  removeStorageItem,
+  writeStorageItem,
+} from './safeStorage';
 
 export const MANUAL_SAVE_STORAGE_KEY = 'prskCalcManualSavedSnapshotV2';
 
@@ -69,11 +74,16 @@ export const isManualSaveSnapshot = (value) => {
 export const readManualStorageEntries = () => {
   if (typeof window === 'undefined') return {};
   const entries = {};
-  for (let index = 0; index < window.localStorage.length; index += 1) {
-    const key = window.localStorage.key(index);
-    if (!key || !isManualSaveStorageKey(key)) continue;
-    const value = window.localStorage.getItem(key);
-    if (value !== null) entries[key] = value;
+  try {
+    const storage = window.localStorage;
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
+      if (!key || !isManualSaveStorageKey(key)) continue;
+      const value = storage.getItem(key);
+      if (value !== null) entries[key] = value;
+    }
+  } catch {
+    return {};
   }
   return normalizeManualEntries(entries) || {};
 };
@@ -83,17 +93,52 @@ export const restoreManualStorageEntries = (rawEntries) => {
   const entries = normalizeManualEntries(rawEntries);
   if (entries === null) return;
 
-  const existingKeys = [];
-  for (let index = 0; index < window.localStorage.length; index += 1) {
-    const key = window.localStorage.key(index);
-    if (key && isManualSaveStorageKey(key)) existingKeys.push(key);
+  let storage;
+  try {
+    storage = window.localStorage;
+  } catch (error) {
+    throw new Error('로컬 저장소에 접근할 수 없습니다.', { cause: error });
   }
-  existingKeys.forEach((key) => {
-    if (!(key in entries)) window.localStorage.removeItem(key);
-  });
-  Object.entries(entries).forEach(([key, value]) => {
-    window.localStorage.setItem(key, value);
-  });
+
+  const previousEntries = {};
+  const existingKeys = [];
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (key && isManualSaveStorageKey(key)) existingKeys.push(key);
+    if (key && isManualSaveStorageKey(key)) {
+      const value = storage.getItem(key);
+      if (value !== null) previousEntries[key] = value;
+    }
+  }
+
+  try {
+    // Write the replacement values first. If quota is exhausted, old keys have
+    // not been deleted and the best-effort rollback below can restore changes.
+    Object.entries(entries).forEach(([key, value]) => {
+      storage.setItem(key, value);
+    });
+    existingKeys.forEach((key) => {
+      if (!(key in entries)) storage.removeItem(key);
+    });
+  } catch (error) {
+    try {
+      const currentKeys = [];
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (key && isManualSaveStorageKey(key)) currentKeys.push(key);
+      }
+      currentKeys.forEach((key) => {
+        if (!(key in previousEntries)) storage.removeItem(key);
+      });
+      Object.entries(previousEntries).forEach(([key, value]) => {
+        storage.setItem(key, value);
+      });
+    } catch {
+      // Preserve the original storage error; rollback is only best effort when
+      // the browser refuses all writes.
+    }
+    throw error;
+  }
 };
 
 export const createManualSaveSnapshot = (data) => {
@@ -108,10 +153,28 @@ export const createManualSaveSnapshot = (data) => {
 
 export const restoreManualSaveSnapshot = (rawSnapshot) => {
   const snapshot = normalizeManualSaveSnapshot(rawSnapshot);
-  restoreManualStorageEntries(snapshot.entries);
-  if (snapshot.mysekai && typeof window !== 'undefined') {
-    createMysekaiStorageAdapter().write(snapshot.mysekai);
-    window.localStorage.setItem(MYSEKAI_DIRTY_KEY, '1');
+  const previousEntries = readManualStorageEntries();
+  const mysekaiStorage = createMysekaiStorageAdapter();
+  const previousMysekai = mysekaiStorage.read();
+  const previousMysekaiDirty = readStorageItem(MYSEKAI_DIRTY_KEY);
+
+  try {
+    restoreManualStorageEntries(snapshot.entries);
+    if (snapshot.mysekai && typeof window !== 'undefined') {
+      if (!mysekaiStorage.write(snapshot.mysekai) || !writeStorageItem(MYSEKAI_DIRTY_KEY, '1')) {
+        throw new Error('로컬 저장소에 불러온 데이터를 저장하지 못했습니다.');
+      }
+    }
+  } catch (error) {
+    try {
+      restoreManualStorageEntries(previousEntries);
+      mysekaiStorage.write(previousMysekai);
+      if (previousMysekaiDirty === null) removeStorageItem(MYSEKAI_DIRTY_KEY);
+      else writeStorageItem(MYSEKAI_DIRTY_KEY, previousMysekaiDirty);
+    } catch {
+      // The original failure is more useful than a best-effort rollback error.
+    }
+    throw error;
   }
   return snapshot.data;
 };

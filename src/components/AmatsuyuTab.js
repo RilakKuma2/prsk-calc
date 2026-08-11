@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
 import { useTranslation } from '../contexts/LanguageContext';
+import { readJsonStorage, writeJsonStorage } from '../utils/safeStorage';
 
 import AmatsuyuCalendar from './AmatsuyuCalendar';
 import AmatsuyuNotificationModal from './AmatsuyuNotificationModal';
+
+const DEFAULT_NOTIFY_SETTINGS = {
+  enabled: false,
+  notifyAcq: true,
+  notifyBd: true,
+  time: '21:00',
+};
 
 const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const { t, language } = useTranslation();
@@ -24,8 +32,12 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const [showNotifyModal, setShowNotifyModal] = useState(false);
 
   const [notifySettings, setNotifySettings] = useState(() => {
-    const saved = localStorage.getItem('amatsuyu_notify_settings');
-    return saved ? JSON.parse(saved) : { enabled: false, notifyAcq: true, notifyBd: true, time: '21:00' };
+    const saved = readJsonStorage(
+      'amatsuyu_notify_settings',
+      DEFAULT_NOTIFY_SETTINGS,
+      value => value && typeof value === 'object' && !Array.isArray(value),
+    );
+    return { ...DEFAULT_NOTIFY_SETTINGS, ...saved };
   });
 
   // Notification Logic - Handled by Cloudflare Worker via Web Push
@@ -34,7 +46,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
 
   const saveSettings = (newSettings) => {
     setNotifySettings(newSettings);
-    localStorage.setItem('amatsuyu_notify_settings', JSON.stringify(newSettings));
+    writeJsonStorage('amatsuyu_notify_settings', newSettings);
   };
 
   const rewardTable = [

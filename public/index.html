@@ -24,7 +24,13 @@
   </script>
   <script>
     (function () {
-      var savedLanguage = localStorage.getItem('language');
+      var savedLanguage = null;
+      try {
+        savedLanguage = localStorage.getItem('language');
+      } catch (_) {}
+      if (savedLanguage !== 'ko' && savedLanguage !== 'ja' && savedLanguage !== 'en') {
+        savedLanguage = null;
+      }
       var browserLang = navigator.language || navigator.userLanguage;
       var lang = savedLanguage || (browserLang && browserLang.startsWith('ja') ? 'ja' : 'ko');
       document.documentElement.lang = lang;
@@ -36,7 +42,7 @@
 
       var link = document.createElement('link');
       link.rel = 'manifest';
-      link.href = manifestFile;
+      link.href = '%PUBLIC_URL%/' + manifestFile;
       document.head.appendChild(link);
 
       // Initial Apple Title

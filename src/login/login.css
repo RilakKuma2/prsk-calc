@@ -20,6 +20,7 @@
 .login-modal {
   position: relative;
   width: min(540px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 32px));
   max-height: min(760px, calc(100dvh - 32px));
   margin: auto;
   overflow-y: auto;
@@ -32,6 +33,16 @@
   box-shadow: 0 30px 90px rgba(15, 16, 24, 0.28);
   text-align: left;
   animation: login-modal-in 0.2s ease-out;
+}
+
+.login-legal-modal {
+  height: min(80vh, calc(100vh - 32px));
+}
+
+@supports (height: 100dvh) {
+  .login-legal-modal {
+    height: min(80dvh, calc(100dvh - 32px));
+  }
 }
 
 @keyframes login-modal-in {
@@ -510,6 +521,7 @@
 
   .login-modal {
     width: min(100%, 480px);
+    max-height: calc(100vh - 32px);
     max-height: calc(100dvh - 32px);
     padding: 26px 22px 24px;
     border-radius: 22px;

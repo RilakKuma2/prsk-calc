@@ -16,6 +16,12 @@ import {
     getSupportRarityKey,
 } from '../utils/supportCardUtils';
 import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
+import {
+    readJsonStorage,
+    readStorageItem,
+    writeJsonStorage,
+    writeStorageItem,
+} from '../utils/safeStorage';
 
 const SLOT_COUNT = 25;
 const MAIN_DECK_SLOT_COUNT = 5;
@@ -335,32 +341,31 @@ const SupportDeckTab = () => {
     const [bulkMasterRank, setBulkMasterRank] = useState(5);
     const [bulkSkillLevel, setBulkSkillLevel] = useState(4);
     const [calcPreviewCharId, setCalcPreviewCharId] = useState(() => {
-        const saved = localStorage.getItem('calcPreviewCharId');
-        return saved ? Number(saved) : 21;
+        const saved = Number(readStorageItem('calcPreviewCharId'));
+        return Number.isSafeInteger(saved) && saved > 0 ? saved : 21;
     });
     const bulkRef = useRef(null);
 
     useEffect(() => {
-        localStorage.setItem('calcPreviewCharId', calcPreviewCharId);
+        writeStorageItem('calcPreviewCharId', String(calcPreviewCharId));
     }, [calcPreviewCharId]);
 
     useEffect(() => {
-        try {
-            const saved = JSON.parse(localStorage.getItem('supportDeckState') || '{}');
-            if (saved.selectedCharId) setSelectedCharId(Number(saved.selectedCharId) || 1);
-            if (saved.decks && typeof saved.decks === 'object') setDecks(saved.decks);
-            if (saved.mainDeckSlots) setMainDeckSlots(normalizeMainDeckSlots(saved.mainDeckSlots));
-            if (typeof saved.finaleEnabled === 'boolean') setFinaleEnabled(saved.finaleEnabled);
-        } catch (error) {
-            console.error('Failed to load support deck state', error);
-        } finally {
-            setIsLoaded(true);
-        }
+        const saved = readJsonStorage(
+            'supportDeckState',
+            {},
+            value => Boolean(value) && typeof value === 'object' && !Array.isArray(value),
+        );
+        if (saved.selectedCharId) setSelectedCharId(Number(saved.selectedCharId) || 1);
+        if (saved.decks && typeof saved.decks === 'object' && !Array.isArray(saved.decks)) setDecks(saved.decks);
+        if (saved.mainDeckSlots) setMainDeckSlots(normalizeMainDeckSlots(saved.mainDeckSlots));
+        if (typeof saved.finaleEnabled === 'boolean') setFinaleEnabled(saved.finaleEnabled);
+        setIsLoaded(true);
     }, []);
 
     useEffect(() => {
         if (!isLoaded) return;
-        localStorage.setItem('supportDeckState', JSON.stringify({ selectedCharId, decks, mainDeckSlots, finaleEnabled }));
+        writeJsonStorage('supportDeckState', { selectedCharId, decks, mainDeckSlots, finaleEnabled });
     }, [decks, finaleEnabled, isLoaded, mainDeckSlots, selectedCharId]);
 
     useEffect(() => {

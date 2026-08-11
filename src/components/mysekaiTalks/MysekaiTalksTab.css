@@ -646,6 +646,12 @@
   color: var(--theme-text);
 }
 
+@supports (height: 100dvh) {
+  .mysekai-talk-modal {
+    max-height: 80dvh;
+  }
+}
+
 .mysekai-talk-modal > header {
   position: sticky;
   z-index: 10;
@@ -903,6 +909,13 @@
   padding: 16px;
   color: var(--theme-text);
   text-align: left;
+}
+
+@supports (height: 100dvh) {
+  .mysekai-talk-simple-modal,
+  .mysekai-talk-import-modal {
+    max-height: 82dvh;
+  }
 }
 
 .mysekai-talk-simple-modal > header {

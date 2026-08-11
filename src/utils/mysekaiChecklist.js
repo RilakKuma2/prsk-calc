@@ -1,3 +1,10 @@
+import {
+  readJsonStorage,
+  readStorageItem,
+  writeJsonStorage,
+  writeStorageItem,
+} from './safeStorage';
+
 export const MYSEKAI_SYNC_NAMESPACE = 'mysekai-checklist';
 export const MYSEKAI_PRESETS = ['P1', 'P2', 'P3'];
 export const MYSEKAI_DIRTY_KEY = 'sekai-cloud-mysekai-dirty-v1';
@@ -77,14 +84,7 @@ export const isMysekaiSnapshot = (value) => {
     ));
 };
 
-const parseStoredJson = (key, fallback) => {
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-};
+const parseStoredJson = (key, fallback) => readJsonStorage(key, fallback);
 
 export const createMysekaiStorageAdapter = () => ({
   keys: [
@@ -97,7 +97,7 @@ export const createMysekaiStorageAdapter = () => ({
   dirtyKey: MYSEKAI_DIRTY_KEY,
   read: () => {
     if (typeof window === 'undefined') return createEmptyMysekaiSnapshot();
-    const currentPreset = window.localStorage.getItem('mysekai_currentPreset') || 'P1';
+    const currentPreset = readStorageItem('mysekai_currentPreset', 'P1');
     return normalizeMysekaiSnapshot({
       schemaVersion: 1,
       currentPreset,
@@ -111,19 +111,20 @@ export const createMysekaiStorageAdapter = () => ({
     });
   },
   write: (rawSnapshot) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return false;
     const snapshot = normalizeMysekaiSnapshot(rawSnapshot);
-    window.localStorage.setItem('mysekai_currentPreset', snapshot.currentPreset);
+    let didWriteAll = writeStorageItem('mysekai_currentPreset', snapshot.currentPreset);
     MYSEKAI_PRESETS.forEach((preset) => {
-      window.localStorage.setItem(
+      didWriteAll = writeJsonStorage(
         fixtureStorageKey(preset),
-        JSON.stringify(snapshot.presets[preset].ownedFixtures),
-      );
-      window.localStorage.setItem(
+        snapshot.presets[preset].ownedFixtures,
+      ) && didWriteAll;
+      didWriteAll = writeJsonStorage(
         dialogueStorageKey(preset),
-        JSON.stringify(snapshot.presets[preset].seenDialogues),
-      );
+        snapshot.presets[preset].seenDialogues,
+      ) && didWriteAll;
     });
+    return didWriteAll;
   },
 });
 

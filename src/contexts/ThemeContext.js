@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { readStorageItem, writeStorageItem } from '../utils/safeStorage';
 
 const ThemeContext = createContext(null);
 const THEME_STORAGE_KEY = 'sekai-theme';
@@ -17,7 +18,7 @@ const getSystemTheme = () => (
 export const ThemeProvider = ({ children }) => {
   const [themePreference, setThemePreference] = useState(() => {
     if (typeof window === 'undefined') return 'system';
-    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const savedTheme = readStorageItem(THEME_STORAGE_KEY);
     return isThemePreference(savedTheme) ? savedTheme : 'system';
   });
   const [resolvedTheme, setResolvedTheme] = useState(() => (
@@ -35,7 +36,7 @@ export const ThemeProvider = ({ children }) => {
       document.documentElement.dataset.theme = nextTheme;
       document.documentElement.dataset.themePreference = themePreference;
       document.documentElement.style.colorScheme = nextTheme;
-      window.localStorage.setItem(THEME_STORAGE_KEY, themePreference);
+      writeStorageItem(THEME_STORAGE_KEY, themePreference);
 
       const themeColor = document.querySelector('meta[name="theme-color"]');
       themeColor?.setAttribute('content', nextTheme === 'dark' ? '#25272c' : '#6366f1');
