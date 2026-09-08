@@ -4,6 +4,7 @@ import { buildMusicMetaLookup, getSongOptions, getMusicMetas, normalizeSearchTex
 import { LiveType, EventCalculator, EventType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 import { getAutoEventPointMultiplier, getEventPointMultiplier } from '../utils/autoEnergy';
+import { isAutoSongExcluded, keepBestAutoSongPerWholeSecond } from '../utils/autoSongSelection';
 const DIFFICULTY_COLORS = {
     master: { backgroundColor: '#cc33ff', color: '#FFFFFF' },
     append: { background: 'linear-gradient(to bottom right, #ad92fd, #fe7bde)', color: '#FFFFFF' },
@@ -238,6 +239,7 @@ const AllSongsTable = ({
             : [targetDifficulty];
 
         songOptions.forEach(song => {
+            if (isAutoMode && isAutoSongExcluded(song)) return;
             const songResults = [];
 
             diffsToCheck.forEach(diff => {
@@ -312,6 +314,7 @@ const AllSongsTable = ({
 
                         songResults.push({
                             difficulty: diff,
+                            musicTime: Number(meta.music_time) || Number(song.length) || 0,
                             minEP,
                             maxEP,
                             averageEP,
@@ -350,6 +353,7 @@ const AllSongsTable = ({
                     mv: song.mv,
                     unit: song.unit, // Pass unit info
                     release_date: song.release_date,
+                    autoDurationSeconds: best.musicTime,
                     searchText: [
                         song.name,
                         song.title_jp,
@@ -362,6 +366,13 @@ const AllSongsTable = ({
             }
         });
 
+        const visibleCalculatedResults = isAutoMode
+            ? keepBestAutoSongPerWholeSecond(calculatedResults, {
+                getDuration: result => result.autoDurationSeconds,
+                getScore: result => result.averageEP,
+            })
+            : calculatedResults;
+
         // Set used params state
         setUsedParams({
             power: finalPower,
@@ -370,7 +381,7 @@ const AllSongsTable = ({
         });
 
         // Initial Sort
-        sortResults(calculatedResults, sortKey, sortOrder);
+        sortResults(visibleCalculatedResults, sortKey, sortOrder);
         setIsCalculating(false);
     };
 

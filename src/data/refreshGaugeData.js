@@ -46,19 +46,99 @@ export const getRefreshPlaysPerHour = (durationSeconds) => {
   return duration ? Math.round(3600 / (duration + 45)) : 0;
 };
 
-export const calculateRefreshGauge = ({ durationSeconds, currentPercent = 0, playsPerHour = 0 }) => {
+export const getRefreshTargetPercent = (targetPercent) => {
+  if (targetPercent === '' || targetPercent === null || targetPercent === undefined) return 100;
+  const parsed = Number(targetPercent);
+  if (!Number.isFinite(parsed)) return 100;
+  return Math.min(100, Math.max(0, parsed));
+};
+
+export const calculateRefreshGauge = ({
+  durationSeconds,
+  currentPercent = 0,
+  targetPercent = 100,
+  playsPerHour = 0,
+}) => {
   const duration = Math.max(0, Number(durationSeconds) || 0);
   const current = Math.min(99.999, Math.max(0, Number(currentPercent) || 0));
+  const target = getRefreshTargetPercent(targetPercent);
   const plays = Math.max(0, Number(playsPerHour) || 0);
   if (!duration || !plays) return null;
 
   const gainPerPlay = ((duration + REFRESH_GAUGE_CONFIG.offsetSeconds) * REFRESH_GAUGE_CONFIG.basePoint)
     / REFRESH_GAUGE_CONFIG.maximum * 100;
-  const playsNeeded = (100 - current) / gainPerPlay;
+  const playsNeeded = Math.max(0, target - current) / gainPerPlay;
   return {
     gainPerPlay,
+    targetPercent: target,
     playsNeeded,
     hoursNeeded: playsNeeded / plays,
+  };
+};
+
+export const calculateRequiredRefreshRest = ({
+  durationSeconds,
+  currentPercent = 0,
+  playsPerHour = 0,
+  remainingMinutes = 0,
+}) => {
+  const duration = Math.max(0, Number(durationSeconds) || 0);
+  const current = Math.min(100, Math.max(0, Number(currentPercent) || 0));
+  const plays = Math.max(0, Number(playsPerHour) || 0);
+  const minutes = Math.max(0, Number(remainingMinutes) || 0);
+  if (!duration || !plays || !minutes) return null;
+
+  const gainPerPlay = ((duration + REFRESH_GAUGE_CONFIG.offsetSeconds) * REFRESH_GAUGE_CONFIG.basePoint)
+    / REFRESH_GAUGE_CONFIG.maximum * 100;
+  const restBlockMinutes = REFRESH_GAUGE_CONFIG.decay.minimumMinutes;
+  const restBlockHours = restBlockMinutes / 60;
+  const maximumRestBlocks = Math.floor(minutes / restBlockMinutes);
+  const epsilon = 1e-7;
+  let best = null;
+
+  // Compare every possible number of 30-minute rest blocks. For each option,
+  // the playable count is limited independently by remaining time and by the
+  // amount of gauge headroom. This also allows zero rest to win when filling
+  // the remaining gauge yields more plays than taking another full rest block.
+  for (let restBlocks = 0; restBlocks <= maximumRestBlocks; restBlocks += 1) {
+    const playableMinutes = minutes - (restBlocks * restBlockMinutes);
+    const timeLimitedPlays = Math.max(
+      0,
+      Math.floor(((playableMinutes / 60) * plays) + epsilon),
+    );
+    const gaugeHeadroom = (100 - current)
+      + (restBlocks * REFRESH_GAUGE_CONFIG.decay.deductedPercent);
+    const gaugeLimitedPlays = Math.max(
+      0,
+      Math.floor((gaugeHeadroom / gainPerPlay) + epsilon),
+    );
+    const playableRounds = Math.min(timeLimitedPlays, gaugeLimitedPlays);
+    const finalGaugePercent = Math.max(0, Math.min(
+      100,
+      current
+        + (playableRounds * gainPerPlay)
+        - (restBlocks * REFRESH_GAUGE_CONFIG.decay.deductedPercent),
+    ));
+
+    if (
+      !best
+      || playableRounds > best.maxPlayableRounds
+      || (playableRounds === best.maxPlayableRounds && restBlocks < best.restBlocks)
+    ) {
+      best = {
+        restBlocks,
+        maxPlayableRounds: playableRounds,
+        finalGaugePercent,
+      };
+    }
+  }
+
+  return {
+    canReach: true,
+    restHoursNeeded: best.restBlocks * restBlockHours,
+    restBlocks: best.restBlocks,
+    maxPlayableRounds: best.maxPlayableRounds,
+    finalGaugePercent: best.finalGaugePercent,
   };
 };
 

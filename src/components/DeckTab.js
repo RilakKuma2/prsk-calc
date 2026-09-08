@@ -386,9 +386,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     // Sync manualInternalValue with unifiedDecks internalValue
     useEffect(() => {
         const deckInternalValue = surveyData.unifiedDecks?.[activeDeckKey]?.internalValue;
-        if (deckInternalValue) {
-            setManualInternalValue(deckInternalValue);
-        }
+        setManualInternalValue(deckInternalValue ?? '');
     }, [surveyData.unifiedDecks, activeDeckKey]);
 
     // Initialize unified decks if not exists
@@ -940,9 +938,14 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         if (surveyData.unifiedDecks?.[`deck${activeDeckNum}`]) {
             setSurveyData(prev => {
                 const targetDeck = prev.unifiedDecks?.[`deck${activeDeckNum}`];
+                if (!targetDeck) return prev;
                 return {
                     ...prev,
                     autoDeck: { ...targetDeck },
+                    // PowerTab's normal (non-comparison) result reads these
+                    // compatibility fields, so they must switch with autoDeck.
+                    power: String(numberOrDefault(targetDeck.totalPower, 293231) / 10000),
+                    effi: String(numberOrDefault(targetDeck.eventBonus, 250)),
                     internalValue: targetDeck?.internalValue || '',
                     isManualInternalEdit: targetDeck?.isManualInternalEdit || false,
                     detailedSkills: targetDeck?.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' },

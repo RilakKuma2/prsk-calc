@@ -56,29 +56,6 @@
   }
 }
 
-.login-modal-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  padding: 0 0 2px;
-  border: 0;
-  border-radius: 50%;
-  color: var(--theme-text-muted);
-  background: var(--theme-surface-soft);
-  font-size: 1.45rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.login-modal-close:hover {
-  color: var(--theme-text);
-  background: var(--theme-surface-muted);
-}
-
 .login-modal-brand {
   position: relative;
   width: 44px;
@@ -530,4 +507,85 @@
   .login-modal-brand-badge {
     right: -8px;
   }
+}
+
+/* Shared floating close control; independent of host application CSS. */
+.login-floating-close {
+    box-sizing: border-box;
+    display: flex;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    color: #52525b;
+    background: rgba(245, 245, 247, 0.94);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    font: inherit;
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 250;
+    transition: background-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.login-floating-close > svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex: none;
+}
+
+.login-floating-close.is-absolute {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
+.login-floating-close.is-sticky {
+    position: sticky;
+    top: 12px;
+    align-self: flex-end;
+    margin: 12px 12px -50px auto;
+}
+
+.login-floating-close:hover,
+.login-floating-close:focus-visible {
+    color: #52525b;
+    background: #e9e9ee;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.login-floating-close:active {
+    transform: scale(0.94);
+}
+
+.login-floating-close:focus-visible {
+    outline: 2px solid #8b8b9b;
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    .login-floating-close {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+        font-size: 24px;
+    }
+
+    .login-floating-close.is-absolute {
+        top: 8px;
+        right: 8px;
+    }
+
+    .login-floating-close.is-sticky {
+        top: 8px;
+        margin: 8px 8px -44px auto;
+    }
 }

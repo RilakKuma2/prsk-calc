@@ -18,17 +18,24 @@ import { AUTO_ENERGY_OPTIONS, normalizeAutoEnergy } from '../utils/autoEnergy';
 import useModalAccessibility from '../hooks/useModalAccessibility';
 import { readStorageItem, writeStorageItem } from '../utils/safeStorage';
 import {
+  getEfficientAutoHourlyPerformances,
   getAutoTimeSongPerformances,
   rankAutoTimeRecommendations,
 } from '../utils/autoTimeRecommendations';
 import {
   calculateRefreshGauge,
   calculateRefreshGaugeDecay,
+  calculateRequiredRefreshRest,
   REFRESH_GAUGE_CONFIG,
+  getRefreshTargetPercent,
   getRefreshPlaysPerHour,
   REFRESH_PRESET_SONG_IDS,
   REFRESH_SONGS,
 } from '../data/refreshGaugeData';
+import {
+  getDisplayedPrediction,
+  shouldHideCompletedPrediction,
+} from '../utils/predictionDisplay';
 
 const GENERAL_ALLOWED_RANKS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -258,6 +265,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [autoTimePerformances, setAutoTimePerformances] = useState([]);
   const [autoTimePerformanceKey, setAutoTimePerformanceKey] = useState('');
   const [isAutoTimeLoading, setIsAutoTimeLoading] = useState(false);
+  const [autoTimeResultView, setAutoTimeResultView] = useState('recommendations');
+  const [autoTimeHourlySort, setAutoTimeHourlySort] = useState('points');
   const autoTimeHours = surveyData.autoTimeHours ?? '';
   const autoTimeMinutes = surveyData.autoTimeMinutes ?? '';
   const autoTimeEnergyUsed = normalizeAutoEnergy(surveyData.autoTimeEnergy ?? 10);
@@ -271,6 +280,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const setRefreshSongId = (value) => setSurveyData(prev => ({ ...prev, refreshSongId: Number(value) }));
   const refreshGaugePercent = surveyData.refreshGaugePercent ?? '';
   const setRefreshGaugePercent = (value) => setSurveyData(prev => ({ ...prev, refreshGaugePercent: value }));
+  const refreshTargetGaugePercent = surveyData.refreshTargetGaugePercent ?? '';
+  const setRefreshTargetGaugePercent = (value) => setSurveyData(prev => ({ ...prev, refreshTargetGaugePercent: value }));
+  const refreshEventRemainingHours = surveyData.refreshEventRemainingHours ?? '';
+  const refreshEventRemainingMinutes = surveyData.refreshEventRemainingMinutes ?? '';
+  const setRefreshEventRemainingHours = (value) => setSurveyData(prev => ({ ...prev, refreshEventRemainingHours: value }));
+  const setRefreshEventRemainingMinutes = (value) => setSurveyData(prev => ({ ...prev, refreshEventRemainingMinutes: value }));
   const setRefreshPlaysPerHour = (value) => setSurveyData(prev => ({ ...prev, refreshPlaysPerHour: value }));
   const shopDialogRef = useModalAccessibility({
     isOpen: isShopSimulatorOpen,
@@ -425,6 +440,22 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     }
   }, [chaptersData, worldBloomsInfo, eventInfo]);
 
+  // 다음 챕터 데이터가 아직 생성되기 전에 페이지를 열면 자동 선택값이
+  // `wl-N` 임시 ID로 남는다. 이후 주기 갱신에서 실제 챕터가 들어오면
+  // 해당 ID로 교체해 새로고침 없이 예측 데이터를 표시한다.
+  useEffect(() => {
+    if (!selectedChapter.startsWith('wl-') || chaptersData.length === 0) return;
+
+    const chapterNo = selectedChapter.slice(3);
+    const matchedChapter = chaptersData.find((chapter) => (
+      String(chapter.chapter_id || '').split('-').pop() === chapterNo
+    ));
+
+    if (matchedChapter?.chapter_id) {
+      setSelectedChapter(matchedChapter.chapter_id);
+    }
+  }, [chaptersData, selectedChapter]);
+
   // Click Outside Effect for Room Search
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -459,9 +490,15 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       );
 
       try {
+        // latest_ranking is regenerated every minute, while its CDN response may
+        // remain cached for up to two minutes. A minute-bucketed query keeps the
+        // cache shared between users but prevents an older bucket from pinning
+        // the current-score column after the source data has advanced.
+        const currentScoreCacheBucket = Math.floor(Date.now() / 60000);
+        const latestRankingUrl = `${joinUrl(API_BASE_URL, 'api/latest_ranking')}?v=${currentScoreCacheBucket}`;
         const [mainResponse, assetResponse] = await Promise.all([
-          fetch(joinUrl(API_BASE_URL, 'api/ranking'), { signal }),
-          fetch(joinUrl(API_BASE_URL, 'api/latest_ranking'), { cache: 'reload', signal })
+          fetch(joinUrl(API_BASE_URL, 'api/ranking'), { cache: 'no-store', signal }),
+          fetch(latestRankingUrl, { signal })
             .catch((error) => {
               if (signal.aborted) throw error;
               return null;
@@ -613,7 +650,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           try {
             setChaptersData([]);
             const [wlResponse, wbResponse] = await Promise.all([
-              fetch(joinUrl(API_BASE_URL, 'api/wlranking'), { signal }).catch((error) => {
+              fetch(joinUrl(API_BASE_URL, 'api/wlranking'), { cache: 'no-store', signal }).catch((error) => {
                 if (signal.aborted) throw error;
                 return null;
               }),
@@ -660,7 +697,28 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
             const mergedChapters = Array.from(mergedChaptersMap.values());
             if (mergedChapters.length > 0) {
-              setChapterLiveData(mergedChapters);
+              setChapterLiveData((previousChapters) => mergedChapters.map((nextChapter) => {
+                if (!nextChapter.isWorldBloomChapterAggregate) return nextChapter;
+
+                const previousChapter = previousChapters.find((candidate) => (
+                  Number(candidate?.eventId || 0) === Number(nextChapter.eventId || 0)
+                  && Number(candidate?.gameCharacterId || 0) === Number(nextChapter.gameCharacterId || 0)
+                ));
+                if (!previousChapter) return nextChapter;
+
+                // During the ten-minute chapter aggregation window the live API
+                // temporarily returns empty arrays. Keep the last live snapshot
+                // instead of replacing it with the much older prediction file.
+                return {
+                  ...nextChapter,
+                  rankings: nextChapter.rankings?.length > 0
+                    ? nextChapter.rankings
+                    : (previousChapter.rankings || []),
+                  borderRankings: nextChapter.borderRankings?.length > 0
+                    ? nextChapter.borderRankings
+                    : (previousChapter.borderRankings || []),
+                };
+              }));
               if (assetJson?.fetchedAt) {
                 const formattedDateStr = assetJson.fetchedAt.replace(' ', 'T') + '+09:00';
                 setChapterScoreLastUpdated(new Date(formattedDateStr).getTime());
@@ -725,8 +783,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
     fetchPredictionData();
 
-    // 2분마다 자동으로 데이터 갱신
-    const intervalId = setInterval(fetchPredictionData, 120000);
+    // 현재 점수 원본의 생성 주기에 맞춰 1분마다 자동 갱신
+    const intervalId = setInterval(fetchPredictionData, 60000);
 
     // 탭으로 다시 돌아왔을 때 즉시 갱신
     const handleVisibilityChange = () => {
@@ -1495,6 +1553,26 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     }).sort((a, b) => a.rank - b.rank);
   })();
 
+  const selectedPredictionEndAtMs = useMemo(() => {
+    if (selectedChapter === 'all' || eventInfo?.event_type !== 'world_bloom') {
+      return Number(eventInfo?.end || 0) * 1000;
+    }
+
+    const selectedChapterData = chaptersData.find((chapter) => chapter.chapter_id === selectedChapter);
+    if (Number(selectedChapterData?.end) > 0) {
+      return Number(selectedChapterData.end) * 1000;
+    }
+
+    const chapterNo = String(selectedChapter).split('-').pop();
+    const selectedWorldBloom = worldBloomsInfo.find((chapter) => (
+      String(chapter.eventId) === String(eventInfo?.id)
+      && String(chapter.chapterNo) === chapterNo
+    ));
+    return Number(selectedWorldBloom?.aggregateAt || selectedWorldBloom?.chapterEndAt || 0);
+  }, [selectedChapter, eventInfo, chaptersData, worldBloomsInfo]);
+
+  const hideCompletedPredictions = shouldHideCompletedPrediction(selectedPredictionEndAtMs);
+
   const scoreDeltaLayoutSignature = JSON.stringify(
     activePredictionData.map(row => [
       Math.floor(row.currentScore || 0).toLocaleString(),
@@ -1591,16 +1669,46 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     [refreshSongId, refreshSongs],
   );
 
+  const refreshSelectedSongLabel = useMemo(() => {
+    if (refreshSelectedSong?.id === 74) return t('fire.refresh_preset_envy');
+    if (refreshSelectedSong?.id === 226) return t('fire.refresh_preset_lost_and_found');
+    return t('fire.refresh_preset_omakase');
+  }, [refreshSelectedSong, t]);
+
   // New refresh calculators start on Envy at 28 runs/h. Keep a user's own
   // value intact, while song selection can still fill its recommended value.
-  const refreshPlaysPerHour = surveyData.refreshPlaysPerHour ?? '28';
+  const refreshPlaysPerHour = surveyData.refreshPlaysPerHour === ''
+    || surveyData.refreshPlaysPerHour === null
+    || surveyData.refreshPlaysPerHour === undefined
+    ? '28'
+    : surveyData.refreshPlaysPerHour;
   const refreshApproximateRange = '26 ~ 31';
 
   const refreshGaugeResult = useMemo(() => calculateRefreshGauge({
     durationSeconds: refreshSelectedSong?.duration,
     currentPercent: refreshGaugePercent,
+    targetPercent: refreshTargetGaugePercent,
     playsPerHour: refreshPlaysPerHour,
-  }), [refreshSelectedSong, refreshGaugePercent, refreshPlaysPerHour]);
+  }), [refreshSelectedSong, refreshGaugePercent, refreshTargetGaugePercent, refreshPlaysPerHour]);
+
+  const normalizedRefreshTargetGaugePercent = getRefreshTargetPercent(refreshTargetGaugePercent);
+
+  const hasRefreshEventRemainingTime = refreshEventRemainingHours !== ''
+    || refreshEventRemainingMinutes !== '';
+  const refreshEventRemainingTotalMinutes = Math.max(0,
+    (Math.max(0, Number(refreshEventRemainingHours) || 0) * 60)
+      + Math.min(59, Math.max(0, Number(refreshEventRemainingMinutes) || 0)));
+  const refreshRequiredRest = useMemo(() => calculateRequiredRefreshRest({
+    durationSeconds: refreshSelectedSong?.duration,
+    currentPercent: refreshGaugePercent,
+    playsPerHour: refreshPlaysPerHour,
+    remainingMinutes: refreshEventRemainingTotalMinutes,
+  }), [
+    refreshSelectedSong,
+    refreshGaugePercent,
+    refreshPlaysPerHour,
+    refreshEventRemainingTotalMinutes,
+  ]);
 
   const refreshGaugeDecay = useMemo(() => calculateRefreshGaugeDecay({
     currentPercent: refreshGaugePercent,
@@ -1633,7 +1741,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       !isAutoTimeOpen
       || !autoTimeSongs
       || !autoTimeMusicMetas
-      || autoTimeAvailableSeconds <= 0
       || autoTimePerformanceKey === autoTimeCalculationKey
     ) return undefined;
 
@@ -1668,7 +1775,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     isAutoTimeOpen,
     autoTimeSongs,
     autoTimeMusicMetas,
-    autoTimeAvailableSeconds,
     autoTimePerformanceKey,
     autoTimeCalculationKey,
     surveyData.autoDeck,
@@ -1694,6 +1800,11 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   );
 
   const autoTimeBestResult = autoTimeRecommendations[0] || null;
+
+  const autoTimeHourlyPerformances = useMemo(
+    () => getEfficientAutoHourlyPerformances(autoTimePerformances, autoTimeHourlySort),
+    [autoTimePerformances, autoTimeHourlySort],
+  );
 
   const updateAutoTimeValue = (setter, maximum) => (event) => {
     const rawValue = event.target.value;
@@ -2676,6 +2787,25 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           </div>
                         </label>
                         <label className="text-[10px] font-bold text-gray-500">
+                          {t('fire.refresh_target_gauge')}
+                          <div className="relative mt-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.001"
+                              value={refreshTargetGaugePercent}
+                              onChange={(event) => setRefreshTargetGaugePercent(event.target.value)}
+                              onFocus={(event) => event.target.select()}
+                              placeholder="100"
+                              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 pr-5 text-center text-xs font-extrabold text-gray-800 outline-none placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <span className="pointer-events-none absolute right-2 top-1.5 text-xs font-bold text-gray-400">%</span>
+                          </div>
+                        </label>
+                      </div>
+
+                      <label className="mb-2 mt-2 block text-[10px] font-bold text-gray-500">
                           {t('fire.refresh_plays_per_hour')}
                           <input
                             type="number"
@@ -2688,10 +2818,50 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                               setRounds1(event.target.value);
                             }}
                             onFocus={(event) => event.target.select()}
-                            className="mt-1 w-full rounded-lg border border-blue-100 bg-blue-50 px-2 py-1.5 text-center text-xs font-extrabold text-blue-700 tabular-nums outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                            className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-center text-xs font-extrabold text-gray-800 tabular-nums outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                           />
-                        </label>
-                      </div>
+                      </label>
+
+                      <fieldset className="mb-2 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2">
+                        <legend className="px-1 text-[10px] font-bold text-gray-500">
+                          {t('fire.refresh_event_remaining')}
+                        </legend>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={refreshEventRemainingHours}
+                              onChange={(event) => setRefreshEventRemainingHours(event.target.value)}
+                              onFocus={(event) => event.target.select()}
+                              placeholder="0"
+                              aria-label={t('fire.refresh_event_remaining_hours')}
+                              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 pr-8 text-center text-xs font-extrabold text-gray-800 outline-none placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <span className="pointer-events-none absolute right-2 top-1.5 text-[10px] font-bold text-gray-400">
+                              {t('fire.hours_suffix')}
+                            </span>
+                          </label>
+                          <label className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              max="59"
+                              step="1"
+                              value={refreshEventRemainingMinutes}
+                              onChange={(event) => setRefreshEventRemainingMinutes(event.target.value)}
+                              onFocus={(event) => event.target.select()}
+                              placeholder="0"
+                              aria-label={t('fire.refresh_event_remaining_minutes')}
+                              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 pr-8 text-center text-xs font-extrabold text-gray-800 outline-none placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <span className="pointer-events-none absolute right-2 top-1.5 text-[10px] font-bold text-gray-400">
+                              {t('fire.minutes_suffix')}
+                            </span>
+                          </label>
+                        </div>
+                      </fieldset>
 
                       <div className="mb-2 flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2 text-[10px] font-medium text-gray-500">
                         <span className="font-bold">{t('fire.refresh_approx_rounds')}</span>
@@ -2701,7 +2871,9 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       <div className="mt-3 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-2.5">
                         <div className="grid grid-cols-2 gap-2 text-center">
                           <div className="rounded-lg bg-white/80 px-1.5 py-2">
-                            <div className="text-[10px] font-bold text-blue-500">{t('fire.refresh_needed_time')}</div>
+                            <div className="text-[10px] font-bold text-blue-500">
+                              {t('fire.refresh_needed_time', { percent: normalizedRefreshTargetGaugePercent })}
+                            </div>
                             <div className="mt-0.5 text-sm font-extrabold text-blue-700 tabular-nums">
                               {refreshGaugeResult ? formatRefreshDuration(refreshGaugeResult.hoursNeeded, t) : '-'}
                             </div>
@@ -2713,6 +2885,39 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                             </div>
                           </div>
                         </div>
+                        {hasRefreshEventRemainingTime && (
+                          <div className="mt-2 grid grid-cols-2 gap-2 text-center">
+                            <div className="rounded-lg bg-white/80 px-2 py-2">
+                              <div className="text-[10px] font-bold text-blue-500">
+                                {t('fire.refresh_total_rest_needed')}
+                              </div>
+                              <div className="mt-0.5 text-sm font-extrabold text-blue-700 tabular-nums">
+                                {!refreshRequiredRest
+                                  ? '-'
+                                  : refreshRequiredRest.restHoursNeeded > 0
+                                    ? formatRefreshDuration(refreshRequiredRest.restHoursNeeded, t)
+                                    : `0${t('fire.minutes_suffix')}`}
+                              </div>
+                            </div>
+                            <div className="rounded-lg bg-white/80 px-2 py-2">
+                              <div className="text-[10px] font-bold text-blue-500">
+                                {t('fire.refresh_final_gauge')}
+                              </div>
+                              <div className="mt-0.5 text-sm font-extrabold text-blue-700 tabular-nums">
+                                {refreshRequiredRest
+                                  ? `${refreshRequiredRest.finalGaugePercent.toFixed(1)}%`
+                                  : '-'}
+                              </div>
+                              {refreshRequiredRest && (
+                                <div className="mt-0.5 text-[10px] font-bold text-blue-500 tabular-nums">
+                                  {t('fire.refresh_total_plays', {
+                                    count: refreshRequiredRest.maxPlayableRounds.toLocaleString(),
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                         <div className="mt-2 rounded-lg bg-white/80 px-2 py-2 text-center">
                           <div className="text-[10px] font-bold text-blue-500">{t('fire.refresh_to_zero')}</div>
                           <div className="mt-0.5 text-sm font-extrabold text-blue-700 tabular-nums">
@@ -2729,6 +2934,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                             </div>
                           )}
                         </div>
+                        {refreshGaugeResult && (
+                          <div className="mt-2 text-center text-[10px] font-medium text-blue-500">
+                            {t('fire.refresh_gain_note', {
+                              song: refreshSelectedSongLabel,
+                              percent: refreshGaugeResult.gainPerPlay.toFixed(3),
+                            })}
+                          </div>
+                        )}
                         <div className="mt-2 text-center text-[10px] font-medium text-blue-500">
                           {t('fire.refresh_decay_note', {
                             minutes: REFRESH_GAUGE_CONFIG.decay.minimumMinutes,
@@ -2838,11 +3051,86 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           />
                         </div>
 
+                        <div className="mt-2 grid grid-cols-2 rounded-lg bg-violet-100 p-0.5">
+                          {['recommendations', 'hourly'].map(view => (
+                            <button
+                              key={view}
+                              type="button"
+                              onClick={() => setAutoTimeResultView(view)}
+                              className={`rounded-md px-2 py-1.5 text-[11px] font-extrabold transition-colors ${autoTimeResultView === view
+                                ? 'bg-white text-violet-700 shadow-sm'
+                                : 'text-violet-500 hover:text-violet-700'
+                                }`}
+                            >
+                              {t(view === 'recommendations'
+                                ? 'fire.auto_time_recommendations_view'
+                                : 'fire.auto_time_hourly_view')}
+                            </button>
+                          ))}
+                        </div>
+
                         <div className="mt-2 max-h-96 overflow-y-auto pr-0.5">
                           {isAutoTimeLoading ? (
                             <div className="py-4 text-center text-xs font-bold text-violet-500 animate-pulse">
                               {t('fire.auto_time_loading')}
                             </div>
+                          ) : autoTimeResultView === 'hourly' ? (
+                            autoTimeHourlyPerformances.length > 0 ? (
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between gap-2 px-0.5">
+                                  <div className="text-[11px] font-extrabold text-gray-700">
+                                    {t('fire.auto_time_hourly_results')}
+                                  </div>
+                                  <div className="flex rounded-md bg-white p-0.5 shadow-sm">
+                                    {['plays', 'points'].map(sort => (
+                                      <button
+                                        key={sort}
+                                        type="button"
+                                        onClick={() => setAutoTimeHourlySort(sort)}
+                                        className={`rounded px-1.5 py-1 text-[9px] font-bold transition-colors ${autoTimeHourlySort === sort
+                                          ? 'bg-violet-500 text-white'
+                                          : 'text-gray-500 hover:text-violet-600'
+                                          }`}
+                                      >
+                                        {t(sort === 'plays'
+                                          ? 'fire.auto_time_hourly_sort_plays'
+                                          : 'fire.auto_time_hourly_sort_points')}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                                {autoTimeHourlyPerformances.map((result, index) => (
+                                  <div key={`${result.song.id}-${result.difficulty}`} className="rounded-lg border border-violet-100 bg-white px-2.5 py-2 shadow-sm">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex min-w-0 items-center gap-1.5">
+                                        <span className="shrink-0 text-[11px] font-extrabold text-violet-500">#{index + 1}</span>
+                                        <span className="truncate text-xs font-bold text-gray-800">
+                                          {language === 'ko' ? result.song.name : (result.song.title_jp || result.song.name)}
+                                        </span>
+                                        <span
+                                          className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide shadow-sm"
+                                          style={AUTO_DIFFICULTY_BADGE_COLORS[result.difficulty] || AUTO_DIFFICULTY_BADGE_COLORS.master}
+                                        >
+                                          {AUTO_DIFFICULTY_LABELS[result.difficulty]}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="mt-1 flex items-center justify-end gap-2 text-[10px] font-extrabold tabular-nums">
+                                      <span className="text-rose-500">
+                                        {t('fire.auto_time_hourly_plays', { count: result.playsPerHour })}
+                                      </span>
+                                      <span className="text-violet-600">
+                                        {t('fire.auto_time_hourly_points', { point: Math.floor(result.eventPointsPerHour).toLocaleString() })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="py-4 text-center text-xs font-medium text-gray-500">
+                                {t('fire.auto_time_unavailable')}
+                              </div>
+                            )
                           ) : autoTimeAvailableSeconds <= 0 ? (
                             <div className="py-4 text-center text-xs font-medium text-gray-500">
                               {t('fire.auto_time_empty')}
@@ -3393,7 +3681,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                             <col className="w-[26%]" />
                           </colgroup>
                           <tbody className="divide-y divide-gray-100">
-                            {activePredictionData.filter(r => r.rank <= 50).map((row, index) => (
+                            {activePredictionData.filter(r => r.rank <= 50).map((row, index) => {
+                              const displayedPrediction = getDisplayedPrediction(row);
+                              const hasDisplayedPrediction = !hideCompletedPredictions && displayedPrediction.score > 0;
+                              return (
                               <React.Fragment key={row.rank}>
                                 <tr
                                   className={`transition-colors cursor-pointer active:bg-indigo-100 ${index % 2 === 0 ? 'bg-indigo-50/10 hover:bg-indigo-50/60' : 'bg-indigo-50/40 hover:bg-indigo-50/80'} ${activeRank === row.rank ? 'bg-indigo-100/70 hover:bg-indigo-100/70' : ''}`}
@@ -3406,7 +3697,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                     <CurrentScoreWithDelta score={row.currentScore} delta={showRecentHourlySpeed ? row.scoreDelta1h : null} stacked={stackScoreDeltas} />
                                   </td>
                                   <td className="pl-1 pr-3 py-2 text-right tabular-nums font-bold text-gray-900">
-                                    {Math.floor(row.predictedScore).toLocaleString()}
+                                    <div>
+                                      {hideCompletedPredictions
+                                        ? '-'
+                                        : Math.floor(displayedPrediction.score).toLocaleString()}
+                                    </div>
+                                    {hasDisplayedPrediction && !displayedPrediction.isNewModel && (
+                                      <div className="text-[9px] font-medium leading-none text-indigo-500">
+                                        ({t('fire.legacy_prediction_model')})
+                                      </div>
+                                    )}
                                   </td>
                                 </tr>
                                 {activeRank === row.rank && (
@@ -3414,15 +3714,17 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                     <td colSpan="3" className="px-3 py-2">
                                       <div className="flex items-center justify-between gap-4">
                                         <div className="flex gap-2">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleSetTarget(row.predictedScore);
-                                            }}
-                                            className="bg-indigo-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-all text-center whitespace-nowrap"
-                                          >
-                                            {t('fire.set_target')}
-                                          </button>
+                                          {hasDisplayedPrediction && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleSetTarget(displayedPrediction.score);
+                                              }}
+                                              className="bg-indigo-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-all text-center whitespace-nowrap"
+                                            >
+                                              {t('fire.set_target')}
+                                            </button>
+                                          )}
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -3439,9 +3741,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                             <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.graph')}</span>
                                           </button>
                                         </div>
-                                        {Number(row.eventcutPredicted) > 0 && (
+                                        {!hideCompletedPredictions && displayedPrediction.jiikuScore > 0 && (
                                           <div className="text-sm sm:text-base text-indigo-700 font-bold pr-1">
-                                            {Math.floor(Number(row.eventcutPredicted)).toLocaleString()} ({t('fire.new_model')})
+                                            {Math.floor(displayedPrediction.jiikuScore).toLocaleString()}{' '}
+                                            <span className="text-[9px] font-medium leading-none text-indigo-500">
+                                              ({t('fire.legacy_prediction_model')})
+                                            </span>
                                           </div>
                                         )}
                                       </div>
@@ -3449,7 +3754,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                   </tr>
                                 )}
                               </React.Fragment>
-                            ))}
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -3457,7 +3763,10 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   </tr>
 
                   {/* Rest of Rows */}
-                  {activePredictionData.filter(r => r.rank > 50).map((row, index) => (
+                  {activePredictionData.filter(r => r.rank > 50).map((row, index) => {
+                    const displayedPrediction = getDisplayedPrediction(row);
+                    const hasDisplayedPrediction = !hideCompletedPredictions && displayedPrediction.score > 0;
+                    return (
                     <React.Fragment key={row.rank}>
                       <tr
                         className={`transition-colors cursor-pointer active:bg-gray-200 ${index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'} ${activeRank === row.rank ? 'bg-gray-200 hover:bg-gray-200' : ''}`}
@@ -3470,7 +3779,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           <CurrentScoreWithDelta score={row.currentScore} delta={showRecentHourlySpeed ? row.scoreDelta1h : null} stacked={stackScoreDeltas} />
                         </td>
                         <td className="pl-1 pr-3 py-2 text-right tabular-nums font-bold text-gray-900">
-                          {Math.floor(row.predictedScore).toLocaleString()}
+                          <div>
+                            {hideCompletedPredictions
+                              ? '-'
+                              : Math.floor(displayedPrediction.score).toLocaleString()}
+                          </div>
+                          {hasDisplayedPrediction && !displayedPrediction.isNewModel && (
+                            <div className="text-[9px] font-medium leading-none text-indigo-500">
+                              ({t('fire.legacy_prediction_model')})
+                            </div>
+                          )}
                         </td>
                       </tr>
                       {activeRank === row.rank && (
@@ -3478,15 +3796,17 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           <td colSpan="3" className="px-3 py-2">
                             <div className="flex items-center justify-between gap-4">
                               <div className="flex gap-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSetTarget(row.predictedScore);
-                                  }}
-                                  className="bg-indigo-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-all text-center whitespace-nowrap"
-                                >
-                                  {t('fire.set_target')}
-                                </button>
+                                {hasDisplayedPrediction && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSetTarget(displayedPrediction.score);
+                                    }}
+                                    className="bg-indigo-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-sm hover:bg-indigo-700 active:scale-95 transition-all text-center whitespace-nowrap"
+                                  >
+                                    {t('fire.set_target')}
+                                  </button>
+                                )}
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -3503,9 +3823,12 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                                   <span className="text-[10px] sm:text-xs font-bold leading-none">{t('fire.graph')}</span>
                                 </button>
                               </div>
-                              {Number(row.eventcutPredicted) > 0 && (
+                              {!hideCompletedPredictions && displayedPrediction.jiikuScore > 0 && (
                                 <div className="text-sm sm:text-base text-gray-600 font-bold pr-1">
-                                  {Math.floor(Number(row.eventcutPredicted)).toLocaleString()} ({t('fire.new_model')})
+                                  {Math.floor(displayedPrediction.jiikuScore).toLocaleString()}{' '}
+                                  <span className="text-[9px] font-medium leading-none text-indigo-500">
+                                    ({t('fire.legacy_prediction_model')})
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -3513,7 +3836,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         </tr>
                       )}
                     </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

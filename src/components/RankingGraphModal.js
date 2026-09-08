@@ -240,7 +240,7 @@ const RankingGraphModal = ({ isOpen, onClose, rank, t, selectedChapter }) => {
         const apiUrl = joinUrl(API_BASE_URL, isChapter ? 'api/wlranking' : 'api/ranking');
 
         // Fetch from custom API
-        fetch(apiUrl, { cache: 'reload', signal: controller.signal })
+        fetch(apiUrl, { cache: 'no-store', signal: controller.signal })
             .then(res => {
                 if (!res.ok) throw new Error("Failed to fetch ranking data");
                 return res.json();

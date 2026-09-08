@@ -39,7 +39,7 @@ export const ThemeProvider = ({ children }) => {
       writeStorageItem(THEME_STORAGE_KEY, themePreference);
 
       const themeColor = document.querySelector('meta[name="theme-color"]');
-      themeColor?.setAttribute('content', nextTheme === 'dark' ? '#25272c' : '#6366f1');
+      themeColor?.setAttribute('content', nextTheme === 'dark' ? '#25272c' : '#ffffff');
     };
 
     applyTheme();

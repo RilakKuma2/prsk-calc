@@ -18,8 +18,8 @@ import {
   removeStorageItem,
   writeJsonStorage,
   writeStorageItem,
-} from '../utils/safeStorage';
-import useModalAccessibility from '../hooks/useModalAccessibility';
+} from './safeStorage';
+import useModalAccessibility from './useModalAccessibility';
 import './login.css';
 
 export type AuthUser = {
@@ -1324,7 +1324,7 @@ export function AuthModal({
   return renderAuthOverlay(
     <div className="login-modal-backdrop" data-auth-overlay="true" role="presentation" onMouseDown={mode === 'change' ? undefined : onClose}>
       <section ref={authDialogRef} className="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
-        {mode !== 'change' && <button className="login-modal-close" type="button" onClick={onClose} aria-label={text.close}>×</button>}
+        {mode !== 'change' && <button className="login-floating-close is-sticky" type="button" onClick={onClose} aria-label={text.close}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg></button>}
         <div className="login-modal-brand" aria-hidden="true">
           <span className="login-modal-brand-letter">S</span>
           <span className="login-modal-brand-badge">
@@ -1354,38 +1354,38 @@ export function AuthModal({
             <>
               <label>
                 <span>{text.usernameLabel}</span>
-                <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" minLength={3} maxLength={24} pattern="[A-Za-z0-9_]+" required placeholder={text.usernamePlaceholder} />
+                <input id="auth-register-username" name="username" type="text" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" minLength={3} maxLength={24} pattern="[A-Za-z0-9_]+" required placeholder={text.usernamePlaceholder} />
               </label>
             </>
           )}
           {(mode === 'login' || mode === 'recover') && (
             <label>
               <span>{mode === 'login' ? text.loginIdentifierLabel : text.recoverIdentifierLabel}</span>
-              <input type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} autoComplete="username" maxLength={254} required placeholder={mode === 'login' ? text.loginIdentifierPlaceholder : text.recoverIdentifierPlaceholder} />
+              <input id={mode === 'login' ? 'auth-login-username' : 'auth-recovery-username'} name="username" type="text" value={identifier} onChange={(event) => setIdentifier(event.target.value)} autoComplete="username" maxLength={254} required placeholder={mode === 'login' ? text.loginIdentifierPlaceholder : text.recoverIdentifierPlaceholder} />
             </label>
           )}
           {mode !== 'recover' && (
             <label>
               <span>{mode === 'change' ? text.newPasswordLabel : text.passwordLabel}</span>
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={10} maxLength={128} required placeholder={mode === 'login' ? text.passwordPlaceholder : text.newPasswordPlaceholder} />
+              <input id={mode === 'login' ? 'auth-login-password' : 'auth-new-password'} name={mode === 'login' ? 'password' : 'new-password'} type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={10} maxLength={128} required placeholder={mode === 'login' ? text.passwordPlaceholder : text.newPasswordPlaceholder} />
             </label>
           )}
           {(mode === 'register' || mode === 'change') && (
             <label>
               <span>{mode === 'change' ? text.newPasswordConfirmLabel : text.passwordConfirmLabel}</span>
-              <input type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" minLength={10} maxLength={128} required placeholder={text.passwordConfirmPlaceholder} />
+              <input id="auth-new-password-confirmation" name="new-password-confirmation" type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" minLength={10} maxLength={128} required placeholder={text.passwordConfirmPlaceholder} />
             </label>
           )}
           {mode === 'register' && showInviteCode && (
             <label>
               <span>{text.inviteCodeLabel} <small>{text.optionalShort}</small></span>
-              <input type="text" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="off" maxLength={80} placeholder={text.inviteCodePlaceholder} />
+              <input id="auth-register-invite-code" name="invite-code" type="text" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="off" maxLength={80} placeholder={text.inviteCodePlaceholder} />
             </label>
           )}
           {mode === 'register' && (
             <label className="login-field-optional">
               <span>{text.emailLabel} <small>{text.emailOptionalHint}</small></span>
-              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} placeholder="name@example.com" />
+              <input id="auth-register-email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} placeholder="name@example.com" />
             </label>
           )}
           {mode === 'register' && (
@@ -1413,7 +1413,7 @@ export function AuthModal({
           <div ref={legalDialogRef} className="login-modal login-legal-modal" role="dialog" aria-modal="true" aria-labelledby="login-legal-title" tabIndex={-1} onClick={e => e.stopPropagation()} style={{ width: '90%', maxWidth: '600px', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '16px', borderBottom: '1px solid var(--login-border, #eee)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 id="login-legal-title" style={{ margin: 0, fontSize: '1.2rem', color: 'var(--login-text-primary, #111)' }}>{text.termsLink}</h3>
-              <button type="button" className="login-modal-close" onClick={() => setShowLegal(false)} aria-label={text.close} style={{ position: 'static' }}>×</button>
+              <button type="button" className="login-floating-close" onClick={() => setShowLegal(false)} aria-label={text.close} style={{ position: 'static' }}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
             </div>
             <iframe src={`/legal_${locale}.html`} style={{ flex: 1, border: 'none', width: '100%', backgroundColor: 'var(--login-bg, #fff)' }} title="Legal terms" />
           </div>
@@ -1472,7 +1472,7 @@ export function ProfileModal({
   return renderAuthOverlay(
     <div className="login-modal-backdrop" data-auth-overlay="true" role="presentation" onMouseDown={onClose}>
       <section ref={profileDialogRef} className="login-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
-        <button className="login-modal-close" type="button" onClick={onClose} aria-label={text.close}>×</button>
+        <button className="login-floating-close is-sticky" type="button" onClick={onClose} aria-label={text.close}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
         <h2 id="profile-modal-title">{isDeleting ? text.deleteAccountTitle : text.profileTitle}</h2>
         <p className="login-modal-description">{isDeleting ? text.deleteAccountDescription : (showInviteCode ? text.profileDescriptionWithInvite : text.profileDescriptionEmailOnly)}</p>
         <form className="login-form" onSubmit={handleSubmit}>
@@ -1480,7 +1480,7 @@ export function ProfileModal({
             <>
               <label>
                 <span>{text.passwordLabel}</span>
-                <input type="password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} minLength={1} maxLength={128} required placeholder={text.passwordPlaceholder} />
+                <input id="profile-delete-password" name="password" type="password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} autoComplete="current-password" minLength={1} maxLength={128} required placeholder={text.passwordPlaceholder} />
               </label>
               {error && <p className="login-message error" role="alert">{error}</p>}
               <button className="login-submit danger" type="submit" disabled={submitting}>{submitting ? text.processing : text.deleteAccountConfirm}</button>
@@ -1488,23 +1488,23 @@ export function ProfileModal({
             </>
           ) : (
             <>
-              <label><span>{text.usernameLabel}</span><input type="text" value={user.username} disabled /></label>
+              <label><span>{text.usernameLabel}</span><input id="profile-username" name="username" type="text" value={user.username} autoComplete="username" disabled /></label>
               {showInviteCode && (user.canAccessModeling ? (
                 <p className="login-message notice">{text.inviteCodeRegistered}</p>
               ) : (
                 <label>
                   <span>{text.inviteCodeLabel} <small>{text.optionalShort}</small></span>
-                  <input type="text" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="off" maxLength={80} placeholder={text.inviteCodePlaceholder} />
+                  <input id="profile-invite-code" name="invite-code" type="text" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="off" maxLength={80} placeholder={text.inviteCodePlaceholder} />
                 </label>
               ))}
               <label className="login-field-optional">
                 <span>{text.emailLabel} <small>{text.emailOptionalHint}</small></span>
-                <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} placeholder="name@example.com" />
+                <input id="profile-email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} placeholder="name@example.com" />
               </label>
               {email.trim().toLowerCase() !== (user.email || '').toLowerCase() && (
                 <label>
                   <span>{text.passwordLabel}</span>
-                  <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" minLength={1} maxLength={128} required placeholder={text.passwordPlaceholder} />
+                  <input id="profile-current-password" name="password" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" minLength={1} maxLength={128} required placeholder={text.passwordPlaceholder} />
                 </label>
               )}
               {error && <p className="login-message error" role="alert">{error}</p>}

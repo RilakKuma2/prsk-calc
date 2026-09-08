@@ -57,7 +57,7 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
                                         max={max}
                                         placeholder={placeholder}
                                         onFocus={onFocus || ((e) => e.target.select())}
-                                        className={`w-20 text-center bg-gray-50 rounded-lg px-1 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm ${className}`}
+                                        className={`w-20 text-center bg-gray-50 rounded-lg px-1 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm placeholder:text-gray-400 ${className}`}
                                         tabIndex={tabIndexA}
                                         onBlur={onBlur}
                                     />
@@ -81,7 +81,7 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
                                         max={max}
                                         placeholder={placeholderB || placeholder}
                                         onFocus={onFocus || ((e) => e.target.select())}
-                                        className={`w-20 text-center bg-gray-50 rounded-lg px-1 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm ${className}`}
+                                        className={`w-20 text-center bg-gray-50 rounded-lg px-1 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm placeholder:text-gray-400 ${className}`}
                                         tabIndex={tabIndexB}
                                     />
                                     {(suffixB || suffix) && <span className="ml-0.5 text-xs text-gray-500">{suffixB || suffix}</span>}
@@ -103,7 +103,7 @@ export const InputRow = ({ label, value, onChange, type = "number", min, max, su
                                 max={max}
                                 placeholder={placeholder}
                                 onFocus={onFocus || ((e) => e.target.select())}
-                                className={`w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 ${className}`}
+                                className={`w-28 text-center bg-gray-50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-gray-400 ${className}`}
                                 onBlur={onBlur}
                                 autoFocus={autoFocus}
                             />

@@ -81,6 +81,7 @@ const CATEGORY_META = {
   anniversary: { icon: '●', className: 'anniversary' },
   real_event: { icon: '◆', className: 'real' },
   mysekai: { icon: '⌂', className: 'mysekai' },
+  collaboration: { icon: '↔', className: 'collaboration' },
 };
 
 const UNIT_META = {
@@ -190,8 +191,8 @@ const normalizeEntries = (payload) => {
 };
 
 const getItemTitle = (item, language) => {
-  if (language === 'ja') return item.titleJa || item.titleKo || '';
-  return item.titleKo || item.titleJa || '';
+  if (language === 'ja') return item.titleJa || item.titleKo || item.categoryJa || item.categoryKo || item.category || '';
+  return item.titleKo || item.titleJa || item.categoryKo || item.categoryJa || item.category || '';
 };
 
 const getItemDetails = (item, language) => {
@@ -200,6 +201,9 @@ const getItemDetails = (item, language) => {
 };
 
 const getCategoryLabel = (item, language) => {
+  if (item.category === 'collaboration') {
+    return language === 'ja' ? 'コラボ' : language === 'en' ? 'Collaboration' : '콜라보';
+  }
   if (language === 'ja') return item.categoryJa || item.categoryKo || item.category || '';
   return item.categoryKo || item.categoryJa || item.category || '';
 };
@@ -456,37 +460,37 @@ const ScheduleCalendarHeader = ({ children }) => {
           if (event.target === event.currentTarget) setCalendarOpen(false);
         }}>
           <section ref={calendarDialogRef} className="schedule-calendar-modal" role="dialog" aria-modal="true" aria-label={text.calendar} tabIndex={-1}>
-            <header className="schedule-calendar-modal-header">
-              <div>
-                <span className="schedule-calendar-eyebrow">PROJECT SEKAI</span>
-                <h2>{text.calendar}</h2>
-              </div>
-              <button type="button" className="schedule-icon-button close" aria-label={text.close} onClick={() => setCalendarOpen(false)}>
-                <CloseIcon />
-              </button>
-            </header>
-
             <div className="schedule-month-toolbar">
-              <button type="button" className="schedule-icon-button" aria-label={text.previousMonth} onClick={() => moveMonth(-1)}>
-                <ChevronIcon direction="left" />
-              </button>
+              <div className="schedule-month-navigation">
+                <button type="button" className="schedule-icon-button" aria-label={text.previousMonth} onClick={() => moveMonth(-1)}>
+                  <ChevronIcon direction="left" />
+                </button>
+                <button
+                  type="button"
+                  className="schedule-month-title"
+                  onClick={() => {
+                    const now = new Date();
+                    setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
+                  }}
+                  title={text.today}
+                >
+                  {locale === 'ja'
+                    ? `${cursor.getFullYear()}年 ${cursor.getMonth() + 1}月`
+                    : locale === 'en'
+                      ? cursor.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+                      : `${cursor.getFullYear()}년 ${cursor.getMonth() + 1}월`}
+                </button>
+                <button type="button" className="schedule-icon-button" aria-label={text.nextMonth} onClick={() => moveMonth(1)}>
+                  <ChevronIcon direction="right" />
+                </button>
+              </div>
               <button
                 type="button"
-                className="schedule-month-title"
-                onClick={() => {
-                  const now = new Date();
-                  setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
-                }}
-                title={text.today}
+                className="schedule-icon-button schedule-calendar-toolbar-close"
+                aria-label={text.close}
+                onClick={() => setCalendarOpen(false)}
               >
-                {locale === 'ja'
-                  ? `${cursor.getFullYear()}年 ${cursor.getMonth() + 1}月`
-                  : locale === 'en'
-                    ? cursor.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-                    : `${cursor.getFullYear()}년 ${cursor.getMonth() + 1}월`}
-              </button>
-              <button type="button" className="schedule-icon-button" aria-label={text.nextMonth} onClick={() => moveMonth(1)}>
-                <ChevronIcon direction="right" />
+                <CloseIcon />
               </button>
             </div>
 
@@ -569,7 +573,7 @@ const ScheduleCalendarHeader = ({ children }) => {
                   <div className="schedule-empty-month">{text.empty}</div>
                 )}
                 <div className="schedule-legend">
-                  {['song', 'real_event', 'game_event', 'birthday', 'anniversary'].map((category) => {
+                  {['song', 'real_event', 'game_event', 'collaboration', 'birthday', 'anniversary'].map((category) => {
                     const meta = getCategoryMeta(category);
                     const sample = displayEntries.find((item) => item.category === category);
                     if (!sample && category !== 'game_event') return null;

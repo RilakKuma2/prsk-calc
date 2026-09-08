@@ -104,7 +104,6 @@
   }
 }
 
-.schedule-calendar-modal-header,
 .schedule-detail-header {
   position: sticky;
   top: 0;
@@ -115,23 +114,6 @@
   border-bottom: 1px solid var(--theme-border-soft);
   background: rgb(var(--theme-surface-rgb) / 0.96);
   backdrop-filter: blur(14px);
-}
-
-.schedule-calendar-modal-header {
-  padding: 18px 20px;
-  text-align: left;
-}
-
-.schedule-calendar-eyebrow {
-  color: var(--theme-text-subtle);
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.16em;
-}
-
-.schedule-calendar-modal-header h2 {
-  margin: 2px 0 0;
-  font-size: 21px;
 }
 
 .schedule-icon-button {
@@ -152,11 +134,28 @@
 }
 
 .schedule-month-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: minmax(38px, 1fr) auto minmax(38px, 1fr);
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  background: rgb(var(--theme-surface-rgb) / 0.96);
+  backdrop-filter: blur(14px);
+}
+
+.schedule-month-navigation {
+  grid-column: 2;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 12px;
-  padding: 14px 18px;
+}
+
+.schedule-calendar-toolbar-close {
+  grid-column: 3;
+  justify-self: end;
 }
 
 .schedule-month-title {
@@ -555,6 +554,7 @@
 .schedule-tone-anniversary { --schedule-item-color: #28ad9f; }
 .schedule-tone-real { --schedule-item-color: #e38c23; }
 .schedule-tone-mysekai { --schedule-item-color: #45a45b; }
+.schedule-tone-collaboration { --schedule-item-color: #8a73c9; }
 .schedule-tone-amatsuyu { --schedule-item-color: #81b8e1; }
 .schedule-tone-other { --schedule-item-color: #788292; }
 
@@ -596,16 +596,12 @@
     }
   }
 
-  .schedule-calendar-modal-header {
-    padding: 13px 14px;
-  }
-
-  .schedule-calendar-modal-header h2 {
-    font-size: 18px;
-  }
-
   .schedule-month-toolbar {
     padding: 9px 10px;
+  }
+
+  .schedule-month-navigation {
+    gap: 8px;
   }
 
   .schedule-month-title {

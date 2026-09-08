@@ -2,6 +2,7 @@ import { EventCalculator, EventType, LiveType } from 'sekai-calculator';
 import { calculateScoreRange } from './calculator';
 import { buildMusicMetaLookup } from './dataLoader';
 import { getAutoEventPointMultiplier, normalizeAutoEnergy } from './autoEnergy';
+import { isAutoSongExcluded, keepBestAutoSongPerWholeSecond } from './autoSongSelection';
 
 export const AUTO_PLAY_LIMIT = 99;
 export const AUTO_BETWEEN_PLAY_SECONDS = 30;
@@ -50,11 +51,7 @@ export const getAutoTimeSongPerformances = ({
     const eventBonus = normalizeEventBonus(autoDeck.eventBonus);
     const autoMultiplier = getAutoEventPointMultiplier(normalizeAutoEnergy(energyUsed));
 
-    return songs.flatMap(song => {
-        const songLength = Math.floor(Number(song.length) || 0);
-        const playDurationSeconds = songLength + AUTO_BETWEEN_PLAY_SECONDS;
-        if (songLength <= 0 || playDurationSeconds <= 0) return [];
-
+    const performances = songs.filter(song => !isAutoSongExcluded(song)).flatMap(song => {
         let best = null;
         for (const difficulty of AUTO_DIFFICULTIES) {
             const musicMeta = musicMetaLookup.get(`${Number(song.id)}:${difficulty}`);
@@ -94,7 +91,11 @@ export const getAutoTimeSongPerformances = ({
                         && AUTO_DIFFICULTY_PRIORITY[difficulty] > AUTO_DIFFICULTY_PRIORITY[best.difficulty]
                     )
                 ) {
-                    best = { difficulty, eventPoint };
+                    best = {
+                        difficulty,
+                        eventPoint,
+                        musicTime: Number(musicMeta.music_time) || Number(song.length) || 0,
+                    };
                 }
             } catch {
                 // Keep the all-songs calculation resilient when a song has incomplete metadata.
@@ -102,6 +103,9 @@ export const getAutoTimeSongPerformances = ({
         }
 
         if (!best) return [];
+        const songLength = Math.floor(best.musicTime);
+        const playDurationSeconds = songLength + AUTO_BETWEEN_PLAY_SECONDS;
+        if (songLength <= 0 || playDurationSeconds <= 0) return [];
 
         return [{
             song,
@@ -109,6 +113,11 @@ export const getAutoTimeSongPerformances = ({
             eventPointPerPlay: best.eventPoint,
             playDurationSeconds,
         }];
+    });
+
+    return keepBestAutoSongPerWholeSecond(performances, {
+        getDuration: performance => performance.playDurationSeconds - AUTO_BETWEEN_PLAY_SECONDS,
+        getScore: performance => performance.eventPointPerPlay,
     });
 };
 
@@ -132,6 +141,27 @@ export const filterInefficientAutoTimePerformances = (performances = []) => {
 
     return efficient;
 };
+
+export const getEfficientAutoHourlyPerformances = (
+    performances = [],
+    sortBy = 'points',
+) => filterInefficientAutoTimePerformances(performances).map(performance => {
+    const playsPerHour = Math.floor(3600 / performance.playDurationSeconds);
+    return {
+        ...performance,
+        playsPerHour,
+        eventPointsPerHour: performance.eventPointPerPlay * playsPerHour,
+    };
+}).sort((a, b) => {
+    if (sortBy === 'plays') {
+        return b.playsPerHour - a.playsPerHour
+            || b.eventPointsPerHour - a.eventPointsPerHour
+            || a.song.id - b.song.id;
+    }
+    return b.eventPointsPerHour - a.eventPointsPerHour
+        || b.playsPerHour - a.playsPerHour
+        || a.song.id - b.song.id;
+});
 
 export const rankAutoTimeRecommendations = ({
     performances = [],

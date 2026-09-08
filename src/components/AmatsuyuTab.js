@@ -19,14 +19,17 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
   const setHasCurrentYearCard = (val) => setSurveyData(prev => ({ ...prev, hasCurrentYearCard: typeof val === 'function' ? val(prev.hasCurrentYearCard || 'N') : val }));
   const pastCardsOwned = surveyData.pastCardsOwned || '0';
   const setPastCardsOwned = (val) => setSurveyData(prev => ({ ...prev, pastCardsOwned: typeof val === 'function' ? val(prev.pastCardsOwned || '0') : val }));
-  const currentLevel = surveyData.amatsuyuCurrentLevel || '0';
-  const setCurrentLevel = (val) => setSurveyData(prev => ({ ...prev, amatsuyuCurrentLevel: typeof val === 'function' ? val(prev.amatsuyuCurrentLevel || '0') : val }));
-  const targetLevel = surveyData.amatsuyuTargetLevel || '400';
-  const setTargetLevel = (val) => setSurveyData(prev => ({ ...prev, amatsuyuTargetLevel: typeof val === 'function' ? val(prev.amatsuyuTargetLevel || '400') : val }));
-  const currentPoints = surveyData.amatsuyuCurrentPoints !== undefined ? surveyData.amatsuyuCurrentPoints : '10000';
-  const setCurrentPoints = (val) => setSurveyData(prev => ({ ...prev, amatsuyuCurrentPoints: typeof val === 'function' ? val(prev.amatsuyuCurrentPoints !== undefined ? prev.amatsuyuCurrentPoints : '10000') : val }));
-  const gachaSealCount = surveyData.gachaSealCount || '0';
-  const setGachaSealCount = (val) => setSurveyData(prev => ({ ...prev, gachaSealCount: typeof val === 'function' ? val(prev.gachaSealCount || '0') : val }));
+  // Keep editable numeric fields visually empty and apply their defaults only
+  // while calculating. This lets users replace a value without it springing
+  // back as soon as the input is cleared.
+  const currentLevel = surveyData.amatsuyuCurrentLevel ?? '';
+  const setCurrentLevel = (val) => setSurveyData(prev => ({ ...prev, amatsuyuCurrentLevel: typeof val === 'function' ? val(prev.amatsuyuCurrentLevel ?? '') : val }));
+  const targetLevel = surveyData.amatsuyuTargetLevel ?? '';
+  const setTargetLevel = (val) => setSurveyData(prev => ({ ...prev, amatsuyuTargetLevel: typeof val === 'function' ? val(prev.amatsuyuTargetLevel ?? '') : val }));
+  const currentPoints = surveyData.amatsuyuCurrentPoints ?? '';
+  const setCurrentPoints = (val) => setSurveyData(prev => ({ ...prev, amatsuyuCurrentPoints: typeof val === 'function' ? val(prev.amatsuyuCurrentPoints ?? '') : val }));
+  const gachaSealCount = surveyData.gachaSealCount ?? '';
+  const setGachaSealCount = (val) => setSurveyData(prev => ({ ...prev, gachaSealCount: typeof val === 'function' ? val(prev.gachaSealCount ?? '') : val }));
   const [totalNeeded, setTotalNeeded] = useState(0);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);

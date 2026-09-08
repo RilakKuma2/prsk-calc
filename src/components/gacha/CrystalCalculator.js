@@ -31,12 +31,12 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
     const setCurrentTotal = (val) => setSurveyData(prev => ({ ...prev, crystalCurrentTotal: typeof val === 'function' ? val(prev.crystalCurrentTotal || '') : val }));
     const currentPaid = surveyData.crystalCurrentPaid || '';
     const setCurrentPaid = (val) => setSurveyData(prev => ({ ...prev, crystalCurrentPaid: typeof val === 'function' ? val(prev.crystalCurrentPaid || '') : val }));
-    const passPoints = surveyData.crystalPassPoints || 0;
-    const setPassPoints = (val) => setSurveyData(prev => ({ ...prev, crystalPassPoints: typeof val === 'function' ? val(prev.crystalPassPoints || 0) : val }));
-    const passRenewalDate = surveyData.crystalPassRenewalDate || 1; // New State: 1-31
-    const setPassRenewalDate = (val) => setSurveyData(prev => ({ ...prev, crystalPassRenewalDate: typeof val === 'function' ? val(prev.crystalPassRenewalDate || 1) : val }));
-    const worldPassRenewalDate = surveyData.crystalWorldPassRenewalDate || 1; // World Pass Renewal
-    const setWorldPassRenewalDate = (val) => setSurveyData(prev => ({ ...prev, crystalWorldPassRenewalDate: typeof val === 'function' ? val(prev.crystalWorldPassRenewalDate || 1) : val }));
+    const passPoints = surveyData.crystalPassPoints ?? '';
+    const setPassPoints = (val) => setSurveyData(prev => ({ ...prev, crystalPassPoints: typeof val === 'function' ? val(prev.crystalPassPoints ?? '') : val }));
+    const passRenewalDate = surveyData.crystalPassRenewalDate ?? ''; // Blank is calculated as day 1.
+    const setPassRenewalDate = (val) => setSurveyData(prev => ({ ...prev, crystalPassRenewalDate: typeof val === 'function' ? val(prev.crystalPassRenewalDate ?? '') : val }));
+    const worldPassRenewalDate = surveyData.crystalWorldPassRenewalDate ?? ''; // Blank is calculated as day 1.
+    const setWorldPassRenewalDate = (val) => setSurveyData(prev => ({ ...prev, crystalWorldPassRenewalDate: typeof val === 'function' ? val(prev.crystalWorldPassRenewalDate ?? '') : val }));
 
     // Detailed Monthly Settings
     const settings = surveyData.crystalSettings || {
@@ -75,7 +75,7 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
     useEffect(() => {
         const fetchEventData = async () => {
             try {
-                const response = await fetch(joinUrl(API_BASE_URL, 'api/ranking'), { cache: 'reload' });
+                const response = await fetch(joinUrl(API_BASE_URL, 'api/ranking'), { cache: 'no-store' });
                 const data = await response.json();
                 if (data && data.latest_event) {
                     setEventData(data.latest_event);
@@ -342,13 +342,16 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
         // Actually usually calculators assume "future income". If today >= renewal, this month's renewal passed.
         // So we only add if today < renewal.)
 
-        if (currentDay < passRenewalDate) {
+        const effectivePassRenewalDate = Number(passRenewalDate) || 1;
+        const effectiveWorldPassRenewalDate = Number(worldPassRenewalDate) || 1;
+
+        if (currentDay < effectivePassRenewalDate) {
             if (settings.colorfulPass) paid += 3060; // Precious (Colorful)
             if (settings.deluxePass) paid += 1530; // Deluxe
             if (settings.basicPass) paid += 360;  // Basic
         }
 
-        if (settings.worldPass && currentDay < worldPassRenewalDate) {
+        if (settings.worldPass && currentDay < effectiveWorldPassRenewalDate) {
             paid += 1380; // World Pass Paid
         }
 
@@ -392,15 +395,16 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
 
         // Mission Pass (Dynamic Calculation based on Points)
         // Basic
+        const effectivePassPoints = Number(passPoints) || 0;
         const remainingBasic = BASIC_PASS_REWARDS
-            .filter(r => r.point > passPoints)
+            .filter(r => r.point > effectivePassPoints)
             .reduce((sum, r) => sum + r.crystals, 0);
         free += remainingBasic;
 
         // Premium
         if (settings.premiumPass) {
             const remainingPremium = PREMIUM_PASS_REWARDS
-                .filter(r => r.point > passPoints)
+                .filter(r => r.point > effectivePassPoints)
                 .reduce((sum, r) => sum + r.crystals, 0);
             free += remainingPremium;
         }
@@ -618,7 +622,7 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
                     <InputRow
                         label={t('gacha.current_pass_points')}
                         value={passPoints}
-                        onChange={(e) => setPassPoints(Number(e.target.value))}
+                        onChange={(e) => setPassPoints(e.target.value)}
                         placeholder="0"
                     />
                 </InputTableWrapper>
@@ -679,10 +683,12 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
                                             value={passRenewalDate}
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => {
-                                                const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
-                                                setPassRenewalDate(val);
+                                                const rawValue = e.target.value;
+                                                setPassRenewalDate(rawValue === ''
+                                                    ? ''
+                                                    : String(Math.min(31, Math.max(1, Number(rawValue)))));
                                             }}
-                                            className="w-10 px-1 py-0.5 border rounded text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            className="w-10 px-1 py-0.5 border rounded text-center placeholder:text-gray-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                             placeholder="1"
                                         />
                                         <span>{t('gacha.day_suffix')}</span>
@@ -752,10 +758,12 @@ const CrystalCalculator = ({ surveyData, setSurveyData }) => {
                                     value={worldPassRenewalDate}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
-                                        const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
-                                        setWorldPassRenewalDate(val);
+                                        const rawValue = e.target.value;
+                                        setWorldPassRenewalDate(rawValue === ''
+                                            ? ''
+                                            : String(Math.min(31, Math.max(1, Number(rawValue)))));
                                     }}
-                                    className="w-10 px-1 py-0.5 border rounded text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    className="w-10 px-1 py-0.5 border rounded text-center placeholder:text-gray-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                     placeholder="1"
                                 />
                                 <span>{t('gacha.day_suffix')}</span>

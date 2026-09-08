@@ -19,6 +19,7 @@ import {
 import AllSongsTable from './AllSongsTable';
 import CustomSelectDropdown from './common/CustomSelectDropdown';
 import { numberOrDefault } from '../utils/numbers';
+import { isAutoSongExcluded } from '../utils/autoSongSelection';
 
 // Fixed configuration for batch calculation with levels
 const TARGET_SONGS = [
@@ -136,7 +137,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
 
         TARGET_SONGS.forEach(target => {
             const song = songsById.get(target.id);
-            if (!song) return;
+            if (!song || isAutoSongExcluded(song)) return;
             const musicMeta = musicMetaLookup.get(`${Number(target.id)}:${target.difficulty}`);
             if (!musicMeta) return;
 
@@ -186,7 +187,7 @@ function AutoTab({ surveyData, setSurveyData, hideInputs = false }) {
                         level: target.level,
                         minRank,
                         minEventPoint,
-                        maxEventPoint
+                        maxEventPoint,
                     });
                 }
             } catch (e) {

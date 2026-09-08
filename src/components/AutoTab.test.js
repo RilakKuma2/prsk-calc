@@ -42,11 +42,13 @@ jest.mock('../utils/dataLoader', () => ({
             id: 11,
             name: '테스트곡',
             title_jp: 'テスト曲',
+            length: 120,
         },
         {
             id: 765,
             name: '렘',
             title_jp: 'レム',
+            length: 120,
         },
     ],
     getMiniMusicMetas: () => Promise.resolve([
@@ -54,11 +56,13 @@ jest.mock('../utils/dataLoader', () => ({
             music_id: 11,
             difficulty: 'append',
             event_rate: 100,
+            music_time: 120.1,
         },
         {
             music_id: 765,
             difficulty: 'expert',
             event_rate: 106,
+            music_time: 120.9,
         },
     ]),
     preloadMusicMetasWhenIdle: () => {},
@@ -110,6 +114,7 @@ describe('AutoTab energy selection', () => {
         render(<AutoTabHarness />);
 
         const dropdown = await screen.findByRole('combobox', { name: '불 설정' });
+        expect(screen.getByText('테스트곡')).not.toBeNull();
         expect(screen.getByText('렘')).not.toBeNull();
         expect(screen.getByText('EX')).not.toBeNull();
         expect(dropdown.textContent).toContain('1불');
