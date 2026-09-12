@@ -31,16 +31,28 @@ function buildDeckUrl(apiBase, friendCode, eventOverride = {}) {
 }
 
 async function fetchDeckFromApi(apiBase, friendCode, eventOverride) {
+    const serverName = apiBase === WORKER_API ? '기본 서버' : '보조 서버';
+    const startedAt = Date.now();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
     try {
-        const res = await fetch(buildDeckUrl(apiBase, friendCode, eventOverride));
-        if (!res.ok) return { ok: false, code: 'D01' };
+        const res = await fetch(buildDeckUrl(apiBase, friendCode, eventOverride), { signal: controller.signal });
+        if (!res.ok) return { ok: false, code: `${serverName}: D01 (HTTP ${res.status})${res.status === 403 ? ' 접근이 차단되었습니다.' : ''}` };
 
         const data = await res.json();
-        if (data.error) return { ok: false, code: 'D02' };
+        if (data?.error) return { ok: false, code: `${serverName}: D02 (${String(data.error).slice(0, 200)})` };
 
+        if (!Array.isArray(data?.skillValues) || data.skillValues.length !== 5) return { ok: false, code: `${serverName}: D02 (덱 정보 없음)` };
+        if (![data.totalPower, data.eventBonus, ...data.skillValues].every(value =>
+            typeof value === 'number' && Number.isFinite(value) && value >= 0)) {
+            return { ok: false, code: `${serverName}: D02 (종합력·배수·스킬 응답 형식 오류)` };
+        }
         return { ok: true, data };
     } catch (_err) {
-        return { ok: false, code: 'D03' };
+        return { ok: false, code: `${serverName}: ${controller.signal.aborted ? 'D04 (30초 응답 시간 초과)' : 'D03 (연결 오류 또는 CORS 차단)'}` };
+    } finally {
+        clearTimeout(timer);
+        console.info('[친구코드 불러오기]', serverName, `${Date.now() - startedAt}ms`);
     }
 }
 
@@ -59,12 +71,26 @@ async function fetchDeckFromApi(apiBase, friendCode, eventOverride) {
  *   loadedVSBloomFesMembers: object,
  * }>}
  */
-export async function loadDeckFromFriendCode(friendCode, eventOverride = {}) {
+export async function loadDeckFromFriendCode(friendCode, eventOverride = {}, onProgress = () => {}) {
+    onProgress('primary');
     const primary = await fetchDeckFromApi(WORKER_API, friendCode, eventOverride);
     if (primary.ok) return primary.data;
 
+    onProgress('fallback');
     const fallback = await fetchDeckFromApi(FALLBACK_WORKER_API, friendCode, eventOverride);
     if (fallback.ok) return fallback.data;
 
-    throw new Error(`${primary.code}/${fallback.code}`);
+    throw new Error(`${primary.code} / ${fallback.code}`);
+}
+
+
+export function describeDeckLoadError(error) {
+    const message = String(error?.message || '');
+    if (/404|not found|存在し|見つか|user.*invalid/i.test(message)) return '플레이어를 찾지 못했습니다. 일본 서버 친구코드인지 확인해 주세요.';
+    if (/403/.test(message)) return '서버가 접근을 차단했습니다. 잠시 후 다시 시도해 주세요.';
+    if (/429/.test(message)) return '요청이 많아 잠시 제한되었습니다. 조금 뒤 다시 시도해 주세요.';
+    if (/D04|timeout|시간 초과/i.test(message)) return '서버 응답이 늦어 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    if (/D03|network|fetch/i.test(message)) return '서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.';
+    if (/D02/.test(message)) return '서버에서 올바른 덱 정보를 받지 못했습니다. 친구코드를 확인하거나 잠시 후 다시 시도해 주세요.';
+    return '플레이어 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
 }

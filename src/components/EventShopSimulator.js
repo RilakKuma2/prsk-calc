@@ -5,6 +5,9 @@ import playerLevelData from '../data/player_levels.json';
 import { getCardCharacterId as getSupportCardCharacterId } from '../utils/supportCardUtils';
 import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
 import CustomSelectDropdown from './common/CustomSelectDropdown';
+import EventLiveDeckButton from './common/EventLiveDeckButton';
+import useEventLiveEstimate from '../hooks/useEventLiveEstimate';
+import { getEventLiveSource } from '../utils/eventLiveEstimate';
 import { numberOrDefault } from '../utils/numbers';
 import {
   readJsonStorage,
@@ -89,16 +92,15 @@ const toTimestampMs = (...values) => {
   return 0;
 };
 
-const getNaturalCalculationEndMs = (summary, eventInfo) => (
-  toTimestampMs(
-    summary?.aggregateAt,
-    summary?.endAt,
-    summary?.end,
-    eventInfo?.aggregateAt,
-    eventInfo?.endAt,
-    eventInfo?.end
-  )
-);
+export const getNaturalCalculationWindow = (summary, events, eventInfo, currentTime) => {
+  const eventId = Number(summary?.eventId);
+  const event = events.find(row => Number(row.id) === eventId)
+    || (Number(eventInfo?.id) === eventId ? eventInfo : null);
+  // Exchange shops stay open after event scoring has ended.
+  const end = toTimestampMs(event?.aggregateAt, event?.endAt, event?.end);
+  const start = Math.max(currentTime, toTimestampMs(event?.startAt, event?.start));
+  return { start, end, active: end > start };
+};
 
 const getFireConsumption = (fireOption) => {
   const fireaMap = {
@@ -573,13 +575,10 @@ const getShopGroupLabel = (eventItem, index, language, t, lookups) => {
 
 const EventShopSimulator = ({
   eventInfo,
-  scorePerRoundMan,
   roundsPerInterval,
   currentFireOption,
-  changedFireOption,
   naturalSettings = {},
   onNaturalSettingsChange,
-  onImport,
   surveyData = {},
   setSurveyData,
 }) => {
@@ -587,6 +586,14 @@ const EventShopSimulator = ({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [exchangeSummaries, setExchangeSummaries] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [calculationTime, setCalculationTime] = useState(Date.now);
+  useEffect(() => {
+    const refresh = () => setCalculationTime(Date.now());
+    const timer = window.setInterval(refresh, 60000);
+    window.addEventListener('focus', refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); };
+  }, []);
   const [resourceBoxes, setResourceBoxes] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [mysekaiMaterials, setMysekaiMaterials] = useState([]);
@@ -605,16 +612,24 @@ const EventShopSimulator = ({
   const [shopPresets, setShopPresets] = useState(() => createPresetSlots());
   const dropdownRef = useRef(null);
   const presetMenuRef = useRef(null);
-  const topMenuTouchRef = useRef({ x: 0, y: 0, handled: false });
+  const menuRef = useRef(null);
+  const [menuHeight, setMenuHeight] = useState(0);
+  const [menuRevealed, setMenuRevealed] = useState(false);
+  useEffect(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+    const observer = new ResizeObserver(() => setMenuHeight(menu.offsetHeight));
+    observer.observe(menu);
+    return () => observer.disconnect();
+  }, []);
 
-  const [localScorePerRoundMan, setLocalScorePerRoundMan] = useState(scorePerRoundMan || '2.8');
+  const incomeSource = getEventLiveSource(surveyData).label;
+  const localCurrentFireOption = surveyData.fires2 && surveyData.fires2 !== 'none' ? surveyData.fires2 : surveyData.firea || currentFireOption || '25';
+  const setLocalCurrentFireOption = value => setSurveyData(prev => ({ ...prev, firea: value, fires2: 'none' }));
+  const liveEstimate = useEventLiveEstimate(surveyData, localCurrentFireOption);
+  const localScorePerRoundMan = liveEstimate.points === null ? '0' : String(liveEstimate.points / 10000);
   const [localRoundsPerInterval, setLocalRoundsPerInterval] = useState(roundsPerInterval || '28');
-  const [localCurrentFireOption, setLocalCurrentFireOption] = useState(currentFireOption || '15');
-  const [localChangedFireOption, setLocalChangedFireOption] = useState(changedFireOption || 'none');
-  const [importMenuOpen, setImportMenuOpen] = useState(false);
-  const [isTopSectionCollapsed, setIsTopSectionCollapsed] = useState(false);
 
-  const [isNaturalFireOpen, setIsNaturalFireOpen] = useState(false);
   const getNaturalSetting = (key, fallback) => (
     Object.prototype.hasOwnProperty.call(naturalSettings, key)
       ? naturalSettings[key]
@@ -650,20 +665,13 @@ const EventShopSimulator = ({
   };
 
   useEffect(() => {
-    if (scorePerRoundMan !== undefined) setLocalScorePerRoundMan(scorePerRoundMan);
     if (roundsPerInterval !== undefined) setLocalRoundsPerInterval(roundsPerInterval);
-    if (currentFireOption !== undefined) setLocalCurrentFireOption(currentFireOption);
-    if (changedFireOption !== undefined) setLocalChangedFireOption(changedFireOption);
-  }, [scorePerRoundMan, roundsPerInterval, currentFireOption, changedFireOption]);
-  const importMenuRef = useRef(null);
+  }, [roundsPerInterval]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setBulkActionOpen(false);
-      }
-      if (importMenuRef.current && !importMenuRef.current.contains(event.target)) {
-        setImportMenuOpen(false);
       }
       if (presetMenuRef.current && !presetMenuRef.current.contains(event.target)) {
         setPresetMenuOpen(false);
@@ -673,44 +681,6 @@ const EventShopSimulator = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleImport = (type) => {
-    if (onImport) {
-      onImport(type);
-    }
-    setImportMenuOpen(false);
-  };
-
-  const isMobileViewport = () => (
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
-  );
-
-  const handleTopMenuTouchStart = (event) => {
-    if (!isMobileViewport()) return;
-    const touch = event.touches?.[0];
-    if (!touch) return;
-
-    topMenuTouchRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      handled: false,
-    };
-  };
-
-  const handleTopMenuTouchMove = (event) => {
-    if (!isMobileViewport() || isTopSectionCollapsed) return;
-    const touch = event.touches?.[0];
-    const start = topMenuTouchRef.current;
-    if (!touch || start.handled) return;
-
-    const deltaX = touch.clientX - start.x;
-    const deltaY = touch.clientY - start.y;
-    const isVerticalSwipeUp = deltaY < -32 && Math.abs(deltaY) > Math.abs(deltaX) * 1.15;
-
-    if (isVerticalSwipeUp) {
-      topMenuTouchRef.current = { ...start, handled: true };
-      setIsTopSectionCollapsed(true);
-    }
-  };
 
   const lookups = useMemo(() => ({
     materials: buildLookup(materials),
@@ -784,6 +754,7 @@ const EventShopSimulator = ({
       fetchJson(SKILL_PRACTICE_TICKETS_URL),
       fetchJson(BOOST_ITEMS_URL),
       fetchJson(GAME_CHARACTERS_URL),
+      fetchJson(`${SUITE_BASE_URL}/events.json`),
     ])
       .then(([
         summaries,
@@ -796,9 +767,11 @@ const EventShopSimulator = ({
         skillPracticeTicketRows,
         boostItemRows,
         gameCharacterRows,
+        eventRows,
       ]) => {
         if (cancelled) return;
         setExchangeSummaries(Array.isArray(summaries) ? summaries : []);
+        setEvents(Array.isArray(eventRows) ? eventRows : []);
         setResourceBoxes(Array.isArray(resourceBoxRows) ? resourceBoxRows : []);
         setMaterials(Array.isArray(materialRows) ? materialRows : []);
         setMysekaiMaterials(Array.isArray(mysekaiMaterialRows) ? mysekaiMaterialRows : []);
@@ -897,17 +870,19 @@ const EventShopSimulator = ({
     }, 0);
     const owned = toPositiveInteger(currentOwnedBadgePoints, 0);
     const perRoundPoints = Math.max(0, toNumber(localScorePerRoundMan || '2.8', 0) * 1000);
-    const fireOption = localChangedFireOption && localChangedFireOption !== 'none' ? localChangedFireOption : localCurrentFireOption;
+    const fireOption = localCurrentFireOption;
     const firePerRound = getFireConsumption(fireOption);
 
     let naturalShopPoints = 0;
-    if (selectedSummary || eventInfo) {
-      const now = new Date().getTime();
-      const end = getNaturalCalculationEndMs(selectedSummary, eventInfo);
+    const breakdown = [];
+    const window = getNaturalCalculationWindow(selectedSummary, events, eventInfo, calculationTime);
+    if (window.active) {
+      const now = window.start;
+      const end = window.end;
       const remainingMs = Math.max(0, end - now);
       const recoveryFire = Math.floor(remainingMs / (30 * 60 * 1000));
 
-      let loginFire = 0;
+      let adBonusFire = 0;
       let checkTime = new Date(now);
       if (checkTime.getHours() >= 4) {
         checkTime.setDate(checkTime.getDate() + 1);
@@ -915,12 +890,12 @@ const EventShopSimulator = ({
       checkTime.setHours(4, 0, 0, 0);
 
       while (checkTime.getTime() < end) {
-        loginFire += 10;
+        adBonusFire += 10;
         checkTime.setDate(checkTime.getDate() + 1);
       }
 
       const userCurrentNatural = parseInt(currentNaturalFire) || 0;
-      const baseNaturalFire = recoveryFire + loginFire + userCurrentNatural;
+      const baseNaturalFire = recoveryFire + adBonusFire + userCurrentNatural;
 
       let levelUpFire = 0;
       let simFire = baseNaturalFire;
@@ -969,7 +944,7 @@ const EventShopSimulator = ({
       const naturalRounds = Math.floor(totalNaturalFire / fireConsumption);
       naturalShopPoints = naturalRounds * perRoundPoints;
 
-      const days = loginFire / 10;
+      const days = adBonusFire / 10;
       const cScoreVal = numberOrDefault(challengeScore, 250);
       const challengeEPPerDay = Math.floor((100 + cScoreVal / 2) * 120);
       const totalChallengeEP = cScoreVal > 0 ? challengeEPPerDay * days : 0;
@@ -994,6 +969,14 @@ const EventShopSimulator = ({
       const extraShopPoints = Math.floor((totalChallengeEP + totalMySekaiEP) / 10);
       const eventPointAdShopPoints = isEventPointAdEnabled ? days * 1000 : 0;
       naturalShopPoints += extraShopPoints + eventPointAdShopPoints;
+      breakdown.push(
+        { label: incomeSource, detail: `${totalNaturalFire.toLocaleString()}불 → ${naturalRounds.toLocaleString()}회 × ${perRoundPoints.toLocaleString()}포`, points: naturalRounds * perRoundPoints },
+        { label: '챌린지 라이브', detail: `${days}일`, points: Math.floor(totalChallengeEP / 10) },
+        { label: '마이세카', detail: `${mySekaiDays}일 · ${worldPass ? 10 : 2}배`, points: Math.floor(totalMySekaiEP / 10) },
+        { label: '이벤트 포인트 광고', detail: `${isEventPointAdEnabled ? days : 0}일`, points: eventPointAdShopPoints },
+      );
+      window.fire = `현재 ${userCurrentNatural} + 자연회복 ${recoveryFire} + 광고 불 ${adBonusFire} + 레벨업 ${levelUpFire} = ${totalNaturalFire}불`;
+
     }
 
     const neededBeforeNatural = Math.max(0, plannedCost - owned);
@@ -1006,6 +989,8 @@ const EventShopSimulator = ({
     const additionalHours = additionalRounds !== null && roundSpeed > 0 ? additionalRounds / roundSpeed : null;
 
     return {
+      breakdown,
+      calculationWindow: window,
       plannedCost,
       usedCost,
       owned,
@@ -1019,7 +1004,7 @@ const EventShopSimulator = ({
       additionalFire,
       additionalHours,
     };
-  }, [visibleItems, currentOwnedBadgePoints, localScorePerRoundMan, localRoundsPerInterval, localCurrentFireOption, localChangedFireOption, selectedSummary, eventInfo, currentNaturalFire, isLevelUpBonusEnabled, currentLevel, remainingExp, liveRank, challengeScore, mySekaiScore, worldPass, isEventPointAdEnabled]);
+  }, [incomeSource, events, calculationTime, visibleItems, currentOwnedBadgePoints, localScorePerRoundMan, localRoundsPerInterval, localCurrentFireOption, selectedSummary, eventInfo, currentNaturalFire, isLevelUpBonusEnabled, currentLevel, remainingExp, liveRank, challengeScore, mySekaiScore, worldPass, isEventPointAdEnabled]);
 
   const updateItemsWithCountPersistence = (updater) => {
     setItems(prev => {
@@ -1166,6 +1151,29 @@ const EventShopSimulator = ({
     <div className="w-full text-left animate-fade-in">
       <style dangerouslySetInnerHTML={{
         __html: `
+        .event-shop-simulator .shop-calculation{grid-column:1/-1;min-width:0;border:1px solid var(--theme-border);border-radius:12px;background:var(--theme-surface);color:var(--theme-text);font-size:13px;line-height:1.5;overflow:hidden}
+        .shop-calculation>summary{display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px 14px;list-style:none;background:var(--theme-surface-subtle)}
+        .shop-calculation>summary::-webkit-details-marker{display:none}
+        .shop-calculation>summary::before{content:'›';font-size:20px;line-height:1;color:var(--theme-text-muted);transition:transform .15s}
+        .shop-calculation[open]>summary::before{transform:rotate(90deg)}
+        .shop-calculation-title{font-size:13px;font-weight:800;white-space:nowrap}
+        .shop-calculation-preview{margin-left:auto;font-size:11px;color:var(--theme-text-muted)}
+        .shop-calculation-preview b{margin-left:5px;color:var(--theme-blue-text);font-size:12px}
+        .shop-calculation-body{padding:12px 14px}
+        .shop-calculation-period{display:flex;flex-wrap:wrap;gap:4px 10px;color:var(--theme-text-muted);font-size:11px}
+        .shop-calculation-fire{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:8px;padding:8px 10px;border-radius:7px;background:var(--theme-surface-soft);font-size:11px;color:var(--theme-text-muted)}
+        .shop-calculation-fire b{color:var(--theme-text);white-space:nowrap}
+        .shop-calculation-notice{font-size:12px;margin-top:8px;color:var(--theme-text-muted)}
+        .shop-calculation-columns{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;margin-top:10px}
+        .shop-calculation-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--theme-border)}
+        .shop-calculation-row b{font-size:12px;font-weight:700}.shop-calculation-row small{display:block;color:var(--theme-text-muted);font-size:11px;line-height:1.5}
+        .shop-calculation-row strong{font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}.shop-calculation-row strong small{display:inline;margin-left:3px;font-weight:400}
+        .shop-calculation-total{display:flex;justify-content:space-between;gap:8px;padding-top:10px;font-size:12px;font-weight:800;color:var(--theme-blue-text)}
+        .shop-calculation-balance{align-self:start;background:var(--theme-surface-soft);border-radius:9px;padding:12px}
+        .shop-calculation-balance>div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:12px}.shop-calculation-balance b{white-space:nowrap;font-variant-numeric:tabular-nums}.shop-calculation-balance span{color:var(--theme-text-muted)}
+        .shop-calculation-balance .shop-calculation-shortfall{border-top:1px solid var(--theme-border);margin-top:7px;padding-top:10px;font-weight:800;font-size:14px}.shop-calculation-shortfall span{color:var(--theme-text)}
+        .shop-calculation-balance .shop-calculation-extra{margin-top:8px;padding:8px;border-radius:7px;background:var(--theme-blue-soft);color:var(--theme-blue-text)}.shop-calculation-extra span{color:inherit}
+        @media(max-width:600px){.shop-calculation-columns{grid-template-columns:1fr;gap:12px}.shop-calculation-body{padding:10px}.shop-calculation>summary{padding:11px 10px}.shop-calculation-preview{font-size:10px}}
         .custom-range {
           -webkit-appearance: none !important;
           appearance: none !important;
@@ -1300,142 +1308,34 @@ const EventShopSimulator = ({
             background: linear-gradient(270deg, rgba(255,255,255,0.95), rgba(255,255,255,0));
           }
         }
-        .event-shop-natural-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 4px;
-          align-items: stretch;
-        }
-        .event-shop-natural-field,
-        .event-shop-natural-checks {
-          min-height: 44px;
-          border-radius: 8px;
-          border: 1px solid #cfdafe;
-          background: #ffffff;
-        }
-        .event-shop-natural-field {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 3px;
-          padding: 4px 6px;
-          min-width: 0;
-        }
-        .event-shop-natural-label {
-          min-width: 0;
-          color: #312e81;
-          font-size: 9px;
-          font-weight: 900;
-          line-height: 1;
-          white-space: nowrap;
-        }
-        .event-shop-natural-value {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 2px;
-          min-width: 0;
-          flex-shrink: 0;
-        }
-        .event-shop-natural-input {
-          width: 46px !important;
-          min-width: 46px !important;
-          height: 30px !important;
-          margin: 0 !important;
-          padding: 0 5px !important;
-          border: 1px solid #cbd5e1 !important;
-          border-radius: 8px !important;
-          background: #ffffff !important;
-          color: #312e81 !important;
-          font-size: 13px !important;
-          font-weight: 900 !important;
-          line-height: 1 !important;
-          text-align: right !important;
-          box-sizing: border-box !important;
-          -moz-appearance: textfield;
-        }
-        .event-shop-natural-input::-webkit-outer-spin-button,
-        .event-shop-natural-input::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        .event-shop-natural-checks {
-          grid-column: 1 / -1;
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, max-content));
-          align-items: center;
-          align-content: center;
-          justify-content: center;
-          gap: 6px 12px;
-          padding: 6px 8px;
-        }
-        .event-shop-natural-checks label {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          color: #312e81;
-          font-size: 9px;
-          font-weight: 900;
-          line-height: 1;
-          white-space: nowrap;
-          cursor: pointer;
-        }
-        .event-shop-natural-checks input[type="checkbox"] {
-          width: 18px !important;
-          height: 18px !important;
-          min-width: 18px !important;
-          min-height: 18px !important;
-          border-radius: 6px;
-        }
-        @media (min-width: 768px) {
-          .event-shop-natural-grid {
-            grid-template-columns: repeat(3, minmax(150px, 1fr)) minmax(230px, 1.05fr);
-            gap: 6px;
-          }
-          .event-shop-natural-field,
-          .event-shop-natural-checks {
-            min-height: 58px;
-          }
-          .event-shop-natural-field {
-            gap: 4px;
-            padding: 6px 10px;
-          }
-          .event-shop-natural-label {
-            font-size: 10px;
-          }
-          .event-shop-natural-checks {
-            grid-column: auto;
-            justify-content: start;
-            gap: 8px 12px;
-            padding: 8px 12px;
-          }
-          .event-shop-natural-checks label {
-            gap: 6px;
-            font-size: 10px;
-          }
-          .event-shop-natural-checks input[type="checkbox"] {
-            width: 22px !important;
-            height: 22px !important;
-            min-width: 22px !important;
-            min-height: 22px !important;
-            border-radius: 7px;
-          }
-          .event-shop-natural-input {
-            width: 76px !important;
-            min-width: 76px !important;
-            height: 42px !important;
-            padding: 0 8px !important;
-            border-radius: 10px !important;
-            font-size: 18px !important;
-          }
-        }
+        .shop-menu-sticky{position:sticky;top:calc(-1 * var(--shop-menu-height));z-index:30;background:var(--theme-surface);border-radius:14px 14px 0 0;box-shadow:0 3px 8px #0001}
+        .shop-menu-sticky.is-revealed{top:0}
+        .shop-menu-content{overflow:visible}
+        .event-shop-simulator .shop-menu-handle{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;height:24px;min-height:24px;margin:0;padding:0;border:0;border-radius:0;background:var(--theme-surface-subtle);color:var(--theme-text-muted);font-size:11px;font-weight:600;cursor:pointer}
+        .shop-menu-handle:hover{color:var(--theme-blue-text)}
+        .shop-controls-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(135px,.55fr) auto;align-items:center;gap:6px;margin-top:6px;text-align:left}
+        .shop-controls-row>div:first-child{grid-column:auto;min-height:44px}
+        .shop-actions button{min-height:32px;white-space:nowrap}
+        .shop-preset{width:80px}
+        .event-shop-natural-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-items:center}
+        .event-shop-natural-field{display:flex;align-items:center;justify-content:space-between;gap:5px;min-width:0;padding:4px 6px;border:1px solid #cfdafe;border-radius:7px;background:#fff}
+        .event-shop-natural-label{font-size:11px;font-weight:700;color:#312e81;line-height:1.2}
+        .event-shop-natural-value{display:flex;align-items:center;gap:2px;min-width:0}
+        .event-shop-natural-input{width:64px!important;min-width:0!important;height:32px!important;margin:0!important;padding:0 5px!important;border:1px solid #cbd5e1!important;border-radius:6px!important;background:#fff!important;color:#312e81!important;font-size:14px!important;font-weight:700!important;text-align:right!important;box-sizing:border-box!important;-moz-appearance:textfield}
+        .event-shop-natural-input::-webkit-outer-spin-button,.event-shop-natural-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+        .event-shop-natural-checks{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:2px 6px}
+        .event-shop-natural-checks label{display:inline-flex;align-items:center;gap:5px;min-height:28px;color:#312e81;font-size:11px;font-weight:700;cursor:pointer}
+        .event-shop-natural-checks input[type=checkbox]{width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important}
+        @media(min-width:900px){.event-shop-natural-grid{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(240px,1.5fr)}.event-shop-natural-checks{grid-column:auto}}
+        @media(max-width:767px){.shop-controls-row{grid-template-columns:minmax(0,1fr) auto}.shop-controls-row>div:first-child{grid-column:1/-1}.event-shop-natural-field{flex-direction:column;align-items:stretch;gap:3px}.event-shop-natural-value{justify-content:flex-end}.event-shop-natural-input{width:100%!important}.shop-actions{gap:4px}.shop-preset{width:70px}}
       `}} />
-      <div className="event-shop-simulator rounded-2xl border border-pink-100 bg-gradient-to-b from-white to-pink-50/40 shadow-2xl overflow-hidden max-h-[calc(100vh-4.5rem)] supports-[height:100dvh]:max-h-[calc(100dvh-4.5rem)] sm:max-h-[88vh] sm:supports-[height:100dvh]:max-h-[88dvh] flex flex-col">
-        <div
-          className="px-2 sm:px-4 py-1.5 sm:py-2.5 border-b border-pink-100 bg-white/95 shrink-0"
-          onTouchStart={handleTopMenuTouchStart}
-          onTouchMove={handleTopMenuTouchMove}
-        >
+      <div onScroll={() => setMenuRevealed(false)} onWheel={() => setMenuRevealed(false)} onTouchMove={() => setMenuRevealed(false)} className="event-shop-simulator rounded-2xl border border-pink-100 bg-gradient-to-b from-white to-pink-50/40 shadow-2xl overflow-x-hidden overflow-y-auto max-h-[calc(100vh-4.5rem)] supports-[height:100dvh]:max-h-[calc(100dvh-4.5rem)] sm:max-h-[88vh] sm:supports-[height:100dvh]:max-h-[88dvh]">
+        <div className={`shop-menu-sticky${menuRevealed ? ' is-revealed' : ''}`} style={{ '--shop-menu-height': `${menuHeight}px` }}
+          onMouseLeave={() => { if (!presetMenuOpen && !bulkActionOpen) setMenuRevealed(false); }}
+          onWheel={() => setMenuRevealed(false)}
+          onTouchMove={() => setMenuRevealed(false)}>
+        <div ref={menuRef} className="shop-menu-content px-2 sm:px-4 py-1.5 sm:py-2.5 border-b border-pink-100 bg-white/95 shrink-0">
+
           <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-9 h-9 rounded-lg bg-pink-50 border border-pink-100 flex items-center justify-center shrink-0">
@@ -1492,19 +1392,7 @@ const EventShopSimulator = ({
             </div>
           )}
 
-          {isTopSectionCollapsed && (
-            <div className="mt-1.5 sm:mt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsTopSectionCollapsed(false)}
-                className="px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-500 text-[10px] font-extrabold hover:bg-gray-200 active:scale-95 transition-all"
-              >
-                ▼ 메뉴 펴기
-              </button>
-            </div>
-          )}
-
-          <div className={`transition-all duration-300 ease-in-out origin-top ${isTopSectionCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[760px] opacity-100 overflow-visible'}`}>
+          <div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-1.5 mt-1.5 sm:mt-2 z-10 relative">
               <div className="rounded-lg bg-gray-50 border border-gray-100 px-1.5 sm:px-2 py-1 sm:py-1.5 min-h-[42px] sm:min-h-[50px]">
                 <div className="text-[10px] font-bold text-gray-400 leading-none">{t('fire.shop_owned_points')}</div>
@@ -1542,33 +1430,13 @@ const EventShopSimulator = ({
             </div>
 
             <div className="flex flex-col">
-              <div className="order-2 md:order-1 grid grid-cols-2 md:grid-cols-[minmax(260px,360px)_minmax(145px,190px)_92px_minmax(0,1fr)] gap-1 sm:gap-1.5 mt-1 sm:mt-1.5 text-left items-stretch">
+              <div className="shop-controls-row">
                 <div className="col-span-2 md:col-span-1 rounded-lg bg-white/80 border border-gray-100 relative flex min-h-[46px] sm:min-h-[52px]">
                   <div className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2 py-1.5 border-r border-gray-100 relative">
                     <div className="flex items-center gap-1 min-w-0">
                       <div className="text-[10px] text-gray-400 font-bold whitespace-nowrap">판 당 이벤포</div>
-                      <div className="relative flex items-center" ref={importMenuRef}>
-                        <button
-                          type="button"
-                          onClick={() => setImportMenuOpen(open => !open)}
-                          className="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 transition-colors rounded p-0.5 shadow-sm shrink-0"
-                          title="불러오기"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                        </button>
-                        {importMenuOpen && (
-                          <div className="absolute left-0 top-full mt-1 z-50 bg-white rounded-lg shadow-xl border border-gray-100 p-1 w-[92px] animate-fade-in-down text-left">
-                            <div className="flex flex-col gap-0.5">
-                              <button onClick={() => handleImport('lost')} className="text-left text-[10px] font-bold text-gray-700 p-1.5 hover:bg-red-50 rounded hover:text-red-600 transition-colors">로엔</button>
-                              <button onClick={() => handleImport('omakase')} className="text-left text-[10px] font-bold text-gray-700 p-1.5 hover:bg-red-50 rounded hover:text-red-600 transition-colors">오마카세</button>
-                              <button onClick={() => handleImport('envy')} className="text-left text-[10px] font-bold text-gray-700 p-1.5 hover:bg-red-50 rounded hover:text-red-600 transition-colors">엔비</button>
-                              <button onClick={() => handleImport('creation_myth')} className="text-left text-[10px] font-bold text-gray-700 p-1.5 hover:bg-red-50 rounded hover:text-red-600 transition-colors">개벽오토</button>
-                              <button onClick={() => handleImport('my_sekai')} className="text-left text-[10px] font-bold text-gray-700 p-1.5 hover:bg-red-50 rounded hover:text-red-600 transition-colors">마이세카이</button>
-                            </div>
-                          </div>
-                        )}
+                      <div className="relative flex items-center">
+                        <EventLiveDeckButton surveyData={surveyData} setSurveyData={setSurveyData} bonus={localCurrentFireOption} estimate={liveEstimate} />
                       </div>
                     </div>
                     <div className="flex flex-col items-end shrink-0">
@@ -1576,7 +1444,8 @@ const EventShopSimulator = ({
                         <input
                           type="number"
                           value={localScorePerRoundMan}
-                          onChange={e => setLocalScorePerRoundMan(e.target.value)}
+                          readOnly
+                          title="덱·곡 설정에서 변경"
                           onFocus={e => e.target.select()}
                           className="w-[5.5rem] sm:w-[6.25rem] text-right text-[16px] font-extrabold text-gray-700 bg-transparent border-b border-gray-200 focus:outline-none focus:border-red-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
@@ -1629,11 +1498,14 @@ const EventShopSimulator = ({
                   )}
                 </div>
 
-                <div className="relative col-span-1 md:col-span-1" ref={presetMenuRef}>
+
+
+                <div className="shop-actions flex flex-wrap items-center justify-end gap-1 sm:gap-1.5">
+                <div className="shop-preset relative" ref={presetMenuRef}>
                   <button
                     type="button"
                     onClick={() => setPresetMenuOpen(open => !open)}
-                    className={`h-full min-h-[46px] sm:min-h-[52px] w-full md:w-[92px] rounded-lg px-2 text-[10px] font-extrabold shadow-sm transition-all ${presetMenuOpen ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                    className={`h-8 w-full rounded-lg px-2 text-[10px] font-extrabold shadow-sm transition-all ${presetMenuOpen ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
                       }`}
                   >
                     {t('fire.shop_preset')} ▼
@@ -1669,15 +1541,6 @@ const EventShopSimulator = ({
                   )}
                 </div>
 
-                <div className="col-span-2 md:col-span-1 flex flex-wrap items-center justify-end gap-1 sm:gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setIsNaturalFireOpen(!isNaturalFireOpen)}
-                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold shadow-sm transition-all flex items-center gap-1 ${isNaturalFireOpen ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-50 text-indigo-500 border border-indigo-100 hover:bg-indigo-100'
-                      }`}
-                  >
-                    자연불 {isNaturalFireOpen ? '▲' : '▼'}
-                  </button>
                   <div className="relative" ref={dropdownRef}>
                     <button
                       type="button"
@@ -1703,18 +1566,11 @@ const EventShopSimulator = ({
                   >
                     리셋
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsTopSectionCollapsed(!isTopSectionCollapsed)}
-                    className="px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-500 text-[10px] font-extrabold hover:bg-gray-200 active:scale-95 transition-all"
-                  >
-                    {isTopSectionCollapsed ? '▼ 메뉴 펴기' : '▲ 메뉴 접기'}
-                  </button>
+
                 </div>
               </div>
 
-              {isNaturalFireOpen && (
-                <div className="order-1 md:order-2 w-full mb-1 md:mb-0 md:mt-1.5 animate-fade-in-down">
+                <div className="w-full mt-1.5">
                   <div className="bg-indigo-50/80 rounded-lg p-1 sm:p-1.5 border border-indigo-100 shadow-sm">
                     <div className="event-shop-natural-grid">
                       <div className="event-shop-natural-field">
@@ -1821,7 +1677,6 @@ const EventShopSimulator = ({
                     </div>
                   </div>
                 </div>
-              )}
 
               {(loading || loadError) && (
                 <div className={`mt-2 rounded-lg px-3 py-2 text-xs font-bold ${loadError ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
@@ -1830,17 +1685,40 @@ const EventShopSimulator = ({
               )}
             </div>
           </div>
+          <div className="mt-2">
+                <details className="shop-calculation">
+                  <summary><span className="shop-calculation-title">계산 과정</span><span className="shop-calculation-preview">예상 수입 <b>{totals.naturalShopPoints.toLocaleString()}포</b></span></summary>
+                  <div className="shop-calculation-body">
+                    <div className="shop-calculation-period"><span>계산 기간</span><span>{totals.calculationWindow.end ? `${new Date(totals.calculationWindow.start).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} → ${new Date(totals.calculationWindow.end).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}` : '이벤트 기간을 확인할 수 없습니다.'}</span></div>
+                    {!totals.calculationWindow.active && <div className="shop-calculation-notice">남은 이벤트 기간이 없어 추가 수입은 0포입니다.</div>}
+                    {totals.calculationWindow.fire && <div className="shop-calculation-fire"><b>사용 가능 불</b><span>{totals.calculationWindow.fire}</span></div>}
+                    <div className="shop-calculation-columns">
+                      <section className="shop-calculation-income" aria-label="예상 수입 내역">
+                        {totals.breakdown.map(row => <div key={row.label} className="shop-calculation-row"><div><b>{row.label}</b><small>{row.detail}</small></div><strong>{row.points.toLocaleString()}<small>포</small></strong></div>)}
+                        <div className="shop-calculation-total"><span>예상 수입 합계</span><b>{totals.naturalShopPoints.toLocaleString()}포</b></div>
+                      </section>
+                      <section className="shop-calculation-balance" aria-label="부족분 계산">
+                        <div><span>구매 예정</span><b>{totals.plannedCost.toLocaleString()}포</b></div>
+                        <div><span>보유 포인트 차감</span><b>− {totals.owned.toLocaleString()}포</b></div>
+                        <div><span>예상 수입 차감</span><b>− {totals.naturalShopPoints.toLocaleString()}포</b></div>
+                        <div className="shop-calculation-shortfall"><span>부족 포인트</span><b>{totals.needed.toLocaleString()}포</b></div>
+                        <div className="shop-calculation-extra"><span>추가 라이브</span><b>{totals.additionalRounds?.toLocaleString() ?? '-'}회 · {totals.additionalFire?.toLocaleString() ?? '-'}불</b></div>
+                      </section>
+                    </div>
+                  </div>
+                </details>
+          </div>
+        </div>
+          <button type="button" className="shop-menu-handle" aria-label="상점 메뉴 펼치기" aria-expanded={menuRevealed}
+            onPointerEnter={event => { if (event.pointerType === 'mouse') setMenuRevealed(true); }}
+            onClick={() => setMenuRevealed(value => !value)}>
+            <span aria-hidden="true">{menuRevealed ? '⌃' : '⌄'}</span> 메뉴
+          </button>
         </div>
 
         <div
-          className="p-3 sm:p-4 overflow-y-auto flex-1 min-h-0"
-          onScroll={(e) => {
-            if (e.target.scrollTop > 30 && !isTopSectionCollapsed) {
-              setIsTopSectionCollapsed(true);
-            } else if (e.target.scrollTop <= 10 && isTopSectionCollapsed) {
-              setIsTopSectionCollapsed(false);
-            }
-          }}
+          className="p-3 sm:p-4"
+
         >
           {visibleItems.length === 0 && !loading ? (
             <div className="rounded-lg border border-dashed border-gray-200 bg-white p-6 text-center text-xs text-gray-400 font-bold">
@@ -2106,6 +1984,7 @@ const EventShopSimulator = ({
               })}
             </div>
           )}
+
 
           <div className="mt-3 text-[10px] text-gray-400 text-center font-medium">
             {t('fire.shop_calc_note', { locale: language })}

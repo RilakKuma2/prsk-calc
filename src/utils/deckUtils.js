@@ -169,3 +169,87 @@ export const calculateSlotSkillValues = (slots) => {
         return { ranges, skillValue: ranges[slot.skillLevel || 1] || ranges[1] };
     });
 };
+
+export const BLOOM_LEVELS = {
+    0: null, // X - no bloom
+    1: [60, 120],
+    2: [65, 130],
+    3: [70, 140],
+    4: [80, 150]
+};
+
+export const calculateInternalValueFromDeck = (deckData) => {
+    // Shared effective value used by the event deck and its compact preview.
+
+    const useBloom = deckData.useBloomFes || false;
+    const blooms = deckData.bloomLevels || { leader: 0, member2: 0, member3: 0, member4: 0, member5: 0 };
+
+    const leaderVal = numberOrDefault(deckData.skillLeader, 120);
+    const m2Val = numberOrDefault(deckData.skillMember2, 100);
+    const m3Val = numberOrDefault(deckData.skillMember3, 100);
+    const m4Val = numberOrDefault(deckData.skillMember4, 100);
+    const m5Val = numberOrDefault(deckData.skillMember5, 100);
+
+    const loadedBloomFesOriginal = deckData.loadedBloomFesOriginalMembers || {};
+    const loadedVSBloomFes = deckData.loadedVSBloomFesMembers || {};
+    const hasLoadedBloomFes = Object.values(loadedBloomFesOriginal).some(Boolean) || Object.values(loadedVSBloomFes).some(Boolean);
+
+    if (!useBloom && !hasLoadedBloomFes) {
+        // Standard formula: Leader + (Sum Others)*0.2
+        return Math.floor(leaderVal + (m2Val + m3Val + m4Val + m5Val) * 0.2);
+    }
+
+    // With Bloom Fes (global or per-member loaded), we use MINIMUM effective value
+    const allVals = { leader: leaderVal, member2: m2Val, member3: m3Val, member4: m4Val, member5: m5Val };
+
+    const getSkillMin = (memberKey, baseVal) => {
+        // Global bloom fes check
+        if (useBloom) {
+            const level = blooms[memberKey];
+            if (level && BLOOM_LEVELS[level]) {
+                const [base, maxCap] = BLOOM_LEVELS[level];
+                const memberSkills = {
+                    leader: { val: leaderVal, bloomLevel: blooms.leader },
+                    member2: { val: m2Val, bloomLevel: blooms.member2 },
+                    member3: { val: m3Val, bloomLevel: blooms.member3 },
+                    member4: { val: m4Val, bloomLevel: blooms.member4 },
+                    member5: { val: m5Val, bloomLevel: blooms.member5 },
+                };
+                let minOtherSkill = Infinity;
+                Object.entries(memberSkills).forEach(([k, data]) => {
+                    if (k === memberKey) return;
+                    let effectiveSkill = data.val;
+                    if (data.bloomLevel && BLOOM_LEVELS[data.bloomLevel]) {
+                        effectiveSkill = BLOOM_LEVELS[data.bloomLevel][1];
+                    }
+                    minOtherSkill = Math.min(minOtherSkill, effectiveSkill);
+                });
+                return Math.min(base + Math.floor(minOtherSkill * 0.5), maxCap);
+            }
+        }
+        // Loaded bloom-fes-original card check
+        if (loadedBloomFesOriginal[memberKey] && baseVal) {
+            const maxCap = baseVal >= 80 ? 150 : baseVal >= 70 ? 140 : baseVal >= 65 ? 130 : 120;
+            let minOther = Infinity;
+            Object.entries(allVals).forEach(([k, v]) => {
+                if (k !== memberKey) minOther = Math.min(minOther, v || 0);
+            });
+            if (minOther === Infinity) minOther = 0;
+            return Math.min(baseVal + Math.floor(minOther * 0.5), maxCap);
+        }
+        // Loaded VS bloom-fes-original card check
+        if (loadedVSBloomFes[memberKey] && baseVal) {
+            const unitBonus = loadedVSBloomFes[memberKey].unitBonus ?? 0;
+            return Math.min(baseVal + unitBonus, baseVal + 60);
+        }
+        return baseVal;
+    };
+
+    const lMin = getSkillMin('leader', leaderVal);
+    const m2Min = getSkillMin('member2', m2Val);
+    const m3Min = getSkillMin('member3', m3Val);
+    const m4Min = getSkillMin('member4', m4Val);
+    const m5Min = getSkillMin('member5', m5Val);
+
+    return Math.floor(lMin + (m2Min + m3Min + m4Min + m5Min) * 0.2);
+};

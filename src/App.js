@@ -729,19 +729,21 @@ const AppContent = () => {
   const timerRef1 = React.useRef(null);
   const timerRef2 = React.useRef(null);
 
-  const showToastMessage = useCallback((message) => {
+  const showToastMessage = useCallback((notification) => {
+    const { message, type = 'success', duration = 1500 } = typeof notification === 'string' ? { message: notification } : notification;
     if (timerRef1.current) clearTimeout(timerRef1.current);
     if (timerRef2.current) clearTimeout(timerRef2.current);
 
-    setToast({ show: true, message, fadingOut: false });
+    setToast({ show: true, message, type, fadingOut: false });
+    if (duration === 0) return;
 
     timerRef1.current = setTimeout(() => {
       setToast(prev => ({ ...prev, fadingOut: true }));
-    }, 1000);
+    }, Math.max(0, duration - 500));
 
     timerRef2.current = setTimeout(() => {
       setToast({ show: false, message: '', fadingOut: false });
-    }, 1500);
+    }, duration);
   }, []);
 
   useEffect(() => {
@@ -1064,10 +1066,10 @@ const AppContent = () => {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 flex items-center gap-2 whitespace-nowrap ${toast.fadingOut ? 'animate-fade-out' : 'animate-toast-fade-in-up'}`}
+          className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg border border-gray-700 flex items-center gap-2 max-w-[calc(100vw-2rem)] w-max text-sm whitespace-normal ${toast.fadingOut ? 'animate-fade-out' : 'animate-toast-fade-in-up'}`}
           style={{ zIndex: 99999 }}
         >
-          <span className="text-green-400">✓</span>
+          <span aria-hidden="true" className={toast.type === 'loading' ? 'animate-spin shrink-0' : toast.type === 'error' ? 'text-red-400 shrink-0' : 'text-green-400 shrink-0'}>{toast.type === 'loading' ? '◌' : toast.type === 'error' ? '!' : '✓'}</span>
           {toast.message}
         </div>
       )}

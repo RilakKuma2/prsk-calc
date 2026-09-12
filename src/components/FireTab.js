@@ -3,12 +3,13 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { formatDuration } from '../utils/time';
 import RankingGraphModal from './RankingGraphModal';
 import EventShopSimulator from './EventShopSimulator';
+import EventLiveDeckButton from './common/EventLiveDeckButton';
+import useEventLiveEstimate from '../hooks/useEventLiveEstimate';
+import { getEventLiveSource } from '../utils/eventLiveEstimate';
 import { numberOrDefault } from '../utils/numbers';
 import CustomSelectDropdown from './common/CustomSelectDropdown';
 import { useTranslation } from '../contexts/LanguageContext';
-import { calculateScoreRange } from '../utils/calculator';
-import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
-import { getMusicMetas, getMusicMetaSync, getSongOptionsSync } from '../utils/dataLoader';
+import { getMusicMetas, getSongOptionsSync } from '../utils/dataLoader';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import playerLevelData from '../data/player_levels.json';
 import { characterBirthdays } from '../data/characterBirthdays';
@@ -215,12 +216,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const setScore1 = (val) => setSurveyData(prev => ({ ...prev, score1: typeof val === 'function' ? val(prev.score1 || '') : val }));
   const score2 = surveyData.score2 || '';
   const setScore2 = (val) => setSurveyData(prev => ({ ...prev, score2: typeof val === 'function' ? val(prev.score2 || '') : val }));
-  const score3 = surveyData.score3 || '';
-  const setScore3 = (val) => setSurveyData(prev => ({ ...prev, score3: typeof val === 'function' ? val(prev.score3 || '') : val }));
+  const effectiveLiveBonus = surveyData.fires2 && surveyData.fires2 !== 'none' ? surveyData.fires2 : surveyData.firea || '25';
+  const liveEstimate = useEventLiveEstimate(surveyData, effectiveLiveBonus);
+  const score3 = liveEstimate.points === null ? '0' : String(liveEstimate.points / 10000);
+  useEffect(() => {
+    if (liveEstimate.points !== null && surveyData.score3 !== score3) setSurveyData(prev => ({ ...prev, score3 }));
+  }, [liveEstimate.points, score3, surveyData.score3, setSurveyData]);
   const rounds1 = surveyData.rounds1 || '';
   const setRounds1 = (val) => setSurveyData(prev => ({ ...prev, rounds1: typeof val === 'function' ? val(prev.rounds1 || '') : val }));
   const firea = surveyData.firea || "25";
-  const setFirea = (val) => setSurveyData(prev => ({ ...prev, firea: typeof val === 'function' ? val(prev.firea || "25") : val }));
+  const setFirea = (val) => setSurveyData(prev => ({ ...prev, fires2: 'none', firea: typeof val === 'function' ? val(prev.firea || "25") : val }));
   const fires2 = surveyData.fires2 || "none";
   const setFires2 = (val) => setSurveyData(prev => ({ ...prev, fires2: typeof val === 'function' ? val(prev.fires2 || "none") : val }));
 
@@ -257,7 +262,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const setWorldPass = (val) => setSurveyData(prev => ({ ...prev, worldPass: typeof val === 'function' ? val(prev.worldPass || false) : val }));
   const mySekaiScore = surveyData.mySekaiScore || ''; // Default empty, used as 2500 if empty
   const setMySekaiScore = (val) => setSurveyData(prev => ({ ...prev, mySekaiScore: typeof val === 'function' ? val(prev.mySekaiScore || '') : val }));
-  const [importMenuOpen, setImportMenuOpen] = useState(false);
   const [isShopSimulatorOpen, setIsShopSimulatorOpen] = useState(false);
   const [isAutoTimeOpen, setIsAutoTimeOpen] = useState(false);
   const [autoTimeSongs, setAutoTimeSongs] = useState(null);
@@ -386,7 +390,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
   // Ref for tooltips
   const dropdownRef = useRef(null);
-  const importMenuRef = useRef(null);
   const hasAutoSelected = useRef(false);
   const rankingTableContainerRef = useRef(null);
   const [stackScoreDeltas, setStackScoreDeltas] = useState(false);
@@ -461,9 +464,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsRoomSearchOpen(false);
-      }
-      if (importMenuRef.current && !importMenuRef.current.contains(event.target)) {
-        setImportMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -894,8 +894,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       calculationScore = scorePerRound;
     } else {
       let newFireBonus = parseInt(changeFireBonus);
-      calculationScore =
-        (scorePerRound / currentFireBonus) * newFireBonus;
+      calculationScore = scorePerRound;
       currentFireBonus = newFireBonus;
       firenow = getFireaValue(currentFireBonus);
     }
@@ -1085,7 +1084,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     let nextConsumption = fireConsumption;
     if (chgFireBonus !== "none") {
       const newFireBonus = parseInt(chgFireBonus);
-      finalScorePerRound = (scPerRound / curFireBonus) * newFireBonus;
+      finalScorePerRound = scPerRound;
       // Assume we use the new fire consumption for simulation if simulation is enabled
       // If user sets "Change Fire" to 3, they likely mean they are running at 3 fires.
       nextConsumption = getFireaValue(newFireBonus);
@@ -1286,181 +1285,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     const manScore = parseFloat((score / 10000).toFixed(4));
     setScore2(manScore.toString());
     setActiveRank(null);
-  };
-
-  // Import Calculation Logic
-  const handleImport = (type) => {
-    // Check if data exists
-    if (!surveyData) return;
-
-    // Apply default values if inputs are empty
-    const power = parseFloat(surveyData.power || '25.5') * 10000;
-    const effi = parseFloat(surveyData.effi || '250');
-    const isDetailed = surveyData.isDetailedInput;
-    const internalVal = parseFloat(surveyData.internalValue || '200');
-
-    // Default Fire Counts (matching PowerTab defaults)
-    const savedFireCounts = surveyData.fireCounts || {
-      loAndFound: 5,
-      envy: 5,
-      omakase: 5,
-      creationMyth: 1,
-      mySekai: 1,
-      custom: 5
-    };
-
-    // Helper map to convert integer fire count (0~10) to option value string ("1", "5", "25"...)
-    const fireCountToOptionValue = {
-      0: "1", 1: "5", 2: "10", 3: "15", 4: "20", 5: "25",
-      6: "27", 7: "29", 8: "31", 9: "33", 10: "35"
-    };
-
-    // Config based on type
-    let songId = 0;
-    let difficulty = 'master';
-    let liveType = LiveType.MULTI;
-    let shouldUseFixedSkills = false;
-    let targetFireCount = 5; // Default fallback
-
-    if (type === 'envy') {
-      songId = 74; // Hitorinbo Envy
-      difficulty = 'expert';
-      liveType = LiveType.MULTI;
-      liveType = LiveType.MULTI;
-      targetFireCount = savedFireCounts.envy;
-      setRounds1(28);
-    } else if (type === 'lost') {
-      songId = 226; // Lost and Found
-      difficulty = 'hard';
-      liveType = LiveType.MULTI;
-      liveType = LiveType.MULTI;
-      targetFireCount = savedFireCounts.loAndFound;
-      setRounds1(18);
-    } else if (type === 'creation_myth') {
-      songId = 186; // Creation Myth
-      difficulty = 'master';
-      liveType = LiveType.AUTO;
-      shouldUseFixedSkills = true;
-      shouldUseFixedSkills = true;
-      targetFireCount = savedFireCounts.creationMyth;
-      setRounds1(17);
-    } else if (type === 'omakase') {
-      songId = 572; // Omakase
-      difficulty = 'master';
-      liveType = LiveType.MULTI;
-      liveType = LiveType.MULTI;
-      targetFireCount = savedFireCounts.omakase;
-      setRounds1(20);
-    } else if (type === 'my_sekai') {
-      // My Sekai Logic (unchanged mostly, but no fire count sync usually needed)
-      // ... Logic below
-    }
-
-    // Set the firea state to match the imported song's fire count
-    if (type !== 'my_sekai') {
-      const newFireOption = fireCountToOptionValue[targetFireCount] || "25";
-      setFirea(newFireOption);
-    }
-
-    // Skills
-    let skills = [0, 0, 0, 0, 0];
-    if (isDetailed && surveyData.detailedSkills) {
-      const getVal = (v) => (v === '' || v === null || v === undefined) ? 200 : (parseFloat(v) || 0);
-      skills = [
-        getVal(surveyData.detailedSkills.encore),
-        getVal(surveyData.detailedSkills.member1),
-        getVal(surveyData.detailedSkills.member2),
-        getVal(surveyData.detailedSkills.member3),
-        getVal(surveyData.detailedSkills.member4)
-      ];
-    } else {
-      const val = internalVal || 200;
-      skills = [val, val, val, val, val];
-    }
-
-    // Handle My Sekai Special Case
-    if (type === 'my_sekai') {
-      // Use re-parsed powerVal with default "25.5" to ensure safety. 
-      // Note: "power" above is already multiplied by 10000, but logic below uses raw float.
-      const powerVal = parseFloat(surveyData.power || '25.5');
-      const effiVal = parseInt(surveyData.effi || '250', 10);
-
-      let highestPossibleScore = null;
-      let columnIndex = -1;
-
-      if (powerVal >= 0) {
-        for (let j = powerColumnThresholds.length - 1; j >= 0; j--) {
-          if (powerColumnThresholds[j] <= powerVal) {
-            columnIndex = j;
-            break;
-          }
-        }
-      }
-
-      if (columnIndex !== -1) {
-        for (let i = scoreRowKeys.length - 1; i >= 0; i--) {
-          const currentScoreRow = scoreRowKeys[i];
-          const requiredEffiForThisScore = mySekaiTableData[currentScoreRow][columnIndex];
-          if (requiredEffiForThisScore !== null && effiVal >= requiredEffiForThisScore) {
-            highestPossibleScore = currentScoreRow; // e.g., "2,500" or "25,000"
-            break;
-          }
-        }
-      }
-
-      if (highestPossibleScore) {
-        // Convert to string safely before replace
-        const scoreStr = String(highestPossibleScore);
-        const rawScore = parseFloat(scoreStr.replace(/,/g, ''));
-        // Convert to Man (assuming rawScore is actual EP)
-        const epInMan = rawScore / 10000;
-        setScore3(epInMan.toFixed(4));
-        setImportMenuOpen(false);
-      }
-      return;
-    }
-
-    // Multiplier map
-    const fireMultipliers = {
-      0: 1, 1: 5, 2: 10, 3: 15, 4: 20, 5: 25,
-      6: 27, 7: 29, 8: 31, 9: 33, 10: 35
-    };
-    const multiplier = fireMultipliers[targetFireCount] || 1;
-
-    const inputInput = {
-      songId,
-      difficulty,
-      totalPower: power,
-      skillLeader: shouldUseFixedSkills ? 100 : skills[0],
-      skillMember2: shouldUseFixedSkills ? 100 : skills[1],
-      skillMember3: shouldUseFixedSkills ? 100 : skills[2],
-      skillMember4: shouldUseFixedSkills ? 100 : skills[3],
-      skillMember5: shouldUseFixedSkills ? 100 : skills[4],
-    };
-
-    const result = calculateScoreRange(inputInput, liveType);
-    if (result) {
-      const musicMeta = getMusicMetaSync(songId, difficulty);
-      if (musicMeta) {
-        // Calculate EP
-        const getEP = (score) => EventCalculator.getEventPoint(
-          liveType,
-          EventType.MARATHON,
-          score,
-          musicMeta.event_rate,
-          effi,
-          multiplier
-        );
-        // Use MAX EP as PowerTab result display defaults to Max (Simple Input) or Range (Detailed)
-        // User requested to use MIN if available
-        const targetResultScore = result.min > 0 ? result.min : result.max;
-        const targetEP = getEP(targetResultScore);
-
-        const epInMan = targetEP / 10000;
-        setScore3(epInMan.toFixed(4));
-        setImportMenuOpen(false);
-      }
-    }
   };
 
   // [추가] 월드링크: 선택된 챕터에 따라 표시할 예측 데이터 결정
@@ -1879,54 +1703,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         <div className="flex flex-col items-center relative z-20"> {/* z-20 for dropdown */}
           <div className="flex items-center justify-center gap-1 relative">
             <label className="text-gray-600 text-xs font-bold leading-none">{t('fire.score_per_round')}</label>
-            <button
-              onClick={() => setImportMenuOpen(!importMenuOpen)}
-              className="text-gray-400 hover:text-indigo-600 transition-colors"
-              title={t('fire.import_title')}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </button>
-
-            {/* Import Menu Popover */}
-            {importMenuOpen && (
-              <div ref={importMenuRef} className="absolute left-0 top-full mt-1 z-50 bg-white rounded-lg shadow-xl border border-gray-100 p-2 w-40 animate-fade-in-down text-left">
-                <div className="text-[9px] text-gray-400 mb-2 px-1 border-b border-gray-100 pb-1 leading-tight whitespace-normal">
-                  {t('fire.import_desc')}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <button onClick={() => handleImport('lost')} className="text-left text-xs font-medium text-gray-700 p-1.5 hover:bg-indigo-50 rounded hover:text-indigo-600 transition-colors">
-                    {t('fire.import_lost')}
-                  </button>
-                  <button onClick={() => handleImport('omakase')} className="text-left text-xs font-medium text-gray-700 p-1.5 hover:bg-indigo-50 rounded hover:text-indigo-600 transition-colors">
-                    {t('fire.import_omakase')}
-                  </button>
-                  <button onClick={() => handleImport('envy')} className="text-left text-xs font-medium text-gray-700 p-1.5 hover:bg-indigo-50 rounded hover:text-indigo-600 transition-colors">
-                    {t('fire.import_envy')}
-                  </button>
-                  <button onClick={() => handleImport('creation_myth')} className="text-left text-xs font-medium text-gray-700 p-1.5 hover:bg-indigo-50 rounded hover:text-indigo-600 transition-colors">
-                    {t('fire.import_creation_myth')}
-                  </button>
-                  <button onClick={() => handleImport('my_sekai')} className="text-left text-xs font-medium text-gray-700 p-1.5 hover:bg-indigo-50 rounded hover:text-indigo-600 transition-colors">
-                    {t('fire.import_mysekai')}
-                  </button>
-                </div>
-              </div>
-            )}
+            <EventLiveDeckButton surveyData={surveyData} setSurveyData={setSurveyData} bonus={effectiveLiveBonus} estimate={liveEstimate} />
           </div>
           <div className="flex items-center gap-1 w-full justify-center">
             <input
               type="number"
-              value={score3}
-              onChange={e => {
-                const val = parseFloat(e.target.value);
-                if (val > 14) {
-                  setScore3('14');
-                } else {
-                  setScore3(e.target.value);
-                }
-              }}
+              value={liveEstimate.loading ? '' : score3}
+              readOnly
+              title={`${getEventLiveSource(surveyData).label} · 덱·곡 설정에서 변경`}
               onFocus={(e) => e.target.select()}
               placeholder="2.8"
               className="w-full text-center bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition-shadow"
@@ -2614,10 +2398,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             </button>
             <EventShopSimulator
               eventInfo={eventInfo}
-              scorePerRoundMan={score3}
               roundsPerInterval={rounds1}
               currentFireOption={firea}
-              changedFireOption={fires2}
               naturalSettings={{
                 currentNaturalFire,
                 challengeScore,
@@ -2629,7 +2411,6 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                 liveRank,
               }}
               onNaturalSettingsChange={handleShopNaturalSettingsChange}
-              onImport={handleImport}
               surveyData={surveyData}
               setSurveyData={setSurveyData}
             />

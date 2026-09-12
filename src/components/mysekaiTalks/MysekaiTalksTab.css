@@ -468,6 +468,23 @@
   color: var(--theme-text);
 }
 
+html[data-theme='dark'] .mysekai-talk-card.unread {
+  background: #20242c;
+  border-color: #505968;
+  color: #c5ccd7;
+}
+
+html[data-theme='dark'] .mysekai-talk-card.read {
+  background: #365975;
+  border-color: #7bbce8;
+  color: #f4faff;
+}
+
+html[data-theme='dark'] .mysekai-talk-card:focus-visible {
+  outline: 2px solid #b6e1ff;
+  outline-offset: 2px;
+}
+
 .mysekai-talk-card:hover,
 .mysekai-talk-card:focus-visible {
   border-color: var(--talk-accent);

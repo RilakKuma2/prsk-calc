@@ -1,10 +1,11 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../contexts/LanguageContext';
-import { calculateInternalValue, calculateSlotSkillValues, getDeckValue } from '../utils/deckUtils';
+import { BLOOM_LEVELS, calculateInternalValueFromDeck, calculateInternalValue, calculateSlotSkillValues, getDeckValue } from '../utils/deckUtils';
 import { numberOrDefault } from '../utils/numbers';
 import { readStorageItem, removeStorageItem, writeStorageItem } from '../utils/safeStorage';
-import { loadDeckFromFriendCode } from '../utils/deckLoader';
+import { loadDeckFromFriendCode, describeDeckLoadError } from '../utils/deckLoader';
 import { useAuth } from '../login';
 import { characterBirthdays } from '../data/characterBirthdays';
 import EventBonusCalculatorModal from './common/EventBonusCalculatorModal';
@@ -19,13 +20,7 @@ const AutoTab = lazy(() => import('./AutoTab'));
 const PowerTab = lazy(() => import('./PowerTab'));
 
 // Bloom Fes Awakening skill levels: [base%, max%]
-const BLOOM_LEVELS = {
-    0: null, // X - no bloom
-    1: [60, 120],
-    2: [65, 130],
-    3: [70, 140],
-    4: [80, 150]
-};
+
 
 const SKILL_LEVEL_OPTIONS = [1, 2, 3, 4];
 
@@ -141,6 +136,10 @@ const SkillLevelDropdown = ({ value, onChange }) => {
 
 
 
+const notifyFriendLoad = (message, type = 'loading') => window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: { message, type, duration: type === 'loading' ? 0 : type === 'error' ? 7000 : 3000 },
+    }));
+
 function DeckTab({ surveyData, setSurveyData, subPath }) {
     const { user, updateFriendCode } = useAuth();
     const { t, language } = useTranslation();
@@ -210,6 +209,8 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         });
     };
     const [isLoadingFriend, setIsLoadingFriend] = useState(false);
+    const [friendLoadError, setFriendLoadError] = useState('');
+
     const [mountedResultViews, setMountedResultViews] = useState(() => ({
         [getViewFromSubPath(subPath)]: true,
     }));
@@ -698,85 +699,6 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         };
     };
 
-    // Calculate effective internal value from deck data (handling Bloom Fes)
-    const calculateInternalValueFromDeck = (deckData) => {
-        // Prepare data for getBloomSkillRange logic
-        // We can't reuse getBloomEffectiveValueRange because it uses component state consts
-        // So we reimplement the logic here using passed deckData
-
-        const useBloom = deckData.useBloomFes || false;
-        const blooms = deckData.bloomLevels || { leader: 0, member2: 0, member3: 0, member4: 0, member5: 0 };
-
-        const leaderVal = numberOrDefault(deckData.skillLeader, 120);
-        const m2Val = numberOrDefault(deckData.skillMember2, 100);
-        const m3Val = numberOrDefault(deckData.skillMember3, 100);
-        const m4Val = numberOrDefault(deckData.skillMember4, 100);
-        const m5Val = numberOrDefault(deckData.skillMember5, 100);
-
-        const loadedBloomFesOriginal = deckData.loadedBloomFesOriginalMembers || {};
-        const loadedVSBloomFes = deckData.loadedVSBloomFesMembers || {};
-        const hasLoadedBloomFes = Object.values(loadedBloomFesOriginal).some(Boolean) || Object.values(loadedVSBloomFes).some(Boolean);
-
-        if (!useBloom && !hasLoadedBloomFes) {
-            // Standard formula: Leader + (Sum Others)*0.2
-            return Math.floor(leaderVal + (m2Val + m3Val + m4Val + m5Val) * 0.2);
-        }
-
-        // With Bloom Fes (global or per-member loaded), we use MINIMUM effective value
-        const allVals = { leader: leaderVal, member2: m2Val, member3: m3Val, member4: m4Val, member5: m5Val };
-
-        const getSkillMin = (memberKey, baseVal) => {
-            // Global bloom fes check
-            if (useBloom) {
-                const level = blooms[memberKey];
-                if (level && BLOOM_LEVELS[level]) {
-                    const [base, maxCap] = BLOOM_LEVELS[level];
-                    const memberSkills = {
-                        leader: { val: leaderVal, bloomLevel: blooms.leader },
-                        member2: { val: m2Val, bloomLevel: blooms.member2 },
-                        member3: { val: m3Val, bloomLevel: blooms.member3 },
-                        member4: { val: m4Val, bloomLevel: blooms.member4 },
-                        member5: { val: m5Val, bloomLevel: blooms.member5 },
-                    };
-                    let minOtherSkill = Infinity;
-                    Object.entries(memberSkills).forEach(([k, data]) => {
-                        if (k === memberKey) return;
-                        let effectiveSkill = data.val;
-                        if (data.bloomLevel && BLOOM_LEVELS[data.bloomLevel]) {
-                            effectiveSkill = BLOOM_LEVELS[data.bloomLevel][1];
-                        }
-                        minOtherSkill = Math.min(minOtherSkill, effectiveSkill);
-                    });
-                    return Math.min(base + Math.floor(minOtherSkill * 0.5), maxCap);
-                }
-            }
-            // Loaded bloom-fes-original card check
-            if (loadedBloomFesOriginal[memberKey] && baseVal) {
-                const maxCap = baseVal >= 80 ? 150 : baseVal >= 70 ? 140 : baseVal >= 65 ? 130 : 120;
-                let minOther = Infinity;
-                Object.entries(allVals).forEach(([k, v]) => {
-                    if (k !== memberKey) minOther = Math.min(minOther, v || 0);
-                });
-                if (minOther === Infinity) minOther = 0;
-                return Math.min(baseVal + Math.floor(minOther * 0.5), maxCap);
-            }
-            // Loaded VS bloom-fes-original card check
-            if (loadedVSBloomFes[memberKey] && baseVal) {
-                const unitBonus = loadedVSBloomFes[memberKey].unitBonus ?? 0;
-                return Math.min(baseVal + unitBonus, baseVal + 60);
-            }
-            return baseVal;
-        };
-
-        const lMin = getSkillMin('leader', leaderVal);
-        const m2Min = getSkillMin('member2', m2Val);
-        const m3Min = getSkillMin('member3', m3Val);
-        const m4Min = getSkillMin('member4', m4Val);
-        const m5Min = getSkillMin('member5', m5Val);
-
-        return Math.floor(lMin + (m2Min + m3Min + m4Min + m5Min) * 0.2);
-    };
-
     // Switch a loaded bloom-fes-original member to manual input mode
     // (removes the range display and clears the SLv dropdown for that member)
     const switchBloomFesToManual = (memberKey) => {
@@ -1008,17 +930,19 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     };
 
     const handleLoadFriendCode = async () => {
-        if (!friendCode) return;
+        if (isLoadingFriend) return;
+        if (!/^\d+$/.test(friendCode.trim())) { setFriendLoadError('숫자로 된 친구코드를 입력해 주세요.'); return; }
+        setFriendLoadError('');
         setIsLoadingFriend(true);
-        setManualTotalPowerDecks(prev => ({ ...prev, [activeDeckKey]: false }));
-        setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
+        setShowLoadModal(false);
+        notifyFriendLoad('플레이어 데이터를 불러오는 중…');
 
         if (user && saveFriendCode) {
             updateFriendCode(friendCode, true).catch(console.error);
         }
 
         try {
-            const parsed = await loadDeckFromFriendCode(friendCode, buildEventOverrideForRequest());
+            const parsed = await loadDeckFromFriendCode(friendCode.trim(), buildEventOverrideForRequest(), stage => notifyFriendLoad(stage === 'fallback' ? '플레이어 데이터를 불러오는 중… 보조 서버로 재시도하고 있습니다.' : '플레이어 데이터를 불러오는 중…'));
             const {
                 totalPower: fetchedTotalPower,
                 skillValues,
@@ -1029,47 +953,54 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 loadedVSBloomFesMembers,
             } = parsed;
 
-            setSurveyData(prev => {
-                const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
-                const updatedDeck = {
-                    ...currentDeckData,
-                    totalPower: fetchedTotalPower ?? currentDeckData.totalPower,
-                    skillLeader: skillValues[0],
-                    skillMember2: skillValues[1],
-                    skillMember3: skillValues[2],
-                    skillMember4: skillValues[3],
-                    skillMember5: skillValues[4],
-                    eventBonus,
-                    loadedSkillRanges,
-                    loadedSkillLevels,
-                    loadedBloomFesOriginalMembers,
-                    loadedVSBloomFesMembers,
-                };
-                const preciseInternalVal = calculateInternalValueFromDeck(updatedDeck);
-                const internalVal = Math.floor(preciseInternalVal / 10) * 10;
-                return {
-                    ...prev,
-                    unifiedDecks: {
-                        ...prev.unifiedDecks,
-                        [`deck${activeDeckNum}`]: {
-                            ...updatedDeck,
-                            internalValue: String(internalVal),
-                            isManualInternalEdit: false,
+            notifyFriendLoad('플레이어 데이터를 화면에 반영하는 중…');
+            const applyStartedAt = performance.now();
+            flushSync(() => {
+                setSurveyData(prev => {
+                    const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
+                    const updatedDeck = {
+                        ...currentDeckData,
+                        totalPower: fetchedTotalPower ?? currentDeckData.totalPower,
+                        skillLeader: skillValues[0],
+                        skillMember2: skillValues[1],
+                        skillMember3: skillValues[2],
+                        skillMember4: skillValues[3],
+                        skillMember5: skillValues[4],
+                        eventBonus,
+                        loadedSkillRanges,
+                        loadedSkillLevels,
+                        loadedBloomFesOriginalMembers,
+                        loadedVSBloomFesMembers,
+                    };
+                    const preciseInternalVal = calculateInternalValueFromDeck(updatedDeck);
+                    const internalVal = Math.floor(preciseInternalVal / 10) * 10;
+                    return {
+                        ...prev,
+                        unifiedDecks: {
+                            ...prev.unifiedDecks,
+                            [`deck${activeDeckNum}`]: {
+                                ...updatedDeck,
+                                internalValue: String(internalVal),
+                                isManualInternalEdit: false,
+                            },
                         },
-                    },
-                    autoDeck: updatedDeck,
-                    power: String(numberOrDefault(updatedDeck.totalPower, 293231) / 10000),
-                    effi: String(numberOrDefault(updatedDeck.eventBonus, 250)),
-                    internalValue: String(internalVal),
-                    isManualInternalEdit: false,
-                };
+                        autoDeck: updatedDeck,
+                        power: String(numberOrDefault(updatedDeck.totalPower, 293231) / 10000),
+                        effi: String(numberOrDefault(updatedDeck.eventBonus, 250)),
+                        internalValue: String(internalVal),
+                        isManualInternalEdit: false,
+                    };
+                });
+                setManualTotalPowerDecks(prev => ({ ...prev, [activeDeckKey]: false }));
+                setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
+                setIsLoadingFriend(false);
             });
-            setShowLoadModal(false);
+            console.info('[친구코드 불러오기] 화면 반영', `${Math.round(performance.now() - applyStartedAt)}ms`);
+            notifyFriendLoad(`플레이어 데이터 불러오기 완료 · 덱 ${activeDeckNum}`, 'success');
         } catch (err) {
-            console.error('Failed to load friend data', err);
-            alert(`서버에서 덱을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.\n\n오류코드: ${err.message}`);
-        } finally {
             setIsLoadingFriend(false);
+            console.error('Failed to load friend data', err);
+            notifyFriendLoad(describeDeckLoadError(err), 'error');
         }
     };
 
@@ -1166,6 +1097,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                 {[1, 2, 3].map(num => (
                     <button
                         key={num}
+                        disabled={isLoadingFriend}
                         onClick={() => {
                             setActiveDeckNum(num);
                             // Persist selection
@@ -1188,6 +1120,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                 }
                                 setShowLoadModal(prev => !prev);
                             }}
+                            type="button" disabled={isLoadingFriend}
                             className={`deck-friend-load-button px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${showLoadModal ? 'active' : ''}`}
                         >
                             {t('app.load') || '불러오기'}
@@ -1231,6 +1164,7 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                 <input
                                     type="text"
                                     value={friendCode}
+                                    disabled={isLoadingFriend}
                                     onChange={e => setFriendCode(e.target.value)}
                                     placeholder="예: 3939393939393939"
                                     className="w-full border border-gray-300 rounded px-2 py-1 mb-2 text-sm focus:outline-none focus:border-blue-500"
@@ -1311,7 +1245,9 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                         )}
                                     </div>
                                 )}
+                                {friendLoadError && <p role="alert" className="mb-2 text-xs text-red-600 whitespace-pre-wrap">{friendLoadError}</p>}
                                 <button
+                                    type="button"
                                     onClick={handleLoadFriendCode}
                                     disabled={isLoadingFriend}
                                     className="w-full bg-blue-500 text-white rounded py-1.5 text-sm font-medium hover:bg-blue-600 disabled:opacity-50"
