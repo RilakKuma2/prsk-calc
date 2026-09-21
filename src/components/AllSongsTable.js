@@ -237,133 +237,102 @@ const AllSongsTable = ({
         const diffsToCheck = targetDifficulty === 'best'
             ? ['easy', 'normal', 'hard', 'expert', 'master', 'append']
             : [targetDifficulty];
+        // allDiffs는 항상 전체 난이도로 계산 (필터 무관)
+        const allDiffsToCheck = ['easy', 'normal', 'hard', 'expert', 'master', 'append'];
+
+        // 단일 난이도 결과 계산 헬퍼
+        const calcDiffResult = (song, diff) => {
+            const meta = musicMetaLookup.get(`${Number(song.id)}:${diff}`);
+            if (!meta) return null;
+            try {
+                const input = {
+                    songId: song.id,
+                    difficulty: diff,
+                    totalPower: finalPower,
+                    skillLeader: finalSkills[0],
+                    skillMember2: finalSkills[1],
+                    skillMember3: finalSkills[2],
+                    skillMember4: finalSkills[3],
+                    skillMember5: finalSkills[4],
+                };
+                const range = calculateScoreRange(input, currentLiveType);
+                if (!range) return null;
+                const minEP = EventCalculator.getEventPoint(
+                    currentLiveType, EventType.MARATHON, range.min, meta.event_rate, finalEffi, fireMultiplier
+                );
+                const maxEP = EventCalculator.getEventPoint(
+                    currentLiveType, EventType.MARATHON, range.max, meta.event_rate, finalEffi, fireMultiplier
+                );
+                const averageEP = getAverageEventPoint(minEP, maxEP);
+                let minRank = null;
+                let rankGap = 0;
+                if (isAutoMode) {
+                    const expertLevel = (song.levels && song.levels['expert']) || 24;
+                    const sRank = 1040000 + 5200 * (expertLevel - 5);
+                    const aRank = 840000 + 4200 * (expertLevel - 5);
+                    const bRank = 400000 + 2000 * (expertLevel - 5);
+                    const cRank = 20000 + 100 * (expertLevel - 5);
+                    let currentCutoff = 0;
+                    if (range.min >= sRank) { minRank = 'S'; currentCutoff = sRank; }
+                    else if (range.min >= aRank) { minRank = 'A'; currentCutoff = aRank; }
+                    else if (range.min >= bRank) { minRank = 'B'; currentCutoff = bRank; }
+                    else if (range.min >= cRank) { minRank = 'C'; currentCutoff = cRank; }
+                    else { minRank = 'D'; currentCutoff = 0; }
+                    rankGap = range.min - currentCutoff;
+                }
+                return {
+                    difficulty: diff,
+                    musicTime: Number(meta.music_time) || Number(song.length) || 0,
+                    minEP, maxEP, averageEP, range, minRank, rankGap
+                };
+            } catch (e) {
+                return null;
+            }
+        };
 
         songOptions.forEach(song => {
             if (isAutoMode && isAutoSongExcluded(song)) return;
-            const songResults = [];
 
-            diffsToCheck.forEach(diff => {
-                // Check if meta exists for this diff
-                const meta = musicMetaLookup.get(`${Number(song.id)}:${diff}`);
-                if (!meta) return;
+            // 필터 적용 난이도로 메인 row 계산
+            const songResults = diffsToCheck
+                .map(diff => calcDiffResult(song, diff))
+                .filter(Boolean);
 
-                try {
-                    const input = {
-                        songId: song.id,
-                        difficulty: diff,
-                        totalPower: finalPower,
-                        skillLeader: finalSkills[0],
-                        skillMember2: finalSkills[1],
-                        skillMember3: finalSkills[2],
-                        skillMember4: finalSkills[3],
-                        skillMember5: finalSkills[4],
-                    };
+            if (songResults.length === 0) return;
 
-                    const range = calculateScoreRange(input, currentLiveType);
-                    if (range) {
-                        const minEP = EventCalculator.getEventPoint(
-                            currentLiveType,
-                            EventType.MARATHON,
-                            range.min,
-                            meta.event_rate,
-                            finalEffi,
-                            fireMultiplier
-                        );
-                        const maxEP = EventCalculator.getEventPoint(
-                            currentLiveType,
-                            EventType.MARATHON,
-                            range.max,
-                            meta.event_rate,
-                            finalEffi,
-                            fireMultiplier
-                        );
-                        const averageEP = getAverageEventPoint(minEP, maxEP);
+            // 상세 펼침용: 항상 전체 난이도 계산
+            const allDiffResults = allDiffsToCheck
+                .map(diff => calcDiffResult(song, diff))
+                .filter(Boolean);
 
-                        // Calculate min rank based on EXPERT level
-                        let minRank = null;
-                        let rankGap = 0; // The gap for sorting
-                        if (isAutoMode) {
-                            const expertLevel = (song.levels && song.levels['expert']) || 24;
-                            const sRank = 1040000 + 5200 * (expertLevel - 5);
-                            const aRank = 840000 + 4200 * (expertLevel - 5);
-                            const bRank = 400000 + 2000 * (expertLevel - 5);
-                            const cRank = 20000 + 100 * (expertLevel - 5);
-
-                            let currentCutoff = 0;
-
-                            if (range.min >= sRank) {
-                                minRank = 'S';
-                                currentCutoff = sRank;
-                            } else if (range.min >= aRank) {
-                                minRank = 'A';
-                                currentCutoff = aRank;
-                            } else if (range.min >= bRank) {
-                                minRank = 'B';
-                                currentCutoff = bRank;
-                            } else if (range.min >= cRank) {
-                                minRank = 'C';
-                                currentCutoff = cRank;
-                            } else {
-                                minRank = 'D';
-                                currentCutoff = 0;
-                            }
-
-                            // rankGap is how far the score exceeds the current rank's threshold
-                            rankGap = range.min - currentCutoff;
-                        }
-
-                        songResults.push({
-                            difficulty: diff,
-                            musicTime: Number(meta.music_time) || Number(song.length) || 0,
-                            minEP,
-                            maxEP,
-                            averageEP,
-                            range,
-                            minRank,
-                            rankGap
-                        });
-                    }
-                } catch (e) {
-                    // Ignore errors
-                }
+            songResults.sort((a, b) => {
+                const pointA = isAutoMode ? a.averageEP : a.maxEP;
+                const pointB = isAutoMode ? b.averageEP : b.maxEP;
+                if (pointB !== pointA) return pointB - pointA;
+                return b.minEP - a.minEP;
             });
+            const best = songResults[0];
 
-            if (songResults.length > 0) {
-                // Determine representation based on logic
-                // If specific diff, songResults has 1 item (or 0).
-                // Auto picks the difficulty with the highest average EP; multi keeps
-                // the existing maximum-EP behavior.
-                songResults.sort((a, b) => {
-                    const pointA = isAutoMode ? a.averageEP : a.maxEP;
-                    const pointB = isAutoMode ? b.averageEP : b.maxEP;
-                    if (pointB !== pointA) return pointB - pointA;
-                    return b.minEP - a.minEP;
-                });
-                const best = songResults[0];
-
-                // ... inside AllSongsTable component ...
-
-                calculatedResults.push({
-                    id: song.id,
-                    name: song.name,
-                    title_jp: song.title_jp,
-                    title_hi: song.title_hi,
-                    title_hangul: song.title_hangul,
-                    length: song.length,
-                    mv: song.mv,
-                    unit: song.unit, // Pass unit info
-                    release_date: song.release_date,
-                    autoDurationSeconds: best.musicTime,
-                    searchText: [
-                        song.name,
-                        song.title_jp,
-                        song.title_hi,
-                        song.title_hangul
-                    ].map(normalizeSearchText).join('\n'),
-                    ...best,
-                    allDiffs: songResults
-                });
-            }
+            calculatedResults.push({
+                id: song.id,
+                name: song.name,
+                title_jp: song.title_jp,
+                title_hi: song.title_hi,
+                title_hangul: song.title_hangul,
+                length: song.length,
+                mv: song.mv,
+                unit: song.unit,
+                release_date: song.release_date,
+                autoDurationSeconds: best.musicTime,
+                searchText: [
+                    song.name,
+                    song.title_jp,
+                    song.title_hi,
+                    song.title_hangul
+                ].map(normalizeSearchText).join('\n'),
+                ...best,
+                allDiffs: allDiffResults
+            });
         });
 
         const visibleCalculatedResults = isAutoMode

@@ -154,6 +154,13 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
     // Active deck selector (1, 2, 3) - Default to value from surveyData or 1
     const [activeDeckNum, setActiveDeckNum] = useState(surveyData.activeDeckNum || 1);
 
+    // Sync local activeDeckNum when surveyData.activeDeckNum changes externally
+    useEffect(() => {
+        if (surveyData.activeDeckNum && surveyData.activeDeckNum !== activeDeckNum) {
+            setActiveDeckNum(surveyData.activeDeckNum);
+        }
+    }, [surveyData.activeDeckNum, activeDeckNum]);
+
     // Result view selector - Sync with URL subPath
     const [activeResultView, setActiveResultView] = useState(getViewFromSubPath(subPath)); // 'auto', 'power'
 
@@ -392,28 +399,33 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
 
     // Initialize unified decks if not exists
     useEffect(() => {
-        if (!surveyData.unifiedDecks) {
-            setSurveyData(prev => ({
-                ...prev,
-                unifiedDecks: {
-                    deck1: {
-                        totalPower: getDeckValue(prev.autoDeck, 'totalPower', ''),
-                        skillLeader: getDeckValue(prev.autoDeck, 'skillLeader', ''),
-                        skillMember2: getDeckValue(prev.autoDeck, 'skillMember2', ''),
-                        skillMember3: getDeckValue(prev.autoDeck, 'skillMember3', ''),
-                        skillMember4: getDeckValue(prev.autoDeck, 'skillMember4', ''),
-                        skillMember5: getDeckValue(prev.autoDeck, 'skillMember5', ''),
-                        eventBonus: getDeckValue(prev.autoDeck, 'eventBonus', ''),
-                        internalValue: '',
-                        isManualInternalEdit: false,
-                        detailedSkills: { encore: '', member1: '', member2: '', member3: '', member4: '' },
-                        isDetailedInput: false
-                    },
-                    deck2: { totalPower: '', skillLeader: '', skillMember2: '', skillMember3: '', skillMember4: '', skillMember5: '', eventBonus: '', internalValue: '', isManualInternalEdit: false, detailedSkills: { encore: '', member1: '', member2: '', member3: '', member4: '' }, isDetailedInput: false },
-                    deck3: { totalPower: '', skillLeader: '', skillMember2: '', skillMember3: '', skillMember4: '', skillMember5: '', eventBonus: '', internalValue: '', isManualInternalEdit: false, detailedSkills: { encore: '', member1: '', member2: '', member3: '', member4: '' }, isDetailedInput: false },
-                    activeDeck: 1
-                }
-            }));
+        const uDecks = surveyData.unifiedDecks;
+        if (!uDecks || !uDecks.deck1 || !uDecks.deck2 || !uDecks.deck3) {
+            setSurveyData(prev => {
+                const existing = prev.unifiedDecks || {};
+                const defaultDeck = { totalPower: '', skillLeader: '', skillMember2: '', skillMember3: '', skillMember4: '', skillMember5: '', eventBonus: '', internalValue: '', isManualInternalEdit: false, detailedSkills: { encore: '', member1: '', member2: '', member3: '', member4: '' }, isDetailedInput: false };
+                return {
+                    ...prev,
+                    unifiedDecks: {
+                        deck1: existing.deck1 || {
+                            totalPower: getDeckValue(prev.autoDeck, 'totalPower', ''),
+                            skillLeader: getDeckValue(prev.autoDeck, 'skillLeader', ''),
+                            skillMember2: getDeckValue(prev.autoDeck, 'skillMember2', ''),
+                            skillMember3: getDeckValue(prev.autoDeck, 'skillMember3', ''),
+                            skillMember4: getDeckValue(prev.autoDeck, 'skillMember4', ''),
+                            skillMember5: getDeckValue(prev.autoDeck, 'skillMember5', ''),
+                            eventBonus: getDeckValue(prev.autoDeck, 'eventBonus', ''),
+                            internalValue: '',
+                            isManualInternalEdit: false,
+                            detailedSkills: { encore: '', member1: '', member2: '', member3: '', member4: '' },
+                            isDetailedInput: false
+                        },
+                        deck2: existing.deck2 || { ...defaultDeck },
+                        deck3: existing.deck3 || { ...defaultDeck },
+                        activeDeck: prev.activeDeckNum || 1
+                    }
+                };
+            });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -861,14 +873,16 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             setSurveyData(prev => {
                 const targetDeck = prev.unifiedDecks?.[`deck${activeDeckNum}`];
                 if (!targetDeck) return prev;
+                const fallbackInternal = calculateInternalValue(targetDeck);
                 return {
                     ...prev,
+                    activeDeckNum,
                     autoDeck: { ...targetDeck },
                     // PowerTab's normal (non-comparison) result reads these
                     // compatibility fields, so they must switch with autoDeck.
                     power: String(numberOrDefault(targetDeck.totalPower, 293231) / 10000),
                     effi: String(numberOrDefault(targetDeck.eventBonus, 250)),
-                    internalValue: targetDeck?.internalValue || '',
+                    internalValue: targetDeck?.internalValue || (fallbackInternal ? String(fallbackInternal) : ''),
                     isManualInternalEdit: targetDeck?.isManualInternalEdit || false,
                     detailedSkills: targetDeck?.detailedSkills || { encore: '', member1: '', member2: '', member3: '', member4: '' },
                     isDetailedInput: targetDeck?.isDetailedInput || false
@@ -935,6 +949,11 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
         setFriendLoadError('');
         setIsLoadingFriend(true);
         setShowLoadModal(false);
+
+        // Explicitly capture target deck number and key at invocation
+        const targetDeckNum = activeDeckNum;
+        const targetDeckKey = `deck${targetDeckNum}`;
+
         notifyFriendLoad('플레이어 데이터를 불러오는 중…');
 
         if (user && saveFriendCode) {
@@ -956,8 +975,9 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
             notifyFriendLoad('플레이어 데이터를 화면에 반영하는 중…');
             const applyStartedAt = performance.now();
             flushSync(() => {
+                setActiveDeckNum(targetDeckNum);
                 setSurveyData(prev => {
-                    const currentDeckData = prev.unifiedDecks?.[`deck${activeDeckNum}`] || {};
+                    const currentDeckData = prev.unifiedDecks?.[targetDeckKey] || {};
                     const updatedDeck = {
                         ...currentDeckData,
                         totalPower: fetchedTotalPower ?? currentDeckData.totalPower,
@@ -976,9 +996,10 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                     const internalVal = Math.floor(preciseInternalVal / 10) * 10;
                     return {
                         ...prev,
+                        activeDeckNum: targetDeckNum,
                         unifiedDecks: {
                             ...prev.unifiedDecks,
-                            [`deck${activeDeckNum}`]: {
+                            [targetDeckKey]: {
                                 ...updatedDeck,
                                 internalValue: String(internalVal),
                                 isManualInternalEdit: false,
@@ -991,12 +1012,12 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                         isManualInternalEdit: false,
                     };
                 });
-                setManualTotalPowerDecks(prev => ({ ...prev, [activeDeckKey]: false }));
-                setManualEventBonusDecks(prev => ({ ...prev, [activeDeckKey]: false }));
+                setManualTotalPowerDecks(prev => ({ ...prev, [targetDeckKey]: false }));
+                setManualEventBonusDecks(prev => ({ ...prev, [targetDeckKey]: false }));
                 setIsLoadingFriend(false);
             });
             console.info('[친구코드 불러오기] 화면 반영', `${Math.round(performance.now() - applyStartedAt)}ms`);
-            notifyFriendLoad(`플레이어 데이터 불러오기 완료 · 덱 ${activeDeckNum}`, 'success');
+            notifyFriendLoad(`플레이어 데이터 불러오기 완료 · 덱 ${targetDeckNum}`, 'success');
         } catch (err) {
             setIsLoadingFriend(false);
             console.error('Failed to load friend data', err);

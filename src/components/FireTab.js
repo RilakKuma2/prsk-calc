@@ -35,6 +35,7 @@ import {
 } from '../data/refreshGaugeData';
 import {
   getDisplayedPrediction,
+  resolvePredictionLastUpdated,
   shouldHideCompletedPrediction,
 } from '../utils/predictionDisplay';
 
@@ -247,6 +248,16 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const allowedRanksSet = getAllowedRanksSet(isWorldBloomChapterSelected);
   const [chapterLiveData, setChapterLiveData] = useState([]);
   const [chapterScoreLastUpdated, setChapterScoreLastUpdated] = useState(null);
+  const displayedLastUpdated = useMemo(() => {
+    if (selectedChapter !== 'all' && chaptersData.length > 0) {
+      const selChapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
+      if (selChapter) {
+        const chapterUpdatedAt = resolvePredictionLastUpdated(selChapter, selChapter.data);
+        if (chapterUpdatedAt) return chapterUpdatedAt;
+      }
+    }
+    return lastUpdated;
+  }, [selectedChapter, chaptersData, lastUpdated]);
   const [isRoomSearchOpen, setIsRoomSearchOpen] = useState(false);
   const [isRefreshCalculatorOpen, setIsRefreshCalculatorOpen] = useState(false);
   const [searchEngine, setSearchEngine] = useState(() => {
@@ -539,7 +550,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
         let finalData = [];
         let mergedEventInfo = mainEventInfo;
-        let mergedUpdatedAt = mainData.updatedAt;
+        let mergedUpdatedAt = resolvePredictionLastUpdated(mainData, mainData.data);
         let isStale = false;
 
         // 2. Logic: Compare Event IDs
@@ -575,6 +586,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               scoreDelta1h: item.scoreDelta1h
             })).sort((a, b) => a.rank - b.rank);
           }
+          mergedUpdatedAt = resolvePredictionLastUpdated(mainData, finalData);
         } else {
           if (assetEventInfo) {
             mergedEventInfo = { ...(mergedEventInfo || {}), ...assetEventInfo };
@@ -622,14 +634,18 @@ const FireTab = ({ surveyData, setSurveyData }) => {
             };
           }).sort((a, b) => a.rank - b.rank);
 
+          mergedUpdatedAt = resolvePredictionLastUpdated(mainData, finalData);
+
           // Check Stale
-          if (assetData.length > 0 && mainData.updatedAt) {
+          if (assetData.length > 0) {
             const assetTime = assetJson?.fetchedAt ? new Date(assetJson.fetchedAt.replace(' ', 'T') + '+09:00').getTime() : new Date(assetData[0].timestamp).getTime();
-            const mainTime = mainData.updatedAt;
-            const diff = Math.abs(assetTime - mainTime);
-            // 1 day = 24 * 60 * 60 * 1000 = 86400000
-            if (diff > 86400000) {
-              isStale = true;
+            const mainTime = mergedUpdatedAt || mainData.updatedAt;
+            if (mainTime) {
+              const diff = Math.abs(assetTime - mainTime);
+              // 1 day = 24 * 60 * 60 * 1000 = 86400000
+              if (diff > 86400000) {
+                isStale = true;
+              }
             }
           }
         }
@@ -3065,7 +3081,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         {t('fire.last_updated')}
                       </span>
                       <span className="text-[10px] sm:text-xs text-black font-extrabold tabular-nums">
-                        {lastUpdated ? formatTime(lastUpdated) : "-"}
+                        {displayedLastUpdated ? formatTime(displayedLastUpdated) : "-"}
                       </span>
                     </div>
                     {currentScoreLastUpdated && (
@@ -3076,8 +3092,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                         <span className="text-[10px] sm:text-xs text-black font-extrabold tabular-nums">
                           {formatTime(
                             selectedChapter !== 'all' && chapterScoreLastUpdated
-                              ? Math.max(chapterScoreLastUpdated, lastUpdated || 0)
-                              : Math.max(currentScoreLastUpdated, lastUpdated || 0)
+                              ? Math.max(chapterScoreLastUpdated, displayedLastUpdated || 0)
+                              : Math.max(currentScoreLastUpdated, displayedLastUpdated || 0)
                           )}
                         </span>
                       </div>
@@ -3150,15 +3166,15 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                           if (chStartMs && now < chStartMs) {
                             return formatDuration(chStartMs - now, t);
                           } else if (chEndMs && now < chEndMs) {
-                            const refTime = Math.max(lastUpdated || 0, chapterScoreLastUpdated || 0) || now;
+                            const refTime = Math.max(displayedLastUpdated || 0, chapterScoreLastUpdated || 0) || now;
                             return formatDuration(chEndMs - refTime, t);
                           } else if (chEndMs && now >= chEndMs) {
                             return '-';
                           }
                         }
                         // 종합 (기존 로직)
-                        if (eventInfo && (lastUpdated || currentScoreLastUpdated)) {
-                          const refTime = Math.max(lastUpdated || 0, currentScoreLastUpdated || 0);
+                        if (eventInfo && (displayedLastUpdated || currentScoreLastUpdated)) {
+                          const refTime = Math.max(displayedLastUpdated || 0, currentScoreLastUpdated || 0);
                           return formatDuration((eventInfo.end * 1000) - refTime, t);
                         }
                         return timeRemaining !== null ? formatDuration(timeRemaining, t) : null;
@@ -3178,7 +3194,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     if (selChapter && selChapter.start && selChapter.end) {
                       startSec = selChapter.start;
                       totalHours = (selChapter.end - selChapter.start) / 3600;
-                      const maxTs = Math.max(lastUpdated || 0, chapterScoreLastUpdated || 0);
+                      const maxTs = Math.max(displayedLastUpdated || 0, chapterScoreLastUpdated || 0);
                       currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
                     }
 
@@ -3189,7 +3205,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       if (wbChapter && wbChapter.chapterStartAt && wbChapter.chapterEndAt) {
                         startSec = wbChapter.chapterStartAt / 1000;
                         totalHours = (wbChapter.chapterEndAt - wbChapter.chapterStartAt) / 3600000;
-                        const maxTs = Math.max(lastUpdated || 0, chapterScoreLastUpdated || 0);
+                        const maxTs = Math.max(displayedLastUpdated || 0, chapterScoreLastUpdated || 0);
                         currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
                       }
                     }
@@ -3199,7 +3215,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   if (!startSec) {
                     startSec = eventInfo.start;
                     totalHours = eventInfo.len;
-                    const maxTs = Math.max(lastUpdated || 0, currentScoreLastUpdated || 0);
+                    const maxTs = Math.max(displayedLastUpdated || 0, currentScoreLastUpdated || 0);
                     currentTs = maxTs > 0 ? maxTs / 1000 : Date.now() / 1000;
                   }
 
@@ -3242,7 +3258,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
               <div className="flex justify-between items-center text-xs mt-2 text-gray-500 px-1">
                 <span>
                   <div className="text-[10px] text-black font-medium tabular-nums">
-                    {lastUpdated && <div>{`${t('fire.last_updated')}: ${formatTime(lastUpdated)}`}</div>}
+                    {displayedLastUpdated && <div>{`${t('fire.last_updated')}: ${formatTime(displayedLastUpdated)}`}</div>}
                     {currentScoreLastUpdated && <div>{`${t('fire.current_score_updated')}: ${formatTime(currentScoreLastUpdated)}`}</div>}
                   </div>
                 </span>
