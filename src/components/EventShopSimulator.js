@@ -7,7 +7,7 @@ import { API_BASE_URL, ASSET_BASE_URL, joinUrl } from '../config/env';
 import CustomSelectDropdown from './common/CustomSelectDropdown';
 import EventLiveDeckButton from './common/EventLiveDeckButton';
 import useEventLiveEstimate from '../hooks/useEventLiveEstimate';
-import { getEventLiveSource } from '../utils/eventLiveEstimate';
+import { getEventLiveSource, updateEventLiveDeck } from '../utils/eventLiveEstimate';
 import { numberOrDefault } from '../utils/numbers';
 import {
   readJsonStorage,
@@ -583,6 +583,7 @@ const EventShopSimulator = ({
   setSurveyData,
 }) => {
   const { t, language } = useTranslation();
+  const isJa = language === 'ja';
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [exchangeSummaries, setExchangeSummaries] = useState([]);
@@ -627,7 +628,45 @@ const EventShopSimulator = ({
   const localCurrentFireOption = surveyData.fires2 && surveyData.fires2 !== 'none' ? surveyData.fires2 : surveyData.firea || currentFireOption || '25';
   const setLocalCurrentFireOption = value => setSurveyData(prev => ({ ...prev, firea: value, fires2: 'none' }));
   const liveEstimate = useEventLiveEstimate(surveyData, localCurrentFireOption);
-  const localScorePerRoundMan = liveEstimate.points === null ? '0' : String(liveEstimate.points / 10000);
+  const autoScorePerRoundMan = liveEstimate.points === null ? '0' : String(liveEstimate.points / 10000);
+  const [manualScorePerRoundMan, setManualScorePerRoundMan] = useState(null); // null = 자동(덱 계산값)
+
+  // 덱 관련 설정(불 제외)이 변경되었을 때만 수동값 리셋
+  const deckKey = useMemo(() => {
+    const { power, effi, internalValue, isDetailedInput, detailedSkills, eventLiveSong } = surveyData || {};
+    return JSON.stringify({ power, effi, internalValue, isDetailedInput, detailedSkills, eventLiveSong });
+  }, [surveyData]);
+  const prevDeckKeyRef = useRef(deckKey);
+  useEffect(() => {
+    if (prevDeckKeyRef.current !== deckKey) {
+      prevDeckKeyRef.current = deckKey;
+      setManualScorePerRoundMan(null);
+    }
+  }, [deckKey]);
+
+  // 불(보너스) 변경 시 수동 입력된 판당 이벤포가 있으면 비율로 자동 스케일링
+  const prevFireOptionRef = useRef(localCurrentFireOption);
+  useEffect(() => {
+    const prevFire = prevFireOptionRef.current;
+    const currentFire = localCurrentFireOption;
+    if (prevFire !== currentFire) {
+      prevFireOptionRef.current = currentFire;
+      setManualScorePerRoundMan(prevManual => {
+        if (prevManual === null) return null;
+        const prevMultiplier = Number(prevFire) || 1;
+        const newMultiplier = Number(currentFire) || 1;
+        const currentVal = parseFloat(prevManual);
+        if (!isNaN(currentVal) && currentVal >= 0 && prevMultiplier > 0) {
+          const scaled = (currentVal * newMultiplier) / prevMultiplier;
+          return String(parseFloat(scaled.toFixed(4)));
+        }
+        return prevManual;
+      });
+    }
+  }, [localCurrentFireOption]);
+
+  const localScorePerRoundMan = manualScorePerRoundMan !== null ? manualScorePerRoundMan : autoScorePerRoundMan;
+  const isScoreManuallySet = manualScorePerRoundMan !== null && manualScorePerRoundMan !== autoScorePerRoundMan;
   const [localRoundsPerInterval, setLocalRoundsPerInterval] = useState(roundsPerInterval || '28');
 
   const getNaturalSetting = (key, fallback) => (
@@ -699,6 +738,21 @@ const EventShopSimulator = ({
   const selectedEventStorageKey = useMemo(() => (
     getShopEventStorageKey(selectedSummary)
   ), [selectedSummary]);
+
+  // 월드링크(피날레 포함) 이벤트 여부
+  const isWorldLink = useMemo(() => {
+    const currentEventId = Number(selectedSummary?.eventId || eventInfo?.id || 0);
+    const matchedEvent = events.find(e => Number(e.id) === currentEventId);
+    const target = matchedEvent || eventInfo;
+    const type = target?.eventType || target?.event_type;
+    if (type === 'world_bloom') return true;
+
+    // assetbundleName으로도 백업 확인 (예: event_wl_3rd_part5_2026, event_wl_3rd_finale_2026 등)
+    const asname = selectedSummary?.assetbundleName || target?.assetbundleName || target?.asname;
+    if (typeof asname === 'string' && /event_wl_/i.test(asname)) return true;
+
+    return false;
+  }, [selectedSummary, events, eventInfo]);
 
   const shopGroups = useMemo(() => {
     const orderedKeys = [];
@@ -857,6 +911,11 @@ const EventShopSimulator = ({
     return [selectedSummary, ...latest];
   }, [exchangeSummaries, selectedSummary]);
 
+  const eventDropdownOptions = useMemo(() => visibleSummaries.map(summary => ({
+    value: summary.id,
+    label: `#${summary.eventId} ${summary.assetbundleName || ''}`,
+  })), [visibleSummaries]);
+
   const totals = useMemo(() => {
     const plannedCost = visibleItems.reduce((sum, item) => {
       const price = toPositiveInteger(item.price, 0);
@@ -869,7 +928,18 @@ const EventShopSimulator = ({
       return sum + (price * bought);
     }, 0);
     const owned = toPositiveInteger(currentOwnedBadgePoints, 0);
-    const perRoundPoints = Math.max(0, toNumber(localScorePerRoundMan || '2.8', 0) * 1000);
+    const baseEp = Math.max(0, toNumber(localScorePerRoundMan || '2.8', 0) * 10000);
+    let perRoundPoints = Math.floor(baseEp / 10);
+    // 역산 공식: 이벤포 / (이벤배수 + 100%) * (상점배수 + 100%) / 10
+    if (isWorldLink) {
+      const eventBonus = Math.max(0, numberOrDefault(surveyData.effi, 250));
+      const shopBonus = Math.max(0, numberOrDefault(surveyData.shopEffi, numberOrDefault(surveyData.effi, 200)));
+      const eventRate = eventBonus + 100;
+      const shopRate = shopBonus + 100;
+      if (eventRate > 0) {
+        perRoundPoints = Math.floor((baseEp * shopRate) / (eventRate * 10));
+      }
+    }
     const fireOption = localCurrentFireOption;
     const firePerRound = getFireConsumption(fireOption);
 
@@ -970,10 +1040,33 @@ const EventShopSimulator = ({
       const eventPointAdShopPoints = isEventPointAdEnabled ? days * 1000 : 0;
       naturalShopPoints += extraShopPoints + eventPointAdShopPoints;
       breakdown.push(
-        { label: incomeSource, detail: `${totalNaturalFire.toLocaleString()}불 → ${naturalRounds.toLocaleString()}회 × ${perRoundPoints.toLocaleString()}포`, points: naturalRounds * perRoundPoints },
-        { label: '챌린지 라이브', detail: `${days}일`, points: Math.floor(totalChallengeEP / 10) },
-        { label: '마이세카', detail: `${mySekaiDays}일 · ${worldPass ? 10 : 2}배`, points: Math.floor(totalMySekaiEP / 10) },
-        { label: '이벤트 포인트 광고', detail: `${isEventPointAdEnabled ? days : 0}일`, points: eventPointAdShopPoints },
+        {
+          label: incomeSource,
+          detail: t('fire.shop_fire_to_rounds_detail', {
+            fire: totalNaturalFire.toLocaleString(),
+            fireSuffix: t('fire.fire_suffix'),
+            rounds: naturalRounds.toLocaleString(),
+            roundsSuffix: t('fire.rounds_suffix'),
+            points: perRoundPoints.toLocaleString(),
+            pointSuffix: t('fire.shop_point_suffix'),
+          }),
+          points: naturalRounds * perRoundPoints
+        },
+        {
+          label: t('fire.challenge_live'),
+          detail: t('fire.shop_days_unit', { count: days }),
+          points: Math.floor(totalChallengeEP / 10)
+        },
+        {
+          label: t('fire.my_sekai'),
+          detail: `${t('fire.shop_days_unit', { count: mySekaiDays })} · ${t('fire.shop_rate_multiplier', { rate: worldPass ? 10 : 2 })}`,
+          points: Math.floor(totalMySekaiEP / 10)
+        },
+        {
+          label: t('fire.event_point_ad'),
+          detail: t('fire.shop_days_unit', { count: isEventPointAdEnabled ? days : 0 }),
+          points: eventPointAdShopPoints
+        },
       );
       window.fire = `현재 ${userCurrentNatural} + 자연회복 ${recoveryFire} + 광고 불 ${adBonusFire} + 레벨업 ${levelUpFire} = ${totalNaturalFire}불`;
 
@@ -1004,7 +1097,7 @@ const EventShopSimulator = ({
       additionalFire,
       additionalHours,
     };
-  }, [incomeSource, events, calculationTime, visibleItems, currentOwnedBadgePoints, localScorePerRoundMan, localRoundsPerInterval, localCurrentFireOption, selectedSummary, eventInfo, currentNaturalFire, isLevelUpBonusEnabled, currentLevel, remainingExp, liveRank, challengeScore, mySekaiScore, worldPass, isEventPointAdEnabled]);
+  }, [t, incomeSource, events, calculationTime, visibleItems, currentOwnedBadgePoints, localScorePerRoundMan, localRoundsPerInterval, localCurrentFireOption, selectedSummary, eventInfo, currentNaturalFire, isLevelUpBonusEnabled, currentLevel, remainingExp, liveRank, challengeScore, mySekaiScore, worldPass, isEventPointAdEnabled, isWorldLink, surveyData.effi, surveyData.shopEffi]);
 
   const updateItemsWithCountPersistence = (updater) => {
     setItems(prev => {
@@ -1357,10 +1450,7 @@ const EventShopSimulator = ({
                 className="!w-full sm:!w-48 !mb-0"
                 buttonClassName="!h-8 !w-full sm:!w-48 !rounded-lg !border-gray-200 !px-7 !text-xs !font-bold !text-gray-600"
                 disabled={loading || visibleSummaries.length === 0}
-                options={visibleSummaries.map(summary => ({
-                  value: summary.id,
-                  label: `#${summary.eventId} ${summary.assetbundleName || ''}`,
-                }))}
+                options={eventDropdownOptions}
               />
             </div>
           </div>
@@ -1408,16 +1498,30 @@ const EventShopSimulator = ({
                   />
                 </div>
               </div>
-              <div className="rounded-lg bg-white border border-gray-100 px-1.5 sm:px-2 py-1 sm:py-1.5 min-h-[42px] sm:min-h-[50px] flex flex-col justify-center">
-                <div className="text-[10px] font-bold text-gray-400 leading-none">현재 사용 포인트</div>
+              <div className="rounded-lg bg-white border border-gray-100 px-1.5 sm:px-2 py-1 sm:py-1.5 min-h-[42px] sm:min-h-[50px] flex flex-col justify-center relative">
+                <div className="flex items-center justify-between gap-1 leading-none">
+                  <div className="text-[10px] font-bold text-gray-400 leading-none">{t('fire.shop_used_points')}</div>
+                  <CustomSelectDropdown
+                    value={selectedSummaryId}
+                    onChange={setSelectedSummaryId}
+                    ariaLabel={t('fire.shop_select_event')}
+                    triggerLabel={t('fire.shop_select_event')}
+                    className="sm:hidden"
+                    buttonClassName="!h-5 !px-1.5 !py-0 !rounded-md !border-pink-200 !bg-pink-50 hover:!bg-pink-100 !text-[9.5px] !font-bold !text-pink-600 !shadow-none leading-none"
+                    menuClassName="!min-w-[220px]"
+                    showChevron={false}
+                    disabled={loading || visibleSummaries.length === 0}
+                    options={eventDropdownOptions}
+                  />
+                </div>
                 <div className="text-[13px] sm:text-sm font-extrabold text-gray-800 tabular-nums mt-1 sm:mt-1.5 leading-none">{formatNumber(totals.usedCost)}</div>
               </div>
               <div className="rounded-lg bg-white border border-gray-100 px-1.5 sm:px-2 py-1 sm:py-1.5 min-h-[42px] sm:min-h-[50px] flex flex-col justify-center">
-                <div className="text-[10px] font-bold text-gray-400 leading-none">예정 필요 포인트</div>
+                <div className="text-[10px] font-bold text-gray-400 leading-none">{t('fire.shop_planned_points')}</div>
                 <div className="text-[13px] sm:text-sm font-extrabold text-gray-800 tabular-nums mt-1 sm:mt-1.5 leading-none">{formatNumber(totals.plannedCost)}</div>
               </div>
               <div className="rounded-lg bg-pink-50 border border-pink-100 px-1.5 sm:px-2 py-1 sm:py-1.5 min-h-[46px] sm:min-h-[58px] flex flex-col justify-center">
-                <div className="text-[10px] font-bold text-pink-400 leading-none">부족 포인트</div>
+                <div className="text-[10px] font-bold text-pink-400 leading-none">{t('fire.shop_needed_points')}</div>
                 <div className="text-[13px] sm:text-sm font-extrabold text-pink-600 tabular-nums mt-1 sm:mt-1.5 leading-none">{formatNumber(totals.neededBeforeNatural)}</div>
                 {totals.naturalShopPoints > 0 && (
                   <div className={`text-[9px] font-bold whitespace-nowrap leading-none mt-1 ${isNaturalPointSurplus ? 'text-emerald-500' : 'text-pink-400'}`}>
@@ -1431,44 +1535,108 @@ const EventShopSimulator = ({
 
             <div className="flex flex-col">
               <div className="shop-controls-row">
-                <div className="col-span-2 md:col-span-1 rounded-lg bg-white/80 border border-gray-100 relative flex min-h-[46px] sm:min-h-[52px]">
-                  <div className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2 py-1.5 border-r border-gray-100 relative">
-                    <div className="flex items-center gap-1 min-w-0">
-                      <div className="text-[10px] text-gray-400 font-bold whitespace-nowrap">판 당 이벤포</div>
-                      <div className="relative flex items-center">
-                        <EventLiveDeckButton surveyData={surveyData} setSurveyData={setSurveyData} bonus={localCurrentFireOption} estimate={liveEstimate} />
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end shrink-0">
-                      <div className="flex items-center gap-0.5">
-                        <input
-                          type="number"
-                          value={localScorePerRoundMan}
-                          readOnly
-                          title="덱·곡 설정에서 변경"
-                          onFocus={e => e.target.select()}
-                          className="w-[5.5rem] sm:w-[6.25rem] text-right text-[16px] font-extrabold text-gray-700 bg-transparent border-b border-gray-200 focus:outline-none focus:border-red-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                <div className="col-span-2 md:col-span-1 rounded-lg bg-white/80 border border-gray-100 relative flex min-h-[46px] sm:min-h-[50px]">
+                  <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1 border-r border-gray-100 relative">
+                    <div className="flex flex-col justify-center min-w-0 shrink-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-gray-400 font-bold whitespace-nowrap">{t('fire.shop_score_per_round')}</span>
+                        <EventLiveDeckButton
+                          surveyData={surveyData}
+                          setSurveyData={setSurveyData}
+                          bonus={localCurrentFireOption}
+                          estimate={liveEstimate}
+                          isWorldLink={isWorldLink}
+                          className="!w-[20px] !h-[20px] !min-w-[20px] !min-h-[20px] !rounded !p-0"
                         />
-                        <span className="text-[10px] text-gray-500 font-bold">만</span>
                       </div>
-                      <div className="text-[9px] text-indigo-400 font-bold leading-none mt-0.5">
-                        {Math.max(parseFloat(localScorePerRoundMan || '0') * 1000, 0).toLocaleString()}포
+                      {isWorldLink && (
+                        <div className="text-[7.5px] sm:text-[8px] text-red-500 font-bold leading-tight mt-0.5 whitespace-nowrap">
+                          {t('fire.wl_shop_rate_lower')}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                      <div className="flex flex-col items-end shrink-0 justify-center">
+                        <div className="flex items-center gap-0.5">
+                          <input
+                            type="number"
+                            value={localScorePerRoundMan}
+                            onFocus={e => e.target.select()}
+                            onChange={e => setManualScorePerRoundMan(e.target.value)}
+                            onBlur={e => {
+                              const v = parseFloat(e.target.value);
+                              if (isNaN(v) || v < 0) setManualScorePerRoundMan(autoScorePerRoundMan);
+                            }}
+                            title={t('fire.shop_score_per_round_title')}
+                            className={`${isWorldLink ? 'w-[3.25rem] sm:w-[3.85rem]' : 'w-[4.75rem] sm:w-[5.5rem]'} text-right text-[14px] sm:text-[15px] font-extrabold text-gray-700 bg-transparent border-b border-gray-200 focus:outline-none focus:border-red-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none py-0 px-0.5 leading-tight`}
+                          />
+                          <span className="text-[10px] text-gray-500 font-bold">{t('fire.shop_ten_thousand_unit')}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <div className="text-[9px] text-indigo-500 font-bold leading-none">
+                            {totals.perRoundPoints.toLocaleString()}{t('fire.shop_point_suffix')}
+                          </div>
+                          {isScoreManuallySet && (
+                            <button
+                              onClick={() => setManualScorePerRoundMan(null)}
+                              title={t('fire.shop_reset_to_deck')}
+                              className="text-[8px] text-gray-400 hover:text-red-400 leading-none border border-gray-200 rounded px-0.5 py-0.5 transition-colors"
+                            >↺</button>
+                          )}
+                        </div>
                       </div>
+                      {isWorldLink && (
+                        <div className="flex flex-col justify-center gap-0.5 shrink-0 border-l border-gray-100 pl-1 sm:pl-1.5">
+                          <div className="flex items-center gap-0.5 flex-nowrap">
+                            <span className="text-[8.5px] text-gray-400 font-bold whitespace-nowrap shrink-0">{t('fire.shop_event_bonus_short')}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={surveyData.effi ?? ''}
+                              placeholder="250"
+                              title={t('fire.shop_event_bonus_title')}
+                              onChange={e => setSurveyData(prev => updateEventLiveDeck(prev, 'effi', e.target.value))}
+                              className="w-9 sm:w-11 text-right text-[11px] font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded px-0.5 py-0 h-[19px] focus:outline-none focus:border-indigo-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <span className="text-[8.5px] text-gray-400 font-bold shrink-0">%</span>
+                          </div>
+                          <div className="flex items-center gap-0.5 flex-nowrap">
+                            <span className={`${isJa ? 'text-[7.5px]' : 'text-[8.5px]'} text-rose-500 font-bold whitespace-nowrap shrink-0`}>{t('fire.shop_bonus_short')}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={surveyData.shopEffi ?? ''}
+                              placeholder={surveyData.effi || '200'}
+                              title={t('fire.shop_bonus_title')}
+                              onChange={e => setSurveyData(prev => ({ ...prev, shopEffi: e.target.value }))}
+                              className="w-9 sm:w-11 text-right text-[11px] font-bold text-gray-700 bg-rose-50/50 border border-rose-200 rounded px-0.5 py-0 h-[19px] focus:outline-none focus:border-rose-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <span className="text-[8.5px] text-rose-500 font-bold shrink-0">%</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="w-[104px] sm:w-[82px] flex items-center justify-between gap-1 px-2.5 sm:px-2 py-1.5">
-                    <div className="text-[10px] text-gray-400 font-bold whitespace-nowrap">보너스</div>
+                  <div className="w-[78px] sm:w-[82px] flex items-center justify-between gap-1 px-1.5 sm:px-2 py-1 shrink-0">
+                    <div className={`${isJa ? 'text-[8.5px]' : 'text-[10px]'} text-gray-400 font-bold whitespace-nowrap`}>{t('fire.shop_fire_bonus')}</div>
                     <CustomSelectDropdown
                       value={localCurrentFireOption}
                       onChange={setLocalCurrentFireOption}
-                      ariaLabel="보너스"
-                      className="w-14 sm:w-11"
-                      buttonClassName="!h-7 !w-14 sm:!w-11 !rounded-md !border-gray-200 !bg-transparent !px-5 !text-[13px] !font-extrabold !text-gray-700"
+                      ariaLabel={t('fire.shop_fire_bonus')}
+                      className="w-11 sm:w-11"
+                      buttonClassName="!h-6 sm:!h-7 !w-11 !rounded-md !border-gray-200 !bg-transparent !px-1.5 !text-[12px] sm:!text-[13px] !font-extrabold !text-gray-700"
                       options={[
-                        { value: "1", label: "0불" }, { value: "5", label: "1불" }, { value: "10", label: "2불" },
-                        { value: "15", label: "3불" }, { value: "20", label: "4불" }, { value: "25", label: "5불" },
-                        { value: "27", label: "6불" }, { value: "29", label: "7불" }, { value: "31", label: "8불" },
-                        { value: "33", label: "9불" }, { value: "35", label: "10불" }
+                        { value: "1", label: t('fire.energy_option', { count: 0 }) },
+                        { value: "5", label: t('fire.energy_option', { count: 1 }) },
+                        { value: "10", label: t('fire.energy_option', { count: 2 }) },
+                        { value: "15", label: t('fire.energy_option', { count: 3 }) },
+                        { value: "20", label: t('fire.energy_option', { count: 4 }) },
+                        { value: "25", label: t('fire.energy_option', { count: 5 }) },
+                        { value: "27", label: t('fire.energy_option', { count: 6 }) },
+                        { value: "29", label: t('fire.energy_option', { count: 7 }) },
+                        { value: "31", label: t('fire.energy_option', { count: 8 }) },
+                        { value: "33", label: t('fire.energy_option', { count: 9 }) },
+                        { value: "35", label: t('fire.energy_option', { count: 10 }) }
                       ]}
                     />
                   </div>
@@ -1547,15 +1715,15 @@ const EventShopSimulator = ({
                       onClick={() => setBulkActionOpen(!bulkActionOpen)}
                       className="px-2.5 py-1.5 rounded-lg bg-pink-500 text-white text-[10px] font-extrabold shadow-sm hover:bg-pink-600 active:scale-95 transition-all flex items-center gap-1"
                     >
-                      일괄 ▼
+                      {t('fire.shop_bulk_action')} ▼
                     </button>
                     {bulkActionOpen && (
                       <div className="absolute right-0 top-full mt-1 w-28 bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden flex flex-col">
-                        <button onClick={fillBoughtMax} className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors">현재 MAX</button>
-                        <button onClick={fillBoughtZero} className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-700 hover:bg-gray-50 transition-colors">현재 0</button>
+                        <button onClick={fillBoughtMax} className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors">{t('fire.shop_bought_max')}</button>
+                        <button onClick={fillBoughtZero} className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-700 hover:bg-gray-50 transition-colors">{t('fire.shop_bought_zero')}</button>
                         <div className="h-px bg-gray-100 my-0.5"></div>
-                        <button onClick={fillDesiredMax} className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors">예정 MAX</button>
-                        <button onClick={fillDesiredZero} className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-700 hover:bg-gray-50 transition-colors">예정 0</button>
+                        <button onClick={fillDesiredMax} className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors">{t('fire.shop_desired_max')}</button>
+                        <button onClick={fillDesiredZero} className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-700 hover:bg-gray-50 transition-colors">{t('fire.shop_desired_zero')}</button>
                       </div>
                     )}
                   </div>
@@ -1564,7 +1732,7 @@ const EventShopSimulator = ({
                     onClick={resetAllToZero}
                     className="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 text-[10px] font-extrabold hover:bg-gray-50 active:scale-95 transition-all"
                   >
-                    리셋
+                    {t('fire.shop_reset')}
                   </button>
 
                 </div>
@@ -1574,7 +1742,7 @@ const EventShopSimulator = ({
                   <div className="bg-indigo-50/80 rounded-lg p-1 sm:p-1.5 border border-indigo-100 shadow-sm">
                     <div className="event-shop-natural-grid">
                       <div className="event-shop-natural-field">
-                        <label className="event-shop-natural-label">보유 불</label>
+                        <label className="event-shop-natural-label">{t('fire.shop_current_fire')}</label>
                         <div className="event-shop-natural-value">
                           <input
                             type="number"
@@ -1587,7 +1755,7 @@ const EventShopSimulator = ({
                         </div>
                       </div>
                       <div className="event-shop-natural-field">
-                        <label className="event-shop-natural-label">챌린지</label>
+                        <label className="event-shop-natural-label">{t('fire.shop_challenge')}</label>
                         <div className="event-shop-natural-value">
                           <input
                             type="number"
@@ -1597,11 +1765,11 @@ const EventShopSimulator = ({
                             placeholder="250"
                             className="event-shop-natural-input"
                           />
-                          <span className="text-[10px] text-indigo-400 font-bold">만</span>
+                          <span className="text-[10px] text-indigo-400 font-bold">{t('fire.shop_ten_thousand_unit')}</span>
                         </div>
                       </div>
                       <div className="event-shop-natural-field">
-                        <label className="event-shop-natural-label">마이세카이</label>
+                        <label className="event-shop-natural-label">{t('fire.my_sekai')}</label>
                         <div className="event-shop-natural-value">
                           <input
                             type="number"
@@ -1643,7 +1811,7 @@ const EventShopSimulator = ({
                       {isLevelUpBonusEnabled && (
                         <>
                           <div className="event-shop-natural-field animate-fade-in">
-                            <label className="event-shop-natural-label">현재 레벨</label>
+                            <label className="event-shop-natural-label">{t('fire.shop_current_level')}</label>
                             <div className="event-shop-natural-value">
                               <input
                                 type="number"
@@ -1656,7 +1824,7 @@ const EventShopSimulator = ({
                             </div>
                           </div>
                           <div className="event-shop-natural-field animate-fade-in">
-                            <label className="event-shop-natural-label">남은 경험치</label>
+                            <label className="event-shop-natural-label">{t('fire.player_remaining_exp')}</label>
                             <div className="event-shop-natural-value">
                               <input
                                 type="number"
@@ -1687,32 +1855,32 @@ const EventShopSimulator = ({
           </div>
           <div className="mt-2">
                 <details className="shop-calculation">
-                  <summary><span className="shop-calculation-title">계산 과정</span><span className="shop-calculation-preview">예상 수입 <b>{totals.naturalShopPoints.toLocaleString()}포</b></span></summary>
+                  <summary><span className="shop-calculation-title">{t('fire.shop_calc_process')}</span><span className="shop-calculation-preview">{t('fire.shop_expected_income')} <b>{totals.naturalShopPoints.toLocaleString()}{t('fire.shop_point_suffix')}</b></span></summary>
                   <div className="shop-calculation-body">
-                    <div className="shop-calculation-period"><span>계산 기간</span><span>{totals.calculationWindow.end ? `${new Date(totals.calculationWindow.start).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} → ${new Date(totals.calculationWindow.end).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}` : '이벤트 기간을 확인할 수 없습니다.'}</span></div>
-                    {!totals.calculationWindow.active && <div className="shop-calculation-notice">남은 이벤트 기간이 없어 추가 수입은 0포입니다.</div>}
-                    {totals.calculationWindow.fire && <div className="shop-calculation-fire"><b>사용 가능 불</b><span>{totals.calculationWindow.fire}</span></div>}
+                    <div className="shop-calculation-period"><span>{t('fire.shop_calc_period')}</span><span>{totals.calculationWindow.end ? `${new Date(totals.calculationWindow.start).toLocaleString(language === 'ja' ? 'ja-JP' : language === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} → ${new Date(totals.calculationWindow.end).toLocaleString(language === 'ja' ? 'ja-JP' : language === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}` : t('fire.shop_no_event_period')}</span></div>
+                    {!totals.calculationWindow.active && <div className="shop-calculation-notice">{t('fire.shop_no_remaining_event_notice')}</div>}
+                    {totals.calculationWindow.fire && <div className="shop-calculation-fire"><b>{t('fire.shop_usable_fire')}</b><span>{totals.calculationWindow.fire}</span></div>}
                     <div className="shop-calculation-columns">
-                      <section className="shop-calculation-income" aria-label="예상 수입 내역">
-                        {totals.breakdown.map(row => <div key={row.label} className="shop-calculation-row"><div><b>{row.label}</b><small>{row.detail}</small></div><strong>{row.points.toLocaleString()}<small>포</small></strong></div>)}
-                        <div className="shop-calculation-total"><span>예상 수입 합계</span><b>{totals.naturalShopPoints.toLocaleString()}포</b></div>
+                      <section className="shop-calculation-income" aria-label={t('fire.shop_expected_income_details')}>
+                        {totals.breakdown.map(row => <div key={row.label} className="shop-calculation-row"><div><b>{row.label}</b><small>{row.detail}</small></div><strong>{row.points.toLocaleString()}<small>{t('fire.shop_point_suffix')}</small></strong></div>)}
+                        <div className="shop-calculation-total"><span>{t('fire.shop_expected_income_total')}</span><b>{totals.naturalShopPoints.toLocaleString()}{t('fire.shop_point_suffix')}</b></div>
                       </section>
-                      <section className="shop-calculation-balance" aria-label="부족분 계산">
-                        <div><span>구매 예정</span><b>{totals.plannedCost.toLocaleString()}포</b></div>
-                        <div><span>보유 포인트 차감</span><b>− {totals.owned.toLocaleString()}포</b></div>
-                        <div><span>예상 수입 차감</span><b>− {totals.naturalShopPoints.toLocaleString()}포</b></div>
-                        <div className="shop-calculation-shortfall"><span>부족 포인트</span><b>{totals.needed.toLocaleString()}포</b></div>
-                        <div className="shop-calculation-extra"><span>추가 라이브</span><b>{totals.additionalRounds?.toLocaleString() ?? '-'}회 · {totals.additionalFire?.toLocaleString() ?? '-'}불</b></div>
+                      <section className="shop-calculation-balance" aria-label={t('fire.shop_shortage_calc')}>
+                        <div><span>{t('fire.shop_planned_purchase')}</span><b>{totals.plannedCost.toLocaleString()}{t('fire.shop_point_suffix')}</b></div>
+                        <div><span>{t('fire.shop_deduct_owned_points')}</span><b>− {totals.owned.toLocaleString()}{t('fire.shop_point_suffix')}</b></div>
+                        <div><span>{t('fire.shop_deduct_expected_income')}</span><b>− {totals.naturalShopPoints.toLocaleString()}{t('fire.shop_point_suffix')}</b></div>
+                        <div className="shop-calculation-shortfall"><span>{t('fire.shop_needed_points')}</span><b>{totals.needed.toLocaleString()}{t('fire.shop_point_suffix')}</b></div>
+                        <div className="shop-calculation-extra"><span>{t('fire.shop_extra_live')}</span><b>{totals.additionalRounds !== null ? `${totals.additionalRounds.toLocaleString()}${t('fire.rounds_suffix')}` : '-'} · {totals.additionalFire !== null ? `${totals.additionalFire.toLocaleString()}${t('fire.fire_suffix')}` : '-'}</b></div>
                       </section>
                     </div>
                   </div>
                 </details>
           </div>
         </div>
-          <button type="button" className="shop-menu-handle" aria-label="상점 메뉴 펼치기" aria-expanded={menuRevealed}
+          <button type="button" className="shop-menu-handle" aria-label={t('fire.shop_menu_toggle')} aria-expanded={menuRevealed}
             onPointerEnter={event => { if (event.pointerType === 'mouse') setMenuRevealed(true); }}
             onClick={() => setMenuRevealed(value => !value)}>
-            <span aria-hidden="true">{menuRevealed ? '⌃' : '⌄'}</span> 메뉴
+            <span aria-hidden="true">{menuRevealed ? '⌃' : '⌄'}</span> {t('fire.shop_menu')}
           </button>
         </div>
 
@@ -1743,7 +1911,7 @@ const EventShopSimulator = ({
                       {/* Top Right Limit Pill */}
                       {limit !== null && (
                         <div className="absolute top-1 right-1 z-10 bg-[#ff6b9e] text-white text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
-                          あと{Math.max(0, limit - bought)}回
+                          {t('fire.shop_remaining_times', { count: Math.max(0, limit - bought) })}
                         </div>
                       )}
 
@@ -1814,7 +1982,7 @@ const EventShopSimulator = ({
                     <div className="flex flex-col px-0 sm:px-1 w-full mt-1 gap-1">
                       <div className="sm:hidden flex flex-col gap-1">
                         <div className="grid grid-cols-[2rem_1fr_2.4rem_1fr] items-center gap-1">
-                          <div className="h-7 rounded-md bg-white/90 border border-gray-100 flex items-center justify-center text-[10px] font-black text-gray-600">현재</div>
+                          <div className="h-7 rounded-md bg-white/90 border border-gray-100 flex items-center justify-center text-[10px] font-black text-gray-600">{t('fire.shop_bought_label')}</div>
                           <button
                             type="button"
                             onClick={() => setBoughtClamped(item, 0)}
@@ -1840,7 +2008,7 @@ const EventShopSimulator = ({
 	                          </button>
                         </div>
                         <div className="grid grid-cols-[2rem_1fr_2.4rem_1fr] items-center gap-1">
-                          <div className="h-7 rounded-md bg-white/90 border border-pink-100 flex items-center justify-center text-[10px] font-black text-pink-500">예정</div>
+                          <div className="h-7 rounded-md bg-white/90 border border-pink-100 flex items-center justify-center text-[10px] font-black text-pink-500">{t('fire.shop_desired_label')}</div>
                           <button
                             type="button"
                             onClick={() => setDesiredClamped(item, 0)}
@@ -1869,7 +2037,7 @@ const EventShopSimulator = ({
                       {/* Bought (현재) Row */}
                       <div className="hidden sm:flex items-center gap-1.5 w-full">
                         <div className="w-10 h-8 bg-white/90 rounded-md shadow-sm border border-gray-100 flex items-center justify-center shrink-0">
-                          <span className="text-[12px] sm:text-[13px] font-black text-gray-600 tracking-widest">현재</span>
+                          <span className="text-[12px] sm:text-[13px] font-black text-gray-600 tracking-widest">{t('fire.shop_bought_label')}</span>
                         </div>
                         <div className="flex items-center flex-1 min-w-0 bg-[#f0f1f5] rounded-lg p-1 gap-1">
                           <button
@@ -1923,7 +2091,7 @@ const EventShopSimulator = ({
                       {/* Desired (예정) Row */}
                       <div className="hidden sm:flex items-center gap-1.5 w-full">
                         <div className="w-10 h-8 bg-white/90 rounded-md shadow-sm border border-pink-100 flex items-center justify-center shrink-0">
-                          <span className="text-[12px] sm:text-[13px] font-black text-pink-500 tracking-widest">예정</span>
+                          <span className="text-[12px] sm:text-[13px] font-black text-pink-500 tracking-widest">{t('fire.shop_desired_label')}</span>
                         </div>
                         <div className="flex items-center flex-1 min-w-0 bg-[#f0f1f5] rounded-lg p-1 gap-1">
                           <button

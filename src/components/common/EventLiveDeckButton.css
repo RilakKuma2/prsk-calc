@@ -19,5 +19,11 @@
 .event-live-deck-song button[role=combobox]{width:100%!important;min-height:34px;font-size:13px}
 .event-live-deck-result{display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:9px;background:var(--theme-blue-soft);color:var(--theme-blue-text);padding:9px}
 .event-live-deck-result span{font-size:11px}.event-live-deck-result strong{font-size:18px;font-variant-numeric:tabular-nums}
+.event-live-deck-scores{display:inline-flex;align-items:baseline;justify-content:center;gap:6px;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+.event-live-deck-ep{color:#2563eb}
+.event-live-deck-sep{color:var(--theme-text-muted,#9ca3af);font-weight:400;font-size:15px}
+.event-live-deck-sp{color:#e11d48}
+[data-theme=dark] .event-live-deck-ep{color:#60a5fa}
+[data-theme=dark] .event-live-deck-sp{color:#fb7185}
 
 .event-live-deck-body>.event-live-deck-own-value{margin-top:-7px;text-align:right;font-size:11px;color:var(--theme-text-muted)}

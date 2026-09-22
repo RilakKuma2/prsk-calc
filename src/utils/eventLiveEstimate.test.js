@@ -1,4 +1,4 @@
-import { calculateEventLiveEstimate, updateEventLiveDeck } from './eventLiveEstimate';
+import { calculateEventLiveEstimate, calculateShopPointsEstimate, updateEventLiveDeck } from './eventLiveEstimate';
 import { calculateScoreRange } from './calculator';
 import { getMusicMetaSync } from './dataLoader';
 
@@ -35,4 +35,19 @@ test('mini deck edits update only the active shared deck and preserve card detai
   expect(result.unifiedDecks.deck2).toEqual({ totalPower: 325000, skillLeader: 140 });
   expect(result.unifiedDecks.deck1).toBe(initial.unifiedDecks.deck1);
   expect(initial.unifiedDecks.deck2.totalPower).toBe(250000);
+});
+
+test('calculateShopPointsEstimate calculates shop points with shopEffi independently', () => {
+  const shopPointsWithCustomShopEffi = calculateShopPointsEstimate({ ...data, shopEffi: '150' }, '25');
+  const shopPointsWithDefault = calculateShopPointsEstimate(data, '25');
+  expect(shopPointsWithCustomShopEffi).toBeGreaterThan(0);
+  expect(shopPointsWithDefault).toBeGreaterThan(0);
+  expect(shopPointsWithCustomShopEffi).toBeLessThan(shopPointsWithDefault);
+});
+
+test('calculateEventLiveEstimate and calculateShopPointsEstimate work even if effi is empty', () => {
+  const ep = calculateEventLiveEstimate({ ...data, effi: '', shopEffi: '180' }, '25');
+  const sp = calculateShopPointsEstimate({ ...data, effi: '', shopEffi: '180' }, '25');
+  expect(ep).toBeGreaterThan(0);
+  expect(sp).toBeGreaterThan(0);
 });

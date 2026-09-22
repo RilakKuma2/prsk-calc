@@ -20,6 +20,7 @@ const CustomSelectDropdown = ({
     menuClassName = '',
     showChevron = true,
     disabled = false,
+    triggerLabel,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [menuPosition, setMenuPosition] = useState(null);
@@ -172,20 +173,26 @@ const CustomSelectDropdown = ({
                 className={`relative inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg border border-gray-300 bg-white ${showChevron ? 'px-7' : 'px-2'} text-sm font-bold normal-case text-gray-700 shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-50 ${buttonClassName}`}
             >
                 <span className="grid place-items-center">
-                    {options.map(option => {
-                        const isSelected = valuesMatch(option.value, selectedOption?.value);
-                        return (
-                            <span
-                                key={option.value}
-                                aria-hidden={!isSelected}
-                                className={`col-start-1 row-start-1 whitespace-nowrap ${
-                                    isSelected ? '' : 'invisible'
-                                }`}
-                            >
-                                {option.label}
-                            </span>
-                        );
-                    })}
+                    {triggerLabel ? (
+                        <span className="col-start-1 row-start-1 whitespace-nowrap">
+                            {triggerLabel}
+                        </span>
+                    ) : (
+                        options.map(option => {
+                            const isSelected = valuesMatch(option.value, selectedOption?.value);
+                            return (
+                                <span
+                                    key={option.value}
+                                    aria-hidden={!isSelected}
+                                    className={`col-start-1 row-start-1 whitespace-nowrap ${
+                                        isSelected ? '' : 'invisible'
+                                    }`}
+                                >
+                                    {option.label}
+                                </span>
+                            );
+                        })
+                    )}
                 </span>
                 {showChevron && (
                     <svg

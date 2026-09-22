@@ -18,7 +18,7 @@ export const getEventLiveEnergy = bonus => Number(Object.keys(EVENT_POINT_MULTIP
 export function calculateEventLiveEstimate(data, bonus) {
   const source = getEventLiveSource(data);
   const power = Math.max(0, numberOrDefault(data.power, 25.5));
-  const eventBonus = Math.max(0, numberOrDefault(data.effi, 250));
+  const eventBonus = Math.max(0, numberOrDefault(data.effi, numberOrDefault(data.shopEffi, 250)));
   const energy = getEventLiveEnergy(bonus);
   if (source.mySekai) {
     let column = -1;
@@ -37,6 +37,32 @@ export function calculateEventLiveEstimate(data, bonus) {
     skillLeader: skills[0], skillMember2: skills[1], skillMember3: skills[2], skillMember4: skills[3], skillMember5: skills[4] }, liveType);
   if (!result) return null;
   return EventCalculator.getEventPoint(liveType, EventType.MARATHON, result.min > 0 ? result.min : result.max, musicMeta.event_rate, eventBonus, Number(bonus));
+}
+
+export function calculateShopPointsEstimate(data, bonus) {
+  const source = getEventLiveSource(data);
+  const power = Math.max(0, numberOrDefault(data.power, 25.5));
+  const shopBonus = Math.max(0, numberOrDefault(data.shopEffi, numberOrDefault(data.effi, 200)));
+  const energy = getEventLiveEnergy(bonus);
+  if (source.mySekai) {
+    let column = -1;
+    powerColumnThresholds.forEach((threshold, index) => { if (threshold <= power) column = index; });
+    const base = column < 0 ? 0 : [...scoreRowKeys].reverse().find(key => mySekaiTableData[key][column] !== null && shopBonus >= mySekaiTableData[key][column]);
+    const mySekaiEp = energy === 0 ? 0 : calculateMySekaiEnergyScore(Number(String(base || 0).replace(/,/g, '')), energy);
+    return Math.floor(mySekaiEp / 10);
+  }
+  const musicMeta = getMusicMetaSync(source.songId, source.difficulty);
+  if (!musicMeta) return null;
+  const room = Math.max(0, numberOrDefault(data.internalValue, 200));
+  const skills = source.auto ? Array(5).fill(100) : data.isDetailedInput && data.detailedSkills
+    ? ['encore', 'member1', 'member2', 'member3', 'member4'].map(key => numberOrDefault(data.detailedSkills[key], 200))
+    : Array(5).fill(room);
+  const liveType = source.auto ? LiveType.AUTO : LiveType.MULTI;
+  const result = calculateScoreRange({ songId: source.songId, difficulty: source.difficulty, musicMeta, totalPower: Math.round(power * 10000),
+    skillLeader: skills[0], skillMember2: skills[1], skillMember3: skills[2], skillMember4: skills[3], skillMember5: skills[4] }, liveType);
+  if (!result) return null;
+  const rawEp = EventCalculator.getEventPoint(liveType, EventType.MARATHON, result.min > 0 ? result.min : result.max, musicMeta.event_rate, shopBonus, Number(bonus));
+  return Math.floor(rawEp / 10);
 }
 
 export function updateEventLiveDeck(previous, field, value) {

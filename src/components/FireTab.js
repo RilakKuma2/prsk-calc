@@ -1719,7 +1719,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         <div className="flex flex-col items-center relative z-20"> {/* z-20 for dropdown */}
           <div className="flex items-center justify-center gap-1 relative">
             <label className="text-gray-600 text-xs font-bold leading-none">{t('fire.score_per_round')}</label>
-            <EventLiveDeckButton surveyData={surveyData} setSurveyData={setSurveyData} bonus={effectiveLiveBonus} estimate={liveEstimate} />
+            <EventLiveDeckButton
+              surveyData={surveyData}
+              setSurveyData={setSurveyData}
+              bonus={effectiveLiveBonus}
+              estimate={liveEstimate}
+              isWorldLink={eventInfo?.event_type === 'world_bloom' || eventInfo?.eventType === 'world_bloom'}
+            />
           </div>
           <div className="flex items-center gap-1 w-full justify-center">
             <input
