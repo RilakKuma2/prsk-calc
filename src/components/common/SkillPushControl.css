@@ -1,0 +1,14 @@
+.skill-push-control { display: inline-flex; flex: none; align-items: center; gap: 5px; font-size: 13px; color: #4b5563; white-space: nowrap; }
+.skill-push-control > label { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 0; width: auto; font-size: inherit; line-height: 24px; cursor: pointer; }
+.skill-push-control input[type="checkbox"] { width: 15px; height: 15px; margin: 0; padding: 0; flex: none; accent-color: #6366f1; }
+.skill-push-help-container { display: inline-flex; align-items: center; flex: none; margin: 0; padding: 0; vertical-align: middle; }
+.skill-push-help-container > .skill-push-help { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; min-height: 0; margin: 0; padding: 0; line-height: 1; font-size: 14px; border-radius: 50%; border: 1px solid #d1d5db; background: #f3f4f6; color: inherit; font-weight: 700; cursor: pointer; }
+.skill-push-help:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+.skill-push-tooltip { position: fixed; z-index: 10000; box-sizing: border-box; width: min(288px, calc(100vw - 24px)); padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; background: white; color: #374151; box-shadow: 0 6px 20px #0002; font-size: 12px; line-height: 1.6; font-weight: 400; text-align: left; white-space: normal; overflow-wrap: anywhere; overflow-y: auto; }
+label.event-skill-delay { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; }
+label.event-skill-delay input { box-sizing: border-box; width: 60px; height: 28px; margin: 0; padding: 2px 5px; font-size: 12px; }
+label.event-skill-delay input:disabled { background: #e5e7eb; border-color: #d1d5db; color: #9ca3af; cursor: not-allowed; opacity: 1; }
+[data-theme="dark"] label.event-skill-delay input:disabled { background: #374151; border-color: #4b5563; color: #9ca3af; }
+label.event-skill-delay input::placeholder { color: #9ca3af; opacity: 1; }
+[data-theme="dark"] .skill-push-control { color: #e5e7eb; }
+[data-theme="dark"] .skill-push-help-container > .skill-push-help, [data-theme="dark"] .skill-push-tooltip { background: #30333b; border-color: #555b68; color: #e5e7eb; }

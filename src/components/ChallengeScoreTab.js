@@ -1,19 +1,16 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { InputTableWrapper, InputRow, SectionHeaderRow } from './common/InputComponents';
-import { calculateScoreForSkillOrder, calculateScoreRange } from '../utils/calculator';
+import { calculateScoreRange } from '../utils/calculator';
+import { calculateNoteScore, noteInput } from '../utils/noteScoreClient';
+import useProgressiveNoteScores from '../hooks/useProgressiveNoteScores';
 import { buildMusicMetaLookup, getMusicMetas, getSongOptionsSync, searchSongOptionsSync } from '../utils/dataLoader';
 import { LiveType } from 'sekai-calculator';
 import { useTranslation } from '../contexts/LanguageContext';
 import CustomSelectDropdown from './common/CustomSelectDropdown';
+import SkillPushControl, { SkillPushHelp } from './common/SkillPushControl';
 
-const DEFAULT_CHALLENGE_DECK = {
-    totalPower: 410520,
-    skillLeader: 140,
-    skillMember2: 120,
-    skillMember3: 100,
-    skillMember4: 100,
-    skillMember5: 100,
-};
+import { CHALLENGE_REFERENCE_DECK as DEFAULT_CHALLENGE_DECK, rankChallengeMetas } from '../lib/liveScore';
+
 const EMPTY_CHALLENGE_DECK = {
     totalPower: '',
     skillLeader: '',
@@ -22,7 +19,7 @@ const EMPTY_CHALLENGE_DECK = {
     skillMember4: '',
     skillMember5: ''
 };
-const TOP_CHALLENGE_SONG_LIMIT = 100;
+const CHALLENGE_DISPLAY_LIMIT = 100;
 let cachedTopChallengeTargets = null;
 
 const buildPaginationItems = (currentPage, totalPages, maxItems) => {
@@ -74,53 +71,17 @@ const getSongLevel = (song, difficulty) => {
     return level === undefined ? null : level;
 };
 
-const buildTopChallengeTargets = (musicMetas) => {
-    if (cachedTopChallengeTargets) return cachedTopChallengeTargets;
+const buildTopChallengeTargets = (musicMetas, skillPush) => {
+    if (cachedTopChallengeTargets?.musicMetas === musicMetas && cachedTopChallengeTargets.skillPush === skillPush) return cachedTopChallengeTargets.targets;
 
     const songs = getSongOptionsSync();
     const songsById = new Map(songs.map(song => [Number(song.id), song]));
-    const seen = new Set();
-    const candidates = [];
+    const targets = rankChallengeMetas(musicMetas.filter(meta => songsById.has(Number(meta.music_id))), { skillPush })
+        .map(row => ({ id: row.musicId, difficulty: row.difficulty,
+            level: getSongLevel(songsById.get(row.musicId), row.difficulty), referenceMax: row.referenceMax }));
 
-    for (const musicMeta of musicMetas) {
-        const songId = Number(musicMeta.music_id);
-        const difficulty = musicMeta.difficulty;
-        const key = `${songId}-${difficulty}`;
-        const song = songsById.get(songId);
-
-        if (!song || !difficulty || seen.has(key)) continue;
-        if (!musicMeta.skill_score_solo || musicMeta.skill_score_solo.length < 5) continue;
-        seen.add(key);
-
-        try {
-            const result = calculateScoreRange({
-                songId,
-                difficulty,
-                ...DEFAULT_CHALLENGE_DECK,
-                musicMeta,
-            }, LiveType.SOLO);
-
-            if (result) {
-                candidates.push({
-                    id: songId,
-                    difficulty,
-                    level: getSongLevel(song, difficulty),
-                    referenceMax: result.max,
-                });
-            }
-        } catch (error) {
-            console.error(`Failed to rank challenge song ${songId} ${difficulty}`, error);
-        }
-    }
-
-    cachedTopChallengeTargets = candidates
-        .sort((a, b) => {
-            if (b.referenceMax !== a.referenceMax) return b.referenceMax - a.referenceMax;
-            return a.id - b.id;
-        })
-        .slice(0, TOP_CHALLENGE_SONG_LIMIT);
-
-    return cachedTopChallengeTargets;
+    cachedTopChallengeTargets = { musicMetas, skillPush, targets };
+    return targets;
 };
 
 const getOrderedMemberIds = (orderedSkills, members) => {
@@ -133,155 +94,130 @@ const getOrderedMemberIds = (orderedSkills, members) => {
     });
 };
 
-function SkillOrderEditor({ result, calculationInput }) {
+function SkillOrderEditor({ result, calculationInput, opposite, oppositeLabel, scoreRows, rowKey }) {
     const { t } = useTranslation();
-    const members = useMemo(() => ([
-        { id: 'leader', shortLabel: 'L', skill: Number(calculationInput.skillLeader) },
-        { id: 'member2', shortLabel: '2', skill: Number(calculationInput.skillMember2) },
-        { id: 'member3', shortLabel: '3', skill: Number(calculationInput.skillMember3) },
-        { id: 'member4', shortLabel: '4', skill: Number(calculationInput.skillMember4) },
-        { id: 'member5', shortLabel: '5', skill: Number(calculationInput.skillMember5) },
-    ]), [calculationInput]);
-    const optimalOrderIds = useMemo(
-        () => getOrderedMemberIds(result.maxPermutation, members),
-        [result.maxPermutation, members]
-    );
+    const headerRef = useRef(null);
+    const [scorePosition, setScorePosition] = useState(null);
+    useLayoutEffect(() => {
+        const header = headerRef.current;
+        const row = scoreRows.current.get(rowKey);
+        if (!header || !row) return undefined;
+        const update = () => {
+            const cells = Array.from(row.cells).slice(-2);
+            if (cells.length !== 2) return;
+            const origin = header.getBoundingClientRect().left;
+            const [max, min] = cells.map(cell => cell.getBoundingClientRect());
+            setScorePosition({ controls: Math.max(0, max.left - origin - 8),
+                max: max.left + max.width / 2 - origin, min: min.left + min.width / 2 - origin });
+        };
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(header);
+        observer.observe(row);
+        Array.from(row.cells).forEach(cell => observer.observe(cell));
+        return () => observer.disconnect();
+    }, [scoreRows, rowKey]);
+    const memberValues = [calculationInput.skillLeader, calculationInput.skillMember2,
+        calculationInput.skillMember3, calculationInput.skillMember4, calculationInput.skillMember5].map(Number);
+    const members = memberValues.map((skill, i) => ({ id: i, shortLabel: i === 0 ? 'L' : String(i + 1), skill }));
+    const optimalOrderIds = getOrderedMemberIds(result.maxPermutation, members);
+    const scope = JSON.stringify([calculationInput.songId, calculationInput.difficulty, calculationInput.totalPower, memberValues]);
     const [isEditing, setIsEditing] = useState(false);
     const [orderedMemberIds, setOrderedMemberIds] = useState(optimalOrderIds);
     const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
-
+    const [customState, setCustomState] = useState(null);
     useEffect(() => {
         setIsEditing(false);
-        setOrderedMemberIds(optimalOrderIds);
         setSelectedSlotIndex(null);
-    }, [optimalOrderIds]);
-
-    const membersById = useMemo(
-        () => new Map(members.map(member => [member.id, member])),
-        [members]
-    );
-    const orderedSkills = useMemo(
-        () => orderedMemberIds.map(memberId => membersById.get(memberId)?.skill ?? 0),
-        [orderedMemberIds, membersById]
-    );
-    const customScore = useMemo(
-        () => calculateScoreForSkillOrder(calculationInput, orderedSkills, LiveType.SOLO),
-        [calculationInput, orderedSkills]
-    );
-
-    const handleSlotClick = (slotIndex) => {
-        if (!isEditing) return;
-        if (selectedSlotIndex === null) {
-            setSelectedSlotIndex(slotIndex);
-            return;
-        }
-        if (selectedSlotIndex === slotIndex) {
-            setSelectedSlotIndex(null);
-            return;
-        }
-
-        setOrderedMemberIds(currentOrder => {
-            const nextOrder = [...currentOrder];
-            [nextOrder[selectedSlotIndex], nextOrder[slotIndex]] = [nextOrder[slotIndex], nextOrder[selectedSlotIndex]];
-            return nextOrder;
+        setCustomState(null);
+    }, [scope]);
+    const displayedIds = isEditing ? orderedMemberIds : optimalOrderIds;
+    const orderedSkills = displayedIds.map(id => members[id].skill);
+    const request = JSON.stringify(noteInput({ ...calculationInput, orderedSkills, precomputeSkillPush: true }));
+    useEffect(() => {
+        if (!isEditing) return undefined;
+        const controller = new AbortController();
+        calculateNoteScore(JSON.parse(request), 'solo', { signal: controller.signal, priority: 20 })
+            .then(variants => { if (!controller.signal.aborted) setCustomState({ request, variants }); })
+            .catch(() => { if (!controller.signal.aborted) setCustomState({ request, error: true }); });
+        return () => controller.abort();
+    }, [isEditing, request]);
+    const activeCustom = customState?.request === request ? customState : null;
+    const activeResult = isEditing
+        ? activeCustom?.variants?.[calculationInput.skillPush ? 'squeezed' : 'normal'] : result;
+    const displayedScore = isEditing ? activeResult?.score : result.max;
+    const gains = activeResult?.skillPushGains;
+    const handleSlotClick = index => {
+        if (selectedSlotIndex === null) { setSelectedSlotIndex(index); return; }
+        if (selectedSlotIndex !== index) setOrderedMemberIds(current => {
+            const next = [...current];
+            [next[selectedSlotIndex], next[index]] = [next[index], next[selectedSlotIndex]];
+            return next;
         });
         setSelectedSlotIndex(null);
     };
-
-    const handleToggleEditing = () => {
-        if (isEditing) {
-            setOrderedMemberIds(optimalOrderIds);
-        }
-        setSelectedSlotIndex(null);
-        setIsEditing(current => !current);
-    };
-
-    return (
-        <div>
-            <div className="flex items-center justify-start gap-2 mb-2">
-                <h4 className="text-sm font-bold text-gray-700">
-                    {isEditing
-                        ? t('challenge_score.custom_skill_order')
-                        : t('challenge_score.optimal_skill_order')}
-                </h4>
-                <button
-                    type="button"
-                    onClick={handleToggleEditing}
-                    className={`shrink-0 rounded-md border px-2 py-1 text-[10px] md:text-xs font-bold transition-colors ${isEditing
-                        ? 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'
-                        : 'border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                        }`}
-                >
-                    {isEditing
-                        ? t('challenge_score.restore_optimal_order')
-                        : t('challenge_score.set_custom_skill_order')}
-                </button>
-            </div>
-            <div className="flex gap-0.5 md:gap-2 overflow-x-auto pb-2 justify-between md:justify-start">
-                {orderedMemberIds.map((memberId, index) => {
-                    const member = membersById.get(memberId);
-                    const isSelected = selectedSlotIndex === index;
-
-                    return (
-                        <div key={index} className="flex flex-col items-center flex-1 min-w-0">
-                            <button
-                                type="button"
-                                disabled={!isEditing}
-                                onClick={() => handleSlotClick(index)}
-                                aria-pressed={isSelected}
-                                aria-label={`${index + 1}${t('challenge_score.suffix_order')} ${member.skill}%`}
-                                className={`relative w-11 h-11 max-[375px]:w-9 max-[375px]:h-9 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center shadow-sm border transition-all ${isSelected
-                                    ? 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200 scale-105'
-                                    : isEditing
-                                        ? 'bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50 active:scale-95'
-                                        : 'bg-white text-gray-700 border-gray-200'
-                                    }`}
-                            >
-                                <span className="font-bold text-sm max-[375px]:text-xs md:text-base leading-none">
-                                    {member.skill}%
-                                </span>
-                                {isEditing && (
-                                    <span className={`mt-0.5 text-[8px] md:text-[9px] font-bold leading-none ${isSelected ? 'text-indigo-100' : 'text-indigo-400'}`}>
-                                        {member.shortLabel}
-                                    </span>
-                                )}
-                            </button>
-                            <span className="text-[10px] max-[375px]:text-[9px] text-gray-500 mt-1 font-medium whitespace-nowrap">
-                                {index + 1}{t('challenge_score.suffix_order')}
-                            </span>
-                        </div>
-                    );
-                })}
-                <div className="flex flex-col items-center flex-1 min-w-0">
-                    <div className="w-11 h-11 max-[375px]:w-9 max-[375px]:h-9 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-sm max-[375px]:text-xs md:text-base shadow-sm border bg-gray-100 text-gray-400 border-gray-200">
-                        {calculationInput.skillLeader}%
-                    </div>
-                    <span className="text-[10px] max-[375px]:text-[9px] text-gray-400 mt-1 font-medium whitespace-nowrap">
-                        {t('challenge_score.encore')}
-                    </span>
-                </div>
-            </div>
-            {isEditing && customScore !== null && (
-                <div className="mt-2">
-                    <p className="mb-1 text-center text-[10px] font-medium text-gray-500">
-                        {t('challenge_score.custom_order_help')}
-                    </p>
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
-                        <span className="text-xs font-bold text-indigo-600">
-                            {t('challenge_score.custom_order_score')}
-                        </span>
-                        <span className="font-mono text-base font-black text-indigo-700">
-                            {customScore.toLocaleString()}
-                        </span>
-                    </div>
-                </div>
-            )}
+    const gainText = index => gains ? `${gains[index] >= 0 ? '+' : ''}${gains[index].toLocaleString()}` : '—';
+    return <div>
+        <div ref={headerRef} className="relative mb-2">
+        <div className="flex flex-wrap items-center gap-2" style={{ width: scorePosition?.controls ?? '55%' }}>
+            <h4 className="text-sm font-bold text-gray-700">
+                {t(isEditing ? 'challenge_score.custom_skill_order' : 'challenge_score.optimal_skill_order')}
+            </h4>
+            <SkillPushHelp label={t('challenge_score.squeeze_gain_help')} description={t('challenge_score.squeeze_gain_help')} />
+            <button type="button" onClick={() => {
+                if (!isEditing) setOrderedMemberIds(optimalOrderIds);
+                setSelectedSlotIndex(null);
+                setIsEditing(value => !value);
+            }} className="shrink-0 rounded-md border border-indigo-200 bg-indigo-50 text-indigo-600 px-2 py-1 text-[10px] md:text-xs font-bold">
+                {t(isEditing ? 'challenge_score.restore_optimal_order' : 'challenge_score.set_custom_skill_order')}
+            </button>
+            {isEditing && <span className="font-mono text-xs font-bold text-indigo-600">
+                {displayedScore == null
+                    ? t(activeCustom?.error ? 'power.note_failed' : 'power.note_calculating') : displayedScore.toLocaleString()}
+            </span>}
         </div>
-    );
+        <span className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-pink-500 text-[11px] md:text-xs font-medium whitespace-nowrap"
+            style={{ left: scorePosition?.max ?? '67.5%' }} aria-label={`${oppositeLabel}: ${opposite.max}`}>
+            {opposite.max?.toLocaleString() ?? '—'}
+        </span>
+        <span className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-blue-500 text-[11px] md:text-xs font-medium whitespace-nowrap"
+            style={{ left: scorePosition?.min ?? '90%' }} aria-label={`${oppositeLabel}: ${opposite.min}`}>
+            {opposite.min?.toLocaleString() ?? '—'}
+        </span>
+        </div>
+        <div className="grid grid-cols-6 gap-0.5 md:gap-2 pb-2">
+            {displayedIds.map((id, index) => {
+                const member = members[id];
+                const selected = selectedSlotIndex === index;
+                return <div key={index} className="flex flex-col items-center min-w-0">
+                    <button type="button" disabled={!isEditing} onClick={() => handleSlotClick(index)}
+                        aria-pressed={selected} aria-label={`${index + 1}${t('challenge_score.suffix_order')} ${member.skill}%`}
+                        className={`w-11 h-11 max-[375px]:w-9 max-[375px]:h-9 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center shadow-sm border ${selected
+                            ? 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200'
+                            : isEditing ? 'bg-white text-indigo-700 border-indigo-300' : 'bg-white text-gray-700 border-gray-200'}`}>
+                        <span className="font-bold text-sm max-[375px]:text-xs md:text-base leading-none">{member.skill}%</span>
+                        {isEditing && <span className="mt-0.5 text-[8px] font-bold leading-none">{member.shortLabel}</span>}
+                    </button>
+                    <span className="text-[10px] text-gray-500 mt-1 whitespace-nowrap">{index + 1}{t('challenge_score.suffix_order')}</span>
+                    <span className="font-mono text-[10px] md:text-xs font-bold text-pink-500 whitespace-nowrap">{gainText(index)}</span>
+                </div>;
+            })}
+            <div className="flex flex-col items-center min-w-0">
+                <div className="w-11 h-11 max-[375px]:w-9 max-[375px]:h-9 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-sm max-[375px]:text-xs md:text-base shadow-sm border bg-gray-100 text-gray-400 border-gray-200">
+                    {calculationInput.skillLeader}%
+                </div>
+                <span className="text-[10px] text-gray-400 mt-1 whitespace-nowrap">{t('challenge_score.encore')}</span>
+                <span className="font-mono text-[10px] md:text-xs font-bold text-pink-500 whitespace-nowrap">{gainText(5)}</span>
+            </div>
+        </div>
+        {isEditing && <p className="mt-2 text-center text-[10px] font-medium text-gray-500">{t('challenge_score.custom_order_help')}</p>}
+    </div>;
 }
 
 function ChallengeScoreTab({ surveyData, setSurveyData }) {
     const { t, language } = useTranslation();
+    const scoreRows = useRef(new Map());
+    const skillPush = surveyData.skillPush === true;
     // Initialize or read from surveyData
     // Using 'challengeDeck' to separate from 'autoDeck'
     const deck = useMemo(() => surveyData.challengeDeck || EMPTY_CHALLENGE_DECK, [surveyData.challengeDeck]);
@@ -300,7 +236,11 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
 
     const [musicMetas, setMusicMetas] = useState(null);
     const [targetSongs, setTargetSongs] = useState(null);
-    const [batchResults, setBatchResults] = useState(null);
+    const [batchVariants, setBatchVariants] = useState(null);
+    const variant = skillPush ? 'squeezed' : 'normal';
+    const oppositeVariant = skillPush ? 'normal' : 'squeezed';
+    const oppositeLabel = t(skillPush ? 'challenge_score.unsqueezed_score' : 'challenge_score.squeezed_score');
+    const batchResults = batchVariants?.[variant] ?? null;
     const [sortConfig, setSortConfig] = useState({ key: 'max', direction: 'desc' });
     const musicMetaLookup = useMemo(() => buildMusicMetaLookup(musicMetas), [musicMetas]);
     const songsById = useMemo(() => new Map(getSongOptionsSync().map(song => [Number(song.id), song])), []);
@@ -311,7 +251,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
     const [searchResults, setSearchResults] = useState([]);
     const [selectedSong, setSelectedSong] = useState(null);
     const [searchDifficulty, setSearchDifficulty] = useState('master');
-    const [customResult, setCustomResult] = useState(null);
+    const [customVariants, setCustomResult] = useState(null);
+    const customMetaResult = customVariants?.[variant] ?? null;
     const searchContainerRef = useRef(null);
     const paginationContainerRef = useRef(null);
     const prevPaginationButtonRef = useRef(null);
@@ -324,13 +265,13 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             .then(metas => {
                 if (cancelled) return;
                 setMusicMetas(metas);
-                setTargetSongs(buildTopChallengeTargets(metas));
+                setTargetSongs({ normal: buildTopChallengeTargets(metas, false), squeezed: buildTopChallengeTargets(metas, true) });
             })
             .catch(error => {
                 console.error('Failed to load music metas for challenge score tab', error);
                 if (!cancelled) {
                     setMusicMetas([]);
-                    setTargetSongs([]);
+                    setTargetSongs({ normal: [], squeezed: [] });
                 }
             });
         return () => {
@@ -368,42 +309,30 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
     };
 
     useEffect(() => {
-        if (!selectedSong || !musicMetas) return;
-
+        if (!selectedSong || !musicMetas) { setCustomResult(null); return; }
         const musicMeta = musicMetaLookup.get(`${Number(selectedSong.id)}:${searchDifficulty}`);
-        if (!musicMeta) {
-            setCustomResult(null);
-            return;
+        if (!musicMeta) { setCustomResult(null); return; }
+        const variants = {};
+        for (const pushed of [false, true]) {
+            const input = {
+                songId: selectedSong.id, difficulty: searchDifficulty,
+                totalPower: Number(deck.totalPower || DEFAULT_CHALLENGE_DECK.totalPower),
+                skillLeader: Number(deck.skillLeader || '140'),
+                skillMember2: Number(deck.skillMember2 || '120'),
+                skillMember3: Number(deck.skillMember3 || '100'),
+                skillMember4: Number(deck.skillMember4 || '100'),
+                skillMember5: Number(deck.skillMember5 || '100'),
+                musicMeta, skillPush: pushed,
+            };
+            try {
+                const res = calculateScoreRange(input, LiveType.SOLO);
+                if (res) variants[pushed ? 'squeezed' : 'normal'] = {
+                    ...res, calculationInput: input, songName: getSongDisplayName(selectedSong, language),
+                    songId: selectedSong.id, difficulty: searchDifficulty, mv: selectedSong.mv,
+                };
+            } catch (error) { console.error(error); }
         }
-
-        const input = {
-            songId: selectedSong.id,
-            difficulty: searchDifficulty,
-            totalPower: Number(deck.totalPower || DEFAULT_CHALLENGE_DECK.totalPower),
-            skillLeader: Number(deck.skillLeader || '140'),
-            skillMember2: Number(deck.skillMember2 || '120'),
-            skillMember3: Number(deck.skillMember3 || '100'),
-            skillMember4: Number(deck.skillMember4 || '100'),
-            skillMember5: Number(deck.skillMember5 || '100'),
-            musicMeta,
-        };
-
-        try {
-            const res = calculateScoreRange(input, LiveType.SOLO);
-            if (res) {
-                setCustomResult({
-                    ...res,
-                    calculationInput: input,
-                    songName: getSongDisplayName(selectedSong, language),
-                    songId: selectedSong.id,
-                    difficulty: searchDifficulty,
-                    mv: selectedSong.mv,
-                });
-            }
-        } catch (e) {
-            console.error(e);
-        }
-
+        setCustomResult(variants);
     }, [selectedSong, searchDifficulty, deck, language, musicMetas, musicMetaLookup]);
 
 
@@ -419,55 +348,39 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         }
     }, [surveyData.challengeDeck, setSurveyData]);
 
-    // Auto-calculate only the pre-selected top 100 targets whenever inputs change.
+    // Prepare both top-100 lists once per deck. Toggling only selects a cached variant.
     useEffect(() => {
-        if (!targetSongs || !musicMetas) {
-            setBatchResults(null);
-            return;
+        if (!targetSongs || !musicMetas) { setBatchVariants(null); return; }
+        const variants = {};
+        for (const pushed of [false, true]) {
+            const variantKey = pushed ? 'squeezed' : 'normal';
+            const results = [];
+            targetSongs[variantKey].forEach(target => {
+                const song = songsById.get(target.id);
+                const musicMeta = musicMetaLookup.get(`${Number(target.id)}:${target.difficulty}`);
+                if (!song || !musicMeta) return;
+                const input = {
+                    songId: target.id, difficulty: target.difficulty,
+                    totalPower: Number(totalPower || DEFAULT_CHALLENGE_DECK.totalPower),
+                    skillLeader: Number(skillLeader || '140'), skillMember2: Number(skillMember2 || '120'),
+                    skillMember3: Number(skillMember3 || '100'), skillMember4: Number(skillMember4 || '100'),
+                    skillMember5: Number(skillMember5 || '100'), musicMeta, skillPush: pushed,
+                };
+                try {
+                    const res = calculateScoreRange(input, LiveType.SOLO);
+                    const opposite = calculateScoreRange({ ...input, skillPush: !pushed }, LiveType.SOLO);
+                    if (res) results.push({ ...res, alternateMin: opposite?.min, alternateMax: opposite?.max, calculationInput: input,
+                        songName: getSongDisplayName(song, language), songId: song.id,
+                        difficulty: target.difficulty, level: target.level, mv: song.mv,
+                        referenceMax: target.referenceMax });
+                } catch (error) { console.error(`Failed to calculate for ${song.name}`, error); }
+            });
+            results.sort((a, b) => b.max - a.max || Number(a.songId) - Number(b.songId));
+            variants[variantKey] = results.slice(0, CHALLENGE_DISPLAY_LIMIT);
         }
-
-        const results = [];
-
-        targetSongs.forEach(target => {
-            const song = songsById.get(target.id);
-            if (!song) return;
-            const musicMeta = musicMetaLookup.get(`${Number(target.id)}:${target.difficulty}`);
-            if (!musicMeta) return;
-
-            const input = {
-                songId: target.id,
-                difficulty: target.difficulty,
-                totalPower: Number(totalPower || DEFAULT_CHALLENGE_DECK.totalPower),
-                skillLeader: Number(skillLeader || '140'),
-                skillMember2: Number(skillMember2 || '120'),
-                skillMember3: Number(skillMember3 || '100'),
-                skillMember4: Number(skillMember4 || '100'),
-                skillMember5: Number(skillMember5 || '100'),
-                musicMeta,
-            };
-
-            try {
-                // Use LiveType.SOLO for calculation
-                const res = calculateScoreRange(input, LiveType.SOLO);
-                if (res) {
-                    results.push({
-                        ...res,
-                        calculationInput: input,
-                        songName: getSongDisplayName(song, language),
-                        songId: song.id,
-                        difficulty: target.difficulty,
-                        level: target.level,
-                        mv: song.mv,
-                        referenceMax: target.referenceMax,
-                    });
-                }
-            } catch (e) {
-                console.error(`Failed to calculate for ${song.name}`, e);
-            }
-        });
-
-        setBatchResults(results);
-    }, [targetSongs, musicMetas, musicMetaLookup, songsById, totalPower, skillLeader, skillMember2, skillMember3, skillMember4, skillMember5, language]);
+        setBatchVariants(variants);
+    }, [targetSongs, musicMetas, musicMetaLookup, songsById, totalPower, skillLeader,
+        skillMember2, skillMember3, skillMember4, skillMember5, language]);
 
     const handleSort = (key) => {
         let direction = 'asc';
@@ -517,6 +430,24 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
         const indexOfFirstItem = indexOfLastItem - itemsPerPage;
         return sortedBatchResults.slice(indexOfFirstItem, indexOfLastItem);
     }, [sortedBatchResults, currentPage]);
+
+    const noteRows = useMemo(() => {
+        const rows = [...Object.values(customVariants || {}), ...Object.values(batchVariants || {}).flat()];
+        return [...new Map(rows.map(row => [`${row.songId}-${row.difficulty}`, {
+            key: `${row.songId}-${row.difficulty}`,
+            input: { ...row.calculationInput, skillPush: false, precomputeSkillPush: true },
+        }])).values()];
+    }, [batchVariants, customVariants]);
+    const visibleKeys = [...(customMetaResult ? [`${customMetaResult.songId}-${customMetaResult.difficulty}`] : []),
+        ...currentItems.map(row => `${row.songId}-${row.difficulty}`)];
+    const noteVariants = useProgressiveNoteScores(noteRows, visibleKeys);
+    const noteResults = useMemo(() => Object.fromEntries(Object.entries(noteVariants)
+        .map(([key, result]) => [key, result[variant] ?? result])), [noteVariants, variant]);
+
+    const customResult = customMetaResult ? { ...customMetaResult,
+        ...noteResults[`${customMetaResult.songId}-${customMetaResult.difficulty}`] } : null;
+    const customOpposite = customMetaResult ? { ...customVariants[oppositeVariant],
+        ...noteVariants[`${customMetaResult.songId}-${customMetaResult.difficulty}`]?.[oppositeVariant] } : null;
 
     const totalPages = sortedBatchResults ? Math.ceil(sortedBatchResults.length / itemsPerPage) : 0;
     const paginationItems = useMemo(
@@ -630,6 +561,9 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
             </div>
 
             <div className="flex flex-col items-center justify-center mt-4 mb-4">
+                <div className="mb-3">
+                    <SkillPushControl checked={skillPush} onChange={value => setSurveyData(prev => ({ ...prev, skillPush: value }))} />
+                </div>
                 <div className="text-[11px] font-bold text-indigo-500 mb-3 animate-pulse-slow">
                     {t('challenge_score.click_guide')}
                 </div>
@@ -714,6 +648,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                             <table className="w-full text-left">
                                 <tbody>
                                     <tr
+                                        ref={node => { if (node) scoreRows.current.set('custom-result', node); else scoreRows.current.delete('custom-result'); }}
                                         className="cursor-pointer"
                                         onClick={() => handleRowClick('custom-result')}
                                     >
@@ -743,6 +678,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                         </td>
                                         <td className="px-4 py-4 text-center">
                                             <span className="font-mono text-pink-500 font-black tracking-tight">{customResult.max.toLocaleString()}</span>
+                                            {!customResult.noteCalculated && <div className="text-[10px] text-gray-500">{t(customResult.noteError ? 'power.note_failed_meta' : 'power.note_pending_meta')}</div>}
                                         </td>
                                         <td className="px-4 py-4 text-center">
                                             <span className="font-mono text-blue-500 font-bold tracking-tight">{customResult.min.toLocaleString()}</span>
@@ -757,6 +693,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                         <SkillOrderEditor
                                             result={customResult}
                                             calculationInput={customResult.calculationInput}
+                                            opposite={customOpposite} oppositeLabel={oppositeLabel}
+                                            scoreRows={scoreRows} rowKey="custom-result"
                                         />
 
                                         {/* Skill Coefficients Graph (Horizontal Stacked Bar) */}
@@ -863,13 +801,17 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {currentItems.map((res, idx) => {
-                                    const rowId = `${res.songId}-${res.difficulty}-${idx}`;
+                                {currentItems.map((metaResult) => {
+                                    const res = { ...metaResult, ...noteResults[`${metaResult.songId}-${metaResult.difficulty}`] };
+                                    const opposite = noteVariants[`${metaResult.songId}-${metaResult.difficulty}`]?.[oppositeVariant]
+                                        ?? { max: metaResult.alternateMax, min: metaResult.alternateMin };
+                                    const rowId = `${res.songId}-${res.difficulty}`;
                                     const isExpanded = expandedRow === rowId;
 
                                     return (
                                         <React.Fragment key={rowId}>
                                             <tr
+                                                ref={node => { if (node) scoreRows.current.set(rowId, node); else scoreRows.current.delete(rowId); }}
                                                 className={`hover:bg-gray-50 transition-colors duration-200 group/row cursor-pointer ${isExpanded ? 'bg-gray-50' : ''}`}
                                                 onClick={() => handleRowClick(rowId)}
                                             >
@@ -929,6 +871,7 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                         <span className="font-mono text-pink-500 text-sm md:text-base font-black tracking-tight group-hover/row:text-pink-600 transition-colors">
                                                             {res.max.toLocaleString()}
                                                         </span>
+                                                        {!res.noteCalculated && <span className="text-[10px] text-gray-500">{t(res.noteError ? 'power.note_failed_meta' : 'power.note_pending_meta')}</span>}
                                                     </div>
                                                 </td>
                                                 <td className="px-1 py-4 md:p-4 text-center">
@@ -947,6 +890,8 @@ function ChallengeScoreTab({ surveyData, setSurveyData }) {
                                                             <SkillOrderEditor
                                                                 result={res}
                                                                 calculationInput={res.calculationInput}
+                                                                opposite={opposite} oppositeLabel={oppositeLabel}
+                                                                scoreRows={scoreRows} rowKey={rowId}
                                                             />
 
                                                             {/* Skill Coefficients Graph (Horizontal Stacked Bar) */}

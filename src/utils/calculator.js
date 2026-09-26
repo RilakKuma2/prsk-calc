@@ -1,6 +1,15 @@
 import { LiveCalculator, LiveType } from 'sekai-calculator';
 import { getMusicMetaSync } from './dataLoader';
 
+// Swap before both skill-order optimization and scoring; never mutate cached rows.
+const withSkillPush = (meta, liveType, enabled) => {
+    if (!meta || !enabled || liveType === LiveType.AUTO) return meta;
+    const field = liveType === LiveType.SOLO ? 'skill_score_solo' : 'skill_score_multi';
+    const inclusive = meta[`${field}_inclusive`];
+    if (!Array.isArray(inclusive) || inclusive.length !== 6 || !inclusive.every(Number.isFinite)) return meta;
+    return { ...meta, [field]: inclusive };
+};
+
 // Helper to create a dummy card
 export const createDummyCard = (skillScoreUp, power) => {
     return {
@@ -70,7 +79,7 @@ export const calculateScoreRange = (input, liveType = LiveType.AUTO) => {
         musicMeta: inputMusicMeta,
     } = input;
 
-    const musicMeta = inputMusicMeta || getMusicMetaSync(songId, difficulty);
+    const musicMeta = withSkillPush(inputMusicMeta || getMusicMetaSync(songId, difficulty), liveType, input.skillPush === true);
 
     if (!musicMeta) {
         console.error(`Calculator: Music meta not found for ID: ${songId}, Difficulty: ${difficulty}`);
@@ -186,7 +195,7 @@ export const calculateScoreForSkillOrder = (input, orderedSkills, liveType = Liv
         musicMeta: inputMusicMeta,
     } = input;
 
-    const musicMeta = inputMusicMeta || getMusicMetaSync(songId, difficulty);
+    const musicMeta = withSkillPush(inputMusicMeta || getMusicMetaSync(songId, difficulty), liveType, input.skillPush === true);
     if (!musicMeta) return null;
 
     let skillScoreCoeffs;

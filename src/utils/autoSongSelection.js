@@ -16,6 +16,7 @@ export const keepBestAutoSongPerWholeSecond = (
         getDuration = result => result.durationSeconds,
         getScore = result => result.score,
         getSongId = result => result.song?.id ?? result.songId ?? result.id,
+        compareTiedResults,
     } = {},
 ) => {
     const bestBySecond = new Map();
@@ -37,7 +38,11 @@ export const keepBestAutoSongPerWholeSecond = (
             ? (Number(getSongId(current)) || Number.MAX_SAFE_INTEGER)
             : Number.MAX_SAFE_INTEGER;
 
-        if (!current || score > Number(getScore(current)) || (score === Number(getScore(current)) && songId < currentSongId)) {
+        const tiedResultOrder = current && typeof compareTiedResults === 'function'
+            ? Number(compareTiedResults(result, current))
+            : songId - currentSongId;
+
+        if (!current || score > Number(getScore(current)) || (score === Number(getScore(current)) && tiedResultOrder < 0)) {
             bestBySecond.set(wholeSecond, result);
         }
     }

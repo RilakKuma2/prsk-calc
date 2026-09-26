@@ -34,7 +34,7 @@ export function calculateEventLiveEstimate(data, bonus) {
     : Array(5).fill(room);
   const liveType = source.auto ? LiveType.AUTO : LiveType.MULTI;
   const result = calculateScoreRange({ songId: source.songId, difficulty: source.difficulty, musicMeta, totalPower: Math.round(power * 10000),
-    skillLeader: skills[0], skillMember2: skills[1], skillMember3: skills[2], skillMember4: skills[3], skillMember5: skills[4] }, liveType);
+    skillLeader: skills[0], skillMember2: skills[1], skillMember3: skills[2], skillMember4: skills[3], skillMember5: skills[4], skillPush: data.skillPush === true }, liveType);
   if (!result) return null;
   return EventCalculator.getEventPoint(liveType, EventType.MARATHON, result.min > 0 ? result.min : result.max, musicMeta.event_rate, eventBonus, Number(bonus));
 }
@@ -59,7 +59,7 @@ export function calculateShopPointsEstimate(data, bonus) {
     : Array(5).fill(room);
   const liveType = source.auto ? LiveType.AUTO : LiveType.MULTI;
   const result = calculateScoreRange({ songId: source.songId, difficulty: source.difficulty, musicMeta, totalPower: Math.round(power * 10000),
-    skillLeader: skills[0], skillMember2: skills[1], skillMember3: skills[2], skillMember4: skills[3], skillMember5: skills[4] }, liveType);
+    skillLeader: skills[0], skillMember2: skills[1], skillMember3: skills[2], skillMember4: skills[3], skillMember5: skills[4], skillPush: data.skillPush === true }, liveType);
   if (!result) return null;
   const rawEp = EventCalculator.getEventPoint(liveType, EventType.MARATHON, result.min > 0 ? result.min : result.max, musicMeta.event_rate, shopBonus, Number(bonus));
   return Math.floor(rawEp / 10);

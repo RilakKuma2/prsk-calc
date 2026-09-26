@@ -8,10 +8,21 @@ export const AUTO_PLAY_LIMIT = 99;
 export const AUTO_BETWEEN_PLAY_SECONDS = 30;
 
 const AUTO_DIFFICULTIES = ['easy', 'normal', 'hard', 'expert', 'master', 'append'];
+const MELT_SONG_ID = 47;
+const CREATION_MYTH_SONG_ID = 186;
 const AUTO_DIFFICULTY_PRIORITY = AUTO_DIFFICULTIES.reduce((priorities, difficulty, index) => {
     priorities[difficulty] = index;
     return priorities;
 }, {});
+
+// 멜트와 개벽은 오토 시간/점수가 같을 때 곡 ID 순서 대신 개벽을 우선한다.
+const compareAutoTimeSongPriority = (a, b) => {
+    const aId = Number(a?.song?.id ?? a?.songId ?? a?.id);
+    const bId = Number(b?.song?.id ?? b?.songId ?? b?.id);
+    if (aId === CREATION_MYTH_SONG_ID && bId === MELT_SONG_ID) return -1;
+    if (aId === MELT_SONG_ID && bId === CREATION_MYTH_SONG_ID) return 1;
+    return aId - bId;
+};
 
 const normalizePower = (value) => {
     const parsed = Number(value);
@@ -118,6 +129,7 @@ export const getAutoTimeSongPerformances = ({
     return keepBestAutoSongPerWholeSecond(performances, {
         getDuration: performance => performance.playDurationSeconds - AUTO_BETWEEN_PLAY_SECONDS,
         getScore: performance => performance.eventPointPerPlay,
+        compareTiedResults: compareAutoTimeSongPriority,
     });
 };
 
@@ -127,7 +139,7 @@ export const filterInefficientAutoTimePerformances = (performances = []) => {
     const efficiencySorted = [...performances].sort((a, b) => (
         b.eventPointPerPlay - a.eventPointPerPlay
         || a.playDurationSeconds - b.playDurationSeconds
-        || a.song.id - b.song.id
+        || compareAutoTimeSongPriority(a, b)
     ));
     const efficient = [];
     let shortestDuration = Infinity;
@@ -156,11 +168,11 @@ export const getEfficientAutoHourlyPerformances = (
     if (sortBy === 'plays') {
         return b.playsPerHour - a.playsPerHour
             || b.eventPointsPerHour - a.eventPointsPerHour
-            || a.song.id - b.song.id;
+            || compareAutoTimeSongPriority(a, b);
     }
     return b.eventPointsPerHour - a.eventPointsPerHour
         || b.playsPerHour - a.playsPerHour
-        || a.song.id - b.song.id;
+        || compareAutoTimeSongPriority(a, b);
 });
 
 export const rankAutoTimeRecommendations = ({
@@ -192,6 +204,7 @@ export const rankAutoTimeRecommendations = ({
         b.totalEventPoint - a.totalEventPoint
         || b.eventPointPerPlay - a.eventPointPerPlay
         || a.playDurationSeconds - b.playDurationSeconds
+        || compareAutoTimeSongPriority(a, b)
     ));
 };
 

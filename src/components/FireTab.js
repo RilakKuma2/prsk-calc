@@ -244,7 +244,14 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   const [chaptersData, setChaptersData] = useState([]);
   const [worldBloomsInfo, setWorldBloomsInfo] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState('all');
-  const isWorldBloomChapterSelected = eventInfo?.event_type === 'world_bloom' && selectedChapter !== 'all';
+  const isFinaleEvent = Boolean(
+    /finale/i.test(eventInfo?.asname || '') ||
+    /finale/i.test(eventInfo?.assetbundleName || '') ||
+    /finale|フィナーレ|피날레/i.test(eventInfo?.name || '') ||
+    (eventInfo?.id && worldBloomsInfo.some(wb => String(wb.eventId) === String(eventInfo.id) && wb.worldBloomChapterType === 'finale'))
+  );
+  const isWorldBloom = Boolean(eventInfo?.event_type === 'world_bloom' || eventInfo?.eventType === 'world_bloom');
+  const isWorldBloomChapterSelected = !isFinaleEvent && isWorldBloom && selectedChapter !== 'all';
   const allowedRanksSet = getAllowedRanksSet(isWorldBloomChapterSelected);
   const [chapterLiveData, setChapterLiveData] = useState([]);
   const [chapterScoreLastUpdated, setChapterScoreLastUpdated] = useState(null);
@@ -416,13 +423,23 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
   // World Link Chapter Auto-selection
   useEffect(() => {
+    if (isFinaleEvent) {
+      setSelectedChapter('all');
+      hasAutoSelected.current = true;
+      return;
+    }
     if (!hasAutoSelected.current) {
       let selected = null;
       const now = Date.now();
 
-      // 1. worldBloomsInfo에서 먼저 찾기
+      // 1. worldBloomsInfo에서 먼저 찾기 (피날레/더미 챕터 제외)
       if (worldBloomsInfo && worldBloomsInfo.length > 0 && eventInfo?.id) {
-        const eventChapters = worldBloomsInfo.filter(wb => String(wb.eventId) === String(eventInfo.id));
+        const eventChapters = worldBloomsInfo.filter(wb => (
+          String(wb.eventId) === String(eventInfo.id) &&
+          wb.worldBloomChapterType !== 'finale' &&
+          Number(wb.chapterNo) > 0 &&
+          Boolean(wb.gameCharacterId)
+        ));
         const currentChapter = eventChapters.find(ch => {
           const start = ch.chapterStartAt || 0;
           const end = ch.chapterEndAt || 0;
@@ -435,9 +452,13 @@ const FireTab = ({ surveyData, setSurveyData }) => {
         }
       }
 
-      // 2. 못 찾았으면 chaptersData에서 찾기
+      // 2. 못 찾았으면 chaptersData에서 찾기 (유효한 번호의 챕터만)
       if (!selected && chaptersData.length > 0) {
-        const currentChapter = chaptersData.find(ch => {
+        const validChapters = chaptersData.filter(ch => {
+          const num = ch.chapter_id?.split('-')[1];
+          return num && Number(num) > 0;
+        });
+        const currentChapter = validChapters.find(ch => {
           const start = (ch.start || 0) * 1000;
           const end = (ch.end || 0) * 1000;
           return now >= start && now < end;
@@ -450,15 +471,17 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       if (selected) {
         setSelectedChapter(selected);
         hasAutoSelected.current = true;
+      } else {
+        setSelectedChapter('all');
       }
     }
-  }, [chaptersData, worldBloomsInfo, eventInfo]);
+  }, [chaptersData, worldBloomsInfo, eventInfo, isFinaleEvent]);
 
   // 다음 챕터 데이터가 아직 생성되기 전에 페이지를 열면 자동 선택값이
   // `wl-N` 임시 ID로 남는다. 이후 주기 갱신에서 실제 챕터가 들어오면
   // 해당 ID로 교체해 새로고침 없이 예측 데이터를 표시한다.
   useEffect(() => {
-    if (!selectedChapter.startsWith('wl-') || chaptersData.length === 0) return;
+    if (isFinaleEvent || !selectedChapter.startsWith('wl-') || chaptersData.length === 0) return;
 
     const chapterNo = selectedChapter.slice(3);
     const matchedChapter = chaptersData.find((chapter) => (
@@ -468,7 +491,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
     if (matchedChapter?.chapter_id) {
       setSelectedChapter(matchedChapter.chapter_id);
     }
-  }, [chaptersData, selectedChapter]);
+  }, [chaptersData, selectedChapter, isFinaleEvent]);
 
   // Click Outside Effect for Room Search
   useEffect(() => {
@@ -1305,7 +1328,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
 
   // [추가] 월드링크: 선택된 챕터에 따라 표시할 예측 데이터 결정
   const activePredictionData = (() => {
-    if (selectedChapter === 'all' || eventInfo?.event_type !== 'world_bloom') {
+    if (isFinaleEvent || selectedChapter === 'all' || !isWorldBloom) {
       return predictionData;
     }
     const chapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
@@ -1394,7 +1417,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
   })();
 
   const selectedPredictionEndAtMs = useMemo(() => {
-    if (selectedChapter === 'all' || eventInfo?.event_type !== 'world_bloom') {
+    if (isFinaleEvent || selectedChapter === 'all' || !isWorldBloom) {
       return Number(eventInfo?.end || 0) * 1000;
     }
 
@@ -1409,7 +1432,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
       && String(chapter.chapterNo) === chapterNo
     ));
     return Number(selectedWorldBloom?.aggregateAt || selectedWorldBloom?.chapterEndAt || 0);
-  }, [selectedChapter, eventInfo, chaptersData, worldBloomsInfo]);
+  }, [selectedChapter, eventInfo, chaptersData, worldBloomsInfo, isFinaleEvent, isWorldBloom]);
 
   const hideCompletedPredictions = shouldHideCompletedPrediction(selectedPredictionEndAtMs);
 
@@ -3126,7 +3149,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   <div className="flex flex-col items-end min-w-max">
                     <span className="text-[9px] sm:text-[10px] text-gray-400 font-medium leading-none mb-0.5 sm:mb-1">
                       {(() => {
-                        if (selectedChapter !== 'all') {
+                        if (!isFinaleEvent && selectedChapter !== 'all') {
                           const now = Date.now();
                           let chStartMs = null;
                           let chEndMs = null;
@@ -3152,7 +3175,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                     </span>
                     <span className="text-[10px] sm:text-xs text-indigo-600 font-extrabold tracking-tight">
                       {(() => {
-                        if (selectedChapter !== 'all') {
+                        if (!isFinaleEvent && selectedChapter !== 'all') {
                           const now = Date.now();
                           let chStartMs = null;
                           let chEndMs = null;
@@ -3194,7 +3217,7 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                   let startSec, totalHours, currentTs;
 
                   // 챕터 선택 시 해당 챕터의 시간 범위 사용
-                  if (selectedChapter !== 'all') {
+                  if (!isFinaleEvent && selectedChapter !== 'all') {
                     // 1) chaptersData에서 찾기
                     const selChapter = chaptersData.find(ch => ch.chapter_id === selectedChapter);
                     if (selChapter && selChapter.start && selChapter.end) {
@@ -3279,16 +3302,28 @@ const FireTab = ({ surveyData, setSurveyData }) => {
           {/* [추가] World Link Chapter Selector */}
           {/* [추가] World Link Chapter Selector — worldBloomsInfo 기반 전체 챕터 표시 */}
           {(() => {
-            // worldBloomsInfo에서 현재 이벤트의 모든 챕터 추출
+            if (isFinaleEvent) return null;
+            // worldBloomsInfo에서 현재 이벤트의 유효한 챕터 추출 (피날레/0번 챕터 제외)
             const eventChaptersFromWB = eventInfo?.id
               ? worldBloomsInfo
-                .filter(wb => String(wb.eventId) === String(eventInfo.id))
+                .filter(wb => (
+                  String(wb.eventId) === String(eventInfo.id) &&
+                  wb.worldBloomChapterType !== 'finale' &&
+                  Number(wb.chapterNo) > 0 &&
+                  Boolean(wb.gameCharacterId)
+                ))
                 .sort((a, b) => a.chapterNo - b.chapterNo)
               : [];
 
-            // 챕터 목록: worldBloomsInfo 우선, 없으면 chaptersData 사용
+            // 0번(CH0) 등 유효하지 않은 챕터 제외
+            const validChaptersData = chaptersData.filter(ch => {
+              const num = ch.chapter_id?.split('-')[1];
+              return num && Number(num) > 0;
+            });
+
+            // 챕터 목록: worldBloomsInfo 우선, 없으면 validChaptersData 사용
             const hasWBChapters = eventChaptersFromWB.length > 0;
-            const showSelector = hasWBChapters || chaptersData.length > 0;
+            const showSelector = hasWBChapters || validChaptersData.length > 0;
 
             if (!showSelector) return null;
 
@@ -3318,8 +3353,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       const isEnded = now >= chEnd;
                       const chapterNum = wbChapter.chapterNo;
 
-                      // chaptersData에서 매칭되는 챕터 찾기 (선택 시 데이터 표시용)
-                      const matchedChapter = chaptersData.find(ch => {
+                      // validChaptersData에서 매칭되는 챕터 찾기 (선택 시 데이터 표시용)
+                      const matchedChapter = validChaptersData.find(ch => {
                         const chNum = ch.chapter_id?.split('-')[1];
                         return String(chNum) === String(chapterNum);
                       });
@@ -3367,8 +3402,8 @@ const FireTab = ({ surveyData, setSurveyData }) => {
                       );
                     })
                   ) : (
-                    // Fallback: chaptersData 기반 (기존 로직)
-                    chaptersData.map((ch, idx) => {
+                    // Fallback: validChaptersData 기반
+                    validChaptersData.map((ch, idx) => {
                       const now = Date.now();
                       const chStart = (ch.start || 0) * 1000;
                       const chEnd = (ch.end || 0) * 1000;

@@ -2,6 +2,7 @@ export const CHALLENGE_PRESETS = ['P1', 'P2', 'P3'];
 
 export const CHALLENGE_PROFILE_FIELDS = [
   'challengeDeck',
+  'skillPush',
   'currentStage',
   'remainingScore',
   'targetStage',

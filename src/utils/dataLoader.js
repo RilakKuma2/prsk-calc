@@ -16,9 +16,10 @@ let cachedFilteredSongOptions = null;
 let searchableSongOptionsSource = null;
 let cachedSearchableSongOptions = null;
 
-const MUSIC_METAS_URL = joinUrl(ASSET_BASE_URL, 'music_metas.json');
+const MUSIC_METAS_URL = joinUrl(ASSET_BASE_URL || 'https://asset.rilaksekai.com', 'data/music_metas.json');
 const LOCAL_MUSIC_METAS_URL = joinUrl(process.env.PUBLIC_URL || '', 'music_metas.json');
-const MINI_MUSIC_METAS_URL = joinUrl(process.env.PUBLIC_URL || '', 'music_metas_min.json');
+const MINI_MUSIC_METAS_URL = joinUrl(ASSET_BASE_URL || 'https://asset.rilaksekai.com', 'data/music_metas_min.json');
+const LOCAL_MINI_MUSIC_METAS_URL = joinUrl(process.env.PUBLIC_URL || '', 'music_metas_min.json');
 const MUSIC_METAS_TIMEOUT_MS = 6000;
 const LOCAL_MUSIC_METAS_TIMEOUT_MS = 10000;
 const MINI_MUSIC_METAS_TIMEOUT_MS = 3000;
@@ -198,7 +199,7 @@ export async function getMiniMusicMetas() {
     miniMusicMetasPromise = fetchJsonWithTimeout(
         MINI_MUSIC_METAS_URL,
         MINI_MUSIC_METAS_TIMEOUT_MS,
-    ).then(metas => {
+    ).catch(() => fetchJsonWithTimeout(LOCAL_MINI_MUSIC_METAS_URL, MINI_MUSIC_METAS_TIMEOUT_MS)).then(metas => {
         cachedMiniMusicMetas = metas;
         return cachedMiniMusicMetas;
     }).catch(error => {

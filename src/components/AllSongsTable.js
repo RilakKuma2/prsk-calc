@@ -46,6 +46,7 @@ const AllSongsTable = ({
     skills,
     isAutoMode = false,
     energyUsed = 1,
+    skillPush = false,
 }) => {
     const { t } = useTranslation();
     const [results, setResults] = useState([]);
@@ -93,7 +94,7 @@ const AllSongsTable = ({
             handleRefresh();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isVisible, targetDifficulty, songOptions, musicMetaLookup, energyUsed, isAutoMode]);
+    }, [isVisible, targetDifficulty, songOptions, musicMetaLookup, energyUsed, isAutoMode, skillPush]);
 
     // Reset pagination when search query changes
     useEffect(() => {
@@ -254,6 +255,8 @@ const AllSongsTable = ({
                     skillMember3: finalSkills[2],
                     skillMember4: finalSkills[3],
                     skillMember5: finalSkills[4],
+                    musicMeta: meta,
+                    skillPush,
                 };
                 const range = calculateScoreRange(input, currentLiveType);
                 if (!range) return null;

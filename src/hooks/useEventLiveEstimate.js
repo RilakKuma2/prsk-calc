@@ -10,10 +10,10 @@ export default function useEventLiveEstimate(data, bonus) {
     getMusicMetas().then(() => { if (active) setLoaded(true); }).catch(() => { if (active) setError('곡 계산 데이터를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.'); });
     return () => { active = false; };
   }, []);
-  const { power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong } = data;
-  const points = useMemo(() => loaded ? calculateEventLiveEstimate({ power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong }, bonus) : null,
-    [loaded, bonus, power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong]);
-  const shopPoints = useMemo(() => loaded ? calculateShopPointsEstimate({ power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong }, bonus) : null,
-    [loaded, bonus, power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong]);
+  const { power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong, skillPush } = data;
+  const points = useMemo(() => loaded ? calculateEventLiveEstimate({ power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong, skillPush }, bonus) : null,
+    [loaded, bonus, power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong, skillPush]);
+  const shopPoints = useMemo(() => loaded ? calculateShopPointsEstimate({ power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong, skillPush }, bonus) : null,
+    [loaded, bonus, power, effi, shopEffi, internalValue, isDetailedInput, detailedSkills, eventLiveSong, skillPush]);
   return { points, shopPoints, error: error || (loaded && points === null ? '선택한 곡의 계산 데이터가 없습니다.' : ''), loading: !loaded && !error };
 }

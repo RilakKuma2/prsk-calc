@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import MySekaiTable from './MySekaiTable';
 import AllSongsTable from './AllSongsTable';
+import SkillPushControl from './common/SkillPushControl';
 import { mySekaiTableData, powerColumnThresholds, scoreRowKeys } from '../data/mySekaiTableData';
 import { EventCalculator, LiveType, EventType } from 'sekai-calculator';
 import {
@@ -12,6 +13,7 @@ import {
 } from '../utils/dataLoader';
 import { InputTableWrapper, InputRow } from './common/InputComponents';
 import { calculateScoreRange } from '../utils/calculator';
+import { calculateNoteScore } from '../utils/noteScoreClient';
 import { useTranslation } from '../contexts/LanguageContext';
 import {
   AUTO_ENERGY_OPTIONS,
@@ -206,6 +208,11 @@ const InternalValueCalculator = ({ t, onClose, onApply, isComparisonMode, isDeta
 
 const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   const { t, language } = useTranslation();
+  const skillPush = surveyData.skillPush === true;
+  const firstPick = surveyData.eventFirstPick === true;
+  const storedDelayMs = surveyData.eventSkillFeverDelayMs ?? '';
+  const effectiveDelayMs = storedDelayMs === '' ? 200 : Number(storedDelayMs);
+  const skillFeverDelayMs = firstPick ? 0 : Math.max(0, Math.min(30000, Number.isFinite(effectiveDelayMs) ? effectiveDelayMs : 200));
 
   // Comparison Mode State
   const isComparisonMode = surveyData.isComparisonMode || false;
@@ -415,6 +422,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
   }, [selectedSong, searchDifficulty]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const inputsList = [
       {
         p: power, e: effi, i: internalValue, skills: detailedSkills,
@@ -481,6 +489,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
             skillMember3: skillsArr[2],
             skillMember4: skillsArr[3],
             skillMember5: skillsArr[4],
+            skillPush,
           };
 
           const result = calculateScoreRange(input, liveType);
@@ -519,12 +528,33 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
         }
       };
 
-      // 1. Lost and Found (ID 186, Hard, Multi)
-      setLo(getScoreRange(powerVal, skillsArray, 226, 'hard', LiveType.MULTI, fireCounts.loAndFound));
-
-      // 2. Envy (ID 74, Expert, Multi)
-      setEn(getScoreRange(powerVal, skillsArray, 74, 'expert', LiveType.MULTI, fireCounts.envy));
-      setEn10(getScoreRange(powerVal, skillsArray, 74, 'expert', LiveType.MULTI, 10));
+      // Main event estimates use the same per-note accumulation as the game-like engine.
+      // One Envy calculation supplies both the selected energy and 10-energy results.
+      const calculateMainSong = (songId, difficulty, targets) => {
+        targets.forEach(([setScore]) => setScore({ pending: true }));
+        const input = {
+          songId, difficulty, totalPower: powerVal * 10000,
+          skillLeader: skillsArray[0], skillMember2: skillsArray[1],
+          skillMember3: skillsArray[2], skillMember4: skillsArray[3], skillMember5: skillsArray[4], skillPush, skillFeverDelayMs,
+        };
+        calculateNoteScore(input, 'multi', { signal: controller.signal, priority: 20 })
+          .then(result => {
+            if (controller.signal.aborted) return;
+            const meta = getMusicMetaSync(songId, difficulty);
+            if (!meta) throw new Error('Missing event rate');
+            targets.forEach(([setScore, fireCount]) => {
+              const toEventPoint = score => EventCalculator.getEventPoint(
+                LiveType.MULTI, EventType.MARATHON, score, meta.event_rate, effiVal, getEventPointMultiplier(fireCount)
+              );
+              setScore({ min: toEventPoint(result.min), max: toEventPoint(result.max) });
+            });
+          })
+          .catch(() => {
+            if (!controller.signal.aborted) targets.forEach(([setScore]) => setScore({ noteError: true }));
+          });
+      };
+      calculateMainSong(226, 'hard', [[setLo, fireCounts.loAndFound]]);
+      calculateMainSong(74, 'expert', [[setEn, fireCounts.envy], [setEn10, 10]]);
 
       // 3. Omakase (ID 572, Master, Multi)
       setOm(getScoreRange(powerVal, skillsArray, 572, 'master', LiveType.MULTI, fireCounts.omakase));
@@ -647,8 +677,9 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
       }
     });
 
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB, selectedSong, selectedPowerAutoSong, searchDifficulty, musicMetasLoadVersion]);
+  }, [power, effi, internalValue, isDetailedInput, detailedSkills, detailedSkillsB, fireCounts, isComparisonMode, powerB, effiB, internalValueB, selectedSong, selectedPowerAutoSong, searchDifficulty, musicMetasLoadVersion, skillPush, skillFeverDelayMs]);
 
   const handleDetailedChange = (key, value) => {
     const val = parseInt(value) || 0;
@@ -700,6 +731,8 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
 
   const renderScore = (scoreObj, forceSingle = false) => {
     if (scoreObj === 'N/A') return 'N/A';
+    if (scoreObj?.pending) return t('power.note_calculating');
+    if (scoreObj?.noteError) return t('power.note_failed');
     if (isDetailedInput && !forceSingle) {
       if (isComparisonMode) {
         return (
@@ -1195,6 +1228,23 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
 
 
 
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 w-full mb-3">
+          <SkillPushControl checked={firstPick}
+            onChange={value => setSurveyData(prev => ({ ...prev, eventFirstPick: value }))}
+            label={t('power.first_pick')} helpLabel={t('power.first_pick_help_label')}
+            description={t('power.first_pick_description')} />
+          <label className="event-skill-delay">
+            <span>{t('power.skill_fever_delay')}</span>
+            <input type="number" min="0" max="30000" step="1" inputMode="numeric"
+              className="rounded border border-gray-300 bg-transparent text-right"
+              disabled={firstPick} value={storedDelayMs} placeholder="200"
+              onChange={event => {
+                const value = event.target.value;
+                setSurveyData(prev => ({ ...prev, eventSkillFeverDelayMs: value === '' ? '' : Math.max(0, Math.min(30000, Number(value) || 0)) }));
+              }} />
+            <span>ms</span>
+          </label>
+        </div>
         <div className="flex justify-center w-full mb-4 gap-2">
           {/* Search Toggle Button */}
           <button
@@ -1616,6 +1666,7 @@ const PowerTab = ({ surveyData, setSurveyData, hideInputs = false }) => {
 
           <AllSongsTable
             isVisible={showAllSongsTable}
+            skillPush={skillPush}
             language={language}
             power={power}
             effi={effi}

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import useModalAccessibility from '../../hooks/useModalAccessibility';
 import { useTranslation } from '../../contexts/LanguageContext';
 import CustomSelectDropdown from './CustomSelectDropdown';
+import SkillPushControl from './SkillPushControl';
 import { EVENT_LIVE_SOURCES, getEventLiveSource, getEventLiveEnergy, updateEventLiveDeck } from '../../utils/eventLiveEstimate';
 import { EVENT_POINT_MULTIPLIERS } from '../../utils/autoEnergy';
 import { calculateInternalValueFromDeck } from '../../utils/deckUtils';
@@ -56,6 +57,9 @@ export default function EventLiveDeckButton({ surveyData, setSurveyData, bonus, 
             options={Object.entries(EVENT_POINT_MULTIPLIERS).map(([energy, multiplier]) => ({ value: String(multiplier), label: `${energy}불` }))}
             onChange={value => setSurveyData(prev => ({ ...prev, firea: value, fires2: 'none' }))}
           /><CustomSelectDropdown value={source.value} options={EVENT_LIVE_SOURCES} ariaLabel="곡·플레이 방식" className="event-live-deck-source" onChange={value => setSurveyData(prev => { const selected = EVENT_LIVE_SOURCES.find(row => row.value === value); return { ...prev, eventLiveSong: value, ...(selected?.rounds ? { rounds1: String(selected.rounds) } : {}) }; })} /></div>
+          {!source.auto && !source.mySekai && <div className="flex justify-center my-3">
+            <SkillPushControl checked={surveyData.skillPush === true} onChange={value => setSurveyData(prev => ({ ...prev, skillPush: value }))} />
+          </div>}
           <div className="event-live-deck-result">
             <span>{source.label} · {getEventLiveEnergy(bonus)}불</span>
             {estimate.loading ? (
