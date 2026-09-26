@@ -1,0 +1,35 @@
+{
+  "files": {
+    "main.css": "/static/css/main.639887cb.css",
+    "main.js": "/static/js/main.379f35f4.js",
+    "static/js/404.37fe466e.chunk.js": "/static/js/404.37fe466e.chunk.js",
+    "static/css/829.ab61016b.chunk.css": "/static/css/829.ab61016b.chunk.css",
+    "static/js/829.f8a6f021.chunk.js": "/static/js/829.f8a6f021.chunk.js",
+    "static/css/734.3a6bef9e.chunk.css": "/static/css/734.3a6bef9e.chunk.css",
+    "static/js/734.d3090d23.chunk.js": "/static/js/734.d3090d23.chunk.js",
+    "static/js/995.b836982c.chunk.js": "/static/js/995.b836982c.chunk.js",
+    "static/js/892.75a06bd5.chunk.js": "/static/js/892.75a06bd5.chunk.js",
+    "static/js/216.2efcb6a4.chunk.js": "/static/js/216.2efcb6a4.chunk.js",
+    "static/js/54.c41841a4.chunk.js": "/static/js/54.c41841a4.chunk.js",
+    "static/js/933.fcc286fa.chunk.js": "/static/js/933.fcc286fa.chunk.js",
+    "static/js/665.0c560d9e.chunk.js": "/static/js/665.0c560d9e.chunk.js",
+    "static/css/850.fc58d159.chunk.css": "/static/css/850.fc58d159.chunk.css",
+    "static/js/850.e38a04f6.chunk.js": "/static/js/850.e38a04f6.chunk.js",
+    "static/js/134.3faee497.chunk.js": "/static/js/134.3faee497.chunk.js",
+    "static/js/206.02e40808.chunk.js": "/static/js/206.02e40808.chunk.js",
+    "static/js/496.35fb68ea.chunk.js": "/static/js/496.35fb68ea.chunk.js",
+    "static/js/92.0a1a4020.chunk.js": "/static/js/92.0a1a4020.chunk.js",
+    "static/css/800.3a6bef9e.chunk.css": "/static/css/800.3a6bef9e.chunk.css",
+    "static/js/800.e7a62bc2.chunk.js": "/static/js/800.e7a62bc2.chunk.js",
+    "static/js/957.6d3834f0.chunk.js": "/static/js/957.6d3834f0.chunk.js",
+    "static/js/937.b445dc3d.chunk.js": "/static/js/937.b445dc3d.chunk.js",
+    "static/js/606.2d95d26d.chunk.js": "/static/js/606.2d95d26d.chunk.js",
+    "static/js/338.71a94fcd.chunk.js": "/static/js/338.71a94fcd.chunk.js",
+    "static/js/77.f43bd101.chunk.js": "/static/js/77.f43bd101.chunk.js",
+    "index.html": "/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.639887cb.css",
+    "static/js/main.379f35f4.js"
+  ]
+}
