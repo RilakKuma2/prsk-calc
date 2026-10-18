@@ -1,4 +1,7 @@
+import anniversary from './anniversary.en';
+
 const en = {
+    anniversary,
     app: {
         title: 'Sekai Calculator',
         save: 'Save',
@@ -95,6 +98,19 @@ const en = {
         conflict_hint: 'Merging keeps all owned furniture and read-dialogue records from both copies.',
     },
     rank: {
+        theory: "Theoretical",
+        theory_loading: "Calculating theory…",
+        theory_retry: "Retry theory",
+        no_kizuna: "Without Kizuna",
+        theory_count: "Count / Next EXP target",
+        cap_note: "Dark red: character rank EXP cap reached",
+        close: "Close",
+        theory_challenge: "Challenge score history",
+        theory_challenge_note: "One daily play with the pass, starting at Lv.151 / 0 points on Sep 30, 2026. Card releases, the shared area and plushies are applied on their respective dates.",
+        period: "Period",
+        score: "Score",
+        daily_points: "Daily stage pts",
+
         title: 'Character Rank Calculator',
         current_rank: 'Current Rank',
         expected_rank: 'Expected Rank',
@@ -102,6 +118,7 @@ const en = {
         added: 'Added',
         next: 'NEXT',
         missions: {
+            area_item_common: "Shared area",
             leader: 'Leader Live',
             waiting: 'Waiting Room',
             member: 'Member',
@@ -142,6 +159,10 @@ const en = {
         before_birthday: '(Before Birthday)',
         unreleased: '(Unreleased)',
         etc_items: {
+            birthday_27: "2027 birthday celebration",
+            solo_live_6th: "6th anniversary solo live",
+            memorial_6th: "6th anniversary memorial",
+
             birthday_26: '26 Birthday',
             pass_mission_ticket: 'Pass Mission Ticket',
             newyear_gacha: '26 New Year Gacha',
@@ -783,7 +804,7 @@ const en = {
         pass_status: 'Color Pass',
         suffix_man: '0k',
         error_stage: 'Please enter a valid stage.',
-        ex_stage_desc: 'Stages 151+ automatically converted to EX',
+        ex_stage_desc: 'Stages 201+ automatically converted to EX',
         score_per_round: 'Score/Round',
         needed_score: 'Needed Score',
         remaining_days: 'Remaining Days',

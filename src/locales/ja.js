@@ -1,4 +1,7 @@
+import anniversary from './anniversary.ja';
+
 const ja = {
+    anniversary,
     app: {
         title: 'プロセカ計算機',
         save: '保存',
@@ -95,6 +98,19 @@ const ja = {
         conflict_hint: '統合すると、両方の所持家具と既読会話をすべて保持します。',
     },
     rank: {
+        theory: "理論値",
+        theory_loading: "理論値を計算中…",
+        theory_retry: "理論値を再読み込み",
+        no_kizuna: "キズナ除外",
+        theory_count: "数量 / 次のEXP目標",
+        cap_note: "暗い赤色：キャラランクEXP上限に到達",
+        close: "閉じる",
+        theory_challenge: "チャレンジの期間別スコア",
+        theory_challenge_note: "2026.09.30のLv.151・0ptから毎日1回、パス適用。カード・想いの大樹・ぬいぐるみの変化を日付ごとに反映します。",
+        period: "期間",
+        score: "スコア",
+        daily_points: "1日のステージP",
+
         title: 'キャラクターランク計算機',
         current_rank: '現在ランク',
         expected_rank: '予想ランク',
@@ -102,6 +118,7 @@ const ja = {
         added: '追加',
         next: 'NEXT',
         missions: {
+            area_item_common: "想いの大樹",
             leader: 'リーダーライブ',
             waiting: '控え室お迎え',
             member: 'メンバー',
@@ -142,6 +159,10 @@ const ja = {
         before_birthday: '(誕生日前)',
         unreleased: '(未実装)',
         etc_items: {
+            birthday_27: "2027 誕生日のお祝い",
+            solo_live_6th: "6周年ソロライブ",
+            memorial_6th: "6周年メモリアル",
+
             birthday_26: '26年生日',
             pass_mission_ticket: 'パスミッションチケット',
             newyear_gacha: '26福袋ガチャ',
@@ -783,7 +804,7 @@ const ja = {
         pass_status: 'パス',
         suffix_man: '万',
         error_stage: '正しい値を入力',
-        ex_stage_desc: '151以上はEX変換',
+        ex_stage_desc: '201以上はEX変換',
         score_per_round: '1回スコア',
         needed_score: '必要スコア',
         remaining_days: '残り日数',

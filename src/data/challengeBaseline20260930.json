@@ -1,0 +1,458 @@
+{
+  "version": 1,
+  "date": "2026-09-30",
+  "config": {
+    "characterAreaLevel": 20,
+    "unitAreaLevel_1": 20,
+    "unitAreaLevel_2": 20,
+    "attributeAreaLevel_1": 20,
+    "attributeAreaLevel_2": 20,
+    "masterSekaiGateLevel": 70,
+    "masterSekaiNuiPercent": null,
+    "titleBonus": 260
+  },
+  "characters": {
+    "1": {
+      "inputKey": "48ffc7d400553ef4ef3032c6480d3b64677a3ee258a74b4e3790de572c5fbd48",
+      "name": "이치카",
+      "cardIds": [
+        998,
+        961,
+        416,
+        1458,
+        643
+      ],
+      "score": 3329616,
+      "power": 474254,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "2": {
+      "inputKey": "62ba03a1fd87e5debd311779e7e6879879bd370e1a3e20bafed09ea5737e4d4f",
+      "name": "사키",
+      "cardIds": [
+        1475,
+        1022,
+        369,
+        909,
+        714
+      ],
+      "score": 3371628,
+      "power": 465301,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "3": {
+      "inputKey": "ea35bbb799571555779f56e1c2dcce7a4d341c117ee1bd33ef5feb084e2943b6",
+      "name": "호나미",
+      "cardIds": [
+        1144,
+        281,
+        1380,
+        1191,
+        500
+      ],
+      "score": 3407320,
+      "power": 464546,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "4": {
+      "inputKey": "4ea888bd97df94856f6d60c4b8d2accbee01627ffb9409affc15d29372c67788",
+      "name": "시호",
+      "cardIds": [
+        1307,
+        380,
+        1006,
+        773,
+        493
+      ],
+      "score": 3345234,
+      "power": 466023,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "5": {
+      "inputKey": "e2aefb392f016708094e66189d8642cab422437513421bba25a615188ffb4380",
+      "name": "미노리",
+      "cardIds": [
+        1252,
+        517,
+        1441,
+        921,
+        130
+      ],
+      "score": 3345349,
+      "power": 466039,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "6": {
+      "inputKey": "409e27eb5f1c4fe18d3096d881d47b22e83957dda32b4a94fbeec861a1555865",
+      "name": "하루카",
+      "cardIds": [
+        1057,
+        321,
+        993,
+        716,
+        191
+      ],
+      "score": 3388113,
+      "power": 465277,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "7": {
+      "inputKey": "e7da0eef474fa445b574045a8e6d819b9fba02b492fa31063184870b3df6300a",
+      "name": "아이리",
+      "cardIds": [
+        243,
+        1174,
+        923,
+        1400,
+        591
+      ],
+      "score": 3301765,
+      "power": 465308,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "8": {
+      "inputKey": "7bd7580652ea561da5fc70bd363251a318f07de7502b93c245e4888334c51064",
+      "name": "시즈쿠",
+      "cardIds": [
+        1361,
+        779,
+        160,
+        1459,
+        939
+      ],
+      "score": 3436713,
+      "power": 474283,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "9": {
+      "inputKey": "83cc14cf3c80646721206f28650c3695747181b51a74c98732901085d7c35428",
+      "name": "코하네",
+      "cardIds": [
+        670,
+        1478,
+        1407,
+        916,
+        1017
+      ],
+      "score": 3321024,
+      "power": 464565,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "10": {
+      "inputKey": "52b4868f0956a5758e1e4e5c44825cc430f2da0c16ecd726915f4e22949db11b",
+      "name": "안",
+      "cardIds": [
+        1058,
+        343,
+        1254,
+        849,
+        1321
+      ],
+      "score": 3407437,
+      "power": 464562,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "11": {
+      "inputKey": "bf89c2ff0ed8546758f7c2a3387b973de56621b1c827f4e1cfdae8dc3c2bf04f",
+      "name": "아키토",
+      "cardIds": [
+        1253,
+        136,
+        1016,
+        898,
+        254
+      ],
+      "score": 3388127,
+      "power": 465279,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "12": {
+      "inputKey": "905323967241c1cbb4995bb87326a01d24cd50a5e5c71721e0f6718b67752953",
+      "name": "토우야",
+      "cardIds": [
+        1415,
+        1430,
+        973,
+        165,
+        600
+      ],
+      "score": 3390665,
+      "power": 464543,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "13": {
+      "inputKey": "f18a4505a15d26c1308688ee46e6a2b33edf2fdd8740c7feff4d71151ace52a6",
+      "name": "츠카사",
+      "cardIds": [
+        410,
+        1461,
+        1327,
+        606,
+        928
+      ],
+      "score": 3349586,
+      "power": 473537,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "14": {
+      "inputKey": "2e9b0c2bedf0d023085684cc642ae4c0973a30314d5a6aac7d7ea39210c04af7",
+      "name": "에무",
+      "cardIds": [
+        1308,
+        885,
+        1230,
+        987,
+        233
+      ],
+      "score": 3345406,
+      "power": 466047,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "15": {
+      "inputKey": "c9c58648d6496cef51cb102d3b6bab0a45f3250fdcaf1e0fd5ea89f4a87aecad",
+      "name": "네네",
+      "cardIds": [
+        1416,
+        1005,
+        1034,
+        796,
+        269
+      ],
+      "score": 3407334,
+      "power": 464548,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "16": {
+      "inputKey": "dd95ee4173a7160e6851e0b36798af281b5b5b014f2dd99990838f4f00fcaf4a",
+      "name": "루이",
+      "cardIds": [
+        1003,
+        1431,
+        1172,
+        412,
+        228
+      ],
+      "score": 3371440,
+      "power": 465275,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "17": {
+      "inputKey": "560f1aa86ca109cb2cf1376faf2b3c8c40293bd050bbbb577339a1767fd827c9",
+      "name": "카나데",
+      "cardIds": [
+        949,
+        309,
+        765,
+        1357,
+        487
+      ],
+      "score": 3388200,
+      "power": 465289,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "18": {
+      "inputKey": "e08a361adee32676d580bcbe89350b364f574bb2009d39fd7611d8f2f7037d49",
+      "name": "마후유",
+      "cardIds": [
+        1362,
+        988,
+        1140,
+        637,
+        445
+      ],
+      "score": 3345162,
+      "power": 466013,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "19": {
+      "inputKey": "c17ad3a45d5a46208f09eaf53defa1bf1faf21895515e4652e6eafe45b5064e7",
+      "name": "에나",
+      "cardIds": [
+        1194,
+        152,
+        903,
+        1272,
+        613
+      ],
+      "score": 3388302,
+      "power": 465303,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "20": {
+      "inputKey": "fc733466bb097d587257d9511f6636b502f9e9c75740754b08fc2af5a4cc5c2e",
+      "name": "미즈키",
+      "cardIds": [
+        564,
+        1432,
+        1223,
+        1188,
+        1399
+      ],
+      "score": 3321024,
+      "power": 464565,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "21": {
+      "inputKey": "a4080a1275ee439bdd1b39e3066f3636047623f8637fccc59266b494ed20c1bd",
+      "name": "미쿠",
+      "cardIds": [
+        1476,
+        326,
+        1374,
+        1358,
+        88
+      ],
+      "score": 3439960,
+      "power": 465780,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "22": {
+      "inputKey": "ba0a343508e84057fc7d0b8bc9d9987e64eb91a73511db18aa54ce011561f066",
+      "name": "린",
+      "cardIds": [
+        1004,
+        775,
+        1129,
+        945,
+        92
+      ],
+      "score": 3364400,
+      "power": 466488,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "23": {
+      "inputKey": "286370b8cda39fe586c7599248502c2703491e784a7e0f16cd09c9d0ad9300c6",
+      "name": "렌",
+      "cardIds": [
+        618,
+        229,
+        709,
+        929,
+        471
+      ],
+      "score": 3316349,
+      "power": 467240,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "24": {
+      "inputKey": "5d3d269c528d7af2069ef00b9988e1ef2a718259c8b433d874bc69cb3406ee4f",
+      "name": "루카",
+      "cardIds": [
+        1145,
+        1404,
+        553,
+        1215,
+        1297
+      ],
+      "score": 3392705,
+      "power": 466510,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "25": {
+      "inputKey": "051a7e80c1133bd4772c0763a065175994d2ce17d4e46591910f4169e5274afd",
+      "name": "MEIKO",
+      "cardIds": [
+        950,
+        1463,
+        358,
+        1365,
+        483
+      ],
+      "score": 3458056,
+      "power": 475496,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    },
+    "26": {
+      "inputKey": "4bf7550642b263800605142ed7869883f1651b29a248a275afdeefe4839e2bbe",
+      "name": "KAITO",
+      "cardIds": [
+        1195,
+        214,
+        121,
+        835,
+        407
+      ],
+      "score": 3443955,
+      "power": 465778,
+      "commonBonus": 1,
+      "nuiPercent": 6,
+      "musicId": 11,
+      "difficulty": "append"
+    }
+  }
+}

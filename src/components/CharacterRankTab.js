@@ -1,16 +1,16 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import missionsJP from '../data/characterMissionV2s.json';
-import missionsKR from '../data/characterMissionV2s_kr.json';
-import missionsEN from '../data/characterMissionV2s_en.json';
-import parameterGroups from '../data/characterMissionV2ParameterGroups.json';
-import levels from '../data/levels.json';
+import missionLabelsKR from '../data/characterMissionV2s_kr.json';
+import missionLabelsEN from '../data/characterMissionV2s_en.json';
 import { useTranslation } from '../contexts/LanguageContext';
-import { characterBirthdays } from '../data/characterBirthdays';
 import ConfirmModal from './common/ConfirmModal';
 import CharacterSelector from './common/CharacterSelector';
 import useModalAccessibility from '../hooks/useModalAccessibility';
 import { readJsonStorage, writeJsonStorage } from '../utils/safeStorage';
+import useCharacterRankTheory from '../hooks/useCharacterRankTheory';
+import { createRankMissionIndex, rankMissionStatus, challengeRankExp } from '../utils/characterRankData';
+import { getCharacterRankRewards, isMissionExpCapped } from '../utils/characterRankTheory';
+import { gameDate, expandMissionParameters } from '../utils/progression';
 
 const CHARACTER_NAMES_KR = [
     "호시노 이치카", "텐마 사키", "모치즈키 호나미", "히노모리 시호",
@@ -39,6 +39,28 @@ const CHARACTER_NAMES_EN = [
     "Hatsune Miku", "Kagamine Rin", "Kagamine Len", "Megurine Luka", "MEIKO", "KAITO"
 ];
 
+const ETC_TRANSLATION_KEYS = {
+    "BIRTHDAY_2027": "birthday_27",
+    "SOLO_LIVE_6": "solo_live_6th",
+    "MEMORIAL_6": "memorial_6th",
+    "BIRTHDAY_2026": "birthday_26",
+    "PASS_MISSION_TICKET": "pass_mission_ticket",
+    "WLINK_3": "wl_3",
+    "EXCHANGE_5_5": "exchange_5_5th",
+    "NEW_YEAR_BAG_26": "newyear_gacha",
+    "MEMORIAL_5_ERROR": "memorial_5th_error",
+    "MEMORIAL_5": "memorial_5th",
+    "EXCHANGE_5": "exchange_5th",
+    "WLINK_2": "wl_2",
+    "EXCHANGE_4_5": "exchange_4_5th",
+    "MOVIE_STAMP": "movie_stamp",
+    "EXCHANGE_4": "exchange_4th",
+    "MEMORIAL_4_DUP": "memorial_4th",
+    "WLINK_1": "wl_1",
+    "STAMP_3": "stamp_3rd",
+    "STAMP_2": "stamp_2nd"
+};
+
 const MISSION_CONFIG = [
     { type: 'collect_member', tKey: 'member' },
     { type: 'collect_stamp', tKey: 'stamp' },
@@ -48,6 +70,7 @@ const MISSION_CONFIG = [
     { type: 'area_item_level_up_character', tKey: 'area_item_char' },
     { type: 'area_item_level_up_unit', tKey: 'area_item_unit' },
     { type: 'area_item_level_up_reality_world', tKey: 'area_item_type' },
+    { type: 'area_item_level_up_all_character', tKey: 'area_item_common' },
     { type: 'skill_level_up_rare', tKey: 'skill_4' },
     { type: 'skill_level_up_standard', tKey: 'skill_3' },
     { type: 'master_rank_up_rare', tKey: 'mastery_4' },
@@ -72,7 +95,7 @@ const MISSION_GROUP_1 = [
 
 const MISSION_GROUP_2 = [
     'play_live', 'waiting_room', 'read_card_episode_first', 'read_card_episode_second',
-    'area_item_level_up_character', 'area_item_level_up_unit', 'area_item_level_up_reality_world',
+    'area_item_level_up_character', 'area_item_level_up_unit', 'area_item_level_up_reality_world', 'area_item_level_up_all_character',
     'skill_level_up_rare', 'skill_level_up_standard', 'master_rank_up_rare', 'master_rank_up_standard',
     'collect_mysekai_fixture', 'collect_mysekai_canvas'
 ];
@@ -90,6 +113,12 @@ const chunkArray = (array, size) => {
 
 const CharacterRankTab = ({ surveyData, setSurveyData }) => {
     const { t, language } = useTranslation();
+    const { master, theory, error: theoryError, retry: retryTheory } = useCharacterRankTheory();
+    const activeMissions = master.missions;
+    const CHALL_EX_STAGE = Math.max(...master.stages.map(stage => stage.rank)) + 1;
+    const [theoryPopup, setTheoryPopup] = useState(false);
+    const theoryDialogRef = useModalAccessibility({ isOpen: theoryPopup, onClose: () => setTheoryPopup(false) });
+    const missionIndex = useMemo(() => createRankMissionIndex(master), [master]);
     const [selectedCharId, setSelectedCharId] = useState(1);
     const [inputs, setInputs] = useState({}); // { charId: { missionType: value } }
     const [addInputs, setAddInputs] = useState({}); // { charId: { missionType: value } }
@@ -204,31 +233,16 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         return CHARACTER_NAMES_KR;
     }, [language]);
 
-    // Select active missions based on language
-    const activeMissions = useMemo(() => {
-        if (language === 'ja') return missionsJP;
-        if (language === 'en') return missionsEN;
-        return missionsKR;
-    }, [language]);
-
-    // Filter character levels
-    const characterLevels = useMemo(() => {
-        return levels
-            .filter(l => l.levelType === 'character')
-            .sort((a, b) => a.level - b.level);
-    }, []);
-
-    // Group parameters by ID for fast lookup
+    // Language affects labels only; all languages use the same current JP rules.
+    const characterLevels = useMemo(() => master.levels
+        .filter(row => row.levelType === 'character').sort((a, b) => a.level - b.level), [master.levels]);
     const parameterMap = useMemo(() => {
         const map = {};
-        parameterGroups.forEach(p => {
-            if (!map[p.id]) map[p.id] = [];
-            map[p.id].push(p);
-        });
-        // Sort by requirement
-        Object.values(map).forEach(list => list.sort((a, b) => a.requirement - b.requirement));
+        master.groups.forEach(row => { (map[row.id] ||= []).push(row); });
+        Object.values(map).forEach(rows => rows.sort((a, b) => a.seq - b.seq));
         return map;
-    }, []);
+    }, [master.groups]);
+    const missionStatus = (charId, type, value) => rankMissionStatus(missionIndex.get(`${charId}:${type}`), value, type.endsWith('_ex'));
 
     const handleInputChange = (type, value, isAdd = false) => {
         const targetSet = isAdd ? setAddInputs : setInputs;
@@ -236,85 +250,22 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
             ...prev,
             [selectedCharId]: {
                 ...prev[selectedCharId],
-                [type]: parseInt(value) || 0
+                [type]: Math.max(0, parseInt(value) || 0)
             }
         }));
     };
 
     const calculateTotalExp = (charId, currentVals, addedVals = {}) => {
-        let totalExp = 0;
-        const charInputs = currentVals[charId] || {};
-        const charAddInputs = addedVals[charId] || {};
-
-        MISSION_CONFIG.forEach(config => {
-            const baseVal = charInputs[config.type] || 0;
-            const addVal = charAddInputs[config.type] || 0;
-            const totalVal = baseVal + addVal;
-
-            if (config.isDirectExp) {
-                if (config.type === 'challenge_stage') {
-                    const totalValCapped = Math.min(totalVal, 151);
-                    totalExp += Math.max(0, totalValCapped - 1);
-                } else {
-                    totalExp += totalVal;
-                }
-                return;
-            }
-
-            // Normal Mission Calculation
-            const mission = activeMissions.find(m => m.characterId === charId && m.characterMissionType === config.type);
-            if (mission) {
-                const params = parameterMap[mission.parameterGroupId] || [];
-                const cleared = params.filter(p => p.requirement <= totalVal);
-                const exp = cleared.reduce((sum, p) => sum + p.exp, 0);
-                totalExp += exp;
-            }
-
-            // EX Mission Calculation
-            if (config.exType) {
-                const exType = config.exType;
-                const exVal = charInputs[exType] || 0;
-                const exAddVal = charAddInputs[exType] || 0;
-                const totalExVal = exVal + exAddVal;
-
-                const exMission = activeMissions.find(m => m.characterId === charId && m.characterMissionType === exType);
-                if (exMission) {
-                    const rawParams = parameterMap[exMission.parameterGroupId] || [];
-                    const sortedParams = [...rawParams].sort((a, b) => a.seq - b.seq);
-
-                    let remaining = totalExVal;
-                    let currentSeq = 1;
-
-                    // Simulate leveling up step by step
-                    while (true) {
-                        // Find the parameter entry that applies to the current sequence
-                        // (Entry with param.seq <= currentSeq. We use the largest such seq)
-                        let activeParam = sortedParams[0];
-                        for (let i = 0; i < sortedParams.length; i++) {
-                            if (sortedParams[i].seq <= currentSeq) {
-                                activeParam = sortedParams[i];
-                            } else {
-                                break;
-                            }
-                        }
-
-                        if (!activeParam) break;
-
-                        const req = activeParam.requirement;
-
-                        if (remaining >= req) {
-                            remaining -= req;
-                            // Add EXP from the parameter data (+1 for normal steps, 0 for kakera steps)
-                            totalExp += (activeParam.exp || 0);
-                            currentSeq++;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-        });
-        return totalExp;
+        const current = currentVals[charId] || {};
+        const added = addedVals[charId] || {};
+        return MISSION_CONFIG.reduce((total, config) => {
+            const value = (current[config.type] || 0) + (added[config.type] || 0);
+            if (config.type === 'challenge_stage') return total + challengeRankExp(master.stages, charId, value);
+            if (config.type === 'etc') return total + value;
+            const exValue = config.exType ? (current[config.exType] || 0) + (added[config.exType] || 0) : 0;
+            return total + missionStatus(charId, config.type, value).exp
+                + (config.exType ? missionStatus(charId, config.exType, exValue).exp : 0);
+        }, 0);
     };
 
     const getNextRequirement = (charId, type, currentVal) => {
@@ -331,44 +282,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         return null;
     }
 
-    // Helper for EX Calculations (Dry run to get UI data)
-    const getExStatus = (charId, type, currentTotal) => {
-        const mission = activeMissions.find(m => m.characterId === charId && m.characterMissionType === type);
-        if (!mission) return { currentSeq: 1, currentProgress: 0, required: 0 };
-
-        const rawParams = parameterMap[mission.parameterGroupId] || [];
-        if (rawParams.length === 0) return { currentSeq: 1, currentProgress: 0, required: 0 };
-
-        const sortedParams = [...rawParams].sort((a, b) => a.seq - b.seq);
-
-        let remaining = currentTotal;
-        let currentSeq = 1;
-
-        while (true) {
-            let activeParam = sortedParams[0];
-            for (let i = 0; i < sortedParams.length; i++) {
-                if (sortedParams[i].seq <= currentSeq) {
-                    activeParam = sortedParams[i];
-                } else {
-                    break;
-                }
-            }
-            // Fallback to last param for infinite EX support
-            if (!activeParam) {
-                activeParam = sortedParams[sortedParams.length - 1];
-            }
-            if (!activeParam) break; // Should not happen if params exist
-            const req = activeParam.requirement;
-
-            if (remaining >= req) {
-                remaining -= req;
-                currentSeq++;
-            } else {
-                return { currentSeq, currentProgress: remaining, required: req };
-            }
-        }
-        return { currentSeq, currentProgress: remaining, required: 0 };
-    }
+    const getExStatus = (charId, type, value) => missionStatus(charId, type, value);
 
     const getRankInfo = (totalExp) => {
         let currentLevelObj = characterLevels[0];
@@ -472,7 +386,9 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
             if (currentGroup) groupedLevels.push(currentGroup);
 
             const isEx = t.includes('_ex') || config.isDirectExp || false;
-            let sentence = m.sentence || "";
+            const labels = language === 'en' ? missionLabelsEN : language === 'ko' ? missionLabelsKR : activeMissions;
+            const localized = labels.find(row => row.characterId === selectedCharId && row.characterMissionType === m.characterMissionType);
+            let sentence = localized?.sentence || (language === 'ja' ? m.sentence : '') || '';
             const charName = activeCharNames[selectedCharId - 1] || "";
 
             sentence = sentence
@@ -483,14 +399,12 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                 .replace(/\[Character\]/g, charName)
                 .replace(/\[Unit\]/g, charName);
 
-            const maxReq = sortedParams.length > 0 ? sortedParams[sortedParams.length - 1].requirement : 0;
+            const expSteps = expandMissionParameters(sortedParams, isEx).filter(row => row.exp > 0);
+            const maxReq = expSteps.at(-1)?.requirement || 0;
             sentence = sentence.replace(/{requirement}|\[목표값\]/g, maxReq.toLocaleString());
 
             // Calculate total EXP for display row
-            const totalExpForType = sortedParams.reduce((sum, p) => {
-                const isExType = t === 'play_live_ex' || t === 'waiting_room_ex';
-                return sum + (isExType ? Math.max(0, p.seq - 1) : p.exp);
-            }, 0);
+            const totalExpForType = rankMissionStatus(sortedParams, maxReq, isEx).exp;
 
             return {
                 type: t,
@@ -515,6 +429,8 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
 
         const currentVal = (inputs[selectedCharId] || {})[config.type] || 0;
         const addVal = (addInputs[selectedCharId] || {})[config.type] || 0;
+        const cappedCurrent = isMissionExpCapped({ ...missionStatus(selectedCharId, config.type, currentVal), baseType: config.type, count: currentVal });
+        const cappedTotal = isMissionExpCapped({ ...missionStatus(selectedCharId, config.type, currentVal + addVal), baseType: config.type, count: currentVal + addVal });
         let nextReq = getNextRequirement(selectedCharId, config.type, currentVal);
         let totalNextReq = getNextRequirement(selectedCharId, config.type, currentVal + addVal);
 
@@ -555,7 +471,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         }
 
         const isChallenge = config.type === 'challenge_stage';
-        const displayVal = isChallenge && currentVal >= 151 ? 'EX' : (currentVal === 0 ? '' : currentVal);
+        const displayVal = isChallenge && currentVal >= CHALL_EX_STAGE ? 'EX' : (currentVal === 0 ? '' : currentVal);
         const displayAddVal = addVal === 0 ? '' : addVal;
 
         // EX Mode variables
@@ -645,7 +561,8 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                             <input
                                 type={isChallenge ? "text" : "number"}
                                 min="0"
-                                className={`w-full bg-transparent outline-none text-right font-mono text-sm ${isChallenge && currentVal >= 151 ? 'font-bold text-pink-500' : ''}`}
+                                className={`w-full bg-transparent outline-none text-right font-mono text-sm ${isChallenge && currentVal >= CHALL_EX_STAGE ? 'font-bold text-pink-500' : ''}`}
+                                style={cappedCurrent ? { color: '#8b202b' } : undefined}
                                 value={displayVal}
                                 placeholder="0"
                                 onChange={(e) => handleInputChange(config.type, e.target.value)}
@@ -660,6 +577,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                 type="number"
                                 min="0"
                                 className="w-full bg-transparent outline-none text-right font-mono text-sm text-indigo-700"
+                                style={cappedTotal ? { color: '#8b202b' } : undefined}
                                 value={displayAddVal}
                                 placeholder="0"
                                 onChange={(e) => handleInputChange(config.type, e.target.value, true)}
@@ -780,8 +698,8 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                         {(() => {
                                             const statusBase = getExStatus(selectedCharId, config.exType, exCurrentVal);
                                             const statusTotal = getExStatus(selectedCharId, config.exType, exCurrentVal + exAddVal);
-                                            const expBase = Math.min(30, Math.max(0, statusBase.currentSeq - 1));
-                                            const expTotal = Math.min(30, Math.max(0, statusTotal.currentSeq - 1));
+                                            const expBase = statusBase.exp;
+                                            const expTotal = statusTotal.exp;
                                             const diff = expTotal - expBase;
                                             return `+${diff} EXP`;
                                         })()}
@@ -886,106 +804,60 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                 </div>
             )}
             {/* Amatsuyu Data Popup */}
+            {theoryPopup && theory && (() => {
+                const result = theory.included[selectedCharId];
+                const noKizuna = theory.excluded[selectedCharId];
+                return (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 bg-black/50" onClick={() => setTheoryPopup(false)}>
+                        <div ref={theoryDialogRef} role="dialog" aria-modal="true" aria-labelledby="rank-theory-title" tabIndex={-1}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-xl max-h-[85dvh] flex flex-col overflow-hidden" onClick={event => event.stopPropagation()}>
+                            <div className="p-4 border-b flex items-center justify-between gap-3">
+                                <h3 id="rank-theory-title" className="font-bold text-gray-800">{activeCharNames[selectedCharId - 1]} · {t('rank.theory')} {result.rank.toFixed(1)}</h3>
+                                <button type="button" onClick={() => setTheoryPopup(false)} className="p-2 text-gray-600" aria-label={t('rank.close')}>✕</button>
+                            </div>
+                            <div className="p-4 overflow-y-auto min-h-0 text-sm">
+                                <p className="mb-1 text-gray-600">{gameDate(Math.min(result.criteriaAt ?? theory.now, theory.now))} · {result.totalExp.toLocaleString()} EXP</p>
+                                <p className="mb-3 text-gray-600">{t('rank.no_kizuna')} {noKizuna.rank.toFixed(1)} · {t('rank.missions.area_item_common')} Lv.{theory.common.level}</p>
+                                <table className="w-full text-sm">
+                                    <thead><tr className="border-b text-gray-500 text-xs">
+                                        <th className="text-left py-2">{t('rank.item_name')}</th>
+                                        <th className="text-right py-2">{t('rank.theory_count')}</th>
+                                        <th className="text-right py-2">EXP</th>
+                                    </tr></thead>
+                                    <tbody>{result.stats.map(stat => {
+                                        const config = MISSION_CONFIG.find(row => row.type === (stat.baseType || stat.type));
+                                        const capped = isMissionExpCapped(stat);
+                                        return <tr key={stat.type} className="border-b border-gray-100">
+                                            <td className="py-2 pr-2">{config ? t(`rank.missions.${config.tKey}`) : stat.name}{stat.isEx && ' EX'}</td>
+                                            <td className="py-2 text-right whitespace-nowrap" style={capped ? { color: '#8b202b' } : undefined}
+                                                title={capped ? t('rank.cap_note') : undefined}>
+                                                {stat.type === 'challenge_stage' ? (stat.isEx ? 'EX' : `Lv.${stat.count}`) : stat.count.toLocaleString()}
+                                                {stat.expCap != null && ` / ${stat.nextExpGoal != null ? stat.nextExpGoal.toLocaleString() : '—'}`}
+                                            </td>
+                                            <td className="py-2 pl-3 text-right font-semibold">+{stat.exp.toLocaleString()}</td>
+                                        </tr>;
+                                    })}</tbody>
+                                </table>
+                                <p className="mt-2 text-xs" style={{ color: '#8b202b' }}>{t('rank.cap_note')}</p>
+                                <details className="mt-4">
+                                    <summary className="cursor-pointer font-bold">{t('rank.etc_rank_data')}</summary>
+                                    <table className="w-full mt-2 text-xs"><tbody>
+                                        {result.stats.find(stat => stat.isEtc)?.rewards.map(reward => <tr key={reward.key}
+                                            className={reward.isPassed ? '' : 'text-gray-400 line-through'}>
+                                            <td className="py-1">{t(`rank.etc_items.${ETC_TRANSLATION_KEYS[reward.key]}`)}{!reward.isPassed && ` ${t('rank.before_birthday')}`}</td>
+                                            <td className="py-1 text-right">{reward.count}</td>
+                                        </tr>)}
+                                    </tbody></table>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
             {etcPopup && (() => {
-                // Birthday logic: Check if selected character's birthday is after today in the Amatsuyu period (25/10~26/9)
-                const now = new Date();
-                const currentYear = now.getFullYear();
-                const currentMonth = now.getMonth() + 1;
-                const currentDay = now.getDate();
-
-                // Character ID to birthday mapping (based on characterBirthdays order sorted by date)
-                // Map selectedCharId to characterBirthdays entry
-                const charIdToBirthdayIndex = {
-                    4: 0,   // 시호 01.08
-                    18: 1,  // 마후유 01.27
-                    24: 2,  // 루카 01.30
-                    17: 3,  // 카나데 02.10
-                    26: 4,  // 카이토 02.17
-                    9: 5,   // 코하네 03.02
-                    7: 6,   // 아이리 03.19
-                    5: 7,   // 미노리 04.14
-                    19: 8,  // 에나 04.30
-                    2: 9,   // 사키 05.09
-                    13: 10, // 츠카사 05.17
-                    12: 11, // 토우야 05.25
-                    16: 12, // 루이 06.24
-                    15: 13, // 네네 07.20
-                    10: 14, // 안 07.26
-                    1: 15,  // 이치카 08.11
-                    20: 16, // 미즈키 08.27
-                    21: 17, // 미쿠 08.31
-                    14: 18, // 에무 09.09
-                    6: 19,  // 하루카 10.05
-                    3: 20,  // 호나미 10.27
-                    25: 21, // 메이코 11.05
-                    11: 22, // 아키토 11.12
-                    8: 23,  // 시즈쿠 12.06
-                    22: 24, // 린 12.27
-                    23: 25, // 렌 12.27
-                };
-
-                const birthdayIndex = charIdToBirthdayIndex[selectedCharId];
-                const charBirthday = birthdayIndex !== undefined ? characterBirthdays[birthdayIndex] : null;
-
-                let isBirthdayPassed = true; // Default: birthday has passed
-                if (charBirthday) {
-                    const [bdMonth, bdDay] = charBirthday.date.split('.').map(Number);
-                    // Amatsuyu period: 25/10 ~ 26/9
-                    // For current period ending Sep 2026:
-                    // - Birthdays from Oct-Dec: previous year (2025), always passed by now (Feb 2026)
-                    // - Birthdays from Jan-Sep: current year (2026)
-
-                    if (bdMonth >= 10) {
-                        // Oct-Dec birthdays are in the previous year (2025), so they have passed
-                        isBirthdayPassed = true;
-                    } else {
-                        // Jan-Sep birthdays are in 2026
-                        // Compare with current date
-                        const bdDate = new Date(currentYear, bdMonth - 1, bdDay);
-                        const today = new Date(currentYear, currentMonth - 1, currentDay);
-                        isBirthdayPassed = today >= bdDate;
-                    }
-                }
-
-                // Etc rank acquisition items (based on user's image)
-                const checkWl3Active = () => {
-                    const today = new Date();
-                    const group1 = [24, 3, 8, 9, 18]; // 루카, 호나미, 시즈쿠, 코하네, 마후유
-                    const group2 = [26, 2, 12, 16, 20]; // 카이토, 사키, 토우야, 루이, 미즈키
-                    const group3 = [25, 7, 11, 15, 19]; // 메이코, 아이리, 아키토, 네네, 에나
-                    
-                    if (group1.includes(selectedCharId)) return today >= new Date(2026, 5, 15);
-                    if (group2.includes(selectedCharId)) return today >= new Date(2026, 6, 15);
-                    if (group3.includes(selectedCharId)) return today >= new Date(2026, 7, 15);
-                    return true;
-                };
-                const wl3Active = checkWl3Active();
-
-                const etcRankItems = [
-                    { nameKey: 'etc_items.birthday_26', value: 1, isBirthday: true },
-                    { nameKey: 'etc_items.pass_mission_ticket', value: 5, isBirthday: false },
-                    { nameKey: 'etc_items.wl_3', value: 2, isBirthday: false, isWl3: true },
-                    { nameKey: 'etc_items.exchange_5_5th', value: 3, isBirthday: false },
-                    { nameKey: 'etc_items.newyear_gacha', value: 3, isBirthday: false },
-                    { nameKey: 'etc_items.memorial_5th_error', value: 1, isBirthday: false },
-                    { nameKey: 'etc_items.memorial_5th', value: 1, isBirthday: false },
-                    { nameKey: 'etc_items.exchange_5th', value: 2, isBirthday: false },
-                    { nameKey: 'etc_items.wl_2', value: 2, isBirthday: false },
-                    { nameKey: 'etc_items.exchange_4_5th', value: 2, isBirthday: false },
-                    { nameKey: 'etc_items.movie_stamp', value: 2, isBirthday: false },
-                    { nameKey: 'etc_items.exchange_4th', value: 2, isBirthday: false },
-                    { nameKey: 'etc_items.memorial_4th', value: 1, isBirthday: false, isBlue: true },
-                    { nameKey: 'etc_items.wl_1', value: 2, isBirthday: false },
-                    { nameKey: 'etc_items.stamp_3rd', value: 3, isBirthday: false },
-                    { nameKey: 'etc_items.stamp_2nd', value: 3, isBirthday: false },
-                ];
-
-                // Calculate max value
-                const maxValue = etcRankItems.reduce((sum, item) => {
-                    if (!isBirthdayPassed && item.isBirthday) return sum;
-                    if (item.isWl3 && !wl3Active) return sum;
-                    return sum + item.value;
-                }, 0);
+                const etcRankItems = getCharacterRankRewards(selectedCharId, theory?.now || Date.now());
+                const maxValue = etcRankItems.reduce((sum, item) => sum + (item.isPassed ? item.count : 0), 0);
 
                 return (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setEtcPopup(false)}>
@@ -1004,7 +876,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                 <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
                                     <div className="text-center">
                                         <span className="text-sm font-bold text-amber-700">
-                                            {isBirthdayPassed ? t('rank.max_value') : t('rank.max_value_no_bd')}
+                                            {t('rank.max_value')}
                                         </span>
                                         <span className="text-2xl font-black text-amber-600 ml-3">{maxValue}</span>
                                     </div>
@@ -1019,17 +891,15 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {etcRankItems.map((item, idx) => {
-                                            const isFutureBd = item.isBirthday && !isBirthdayPassed;
-                                            const isFutureWl3 = item.isWl3 && !wl3Active;
-                                            const shouldStrike = isFutureBd || isFutureWl3;
+                                            const isFutureBd = !item.isPassed;
+                                            const shouldStrike = isFutureBd;
                                             return (
                                                 <tr key={idx} className={`${shouldStrike ? 'bg-gray-50 text-gray-400' : 'hover:bg-gray-50/50'}`}>
                                                     <td className={`px-3 py-2 ${shouldStrike ? 'line-through' : ''} ${item.isBlue ? 'text-blue-700 font-medium' : ''}`}>
-                                                        {t(`rank.${item.nameKey}`)}
+                                                        {t(`rank.etc_items.${ETC_TRANSLATION_KEYS[item.key]}`)}
                                                         {isFutureBd && <span className="text-xs text-red-400 ml-1">{t('rank.before_birthday')}</span>}
-                                                        {isFutureWl3 && <span className="text-xs text-red-400 ml-1">{t('rank.unreleased')}</span>}
                                                     </td>
-                                                    <td className={`px-3 py-2 text-right font-medium ${shouldStrike ? 'line-through' : ''}`}>{item.value}</td>
+                                                    <td className={`px-3 py-2 text-right font-medium ${shouldStrike ? 'line-through' : ''}`}>{item.count}</td>
                                                 </tr>
                                             );
                                         })}
@@ -1052,14 +922,14 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                 confirmColor="red"
             />
 
-            <div className="mb-4 flex flex-row justify-center items-center gap-2 sm:gap-3 relative">
+            <div className="mb-4 flex flex-wrap justify-center items-center gap-2 sm:gap-3 relative">
                 <CharacterSelector
                     selectedId={selectedCharId}
                     onSelect={setSelectedCharId}
                     language={language}
                 />
 
-                <div className="flex gap-1 sm:gap-2">
+                <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
                     <button
                         onClick={() => openResetModal('all')}
                         className="character-rank-reset-all px-2 py-2 bg-red-100 text-red-600 rounded-lg shadow-sm hover:bg-red-200 transition-colors text-xs font-bold whitespace-nowrap"
@@ -1073,6 +943,14 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                         title={t('rank.reset_added_confirm_msg')}
                     >
                         {t('rank.reset_added', '추가 초기화')}
+                    </button>
+                    <button type="button"
+                        disabled={!theory && !theoryError}
+                        onClick={() => theory ? setTheoryPopup(true) : retryTheory()}
+                        className="px-2 py-2 bg-violet-100 text-violet-800 rounded-lg shadow-sm hover:bg-violet-200 disabled:opacity-60 text-xs font-bold whitespace-nowrap"
+                        aria-busy={!theory && !theoryError}>
+                        {theory ? `${t('rank.theory')} ${theory.included[selectedCharId].rank.toFixed(1)}`
+                            : t(theoryError ? 'rank.theory_retry' : 'rank.theory_loading')}
                     </button>
                 </div>
             </div>

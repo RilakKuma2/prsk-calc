@@ -1,0 +1,964 @@
+{
+  "1": {
+    "300": {
+      "path": "thumbnail/material/material101.webp",
+      "id": 101,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10102.webp",
+      "id": 10102,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material60.webp",
+      "id": 60,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_1/item_memoria_1.webp",
+      "id": 35,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material60.webp",
+      "id": 60,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material18.webp",
+      "id": 18,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material133.webp",
+      "id": 133,
+      "source": "materials"
+    }
+  },
+  "2": {
+    "300": {
+      "path": "thumbnail/material/material102.webp",
+      "id": 102,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10202.webp",
+      "id": 10202,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material61.webp",
+      "id": 61,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_2/item_memoria_2.webp",
+      "id": 36,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material61.webp",
+      "id": 61,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material19.webp",
+      "id": 19,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material134.webp",
+      "id": 134,
+      "source": "materials"
+    }
+  },
+  "3": {
+    "300": {
+      "path": "thumbnail/material/material103.webp",
+      "id": 103,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10302.webp",
+      "id": 10302,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material62.webp",
+      "id": 62,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_3/item_memoria_3.webp",
+      "id": 37,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material62.webp",
+      "id": 62,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material20.webp",
+      "id": 20,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material135.webp",
+      "id": 135,
+      "source": "materials"
+    }
+  },
+  "4": {
+    "300": {
+      "path": "thumbnail/material/material104.webp",
+      "id": 104,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10402.webp",
+      "id": 10402,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material63.webp",
+      "id": 63,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_4/item_memoria_4.webp",
+      "id": 38,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material63.webp",
+      "id": 63,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material21.webp",
+      "id": 21,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material136.webp",
+      "id": 136,
+      "source": "materials"
+    }
+  },
+  "5": {
+    "300": {
+      "path": "thumbnail/material/material105.webp",
+      "id": 105,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10502.webp",
+      "id": 10502,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material64.webp",
+      "id": 64,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_5/item_memoria_5.webp",
+      "id": 39,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material64.webp",
+      "id": 64,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material22.webp",
+      "id": 22,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material137.webp",
+      "id": 137,
+      "source": "materials"
+    }
+  },
+  "6": {
+    "300": {
+      "path": "thumbnail/material/material106.webp",
+      "id": 106,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10602.webp",
+      "id": 10602,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material65.webp",
+      "id": 65,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_6/item_memoria_6.webp",
+      "id": 40,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material65.webp",
+      "id": 65,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material23.webp",
+      "id": 23,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material138.webp",
+      "id": 138,
+      "source": "materials"
+    }
+  },
+  "7": {
+    "300": {
+      "path": "thumbnail/material/material107.webp",
+      "id": 107,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10702.webp",
+      "id": 10702,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material66.webp",
+      "id": 66,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_7/item_memoria_7.webp",
+      "id": 41,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material66.webp",
+      "id": 66,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material24.webp",
+      "id": 24,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material139.webp",
+      "id": 139,
+      "source": "materials"
+    }
+  },
+  "8": {
+    "300": {
+      "path": "thumbnail/material/material108.webp",
+      "id": 108,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10802.webp",
+      "id": 10802,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material67.webp",
+      "id": 67,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_8/item_memoria_8.webp",
+      "id": 42,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material67.webp",
+      "id": 67,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material25.webp",
+      "id": 25,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material140.webp",
+      "id": 140,
+      "source": "materials"
+    }
+  },
+  "9": {
+    "300": {
+      "path": "thumbnail/material/material109.webp",
+      "id": 109,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket10902.webp",
+      "id": 10902,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material68.webp",
+      "id": 68,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_9/item_memoria_9.webp",
+      "id": 43,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material68.webp",
+      "id": 68,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material26.webp",
+      "id": 26,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material141.webp",
+      "id": 141,
+      "source": "materials"
+    }
+  },
+  "10": {
+    "300": {
+      "path": "thumbnail/material/material110.webp",
+      "id": 110,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11002.webp",
+      "id": 11002,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material69.webp",
+      "id": 69,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_10/item_memoria_10.webp",
+      "id": 44,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material69.webp",
+      "id": 69,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material27.webp",
+      "id": 27,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material142.webp",
+      "id": 142,
+      "source": "materials"
+    }
+  },
+  "11": {
+    "300": {
+      "path": "thumbnail/material/material111.webp",
+      "id": 111,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11102.webp",
+      "id": 11102,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material70.webp",
+      "id": 70,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_11/item_memoria_11.webp",
+      "id": 45,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material70.webp",
+      "id": 70,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material28.webp",
+      "id": 28,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material143.webp",
+      "id": 143,
+      "source": "materials"
+    }
+  },
+  "12": {
+    "300": {
+      "path": "thumbnail/material/material112.webp",
+      "id": 112,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11202.webp",
+      "id": 11202,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material71.webp",
+      "id": 71,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_12/item_memoria_12.webp",
+      "id": 46,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material71.webp",
+      "id": 71,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material29.webp",
+      "id": 29,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material144.webp",
+      "id": 144,
+      "source": "materials"
+    }
+  },
+  "13": {
+    "300": {
+      "path": "thumbnail/material/material113.webp",
+      "id": 113,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11302.webp",
+      "id": 11302,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material72.webp",
+      "id": 72,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_13/item_memoria_13.webp",
+      "id": 47,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material72.webp",
+      "id": 72,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material30.webp",
+      "id": 30,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material145.webp",
+      "id": 145,
+      "source": "materials"
+    }
+  },
+  "14": {
+    "300": {
+      "path": "thumbnail/material/material114.webp",
+      "id": 114,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11402.webp",
+      "id": 11402,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material73.webp",
+      "id": 73,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_14/item_memoria_14.webp",
+      "id": 48,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material73.webp",
+      "id": 73,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material31.webp",
+      "id": 31,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material146.webp",
+      "id": 146,
+      "source": "materials"
+    }
+  },
+  "15": {
+    "300": {
+      "path": "thumbnail/material/material115.webp",
+      "id": 115,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11502.webp",
+      "id": 11502,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material74.webp",
+      "id": 74,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_15/item_memoria_15.webp",
+      "id": 49,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material74.webp",
+      "id": 74,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material32.webp",
+      "id": 32,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material147.webp",
+      "id": 147,
+      "source": "materials"
+    }
+  },
+  "16": {
+    "300": {
+      "path": "thumbnail/material/material116.webp",
+      "id": 116,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11602.webp",
+      "id": 11602,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material75.webp",
+      "id": 75,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_16/item_memoria_16.webp",
+      "id": 50,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material75.webp",
+      "id": 75,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material33.webp",
+      "id": 33,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material148.webp",
+      "id": 148,
+      "source": "materials"
+    }
+  },
+  "17": {
+    "300": {
+      "path": "thumbnail/material/material117.webp",
+      "id": 117,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11702.webp",
+      "id": 11702,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material76.webp",
+      "id": 76,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_17/item_memoria_17.webp",
+      "id": 51,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material76.webp",
+      "id": 76,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material34.webp",
+      "id": 34,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material149.webp",
+      "id": 149,
+      "source": "materials"
+    }
+  },
+  "18": {
+    "300": {
+      "path": "thumbnail/material/material118.webp",
+      "id": 118,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11802.webp",
+      "id": 11802,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material77.webp",
+      "id": 77,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_18/item_memoria_18.webp",
+      "id": 52,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material77.webp",
+      "id": 77,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material35.webp",
+      "id": 35,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material150.webp",
+      "id": 150,
+      "source": "materials"
+    }
+  },
+  "19": {
+    "300": {
+      "path": "thumbnail/material/material119.webp",
+      "id": 119,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket11902.webp",
+      "id": 11902,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material78.webp",
+      "id": 78,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_19/item_memoria_19.webp",
+      "id": 53,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material78.webp",
+      "id": 78,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material36.webp",
+      "id": 36,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material151.webp",
+      "id": 151,
+      "source": "materials"
+    }
+  },
+  "20": {
+    "300": {
+      "path": "thumbnail/material/material120.webp",
+      "id": 120,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket12002.webp",
+      "id": 12002,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material79.webp",
+      "id": 79,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_20/item_memoria_20.webp",
+      "id": 54,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material79.webp",
+      "id": 79,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material37.webp",
+      "id": 37,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material152.webp",
+      "id": 152,
+      "source": "materials"
+    }
+  },
+  "21": {
+    "300": {
+      "path": "thumbnail/material/material121.webp",
+      "id": 121,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket12102.webp",
+      "id": 12102,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material80.webp",
+      "id": 80,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_21/item_memoria_21.webp",
+      "id": 55,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material80.webp",
+      "id": 80,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material38.webp",
+      "id": 38,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material153.webp",
+      "id": 153,
+      "source": "materials"
+    }
+  },
+  "22": {
+    "300": {
+      "path": "thumbnail/material/material122.webp",
+      "id": 122,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket12202.webp",
+      "id": 12202,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material81.webp",
+      "id": 81,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_22/item_memoria_22.webp",
+      "id": 56,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material81.webp",
+      "id": 81,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material39.webp",
+      "id": 39,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material154.webp",
+      "id": 154,
+      "source": "materials"
+    }
+  },
+  "23": {
+    "300": {
+      "path": "thumbnail/material/material123.webp",
+      "id": 123,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket12302.webp",
+      "id": 12302,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material82.webp",
+      "id": 82,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_23/item_memoria_23.webp",
+      "id": 57,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material82.webp",
+      "id": 82,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material40.webp",
+      "id": 40,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material155.webp",
+      "id": 155,
+      "source": "materials"
+    }
+  },
+  "24": {
+    "300": {
+      "path": "thumbnail/material/material124.webp",
+      "id": 124,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket12402.webp",
+      "id": 12402,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material83.webp",
+      "id": 83,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_24/item_memoria_24.webp",
+      "id": 58,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material83.webp",
+      "id": 83,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material41.webp",
+      "id": 41,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material156.webp",
+      "id": 156,
+      "source": "materials"
+    }
+  },
+  "25": {
+    "300": {
+      "path": "thumbnail/material/material125.webp",
+      "id": 125,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket12502.webp",
+      "id": 12502,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material84.webp",
+      "id": 84,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_25/item_memoria_25.webp",
+      "id": 59,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material84.webp",
+      "id": 84,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material42.webp",
+      "id": 42,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material157.webp",
+      "id": 157,
+      "source": "materials"
+    }
+  },
+  "26": {
+    "300": {
+      "path": "thumbnail/material/material126.webp",
+      "id": 126,
+      "source": "materials"
+    },
+    "900": {
+      "path": "thumbnail/skill_practice_ticket/ticket12602.webp",
+      "id": 12602,
+      "source": "skillPracticeTickets"
+    },
+    "1500": {
+      "path": "thumbnail/material/material85.webp",
+      "id": 85,
+      "source": "materials"
+    },
+    "3000": {
+      "path": "mysekai/thumbnail/material/item_memoria_26/item_memoria_26.webp",
+      "id": 60,
+      "source": "mysekaiMaterials"
+    },
+    "4500": {
+      "path": "thumbnail/material/material85.webp",
+      "id": 85,
+      "source": "materials"
+    },
+    "6000": {
+      "path": "thumbnail/material/material43.webp",
+      "id": 43,
+      "source": "materials"
+    },
+    "7500": {
+      "path": "thumbnail/material/material158.webp",
+      "id": 158,
+      "source": "materials"
+    }
+  }
+}

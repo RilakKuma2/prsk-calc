@@ -217,7 +217,7 @@ const AmatsuyuTab = ({ surveyData, setSurveyData }) => {
           label={t('amatsuyu.past_cards_count')}
           value={pastCardsOwned}
           onChange={e => setPastCardsOwned(e.target.value)}
-          options={[0, 1, 2, 3, 4].map(num => ({ value: num, label: num }))}
+          options={[0, 1, 2, 3, 4, 5].map(num => ({ value: num, label: num }))}
           spacer={true}
         />
         <InputRow

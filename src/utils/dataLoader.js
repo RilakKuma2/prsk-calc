@@ -139,7 +139,7 @@ function normalizeSong(apiSong) {
     };
 }
 
-async function fetchJsonWithTimeout(url, timeoutMs) {
+export async function fetchJsonWithTimeout(url, timeoutMs = 15000) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 

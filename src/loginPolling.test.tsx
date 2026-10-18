@@ -460,6 +460,128 @@ describe('rilaksekai ↔ rilakbest MySekai account state', () => {
       expect(screen.getByTestId('sync-fixtures').textContent).toBe('2201,2202,2203');
     });
   });
+
+  it('closes the merge dialog and keeps the merged data local when the account rejects an oversized save', async () => {
+    const remoteSnapshot = normalizeMysekaiSnapshot({
+      schemaVersion: 1,
+      currentPreset: 'P1',
+      presets: {
+        P1: { ownedFixtures: { 1101: true }, seenDialogues: ['bundle:remote-talk'] },
+        P2: { ownedFixtures: {}, seenDialogues: [] },
+        P3: { ownedFixtures: {}, seenDialogues: [] },
+      },
+    });
+    const localSnapshot = normalizeMysekaiSnapshot({
+      schemaVersion: 1,
+      currentPreset: 'P1',
+      presets: {
+        P1: {
+          ownedFixtures: { 1102: true, 1103: true },
+          seenDialogues: ['bundle:local-talk-1', 'bundle:local-talk-2'],
+        },
+        P2: { ownedFixtures: {}, seenDialogues: [] },
+        P3: { ownedFixtures: {}, seenDialogues: [] },
+      },
+    });
+    createMysekaiStorageAdapter().write(localSnapshot);
+    window.localStorage.setItem('sekai-cloud-mysekai-dirty-v1', '1');
+    window.localStorage.setItem('mysekai-sync-auth', JSON.stringify({
+      user: cachedUser,
+      expiresAt: Date.now() + 60_000,
+    }));
+    let putCount = 0;
+
+    global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/api/auth/session')) {
+        return mockJsonResponse({ user: cachedUser });
+      }
+      if (url.endsWith('/api/auth/storage-token')) {
+        return mockJsonResponse({
+          accessToken: 'storage-token',
+          expiresIn: 3600,
+          userId: cachedUser.id,
+        });
+      }
+      if (url.endsWith(`/v1/states/${MYSEKAI_SYNC_NAMESPACE}`) && init?.method === 'PUT') {
+        putCount += 1;
+        return mockJsonResponse({ message: '저장 데이터가 허용 크기를 초과했습니다.' }, 413);
+      }
+      if (url.endsWith(`/v1/states/${MYSEKAI_SYNC_NAMESPACE}`)) {
+        return mockJsonResponse({
+          state: {
+            namespace: MYSEKAI_SYNC_NAMESPACE,
+            data: {
+              __wrapped: true,
+              instanceId: 'other-device',
+              updatedAt: new Date().toISOString(),
+              payload: remoteSnapshot,
+            },
+            revision: 1,
+            updatedAt: new Date().toISOString(),
+          },
+        });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    }) as jest.Mock;
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    function Probe() {
+      const sync = useAccountState({
+        namespace: MYSEKAI_SYNC_NAMESPACE,
+        storage: createMysekaiStorageAdapter(),
+        normalize: normalizeMysekaiSnapshot,
+        validate: (
+          value: unknown,
+        ): value is ReturnType<typeof normalizeMysekaiSnapshot> => isMysekaiSnapshot(value),
+        isEmpty: (value) => getMysekaiSnapshotStats(value).total === 0,
+        hasLocalOnly: hasLocalMysekaiItems,
+        isConflict: hasMysekaiConflict,
+        merge: mergeMysekaiSnapshots,
+        retryDelayMs: 0,
+      });
+      return (
+        <>
+          <output data-testid="sync-status">{sync.status}</output>
+          <output data-testid="sync-conflict">{sync.conflict ? 'open' : 'closed'}</output>
+          <button type="button" onClick={() => void sync.resolveConflict('merge')}>merge</button>
+        </>
+      );
+    }
+
+    render(
+      <LoginProvider
+        authBaseUrl="https://apil.rilaksekai.com"
+        storageBaseUrl="https://api.rilakbest.com"
+        cacheKey="mysekai-sync-auth"
+      >
+        <Probe />
+      </LoginProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sync-conflict').textContent).toBe('open');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'merge' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sync-status').textContent).toBe('error');
+    });
+    expect(screen.getByTestId('sync-conflict').textContent).toBe('closed');
+    expect(putCount).toBe(1);
+    expect(window.localStorage.getItem('sekai-cloud-mysekai-dirty-v1')).toBe('1');
+    const stored = createMysekaiStorageAdapter().read();
+    expect(Object.keys(stored.presets.P1.ownedFixtures).sort()).toEqual(['1101', '1102', '1103']);
+    expect([...stored.presets.P1.seenDialogues].sort()).toEqual([
+      'bundle:local-talk-1',
+      'bundle:local-talk-2',
+      'bundle:remote-talk',
+    ]);
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(putCount).toBe(1);
+    expect(screen.getByTestId('sync-conflict').textContent).toBe('closed');
+  });
 });
 
 function mockJsonResponse(body: unknown, status = 200) {

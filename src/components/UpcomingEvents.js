@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { characterBirthdays } from '../data/characterBirthdays';
 import { useTranslation } from '../contexts/LanguageContext';
+import AnniversaryShop from './AnniversaryShop';
 
 const getUpcomingBirthdays = () => {
     const today = new Date();
@@ -68,6 +69,7 @@ const UpcomingEvents = ({ children, calendarAction = null }) => {
     if (events.length === 0 || !isVisible) {
         return (
             <div className="schedule-header-title">
+                <AnniversaryShop />
                 {children}
                 {calendarAction}
             </div>
@@ -78,8 +80,9 @@ const UpcomingEvents = ({ children, calendarAction = null }) => {
 
     // Combined Layout for Multiple Events
     return (
-        <div className="upcoming-events-with-calendar mx-16 sm:mx-auto sm:w-full sm:max-w-md mt-2 mb-6 px-0 sm:px-4">
-            <div className="relative overflow-visible rounded-xl shadow-lg border border-gray-100 bg-white">
+        <div className="upcoming-events-with-calendar anniv-header-layout mx-16 sm:mx-auto sm:w-full sm:max-w-md mt-2 mb-6 px-0 sm:px-4">
+            <AnniversaryShop />
+            <div className="anniv-birthday-card relative overflow-visible rounded-xl shadow-lg border border-gray-100 bg-white">
 
                 {/* Global Close Button */}
                 <button
@@ -95,7 +98,7 @@ const UpcomingEvents = ({ children, calendarAction = null }) => {
 
                 {/* List/Grid of Events */}
                 {/* If Multiple: Grid 2 Cols side-by-side to save vertical space */}
-                <div className={`${isMultiple ? 'grid grid-cols-2 divide-x divide-gray-100' : 'flex flex-col'}`}>
+                <div className={`anniv-event-list ${isMultiple ? 'grid grid-cols-2 divide-x divide-gray-100' : 'flex flex-col'}`}>
                     {events.map((event, index) => {
                             const acqEndDate = new Date(event.nextBirthday);
                             acqEndDate.setDate(event.nextBirthday.getDate() - 1);
@@ -103,7 +106,7 @@ const UpcomingEvents = ({ children, calendarAction = null }) => {
                             return (
                                 <div
                                     key={event.nameKo}
-                                    className={`relative flex items-center p-2 ${!isMultiple && index !== events.length - 1 ? 'border-b border-gray-100' : ''}`}
+                                    className={`anniv-event-cell relative flex items-center p-2 ${!isMultiple && index !== events.length - 1 ? 'border-b border-gray-100' : ''}`}
                                 >
                                 {/* Background Gradient Strip (Per Row/Cell) */}
                                 <div
@@ -118,9 +121,9 @@ const UpcomingEvents = ({ children, calendarAction = null }) => {
                                 {/* Note: Rounded corners logic is simplified, might need tweak for perfectly rounded corners on grid */}
 
                                 {/* Content */}
-                                <div className={`flex items-center w-full pl-3 ${isMultiple ? 'gap-1.5' : 'gap-3'}`}>
+                                <div className={`anniv-event-content flex items-center w-full pl-3 ${isMultiple ? 'gap-1.5' : 'gap-3'}`}>
                                     {/* Character Image - Smaller if Multiple */}
-                                    <div className={`relative shrink-0 ${isMultiple ? 'w-10 h-10' : 'w-12 h-12 sm:w-14 sm:h-14'}`}>
+                                    <div className={`anniv-event-avatar relative shrink-0 ${isMultiple ? 'w-10 h-10' : 'w-12 h-12 sm:w-14 sm:h-14'}`}>
                                         <img
                                             src={`/assets/characters/${event.image}.webp`}
                                             alt={event.nameKo}
@@ -138,7 +141,7 @@ const UpcomingEvents = ({ children, calendarAction = null }) => {
                                             </span>
 
                                             {/* D-Day Tag */}
-                                            <span className={`ml-auto sm:ml-0 font-bold text-white rounded-full ${isMultiple ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-0.5'}`} style={{ backgroundColor: event.color }}>
+                                            <span className={`anniv-event-countdown ml-auto sm:ml-0 font-bold text-white rounded-full ${isMultiple ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-0.5'}`} style={{ backgroundColor: event.color }}>
                                                 {event.diffDays === 0 ? "D-Day" : `D-${event.diffDays}`}
                                             </span>
                                         </div>
@@ -150,7 +153,7 @@ const UpcomingEvents = ({ children, calendarAction = null }) => {
                                                 <p className={`text-gray-500 leading-tight ${isMultiple ? 'text-[9px] hidden' : 'text-[10px] sm:text-xs sm:font-semibold sm:w-20'}`}>
                                                     {language === 'ja' ? 'あまつゆ' : '아마츠유 기간'}
                                                 </p>
-                                                <div className={`font-bold text-gray-800 ${isMultiple ? 'text-[10px] sm:text-xs text-right leading-tight' : 'text-xs sm:text-sm whitespace-nowrap'}`}>
+                                                <div className={`anniv-event-date font-bold text-gray-800 ${isMultiple ? 'text-[10px] sm:text-xs text-right leading-tight' : 'text-xs sm:text-sm whitespace-nowrap'}`}>
                                                     {isMultiple ? (
                                                         <>
                                                             <div className="sm:hidden">
@@ -170,7 +173,7 @@ const UpcomingEvents = ({ children, calendarAction = null }) => {
                                                 <p className={`text-gray-500 leading-tight ${isMultiple ? 'text-[9px] hidden' : 'text-[10px] sm:text-xs sm:font-semibold sm:w-20'}`}>
                                                     {language === 'ja' ? '誕生日' : '생일'}
                                                 </p>
-                                                <p className={`font-bold text-gray-800 whitespace-nowrap ${isMultiple ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>
+                                                <p className={`anniv-event-date font-bold text-gray-800 whitespace-nowrap ${isMultiple ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>
                                                     {formatDate(event.nextBirthday)}
                                                 </p>
                                             </div>

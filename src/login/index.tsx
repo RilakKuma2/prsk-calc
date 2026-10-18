@@ -527,7 +527,11 @@ function createStorageClient(
       ? null
       : await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(body?.message || text.storageSyncError);
+      throw Object.assign(new Error(body?.message || text.storageSyncError), {
+        status: response.status,
+        // A 409 carries the newer server state so callers can merge onto it.
+        state: body?.state ?? null,
+      });
     }
     return body as T;
   };
@@ -541,11 +545,19 @@ function createStorageClient(
       );
       return result.state;
     },
-    putState: async <T,>(namespace: string, data: T, userId: string) => {
+    putState: async <T,>(
+      namespace: string,
+      data: T,
+      userId: string,
+      options: { expectedRevision?: number } = {},
+    ) => {
       const result = await request<{ state: RemoteUserState<T> }>(
         `/v1/states/${encodeURIComponent(namespace)}`,
         userId,
-        { method: 'PUT', body: JSON.stringify({ data }) },
+        {
+          method: 'PUT',
+          body: JSON.stringify({ data, expectedRevision: options.expectedRevision }),
+        },
       );
       return result.state;
     },
@@ -822,6 +834,13 @@ type UseAccountStateOptions<T> = {
 
 const identity = <T,>(value: T) => value;
 
+// The server rejects these saves for their content (for example an oversized
+// snapshot), so repeating the same request cannot succeed.
+const isRetryableSyncError = (error: unknown) => {
+  const status = (error as { status?: unknown } | null)?.status;
+  return status !== 400 && status !== 413;
+};
+
 const getLoginInstanceId = () => {
   if (typeof window === 'undefined') return '';
   let id = readStorageItem('login-instance-id');
@@ -852,6 +871,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
   const [retryEpoch, setRetryEpoch] = useState(0);
   const [conflict, setConflict] = useState<{ local: T; remote: T } | null>(null);
   const [status, setStatus] = useState<AccountStateSyncStatus>(user ? 'loading' : 'local-only');
+  const conflictRetryTimerRef = useRef<number | undefined>(undefined);
   const normalize = useCallback(
     (next: T) => (optionsRef.current.normalize || identity<T>)(next),
     [],
@@ -1013,6 +1033,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
         if (cancelled) return;
         console.warn(`${current.logLabel || current.namespace} 계정 동기화 실패:`, error);
         setStatus('error');
+        if (!isRetryableSyncError(error)) return;
         retryTimer = window.setTimeout(
           () => setRetryEpoch((epoch) => epoch + 1),
           current.retryDelayMs ?? 10_000,
@@ -1136,19 +1157,15 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
       if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
       refreshTimer = window.setTimeout(() => {
         refreshTimer = undefined;
-        void (async () => {
-          if (readStorageItem(dirtyKey) === '1') {
-            if (!syncReadyRef.current) return;
-            try {
-              await upload(valueRef.current);
-            } catch (error) {
-              console.warn(`${current.logLabel || current.namespace} 계정 저장 실패:`, error);
-              setStatus('error');
-              return;
-            }
-          }
-          setRetryEpoch((epoch) => epoch + 1);
-        })();
+        // Fetch before saving: uploading a long-idle tab's snapshot first would
+        // overwrite changes made on other devices in the meantime. The bootstrap
+        // merges or asks about local changes against the latest account state.
+        if (readStorageItem(dirtyKey) === '1' && !syncReadyRef.current) return;
+        if (saveTimerRef.current !== undefined) {
+          window.clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = undefined;
+        }
+        setRetryEpoch((epoch) => epoch + 1);
       }, current.refreshDelayMs ?? 750);
     };
 
@@ -1203,16 +1220,30 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
         const next = choice === 'merge'
           ? normalize(optionsRef.current.merge(conflict.local, conflict.remote))
           : conflict.local;
-        writeLocal(next, false);
+        // Keep the choice marked as unsynced until the upload succeeds, so a
+        // failed save is retried instead of asking the same question again.
+        writeLocal(next, true);
         await upload(next);
         if (choice === 'merge') optionsRef.current.onExternalStateApplied?.('merge');
       }
       setConflict(null);
     } catch (error) {
       console.warn(`${optionsRef.current.logLabel || optionsRef.current.namespace} 충돌 처리 실패:`, error);
+      // The chosen data is already applied locally. Leaving the dialog open would
+      // only repeat the same failing save on every click.
+      setConflict(null);
       setStatus('error');
+      if (isRetryableSyncError(error)) {
+        window.clearTimeout(conflictRetryTimerRef.current);
+        conflictRetryTimerRef.current = window.setTimeout(
+          () => setRetryEpoch((epoch) => epoch + 1),
+          optionsRef.current.retryDelayMs ?? 10_000,
+        );
+      }
     }
   }, [conflict, dirtyKey, finishBootstrap, normalize, status, upload, user, writeLocal]);
+
+  useEffect(() => () => window.clearTimeout(conflictRetryTimerRef.current), []);
 
   return { value, setValue, conflict, resolveConflict, status };
 }

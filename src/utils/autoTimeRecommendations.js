@@ -2,25 +2,27 @@ import { EventCalculator, EventType, LiveType } from 'sekai-calculator';
 import { calculateScoreRange } from './calculator';
 import { buildMusicMetaLookup } from './dataLoader';
 import { getAutoEventPointMultiplier, normalizeAutoEnergy } from './autoEnergy';
-import { isAutoSongExcluded, keepBestAutoSongPerWholeSecond } from './autoSongSelection';
+import {
+    compareCreationMythMeltPriority,
+    isAutoSongExcluded,
+    keepBestAutoSongPerWholeSecond,
+} from './autoSongSelection';
 
 export const AUTO_PLAY_LIMIT = 99;
 export const AUTO_BETWEEN_PLAY_SECONDS = 30;
 
 const AUTO_DIFFICULTIES = ['easy', 'normal', 'hard', 'expert', 'master', 'append'];
-const MELT_SONG_ID = 47;
-const CREATION_MYTH_SONG_ID = 186;
 const AUTO_DIFFICULTY_PRIORITY = AUTO_DIFFICULTIES.reduce((priorities, difficulty, index) => {
     priorities[difficulty] = index;
     return priorities;
 }, {});
 
-// 멜트와 개벽은 오토 시간/점수가 같을 때 곡 ID 순서 대신 개벽을 우선한다.
+// 멜트와 개벽은 개벽을 우선하고, 나머지는 곡 ID로 순서를 고정한다.
 const compareAutoTimeSongPriority = (a, b) => {
-    const aId = Number(a?.song?.id ?? a?.songId ?? a?.id);
-    const bId = Number(b?.song?.id ?? b?.songId ?? b?.id);
-    if (aId === CREATION_MYTH_SONG_ID && bId === MELT_SONG_ID) return -1;
-    if (aId === MELT_SONG_ID && bId === CREATION_MYTH_SONG_ID) return 1;
+    const specialPriority = compareCreationMythMeltPriority(a, b);
+    if (specialPriority !== 0) return specialPriority;
+    const aId = Number(a?.song?.id ?? a?.songId ?? a?.id) || Number.MAX_SAFE_INTEGER;
+    const bId = Number(b?.song?.id ?? b?.songId ?? b?.id) || Number.MAX_SAFE_INTEGER;
     return aId - bId;
 };
 

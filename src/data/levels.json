@@ -6898,5 +6898,1685 @@
     "level": 175,
     "levelType": "character",
     "totalExp": 1595
+  },
+  {
+    "id": 1175,
+    "level": 76,
+    "levelType": "bonds",
+    "totalExp": 16856000
+  },
+  {
+    "id": 1176,
+    "level": 77,
+    "levelType": "bonds",
+    "totalExp": 17157000
+  },
+  {
+    "id": 1177,
+    "level": 78,
+    "levelType": "bonds",
+    "totalExp": 17458000
+  },
+  {
+    "id": 1178,
+    "level": 79,
+    "levelType": "bonds",
+    "totalExp": 17759000
+  },
+  {
+    "id": 1179,
+    "level": 80,
+    "levelType": "bonds",
+    "totalExp": 18060000
+  },
+  {
+    "id": 1180,
+    "level": 81,
+    "levelType": "bonds",
+    "totalExp": 18361000
+  },
+  {
+    "id": 1181,
+    "level": 82,
+    "levelType": "bonds",
+    "totalExp": 18662000
+  },
+  {
+    "id": 1182,
+    "level": 83,
+    "levelType": "bonds",
+    "totalExp": 18963000
+  },
+  {
+    "id": 1183,
+    "level": 84,
+    "levelType": "bonds",
+    "totalExp": 19264000
+  },
+  {
+    "id": 1184,
+    "level": 85,
+    "levelType": "bonds",
+    "totalExp": 19565000
+  },
+  {
+    "id": 1185,
+    "level": 86,
+    "levelType": "bonds",
+    "totalExp": 19866000
+  },
+  {
+    "id": 1186,
+    "level": 87,
+    "levelType": "bonds",
+    "totalExp": 20167000
+  },
+  {
+    "id": 1187,
+    "level": 88,
+    "levelType": "bonds",
+    "totalExp": 20468000
+  },
+  {
+    "id": 1188,
+    "level": 89,
+    "levelType": "bonds",
+    "totalExp": 20769000
+  },
+  {
+    "id": 1189,
+    "level": 90,
+    "levelType": "bonds",
+    "totalExp": 21070000
+  },
+  {
+    "id": 1190,
+    "level": 91,
+    "levelType": "bonds",
+    "totalExp": 21371000
+  },
+  {
+    "id": 1191,
+    "level": 92,
+    "levelType": "bonds",
+    "totalExp": 21672000
+  },
+  {
+    "id": 1192,
+    "level": 93,
+    "levelType": "bonds",
+    "totalExp": 21973000
+  },
+  {
+    "id": 1193,
+    "level": 94,
+    "levelType": "bonds",
+    "totalExp": 22274000
+  },
+  {
+    "id": 1194,
+    "level": 95,
+    "levelType": "bonds",
+    "totalExp": 22575000
+  },
+  {
+    "id": 1195,
+    "level": 96,
+    "levelType": "bonds",
+    "totalExp": 22876000
+  },
+  {
+    "id": 1196,
+    "level": 97,
+    "levelType": "bonds",
+    "totalExp": 23177000
+  },
+  {
+    "id": 1197,
+    "level": 98,
+    "levelType": "bonds",
+    "totalExp": 23478000
+  },
+  {
+    "id": 1198,
+    "level": 99,
+    "levelType": "bonds",
+    "totalExp": 23779000
+  },
+  {
+    "id": 1199,
+    "level": 100,
+    "levelType": "bonds",
+    "totalExp": 24080000
+  },
+  {
+    "id": 1200,
+    "level": 101,
+    "levelType": "bonds",
+    "totalExp": 24381000
+  },
+  {
+    "id": 1201,
+    "level": 102,
+    "levelType": "bonds",
+    "totalExp": 24682000
+  },
+  {
+    "id": 1202,
+    "level": 103,
+    "levelType": "bonds",
+    "totalExp": 24983000
+  },
+  {
+    "id": 1203,
+    "level": 104,
+    "levelType": "bonds",
+    "totalExp": 25284000
+  },
+  {
+    "id": 1204,
+    "level": 105,
+    "levelType": "bonds",
+    "totalExp": 25585000
+  },
+  {
+    "id": 1205,
+    "level": 106,
+    "levelType": "bonds",
+    "totalExp": 25886000
+  },
+  {
+    "id": 1206,
+    "level": 107,
+    "levelType": "bonds",
+    "totalExp": 26187000
+  },
+  {
+    "id": 1207,
+    "level": 108,
+    "levelType": "bonds",
+    "totalExp": 26488000
+  },
+  {
+    "id": 1208,
+    "level": 109,
+    "levelType": "bonds",
+    "totalExp": 26789000
+  },
+  {
+    "id": 1209,
+    "level": 110,
+    "levelType": "bonds",
+    "totalExp": 27090000
+  },
+  {
+    "id": 1210,
+    "level": 111,
+    "levelType": "bonds",
+    "totalExp": 27391000
+  },
+  {
+    "id": 1211,
+    "level": 112,
+    "levelType": "bonds",
+    "totalExp": 27692000
+  },
+  {
+    "id": 1212,
+    "level": 113,
+    "levelType": "bonds",
+    "totalExp": 27993000
+  },
+  {
+    "id": 1213,
+    "level": 114,
+    "levelType": "bonds",
+    "totalExp": 28294000
+  },
+  {
+    "id": 1214,
+    "level": 115,
+    "levelType": "bonds",
+    "totalExp": 28595000
+  },
+  {
+    "id": 1215,
+    "level": 116,
+    "levelType": "bonds",
+    "totalExp": 28896000
+  },
+  {
+    "id": 1216,
+    "level": 117,
+    "levelType": "bonds",
+    "totalExp": 29197000
+  },
+  {
+    "id": 1217,
+    "level": 118,
+    "levelType": "bonds",
+    "totalExp": 29498000
+  },
+  {
+    "id": 1218,
+    "level": 119,
+    "levelType": "bonds",
+    "totalExp": 29799000
+  },
+  {
+    "id": 1219,
+    "level": 120,
+    "levelType": "bonds",
+    "totalExp": 30100000
+  },
+  {
+    "id": 1220,
+    "level": 121,
+    "levelType": "bonds",
+    "totalExp": 30401000
+  },
+  {
+    "id": 1221,
+    "level": 122,
+    "levelType": "bonds",
+    "totalExp": 30702000
+  },
+  {
+    "id": 1222,
+    "level": 123,
+    "levelType": "bonds",
+    "totalExp": 31003000
+  },
+  {
+    "id": 1223,
+    "level": 124,
+    "levelType": "bonds",
+    "totalExp": 31304000
+  },
+  {
+    "id": 1224,
+    "level": 125,
+    "levelType": "bonds",
+    "totalExp": 31605000
+  },
+  {
+    "id": 1225,
+    "level": 801,
+    "levelType": "user",
+    "totalExp": 300079180
+  },
+  {
+    "id": 1226,
+    "level": 802,
+    "levelType": "user",
+    "totalExp": 300665475
+  },
+  {
+    "id": 1227,
+    "level": 803,
+    "levelType": "user",
+    "totalExp": 301251770
+  },
+  {
+    "id": 1228,
+    "level": 804,
+    "levelType": "user",
+    "totalExp": 301838065
+  },
+  {
+    "id": 1229,
+    "level": 805,
+    "levelType": "user",
+    "totalExp": 302424360
+  },
+  {
+    "id": 1230,
+    "level": 806,
+    "levelType": "user",
+    "totalExp": 303010655
+  },
+  {
+    "id": 1231,
+    "level": 807,
+    "levelType": "user",
+    "totalExp": 303596950
+  },
+  {
+    "id": 1232,
+    "level": 808,
+    "levelType": "user",
+    "totalExp": 304183245
+  },
+  {
+    "id": 1233,
+    "level": 809,
+    "levelType": "user",
+    "totalExp": 304769540
+  },
+  {
+    "id": 1234,
+    "level": 810,
+    "levelType": "user",
+    "totalExp": 305355835
+  },
+  {
+    "id": 1235,
+    "level": 811,
+    "levelType": "user",
+    "totalExp": 305942130
+  },
+  {
+    "id": 1236,
+    "level": 812,
+    "levelType": "user",
+    "totalExp": 306528425
+  },
+  {
+    "id": 1237,
+    "level": 813,
+    "levelType": "user",
+    "totalExp": 307114720
+  },
+  {
+    "id": 1238,
+    "level": 814,
+    "levelType": "user",
+    "totalExp": 307701015
+  },
+  {
+    "id": 1239,
+    "level": 815,
+    "levelType": "user",
+    "totalExp": 308287310
+  },
+  {
+    "id": 1240,
+    "level": 816,
+    "levelType": "user",
+    "totalExp": 308873605
+  },
+  {
+    "id": 1241,
+    "level": 817,
+    "levelType": "user",
+    "totalExp": 309459900
+  },
+  {
+    "id": 1242,
+    "level": 818,
+    "levelType": "user",
+    "totalExp": 310046195
+  },
+  {
+    "id": 1243,
+    "level": 819,
+    "levelType": "user",
+    "totalExp": 310632490
+  },
+  {
+    "id": 1244,
+    "level": 820,
+    "levelType": "user",
+    "totalExp": 311218785
+  },
+  {
+    "id": 1245,
+    "level": 821,
+    "levelType": "user",
+    "totalExp": 311805080
+  },
+  {
+    "id": 1246,
+    "level": 822,
+    "levelType": "user",
+    "totalExp": 312391375
+  },
+  {
+    "id": 1247,
+    "level": 823,
+    "levelType": "user",
+    "totalExp": 312977670
+  },
+  {
+    "id": 1248,
+    "level": 824,
+    "levelType": "user",
+    "totalExp": 313563965
+  },
+  {
+    "id": 1249,
+    "level": 825,
+    "levelType": "user",
+    "totalExp": 314150260
+  },
+  {
+    "id": 1250,
+    "level": 826,
+    "levelType": "user",
+    "totalExp": 314736555
+  },
+  {
+    "id": 1251,
+    "level": 827,
+    "levelType": "user",
+    "totalExp": 315322850
+  },
+  {
+    "id": 1252,
+    "level": 828,
+    "levelType": "user",
+    "totalExp": 315909145
+  },
+  {
+    "id": 1253,
+    "level": 829,
+    "levelType": "user",
+    "totalExp": 316495440
+  },
+  {
+    "id": 1254,
+    "level": 830,
+    "levelType": "user",
+    "totalExp": 317081735
+  },
+  {
+    "id": 1255,
+    "level": 831,
+    "levelType": "user",
+    "totalExp": 317668030
+  },
+  {
+    "id": 1256,
+    "level": 832,
+    "levelType": "user",
+    "totalExp": 318254325
+  },
+  {
+    "id": 1257,
+    "level": 833,
+    "levelType": "user",
+    "totalExp": 318840620
+  },
+  {
+    "id": 1258,
+    "level": 834,
+    "levelType": "user",
+    "totalExp": 319426915
+  },
+  {
+    "id": 1259,
+    "level": 835,
+    "levelType": "user",
+    "totalExp": 320013210
+  },
+  {
+    "id": 1260,
+    "level": 836,
+    "levelType": "user",
+    "totalExp": 320599505
+  },
+  {
+    "id": 1261,
+    "level": 837,
+    "levelType": "user",
+    "totalExp": 321185800
+  },
+  {
+    "id": 1262,
+    "level": 838,
+    "levelType": "user",
+    "totalExp": 321772095
+  },
+  {
+    "id": 1263,
+    "level": 839,
+    "levelType": "user",
+    "totalExp": 322358390
+  },
+  {
+    "id": 1264,
+    "level": 840,
+    "levelType": "user",
+    "totalExp": 322944685
+  },
+  {
+    "id": 1265,
+    "level": 841,
+    "levelType": "user",
+    "totalExp": 323530980
+  },
+  {
+    "id": 1266,
+    "level": 842,
+    "levelType": "user",
+    "totalExp": 324117275
+  },
+  {
+    "id": 1267,
+    "level": 843,
+    "levelType": "user",
+    "totalExp": 324703570
+  },
+  {
+    "id": 1268,
+    "level": 844,
+    "levelType": "user",
+    "totalExp": 325289865
+  },
+  {
+    "id": 1269,
+    "level": 845,
+    "levelType": "user",
+    "totalExp": 325876160
+  },
+  {
+    "id": 1270,
+    "level": 846,
+    "levelType": "user",
+    "totalExp": 326462455
+  },
+  {
+    "id": 1271,
+    "level": 847,
+    "levelType": "user",
+    "totalExp": 327048750
+  },
+  {
+    "id": 1272,
+    "level": 848,
+    "levelType": "user",
+    "totalExp": 327635045
+  },
+  {
+    "id": 1273,
+    "level": 849,
+    "levelType": "user",
+    "totalExp": 328221340
+  },
+  {
+    "id": 1274,
+    "level": 850,
+    "levelType": "user",
+    "totalExp": 328807635
+  },
+  {
+    "id": 1275,
+    "level": 851,
+    "levelType": "user",
+    "totalExp": 329393930
+  },
+  {
+    "id": 1276,
+    "level": 852,
+    "levelType": "user",
+    "totalExp": 329980225
+  },
+  {
+    "id": 1277,
+    "level": 853,
+    "levelType": "user",
+    "totalExp": 330566520
+  },
+  {
+    "id": 1278,
+    "level": 854,
+    "levelType": "user",
+    "totalExp": 331152815
+  },
+  {
+    "id": 1279,
+    "level": 855,
+    "levelType": "user",
+    "totalExp": 331739110
+  },
+  {
+    "id": 1280,
+    "level": 856,
+    "levelType": "user",
+    "totalExp": 332325405
+  },
+  {
+    "id": 1281,
+    "level": 857,
+    "levelType": "user",
+    "totalExp": 332911700
+  },
+  {
+    "id": 1282,
+    "level": 858,
+    "levelType": "user",
+    "totalExp": 333497995
+  },
+  {
+    "id": 1283,
+    "level": 859,
+    "levelType": "user",
+    "totalExp": 334084290
+  },
+  {
+    "id": 1284,
+    "level": 860,
+    "levelType": "user",
+    "totalExp": 334670585
+  },
+  {
+    "id": 1285,
+    "level": 861,
+    "levelType": "user",
+    "totalExp": 335256880
+  },
+  {
+    "id": 1286,
+    "level": 862,
+    "levelType": "user",
+    "totalExp": 335843175
+  },
+  {
+    "id": 1287,
+    "level": 863,
+    "levelType": "user",
+    "totalExp": 336429470
+  },
+  {
+    "id": 1288,
+    "level": 864,
+    "levelType": "user",
+    "totalExp": 337015765
+  },
+  {
+    "id": 1289,
+    "level": 865,
+    "levelType": "user",
+    "totalExp": 337602060
+  },
+  {
+    "id": 1290,
+    "level": 866,
+    "levelType": "user",
+    "totalExp": 338188355
+  },
+  {
+    "id": 1291,
+    "level": 867,
+    "levelType": "user",
+    "totalExp": 338774650
+  },
+  {
+    "id": 1292,
+    "level": 868,
+    "levelType": "user",
+    "totalExp": 339360945
+  },
+  {
+    "id": 1293,
+    "level": 869,
+    "levelType": "user",
+    "totalExp": 339947240
+  },
+  {
+    "id": 1294,
+    "level": 870,
+    "levelType": "user",
+    "totalExp": 340533535
+  },
+  {
+    "id": 1295,
+    "level": 871,
+    "levelType": "user",
+    "totalExp": 341119830
+  },
+  {
+    "id": 1296,
+    "level": 872,
+    "levelType": "user",
+    "totalExp": 341706125
+  },
+  {
+    "id": 1297,
+    "level": 873,
+    "levelType": "user",
+    "totalExp": 342292420
+  },
+  {
+    "id": 1298,
+    "level": 874,
+    "levelType": "user",
+    "totalExp": 342878715
+  },
+  {
+    "id": 1299,
+    "level": 875,
+    "levelType": "user",
+    "totalExp": 343465010
+  },
+  {
+    "id": 1300,
+    "level": 876,
+    "levelType": "user",
+    "totalExp": 344051305
+  },
+  {
+    "id": 1301,
+    "level": 877,
+    "levelType": "user",
+    "totalExp": 344637600
+  },
+  {
+    "id": 1302,
+    "level": 878,
+    "levelType": "user",
+    "totalExp": 345223895
+  },
+  {
+    "id": 1303,
+    "level": 879,
+    "levelType": "user",
+    "totalExp": 345810190
+  },
+  {
+    "id": 1304,
+    "level": 880,
+    "levelType": "user",
+    "totalExp": 346396485
+  },
+  {
+    "id": 1305,
+    "level": 881,
+    "levelType": "user",
+    "totalExp": 346982780
+  },
+  {
+    "id": 1306,
+    "level": 882,
+    "levelType": "user",
+    "totalExp": 347569075
+  },
+  {
+    "id": 1307,
+    "level": 883,
+    "levelType": "user",
+    "totalExp": 348155370
+  },
+  {
+    "id": 1308,
+    "level": 884,
+    "levelType": "user",
+    "totalExp": 348741665
+  },
+  {
+    "id": 1309,
+    "level": 885,
+    "levelType": "user",
+    "totalExp": 349327960
+  },
+  {
+    "id": 1310,
+    "level": 886,
+    "levelType": "user",
+    "totalExp": 349914255
+  },
+  {
+    "id": 1311,
+    "level": 887,
+    "levelType": "user",
+    "totalExp": 350500550
+  },
+  {
+    "id": 1312,
+    "level": 888,
+    "levelType": "user",
+    "totalExp": 351086845
+  },
+  {
+    "id": 1313,
+    "level": 889,
+    "levelType": "user",
+    "totalExp": 351673140
+  },
+  {
+    "id": 1314,
+    "level": 890,
+    "levelType": "user",
+    "totalExp": 352259435
+  },
+  {
+    "id": 1315,
+    "level": 891,
+    "levelType": "user",
+    "totalExp": 352845730
+  },
+  {
+    "id": 1316,
+    "level": 892,
+    "levelType": "user",
+    "totalExp": 353432025
+  },
+  {
+    "id": 1317,
+    "level": 893,
+    "levelType": "user",
+    "totalExp": 354018320
+  },
+  {
+    "id": 1318,
+    "level": 894,
+    "levelType": "user",
+    "totalExp": 354604615
+  },
+  {
+    "id": 1319,
+    "level": 895,
+    "levelType": "user",
+    "totalExp": 355190910
+  },
+  {
+    "id": 1320,
+    "level": 896,
+    "levelType": "user",
+    "totalExp": 355777205
+  },
+  {
+    "id": 1321,
+    "level": 897,
+    "levelType": "user",
+    "totalExp": 356363500
+  },
+  {
+    "id": 1322,
+    "level": 898,
+    "levelType": "user",
+    "totalExp": 356949795
+  },
+  {
+    "id": 1323,
+    "level": 899,
+    "levelType": "user",
+    "totalExp": 357536090
+  },
+  {
+    "id": 1324,
+    "level": 900,
+    "levelType": "user",
+    "totalExp": 358122385
+  },
+  {
+    "id": 1325,
+    "level": 901,
+    "levelType": "user",
+    "totalExp": 358708680
+  },
+  {
+    "id": 1326,
+    "level": 902,
+    "levelType": "user",
+    "totalExp": 359294975
+  },
+  {
+    "id": 1327,
+    "level": 903,
+    "levelType": "user",
+    "totalExp": 359881270
+  },
+  {
+    "id": 1328,
+    "level": 904,
+    "levelType": "user",
+    "totalExp": 360467565
+  },
+  {
+    "id": 1329,
+    "level": 905,
+    "levelType": "user",
+    "totalExp": 361053860
+  },
+  {
+    "id": 1330,
+    "level": 906,
+    "levelType": "user",
+    "totalExp": 361640155
+  },
+  {
+    "id": 1331,
+    "level": 907,
+    "levelType": "user",
+    "totalExp": 362226450
+  },
+  {
+    "id": 1332,
+    "level": 908,
+    "levelType": "user",
+    "totalExp": 362812745
+  },
+  {
+    "id": 1333,
+    "level": 909,
+    "levelType": "user",
+    "totalExp": 363399040
+  },
+  {
+    "id": 1334,
+    "level": 910,
+    "levelType": "user",
+    "totalExp": 363985335
+  },
+  {
+    "id": 1335,
+    "level": 911,
+    "levelType": "user",
+    "totalExp": 364571630
+  },
+  {
+    "id": 1336,
+    "level": 912,
+    "levelType": "user",
+    "totalExp": 365157925
+  },
+  {
+    "id": 1337,
+    "level": 913,
+    "levelType": "user",
+    "totalExp": 365744220
+  },
+  {
+    "id": 1338,
+    "level": 914,
+    "levelType": "user",
+    "totalExp": 366330515
+  },
+  {
+    "id": 1339,
+    "level": 915,
+    "levelType": "user",
+    "totalExp": 366916810
+  },
+  {
+    "id": 1340,
+    "level": 916,
+    "levelType": "user",
+    "totalExp": 367503105
+  },
+  {
+    "id": 1341,
+    "level": 917,
+    "levelType": "user",
+    "totalExp": 368089400
+  },
+  {
+    "id": 1342,
+    "level": 918,
+    "levelType": "user",
+    "totalExp": 368675695
+  },
+  {
+    "id": 1343,
+    "level": 919,
+    "levelType": "user",
+    "totalExp": 369261990
+  },
+  {
+    "id": 1344,
+    "level": 920,
+    "levelType": "user",
+    "totalExp": 369848285
+  },
+  {
+    "id": 1345,
+    "level": 921,
+    "levelType": "user",
+    "totalExp": 370434580
+  },
+  {
+    "id": 1346,
+    "level": 922,
+    "levelType": "user",
+    "totalExp": 371020875
+  },
+  {
+    "id": 1347,
+    "level": 923,
+    "levelType": "user",
+    "totalExp": 371607170
+  },
+  {
+    "id": 1348,
+    "level": 924,
+    "levelType": "user",
+    "totalExp": 372193465
+  },
+  {
+    "id": 1349,
+    "level": 925,
+    "levelType": "user",
+    "totalExp": 372779760
+  },
+  {
+    "id": 1350,
+    "level": 926,
+    "levelType": "user",
+    "totalExp": 373366055
+  },
+  {
+    "id": 1351,
+    "level": 927,
+    "levelType": "user",
+    "totalExp": 373952350
+  },
+  {
+    "id": 1352,
+    "level": 928,
+    "levelType": "user",
+    "totalExp": 374538645
+  },
+  {
+    "id": 1353,
+    "level": 929,
+    "levelType": "user",
+    "totalExp": 375124940
+  },
+  {
+    "id": 1354,
+    "level": 930,
+    "levelType": "user",
+    "totalExp": 375711235
+  },
+  {
+    "id": 1355,
+    "level": 931,
+    "levelType": "user",
+    "totalExp": 376297530
+  },
+  {
+    "id": 1356,
+    "level": 932,
+    "levelType": "user",
+    "totalExp": 376883825
+  },
+  {
+    "id": 1357,
+    "level": 933,
+    "levelType": "user",
+    "totalExp": 377470120
+  },
+  {
+    "id": 1358,
+    "level": 934,
+    "levelType": "user",
+    "totalExp": 378056415
+  },
+  {
+    "id": 1359,
+    "level": 935,
+    "levelType": "user",
+    "totalExp": 378642710
+  },
+  {
+    "id": 1360,
+    "level": 936,
+    "levelType": "user",
+    "totalExp": 379229005
+  },
+  {
+    "id": 1361,
+    "level": 937,
+    "levelType": "user",
+    "totalExp": 379815300
+  },
+  {
+    "id": 1362,
+    "level": 938,
+    "levelType": "user",
+    "totalExp": 380401595
+  },
+  {
+    "id": 1363,
+    "level": 939,
+    "levelType": "user",
+    "totalExp": 380987890
+  },
+  {
+    "id": 1364,
+    "level": 940,
+    "levelType": "user",
+    "totalExp": 381574185
+  },
+  {
+    "id": 1365,
+    "level": 941,
+    "levelType": "user",
+    "totalExp": 382160480
+  },
+  {
+    "id": 1366,
+    "level": 942,
+    "levelType": "user",
+    "totalExp": 382746775
+  },
+  {
+    "id": 1367,
+    "level": 943,
+    "levelType": "user",
+    "totalExp": 383333070
+  },
+  {
+    "id": 1368,
+    "level": 944,
+    "levelType": "user",
+    "totalExp": 383919365
+  },
+  {
+    "id": 1369,
+    "level": 945,
+    "levelType": "user",
+    "totalExp": 384505660
+  },
+  {
+    "id": 1370,
+    "level": 946,
+    "levelType": "user",
+    "totalExp": 385091955
+  },
+  {
+    "id": 1371,
+    "level": 947,
+    "levelType": "user",
+    "totalExp": 385678250
+  },
+  {
+    "id": 1372,
+    "level": 948,
+    "levelType": "user",
+    "totalExp": 386264545
+  },
+  {
+    "id": 1373,
+    "level": 949,
+    "levelType": "user",
+    "totalExp": 386850840
+  },
+  {
+    "id": 1374,
+    "level": 950,
+    "levelType": "user",
+    "totalExp": 387437135
+  },
+  {
+    "id": 1375,
+    "level": 951,
+    "levelType": "user",
+    "totalExp": 388023430
+  },
+  {
+    "id": 1376,
+    "level": 952,
+    "levelType": "user",
+    "totalExp": 388609725
+  },
+  {
+    "id": 1377,
+    "level": 953,
+    "levelType": "user",
+    "totalExp": 389196020
+  },
+  {
+    "id": 1378,
+    "level": 954,
+    "levelType": "user",
+    "totalExp": 389782315
+  },
+  {
+    "id": 1379,
+    "level": 955,
+    "levelType": "user",
+    "totalExp": 390368610
+  },
+  {
+    "id": 1380,
+    "level": 956,
+    "levelType": "user",
+    "totalExp": 390954905
+  },
+  {
+    "id": 1381,
+    "level": 957,
+    "levelType": "user",
+    "totalExp": 391541200
+  },
+  {
+    "id": 1382,
+    "level": 958,
+    "levelType": "user",
+    "totalExp": 392127495
+  },
+  {
+    "id": 1383,
+    "level": 959,
+    "levelType": "user",
+    "totalExp": 392713790
+  },
+  {
+    "id": 1384,
+    "level": 960,
+    "levelType": "user",
+    "totalExp": 393300085
+  },
+  {
+    "id": 1385,
+    "level": 961,
+    "levelType": "user",
+    "totalExp": 393886380
+  },
+  {
+    "id": 1386,
+    "level": 962,
+    "levelType": "user",
+    "totalExp": 394472675
+  },
+  {
+    "id": 1387,
+    "level": 963,
+    "levelType": "user",
+    "totalExp": 395058970
+  },
+  {
+    "id": 1388,
+    "level": 964,
+    "levelType": "user",
+    "totalExp": 395645265
+  },
+  {
+    "id": 1389,
+    "level": 965,
+    "levelType": "user",
+    "totalExp": 396231560
+  },
+  {
+    "id": 1390,
+    "level": 966,
+    "levelType": "user",
+    "totalExp": 396817855
+  },
+  {
+    "id": 1391,
+    "level": 967,
+    "levelType": "user",
+    "totalExp": 397404150
+  },
+  {
+    "id": 1392,
+    "level": 968,
+    "levelType": "user",
+    "totalExp": 397990445
+  },
+  {
+    "id": 1393,
+    "level": 969,
+    "levelType": "user",
+    "totalExp": 398576740
+  },
+  {
+    "id": 1394,
+    "level": 970,
+    "levelType": "user",
+    "totalExp": 399163035
+  },
+  {
+    "id": 1395,
+    "level": 971,
+    "levelType": "user",
+    "totalExp": 399749330
+  },
+  {
+    "id": 1396,
+    "level": 972,
+    "levelType": "user",
+    "totalExp": 400335625
+  },
+  {
+    "id": 1397,
+    "level": 973,
+    "levelType": "user",
+    "totalExp": 400921920
+  },
+  {
+    "id": 1398,
+    "level": 974,
+    "levelType": "user",
+    "totalExp": 401508215
+  },
+  {
+    "id": 1399,
+    "level": 975,
+    "levelType": "user",
+    "totalExp": 402094510
+  },
+  {
+    "id": 1400,
+    "level": 976,
+    "levelType": "user",
+    "totalExp": 402680805
+  },
+  {
+    "id": 1401,
+    "level": 977,
+    "levelType": "user",
+    "totalExp": 403267100
+  },
+  {
+    "id": 1402,
+    "level": 978,
+    "levelType": "user",
+    "totalExp": 403853395
+  },
+  {
+    "id": 1403,
+    "level": 979,
+    "levelType": "user",
+    "totalExp": 404439690
+  },
+  {
+    "id": 1404,
+    "level": 980,
+    "levelType": "user",
+    "totalExp": 405025985
+  },
+  {
+    "id": 1405,
+    "level": 981,
+    "levelType": "user",
+    "totalExp": 405612280
+  },
+  {
+    "id": 1406,
+    "level": 982,
+    "levelType": "user",
+    "totalExp": 406198575
+  },
+  {
+    "id": 1407,
+    "level": 983,
+    "levelType": "user",
+    "totalExp": 406784870
+  },
+  {
+    "id": 1408,
+    "level": 984,
+    "levelType": "user",
+    "totalExp": 407371165
+  },
+  {
+    "id": 1409,
+    "level": 985,
+    "levelType": "user",
+    "totalExp": 407957460
+  },
+  {
+    "id": 1410,
+    "level": 986,
+    "levelType": "user",
+    "totalExp": 408543755
+  },
+  {
+    "id": 1411,
+    "level": 987,
+    "levelType": "user",
+    "totalExp": 409130050
+  },
+  {
+    "id": 1412,
+    "level": 988,
+    "levelType": "user",
+    "totalExp": 409716345
+  },
+  {
+    "id": 1413,
+    "level": 989,
+    "levelType": "user",
+    "totalExp": 410302640
+  },
+  {
+    "id": 1414,
+    "level": 990,
+    "levelType": "user",
+    "totalExp": 410888935
+  },
+  {
+    "id": 1415,
+    "level": 991,
+    "levelType": "user",
+    "totalExp": 411475230
+  },
+  {
+    "id": 1416,
+    "level": 992,
+    "levelType": "user",
+    "totalExp": 412061525
+  },
+  {
+    "id": 1417,
+    "level": 993,
+    "levelType": "user",
+    "totalExp": 412647820
+  },
+  {
+    "id": 1418,
+    "level": 994,
+    "levelType": "user",
+    "totalExp": 413234115
+  },
+  {
+    "id": 1419,
+    "level": 995,
+    "levelType": "user",
+    "totalExp": 413820410
+  },
+  {
+    "id": 1420,
+    "level": 996,
+    "levelType": "user",
+    "totalExp": 414406705
+  },
+  {
+    "id": 1421,
+    "level": 997,
+    "levelType": "user",
+    "totalExp": 414993000
+  },
+  {
+    "id": 1422,
+    "level": 998,
+    "levelType": "user",
+    "totalExp": 415579295
+  },
+  {
+    "id": 1423,
+    "level": 999,
+    "levelType": "user",
+    "totalExp": 416165590
+  },
+  {
+    "id": 1424,
+    "level": 1000,
+    "levelType": "user",
+    "totalExp": 416751885
+  },
+  {
+    "id": 1425,
+    "level": 176,
+    "levelType": "character",
+    "totalExp": 1605
+  },
+  {
+    "id": 1426,
+    "level": 177,
+    "levelType": "character",
+    "totalExp": 1615
+  },
+  {
+    "id": 1427,
+    "level": 178,
+    "levelType": "character",
+    "totalExp": 1625
+  },
+  {
+    "id": 1428,
+    "level": 179,
+    "levelType": "character",
+    "totalExp": 1635
+  },
+  {
+    "id": 1429,
+    "level": 180,
+    "levelType": "character",
+    "totalExp": 1645
+  },
+  {
+    "id": 1430,
+    "level": 181,
+    "levelType": "character",
+    "totalExp": 1655
+  },
+  {
+    "id": 1431,
+    "level": 182,
+    "levelType": "character",
+    "totalExp": 1665
+  },
+  {
+    "id": 1432,
+    "level": 183,
+    "levelType": "character",
+    "totalExp": 1675
+  },
+  {
+    "id": 1433,
+    "level": 184,
+    "levelType": "character",
+    "totalExp": 1685
+  },
+  {
+    "id": 1434,
+    "level": 185,
+    "levelType": "character",
+    "totalExp": 1695
+  },
+  {
+    "id": 1435,
+    "level": 186,
+    "levelType": "character",
+    "totalExp": 1705
+  },
+  {
+    "id": 1436,
+    "level": 187,
+    "levelType": "character",
+    "totalExp": 1715
+  },
+  {
+    "id": 1437,
+    "level": 188,
+    "levelType": "character",
+    "totalExp": 1725
+  },
+  {
+    "id": 1438,
+    "level": 189,
+    "levelType": "character",
+    "totalExp": 1735
+  },
+  {
+    "id": 1439,
+    "level": 190,
+    "levelType": "character",
+    "totalExp": 1745
+  },
+  {
+    "id": 1440,
+    "level": 191,
+    "levelType": "character",
+    "totalExp": 1755
+  },
+  {
+    "id": 1441,
+    "level": 192,
+    "levelType": "character",
+    "totalExp": 1765
+  },
+  {
+    "id": 1442,
+    "level": 193,
+    "levelType": "character",
+    "totalExp": 1775
+  },
+  {
+    "id": 1443,
+    "level": 194,
+    "levelType": "character",
+    "totalExp": 1785
+  },
+  {
+    "id": 1444,
+    "level": 195,
+    "levelType": "character",
+    "totalExp": 1795
+  },
+  {
+    "id": 1445,
+    "level": 196,
+    "levelType": "character",
+    "totalExp": 1805
+  },
+  {
+    "id": 1446,
+    "level": 197,
+    "levelType": "character",
+    "totalExp": 1815
+  },
+  {
+    "id": 1447,
+    "level": 198,
+    "levelType": "character",
+    "totalExp": 1825
+  },
+  {
+    "id": 1448,
+    "level": 199,
+    "levelType": "character",
+    "totalExp": 1835
+  },
+  {
+    "id": 1449,
+    "level": 200,
+    "levelType": "character",
+    "totalExp": 1845
+  },
+  {
+    "id": 1450,
+    "level": 201,
+    "levelType": "character",
+    "totalExp": 1855
+  },
+  {
+    "id": 1451,
+    "level": 202,
+    "levelType": "character",
+    "totalExp": 1865
+  },
+  {
+    "id": 1452,
+    "level": 203,
+    "levelType": "character",
+    "totalExp": 1875
+  },
+  {
+    "id": 1453,
+    "level": 204,
+    "levelType": "character",
+    "totalExp": 1885
+  },
+  {
+    "id": 1454,
+    "level": 205,
+    "levelType": "character",
+    "totalExp": 1895
   }
 ]

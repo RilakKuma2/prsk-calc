@@ -1,4 +1,7 @@
+import anniversary from './anniversary.ko';
+
 const ko = {
+    anniversary,
     app: {
         title: '프로세카 계산기',
         save: '저장',
@@ -92,6 +95,19 @@ const ko = {
         conflict_hint: '병합하면 양쪽의 보유 가구와 읽은 대사 기록을 모두 유지합니다.',
     },
     rank: {
+        theory: "이론치",
+        theory_loading: "이론치 계산 중…",
+        theory_retry: "이론치 다시 불러오기",
+        no_kizuna: "키즈나 제외",
+        theory_count: "수량 / 다음 EXP 목표",
+        cap_note: "어두운 빨간색: 캐랭 EXP 상한 도달",
+        close: "닫기",
+        theory_challenge: "챌린지 기간별 점수",
+        theory_challenge_note: "2026.09.30 Lv.151 / 0점부터 매일 1회, 패스 적용. 카드 출시·공용 에어리어·누이구루미 변화를 날짜별로 반영합니다.",
+        period: "기간",
+        score: "점수",
+        daily_points: "일일 스테이지P",
+
         title: '캐릭터 랭크 계산기',
         current_rank: '현재 캐랭',
         expected_rank: '예상 캐랭',
@@ -99,6 +115,7 @@ const ko = {
         added: '추가',
         next: 'NEXT',
         missions: {
+            area_item_common: "공용 에어리어",
             leader: '리더 라이브',
             waiting: '대기실',
             member: '멤버',
@@ -139,6 +156,10 @@ const ko = {
         before_birthday: '(생일 이전)',
         unreleased: '(미출시)',
         etc_items: {
+            birthday_27: "2027 생일 축하",
+            solo_live_6th: "6주년 솔로라이브",
+            memorial_6th: "6주년 메모리얼",
+
             birthday_26: '26생일',
             pass_mission_ticket: '패스 미션 티켓',
             newyear_gacha: '26신년 복주머니 가챠',
@@ -785,7 +806,7 @@ const ko = {
         pass_status: '컬패 여부',
         suffix_man: '만',
         error_stage: '올바른 스테이지 값을 입력해주세요.',
-        ex_stage_desc: '목표 스테이지 151 이상 입력 시 EX로 자동변환',
+        ex_stage_desc: '목표 스테이지 201 이상 입력 시 EX로 자동변환',
         score_per_round: '판당 점수',
         needed_score: '필요 점수',
         remaining_days: '남은 일수',

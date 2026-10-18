@@ -1,0 +1,8 @@
+{
+  "source": "suite/resourceBoxes.json + musicAchievements.json (2026-10-18)",
+  "musicS": 1,
+  "storyBoxes": {
+    "1": 1,
+    "2": 1
+  }
+}

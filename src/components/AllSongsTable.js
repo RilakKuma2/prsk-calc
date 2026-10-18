@@ -113,6 +113,13 @@ const AllSongsTable = ({
         }
 
         if (isAutoMode && isEfficiencyOrder) {
+            // 같은 정수 초에 속하는 곡을 하나로 줄이는 것은
+            // "비효율곡 가리기"가 켜진 전곡 점수표에만 적용한다.
+            finalResults = keepBestAutoSongPerWholeSecond(finalResults, {
+                getDuration: result => result.autoDurationSeconds,
+                getScore: result => result.averageEP,
+            });
+
             // Auto efficiency is based on the midpoint of the calculated EP range.
             const efficiencySorted = [...finalResults].sort((a, b) => {
                 if (b.averageEP !== a.averageEP) return b.averageEP - a.averageEP;
@@ -338,13 +345,6 @@ const AllSongsTable = ({
             });
         });
 
-        const visibleCalculatedResults = isAutoMode
-            ? keepBestAutoSongPerWholeSecond(calculatedResults, {
-                getDuration: result => result.autoDurationSeconds,
-                getScore: result => result.averageEP,
-            })
-            : calculatedResults;
-
         // Set used params state
         setUsedParams({
             power: finalPower,
@@ -353,7 +353,7 @@ const AllSongsTable = ({
         });
 
         // Initial Sort
-        sortResults(visibleCalculatedResults, sortKey, sortOrder);
+        sortResults(calculatedResults, sortKey, sortOrder);
         setIsCalculating(false);
     };
 

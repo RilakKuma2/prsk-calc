@@ -31,3 +31,15 @@ test('keeps an emptied target level blank while calculating it as level 400', as
     expect(screen.getByText('40,000개')).not.toBeNull();
   });
 });
+
+test('allows five past birthday cards and applies their full bonus', async () => {
+  render(<AmatsuyuTabHarness />);
+
+  const pastCardsSelect = screen.getByRole('combobox', { name: 'amatsuyu.past_cards_count' });
+  fireEvent.click(pastCardsSelect);
+  fireEvent.click(screen.getByRole('option', { name: '5' }));
+
+  await waitFor(() => {
+    expect(screen.getByText('75%')).not.toBeNull();
+  });
+});

@@ -5146,5 +5146,239 @@
     "parameterGroupId": 102,
     "progressSentence": "{progress}回",
     "sentence": "｢KAITO｣を控え室まで{requirement}回迎えよう。"
+  },
+  {
+    "characterId": 1,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 1023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 2,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 2023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 3,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 3023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 4,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 4023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 5,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 5023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 6,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 6023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 7,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 7023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 8,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 8023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 9,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 9023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 10,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 10023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 11,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 11023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 12,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 12023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 13,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 13023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 14,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 14023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 15,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 15023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 16,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 16023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 17,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 17023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 18,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 18023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 19,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 19023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 20,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 20023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 21,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 21023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 22,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 22023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 23,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 23023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 24,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 24023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 25,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 25023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
+  },
+  {
+    "characterId": 26,
+    "characterMissionType": "area_item_level_up_all_character",
+    "id": 26023,
+    "isAchievementMission": true,
+    "parameterGroupId": 23,
+    "progressSentence": "{progress}回",
+    "sentence": "想いの大樹を{requirement}回レベルアップしよう。"
   }
 ]

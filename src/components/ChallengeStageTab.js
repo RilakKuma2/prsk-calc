@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { InputTableWrapper, InputRow, SelectRow } from './common/InputComponents';
-import { challData } from '../data/challData';
+import { challData, CHALL_MAX_STAGE, CHALL_EX_STAGE } from '../data/challData';
 import { useTranslation } from '../contexts/LanguageContext';
 
 const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
@@ -27,13 +27,13 @@ const ChallengeStageTab = ({ surveyData, setSurveyData }) => {
         const remainingScoreVal = parseInt(remainingScore || '4518') || 0;
         const passVal = parseInt(pass);
 
-        if (!isNaN(targetStageVal) && parseInt(targetStageVal) > 150) {
+        if (!isNaN(targetStageVal) && parseInt(targetStageVal) > CHALL_MAX_STAGE) {
             setTargetStage("EX");
             targetStageVal = "EX";
         }
 
         targetStageVal =
-            targetStageVal === "EX" ? 151 : parseInt(targetStageVal) || 0;
+            targetStageVal === "EX" ? CHALL_EX_STAGE : parseInt(targetStageVal) || 0;
 
         if (
             currentStageVal < 1 ||
@@ -149,10 +149,10 @@ ${t('challenge_stage.ex_stage_desc')}
                                 const remainingScoreVal = parseInt(remainingScore || '4518') || 0;
                                 const passVal = parseInt(pass);
 
-                                if (!isNaN(targetStageVal) && parseInt(targetStageVal) > 150) {
+                                if (!isNaN(targetStageVal) && parseInt(targetStageVal) > CHALL_MAX_STAGE) {
                                     targetStageVal = "EX";
                                 }
-                                const targetStageNum = targetStageVal === "EX" ? 151 : parseInt(targetStageVal) || 0;
+                                const targetStageNum = targetStageVal === "EX" ? CHALL_EX_STAGE : parseInt(targetStageVal) || 0;
 
                                 if (currentStageVal < 1 || targetStageNum < 1 || currentStageVal >= targetStageNum) {
                                     return null; // Handled by error check above
