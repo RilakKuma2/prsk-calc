@@ -156,7 +156,14 @@ export function evaluateChallengeDecks(prepared, { bonusConfig = DEFAULT_CHALLEN
             const rates = patterns.map(pattern => coefficients.map(meta => skillRate(pattern.skills, meta)));
             const base = group.attribute === 'mixed' ? area - attrTotal * .5 : area;
             // Keep the original arithmetic order: do not distribute multiplication.
-            const factors = [0, 1].map(multi => 1 + ((base + (commonAreaBonus + (multi ? commonMultiUnitBonus : 0))) / 100));
+            // Official FAQ: matching-unit and multi-unit routes compete; they
+            // must not stack. A VS-only challenge deck retains its matching VS
+            // area total, or uses the support-unit half + common diversity bonus
+            // when that entire route is higher. Common unconditional bonus is shared.
+            // https://pjsekai.sega.jp/faq/index.html
+            const unitTotal = (bonusConfig.unitAreaLevel_1 || 0) + (bonusConfig.unitAreaLevel_2 || 0);
+            const factors = [0, 1].map(multi => 1 + ((base + commonAreaBonus
+                + (multi ? Math.max(0, commonMultiUnitBonus - unitTotal * .5) : 0)) / 100));
             for (let index = 0; index < group.count; index++) {
                 const pattern = group.patternIndex[index];
                 let power = 0, score = 0, metaIndex = -1;

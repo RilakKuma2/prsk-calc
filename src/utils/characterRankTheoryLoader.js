@@ -48,7 +48,7 @@ async function calculate(now) {
             (mySekaiTalkCounts[id] ||= new Set()).add(`${scenario.assetbundleName}:${scenario.lua}`);
         });
     });
-    const calculationInputs = { cards, stamps: data.stamps, actionSets: data.actionSets,
+    const calculationInputs = { cards, rawCards: data.cards, stamps: data.stamps, actionSets: data.actionSets,
         voices: data.characterArchiveVoices, musicVocals: data.musicVocals, cardEpisodes: data.cardEpisodes,
         mySekaiTalkCounts, ingameCutinCharacters: data.ingameCutinCharacters, releaseConditions: data.releaseConditions,
         sdToBaseIdMap: Object.fromEntries(data.character2ds.filter(row => row.characterType === 'game_character' && row.characterId).map(row => [row.id, row.characterId])),

@@ -58,9 +58,10 @@ export function characterRankCriteriaAt({ cards, characterId, now, commonArea, c
     return Math.max(0, ...dates.filter(date => Number.isFinite(date) && date <= now));
 }
 
-export function calculateCharacterRankTheory({ cards, stamps, actionSets, voices, musicVocals, cardEpisodes, mySekaiTalkCounts, ingameCutinCharacters, releaseConditions, sdToBaseIdMap, charIdToFixtureTagId, fixtures, characterMissionsJP, parameterGroups, levelsData, challengeState, commonAreaLevel, rankDate, texts, commonArea = null, now = rankDate, characterIds = Array.from({ length: 26 }, (_, i) => i + 1) }) {
+export function calculateCharacterRankTheory({ cards, rawCards = [], stamps, actionSets, voices, musicVocals, cardEpisodes, mySekaiTalkCounts, ingameCutinCharacters, releaseConditions, sdToBaseIdMap, charIdToFixtureTagId, fixtures, characterMissionsJP, parameterGroups, levelsData, challengeState, commonAreaLevel, rankDate, texts, commonArea = null, now = rankDate, characterIds = Array.from({ length: 26 }, (_, i) => i + 1) }) {
         const charIds = characterIds;
         const result = { included: {}, excluded: {} };
+        const cardMasterById = new Map(rawCards.map(card => [Number(card.id), card]));
 
 
         // Helper to calculate rank from total EXP
@@ -186,23 +187,22 @@ export function calculateCharacterRankTheory({ cards, stamps, actionSets, voices
 
                         case 'collect_member':
                             {
-                                // Weighted Count:
-                                // 3★/4★: 2
-                                // 1★/2★/Birthday: 1
-                                // Fix: Aggregate VS Variants and proper Birthday check
+                                // Count acquisition plus an available training, not rarity alone.
+                                // Pre-trained/single-art cards cannot contribute a second member.
                                 const variants = VS_VARIANT_MAP[charId] || [charId];
                                 const weightedCount = cards.reduce((acc, c) => {
                                     if (!variants.includes(c.characterId)) return acc;
-                                    const r = c.rarity;
-                                    const type = c.type;
-                                    const isBirthday = r === 'birthday' || c.cardRarityType === 'birthday' || type === 'Birthday' || type === 'Anniversary';
-                                    if (isBirthday) return acc + 1;
-                                    if (Number(r) >= 3) return acc + 2;
-                                    return acc + 1;
+                                    const master = cardMasterById.get(Number(c.id)) || c;
+                                    const rarityType = master.cardRarityType || c.cardRarityType;
+                                    const rarity = Number(rarityType?.replace('rarity_', '') ?? c.rarity);
+                                    const isBirthday = c.rarity === 'birthday' || rarityType === 'rarity_birthday'
+                                        || rarityType === 'birthday' || c.type === 'Birthday' || c.type === 'Anniversary';
+                                    const canTrain = master.initialSpecialTrainingStatus !== 'done'
+                                        && (!Array.isArray(master.specialTrainingCosts) || master.specialTrainingCosts.length > 0);
+                                    return acc + (rarity >= 3 && !isBirthday && canTrain ? 2 : 1);
                                 }, 0);
 
                                 myCount = weightedCount;
-                                if (charId === 21) myCount -= 1; // Miku Exception
                             }
                             break;
 

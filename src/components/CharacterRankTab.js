@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import missionLabelsKR from '../data/characterMissionV2s_kr.json';
 import missionLabelsEN from '../data/characterMissionV2s_en.json';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -102,6 +102,15 @@ const MISSION_GROUP_2 = [
 
 const MISSION_GROUP_DIRECT = ['challenge_stage', 'etc'];
 
+// Match the column order of sekai-statics /charRank/theory's table view.
+const THEORY_TABLE_COLUMNS = [
+    'member', 'costume', 'stamp', 'area_talk', 'another_vocal', 'voice', 'mysekai_talk',
+    'leader', 'waiting', 'side_story_1', 'side_story_2', 'area_item_char', 'area_item_unit',
+    'area_item_type', 'area_item_common', 'mastery_4', 'mastery_3', 'skill_4', 'skill_3',
+    'mysekai_fixture', 'canvas', 'challenge_stage', 'etc',
+].map(key => MISSION_CONFIG.find(config => config.tKey === key));
+
+
 // Helper to chunk array
 const chunkArray = (array, size) => {
     const chunks = [];
@@ -111,7 +120,7 @@ const chunkArray = (array, size) => {
     return chunks;
 };
 
-const CharacterRankTab = ({ surveyData, setSurveyData }) => {
+const CharacterRankTab = ({ surveyData, setSurveyData, onAutoStorageChange }) => {
     const { t, language } = useTranslation();
     const { master, theory, error: theoryError, retry: retryTheory } = useCharacterRankTheory();
     const activeMissions = master.missions;
@@ -120,9 +129,13 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
     const theoryDialogRef = useModalAccessibility({ isOpen: theoryPopup, onClose: () => setTheoryPopup(false) });
     const missionIndex = useMemo(() => createRankMissionIndex(master), [master]);
     const [selectedCharId, setSelectedCharId] = useState(1);
+    const theoryStats = useMemo(() => new Map(
+        (theory?.included?.[selectedCharId]?.stats || []).map(stat => [stat.type, stat])
+    ), [theory, selectedCharId]);
     const [inputs, setInputs] = useState({}); // { charId: { missionType: value } }
     const [addInputs, setAddInputs] = useState({}); // { charId: { missionType: value } }
     const [isLoaded, setIsLoaded] = useState(false);
+    const persistedStateRef = useRef({});
     const [expandedEx, setExpandedEx] = useState({}); // { type: boolean }
     const [etcPopup, setEtcPopup] = useState(false); // Amatsuyu etc popup state
     const [confirmModal, setConfirmModal] = useState({
@@ -178,10 +191,19 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         const savedInputs = readJsonStorage('charRankInputs', {}, isRecord);
         const savedAddInputs = readJsonStorage('charRankAddInputs', {}, isRecord);
         const savedCharId = Number(readJsonStorage('charRankSelectedId', 1));
+        const selectedId = Number.isSafeInteger(savedCharId) && savedCharId > 0 ? savedCharId : 1;
+
+        // Loading a fresh tab is not an edit. In particular, do not publish empty
+        // defaults while the existing account snapshot is still being fetched.
+        persistedStateRef.current = {
+            charRankInputs: JSON.stringify(savedInputs),
+            charRankAddInputs: JSON.stringify(savedAddInputs),
+            charRankSelectedId: JSON.stringify(selectedId),
+        };
 
         setInputs(savedInputs);
         setAddInputs(savedAddInputs);
-        setSelectedCharId(Number.isSafeInteger(savedCharId) && savedCharId > 0 ? savedCharId : 1);
+        setSelectedCharId(selectedId);
         setExpandedEx({});
         setIsLoaded(true);
     }, []);
@@ -189,10 +211,17 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
     // Save state to localStorage whenever it changes
     useEffect(() => {
         if (!isLoaded) return;
-        writeJsonStorage('charRankInputs', inputs);
-        writeJsonStorage('charRankAddInputs', addInputs);
-        writeJsonStorage('charRankSelectedId', selectedCharId);
-    }, [inputs, addInputs, selectedCharId, isLoaded]);
+        const changedEntries = {};
+        Object.entries({ charRankInputs: inputs, charRankAddInputs: addInputs, charRankSelectedId: selectedCharId })
+            .forEach(([key, value]) => {
+                const serialized = JSON.stringify(value);
+                if (persistedStateRef.current[key] === serialized) return;
+                writeJsonStorage(key, value);
+                persistedStateRef.current[key] = serialized;
+                changedEntries[key] = serialized;
+            });
+        if (Object.keys(changedEntries).length) onAutoStorageChange?.(changedEntries);
+    }, [inputs, addInputs, selectedCharId, isLoaded, onAutoStorageChange]);
 
     const toggleEx = (type) => {
         setExpandedEx(prev => {
@@ -423,12 +452,58 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
         });
     };
 
+    const getTheoryHint = (type, currentVal, addVal) => {
+        const stat = theoryStats.get(type);
+        // Reuse the asynchronously loaded theory without delaying the inputs.
+        if (!stat || !Number.isFinite(stat.count) || !Number.isFinite(stat.exp)) return null;
+        const totalVal = currentVal + addVal;
+        const earnedExp = type === 'etc' ? totalVal
+            : type === 'challenge_stage' ? challengeRankExp(master.stages, selectedCharId, totalVal)
+                : missionStatus(selectedCharId, type, totalVal).exp;
+        const format = value => value.toLocaleString(language);
+        return {
+            target: type === 'challenge_stage'
+                ? (stat.count >= CHALL_EX_STAGE ? 'EX' : `Lv.${format(stat.count)}`)
+                : type === 'etc' ? `${format(stat.count)} EXP` : format(stat.count),
+            remaining: format(stat.count - totalVal),
+            exp: format(stat.exp - earnedExp),
+        };
+    };
+
+    const renderTheoryTarget = (hint, { exHint = null, isEx = false } = {}) => hint && (
+        <span className="m-0 p-0 text-right text-[9px] font-bold leading-[10px] text-gray-400 tabular-nums whitespace-nowrap" title={t('rank.theory_gap_note')}>
+            {t('rank.theory')} <strong className={`font-bold whitespace-nowrap ${isEx ? 'text-red-600' : 'text-violet-600'}`}>{hint.target}</strong>
+            {exHint && <strong className="font-bold text-red-600 whitespace-nowrap" aria-label={`EX +${exHint.target}`}> +{exHint.target}</strong>}
+        </span>
+    );
+    const renderTheoryGap = (key, count, exCount) => {
+        const signed = value => value.startsWith('-') ? value : `+${value}`;
+        const mainCount = key === 'rank.theory_exp_remaining' ? signed(count) : count;
+        if (exCount == null) return t(key, { count: mainCount });
+        // Keep the translated prefix and unit while coloring only the extra EX value.
+        const [prefix, suffix] = t(key, { count: '{count}' }).split('{count}');
+        const extraCount = signed(exCount);
+        return <>{prefix}{mainCount}<span className="text-red-600" aria-label={`EX ${extraCount}`}> {extraCount}</span>{suffix}</>;
+    };
+    const renderTheoryRemaining = (hint, { exHint = null, isEx = false } = {}) => hint && (
+        <span className={`absolute bottom-0.5 right-1 text-[9px] font-bold leading-[10px] tabular-nums whitespace-nowrap pointer-events-none ${isEx ? 'text-red-600' : 'text-indigo-500'}`}>
+            {renderTheoryGap('rank.theory_remaining', hint.remaining, exHint?.remaining)}
+        </span>
+    );
+    const renderTheoryExp = (hint, { exHint = null, isEx = false } = {}) => hint && (
+        <span className={`absolute top-full left-0 right-0 mt-0.5 text-right text-[9px] font-bold leading-[10px] tabular-nums whitespace-nowrap ${isEx ? 'text-red-600' : 'text-violet-600'}`}
+            title={t('rank.theory_gap_note')}>
+            {renderTheoryGap('rank.theory_exp_remaining', hint.exp, exHint?.exp)}
+        </span>
+    );
+
     const renderCard = (type) => {
         const config = MISSION_CONFIG.find(c => c.type === type);
         if (!config) return null;
 
         const currentVal = (inputs[selectedCharId] || {})[config.type] || 0;
         const addVal = (addInputs[selectedCharId] || {})[config.type] || 0;
+        const theoryHint = getTheoryHint(config.type, currentVal, addVal);
         const cappedCurrent = isMissionExpCapped({ ...missionStatus(selectedCharId, config.type, currentVal), baseType: config.type, count: currentVal });
         const cappedTotal = isMissionExpCapped({ ...missionStatus(selectedCharId, config.type, currentVal + addVal), baseType: config.type, count: currentVal + addVal });
         let nextReq = getNextRequirement(selectedCharId, config.type, currentVal);
@@ -512,12 +587,15 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
             // If seq changes, the added bar simply fills to the end.
         }
 
+        const exTheoryHint = hasExMode ? getTheoryHint(config.exType, exCurrentVal, exAddVal) : null;
+        const collapsedExHint = isExExpanded ? null : exTheoryHint;
+
         return (
             <div key={config.type} className="bg-white rounded-xl shadow-md p-4 border border-gray-100 flex flex-col h-full relative">
                 <div className="flex-1">
-                    <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center gap-1.5">
-                            <h3 className="font-bold text-gray-700 text-sm">{t(`rank.missions.${config.tKey}`)}</h3>
+                    <div className="flex flex-wrap justify-between items-center gap-x-0.5 gap-y-0.5 mb-2">
+                        <div className="flex items-center gap-0.5">
+                            <h3 className="font-bold text-gray-700 text-sm break-keep">{t(`rank.missions.${config.tKey}`)}</h3>
                             {config.type === 'etc' ? (
                                 <button
                                     onClick={() => setEtcPopup(true)}
@@ -530,7 +608,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                                     </svg>
                                 </button>
-                            ) : (
+                            ) : !isChallenge && (
                                 <button
                                     onClick={() => openMissionInfo(config.type)}
                                     className="text-gray-400 hover:text-indigo-500 transition-colors focus:outline-none"
@@ -544,14 +622,18 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                             )}
                         </div>
 
+                        {!hasExMode && renderTheoryTarget(theoryHint)}
                         {hasExMode && (
                             <button
                                 onClick={() => toggleEx(config.type)}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${isExExpanded ? 'bg-pink-500 text-white border-pink-500' : 'bg-white text-pink-500 border-pink-200 hover:bg-pink-50'}`}
+                                className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${isExExpanded ? 'bg-pink-500 text-white border-pink-500' : 'bg-white text-pink-500 border-pink-200 hover:bg-pink-50'}`}
                             >
                                 EX
                             </button>
                         )}
+                        {hasExMode && <div className="basis-full min-h-[10px] text-right leading-[10px]">
+                            {renderTheoryTarget(theoryHint, { exHint: collapsedExHint })}
+                        </div>}
                     </div>
 
                     {/* Standard Input */}
@@ -571,7 +653,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
 
                         <div className="text-gray-400 font-bold text-center text-[10px] leading-none">+</div>
 
-                        <div className="flex items-center justify-between bg-indigo-50 rounded px-1 py-0.5">
+                        <div className="relative flex items-center justify-between bg-indigo-50 rounded px-1 py-0.5">
                             <label className="text-[10px] text-indigo-500 px-1 whitespace-nowrap">{t('rank.added')}</label>
                             <input
                                 type="number"
@@ -582,12 +664,19 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                 placeholder="0"
                                 onChange={(e) => handleInputChange(config.type, e.target.value, true)}
                             />
+                            {renderTheoryRemaining(theoryHint, { exHint: collapsedExHint })}
                         </div>
                     </div>
 
+                    {(config.isDirectExp || !nextReq) && <div className="relative">{renderTheoryExp(theoryHint, { exHint: collapsedExHint })}</div>}
+
+                    {config.type === 'etc' && <p className="mt-5 mb-0 text-[10px] leading-snug font-medium text-gray-500 whitespace-pre-line break-words">
+                        {t('rank.missions.etc_input_help')}
+                    </p>}
+
                     {/* Standard Progress Display - Rendered inline between inputs if EX exists or at bottom of standard input */}
                     {!config.isDirectExp && nextReq && (
-                        <div className="mt-2 text-[10px]">
+                        <div className="relative mt-2 text-[10px]">
                             <div className="flex justify-between items-end text-gray-500 mb-1">
                                 <span className="font-medium text-emerald-600">{t('rank.next')}</span>
                                 <div className="text-right">
@@ -634,15 +723,16 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                     </div>
                                 )}
                             </div>
+                            {renderTheoryExp(theoryHint, { exHint: collapsedExHint })}
                         </div>
                     )}
 
                     {/* EX Input Section */}
                     {hasExMode && isExExpanded && (
-                        <div className="mt-2 pt-2 border-t border-dashed border-pink-100 animate-fadeIn">
-                            <div className="text-[10px] text-pink-500 font-bold mb-1 flex justify-between">
-                                <span>EX</span>
-                                <span>{t('rank.cycle', { count: exCurrentSeq })}</span>
+                        <div className="mt-3 pt-1 border-t border-dashed border-pink-100 animate-fadeIn">
+                            <div className="text-[10px] text-pink-500 font-bold mb-1 flex flex-wrap justify-between items-center gap-x-0.5 gap-y-0.5">
+                                <span>EX · {t('rank.cycle', { count: exCurrentSeq })}</span>
+                                {renderTheoryTarget(exTheoryHint, { isEx: true })}
                             </div>
                             <div className="flex flex-col gap-0.5">
                                 <div className="flex items-center justify-between bg-pink-50/30 rounded px-1 py-0.5 border border-pink-100">
@@ -657,7 +747,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                     />
                                 </div>
                                 <div className="text-pink-300 font-bold text-center text-[10px] leading-none">+</div>
-                                <div className="flex items-center justify-between bg-indigo-50/50 rounded px-1 py-0.5 border border-indigo-100">
+                                <div className="relative flex items-center justify-between bg-indigo-50/50 rounded px-1 py-0.5 border border-indigo-100">
                                     <label className="text-[10px] text-indigo-400 px-1 whitespace-nowrap">{t('rank.added')}</label>
                                     <input
                                         type="number"
@@ -667,11 +757,12 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                         placeholder="0"
                                         onChange={(e) => handleInputChange(config.exType, e.target.value, true)}
                                     />
+                                    {renderTheoryRemaining(exTheoryHint, { isEx: true })}
                                 </div>
                             </div>
 
                             {/* EX Progress Bar */}
-                            <div className="mt-2">
+                            <div className="relative mt-2">
                                 <div className="flex justify-between items-end text-[10px] text-pink-400 mb-0.5">
                                     <span>Next: {t('rank.cycle', { count: exNextReq.seq + 1 })}</span>
                                     {/* Use getExStatus result for display */}
@@ -705,6 +796,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                         })()}
                                     </div>
                                 )}
+                                {renderTheoryExp(exTheoryHint, { isEx: true })}
                             </div>
                         </div>
                     )}
@@ -723,7 +815,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
     return (
         <div className="px-4 pt-2 max-w-4xl mx-auto">
             {modalConfig && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setModalConfig(null)}>
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setModalConfig(null)}>
                     <div ref={detailDialogRef} role="dialog" aria-modal="true" aria-labelledby="character-rank-detail-title" tabIndex={-1} className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[calc(100vh-2rem)] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                             <h3 id="character-rank-detail-title" className="font-bold text-gray-800 text-lg">{modalConfig.title}</h3>
@@ -803,52 +895,72 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                     </div>
                 </div>
             )}
-            {/* Amatsuyu Data Popup */}
             {theoryPopup && theory && (() => {
-                const result = theory.included[selectedCharId];
-                const noKizuna = theory.excluded[selectedCharId];
+                const charIds = Object.keys(theory.included).map(Number).sort((a, b) => a - b);
+                const criteriaAt = Math.min(theory.now, Math.max(0, ...charIds.map(id => theory.included[id].criteriaAt ?? 0)));
+                const etcStat = charIds.map(id => theory.included[id].stats.find(stat => stat.type === 'etc'))
+                    .filter(Boolean).sort((a, b) => b.count - a.count)[0];
                 return (
-                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 bg-black/50" onClick={() => setTheoryPopup(false)}>
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 sm:p-4 bg-black/50" onClick={() => setTheoryPopup(false)}>
                         <div ref={theoryDialogRef} role="dialog" aria-modal="true" aria-labelledby="rank-theory-title" tabIndex={-1}
-                            className="bg-white rounded-xl shadow-2xl w-full max-w-xl max-h-[85dvh] flex flex-col overflow-hidden" onClick={event => event.stopPropagation()}>
-                            <div className="p-4 border-b flex items-center justify-between gap-3">
-                                <h3 id="rank-theory-title" className="font-bold text-gray-800">{activeCharNames[selectedCharId - 1]} · {t('rank.theory')} {result.rank.toFixed(1)}</h3>
-                                <button type="button" onClick={() => setTheoryPopup(false)} className="p-2 text-gray-600" aria-label={t('rank.close')}>✕</button>
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-[1600px] max-h-[90dvh] flex flex-col overflow-hidden" onClick={event => event.stopPropagation()}>
+                            <div className="p-3 sm:p-4 border-b flex items-center justify-between gap-3 shrink-0">
+                                <div className="min-w-0 text-left">
+                                    <h3 id="rank-theory-title" className="font-bold text-gray-800">{t('rank.theory_table')}</h3>
+                                    <div className="mt-1 text-xs text-gray-500">{gameDate(criteriaAt)} · {t('rank.missions.area_item_common')} Lv.{theory.common?.level ?? '—'}</div>
+                                </div>
+                                <button type="button" onClick={() => setTheoryPopup(false)} className="p-2 text-gray-600 shrink-0" aria-label={t('rank.close')}>✕</button>
                             </div>
-                            <div className="p-4 overflow-y-auto min-h-0 text-sm">
-                                <p className="mb-1 text-gray-600">{gameDate(Math.min(result.criteriaAt ?? theory.now, theory.now))} · {result.totalExp.toLocaleString()} EXP</p>
-                                <p className="mb-3 text-gray-600">{t('rank.no_kizuna')} {noKizuna.rank.toFixed(1)} · {t('rank.missions.area_item_common')} Lv.{theory.common.level}</p>
-                                <table className="w-full text-sm">
-                                    <thead><tr className="border-b text-gray-500 text-xs">
-                                        <th className="text-left py-2">{t('rank.item_name')}</th>
-                                        <th className="text-right py-2">{t('rank.theory_count')}</th>
-                                        <th className="text-right py-2">EXP</th>
+                            <div className="overflow-auto overscroll-contain min-h-0 text-sm" tabIndex={0} aria-label={t('rank.theory_table')}>
+                                <table className="w-full border-separate border-spacing-0 text-center tabular-nums" aria-label={t('rank.theory_table')}>
+                                    <thead><tr className="text-gray-600 text-xs">
+                                        <th scope="col" className="sticky top-0 left-0 z-30 bg-gray-50 border-b border-r px-2 py-3 min-w-[64px]">{t('rank.theory_character')}</th>
+                                        <th scope="col" className="sticky top-0 z-20 bg-gray-50 border-b px-2 py-3 min-w-[72px] whitespace-pre-line">{t('rank.theory_rank')}</th>
+                                        <th scope="col" className="sticky top-0 z-20 bg-gray-50 border-b px-2 py-3 min-w-[80px] whitespace-pre-line">{t('rank.theory_rank_no_kizuna')}</th>
+                                        {THEORY_TABLE_COLUMNS.map(config => <th scope="col" key={config.type}
+                                            className="sticky top-0 z-20 bg-gray-50 border-b px-2 py-3 min-w-[72px]">
+                                            <div className="max-w-[92px] mx-auto">{t(`rank.missions.${config.tKey}`)}{config.exType && <span className="block text-[10px] font-normal">(EX)</span>}</div>
+                                        </th>)}
                                     </tr></thead>
-                                    <tbody>{result.stats.map(stat => {
-                                        const config = MISSION_CONFIG.find(row => row.type === (stat.baseType || stat.type));
-                                        const capped = isMissionExpCapped(stat);
-                                        return <tr key={stat.type} className="border-b border-gray-100">
-                                            <td className="py-2 pr-2">{config ? t(`rank.missions.${config.tKey}`) : stat.name}{stat.isEx && ' EX'}</td>
-                                            <td className="py-2 text-right whitespace-nowrap" style={capped ? { color: '#8b202b' } : undefined}
-                                                title={capped ? t('rank.cap_note') : undefined}>
-                                                {stat.type === 'challenge_stage' ? (stat.isEx ? 'EX' : `Lv.${stat.count}`) : stat.count.toLocaleString()}
-                                                {stat.expCap != null && ` / ${stat.nextExpGoal != null ? stat.nextExpGoal.toLocaleString() : '—'}`}
-                                            </td>
-                                            <td className="py-2 pl-3 text-right font-semibold">+{stat.exp.toLocaleString()}</td>
+                                    <tbody>{charIds.map(charId => {
+                                        const result = theory.included[charId];
+                                        const selected = charId === selectedCharId;
+                                        return <tr key={charId} className={selected ? 'bg-violet-50' : 'bg-white'} aria-current={selected ? 'true' : undefined}>
+                                            <th scope="row" className={`sticky left-0 z-10 border-b border-r p-1 ${selected ? 'bg-violet-50' : 'bg-white'}`}>
+                                                <img src={`${process.env.PUBLIC_URL}/assets/characters/${String(charId).padStart(2, '0')}.webp`}
+                                                    alt={activeCharNames[charId - 1]} title={activeCharNames[charId - 1]}
+                                                    width="48" height="48" loading="lazy" className="block w-12 h-12 mx-auto rounded-full" />
+                                            </th>
+                                            <td className="border-b border-gray-100 px-2 py-2 font-bold text-base text-violet-700">{result.rank.toFixed(1)}</td>
+                                            <td className="border-b border-gray-100 px-2 py-2 font-bold text-base text-gray-500">{theory.excluded?.[charId]?.rank.toFixed(1) ?? '—'}</td>
+                                            {THEORY_TABLE_COLUMNS.map(config => {
+                                                const stats = result.stats.filter(stat => (stat.baseType || stat.type) === config.type);
+                                                const capped = stats.length > 0 && stats.every(isMissionExpCapped);
+                                                const challenge = stats[0];
+                                                const value = config.type === 'challenge_stage'
+                                                    ? (result.challenge?.isEx || challenge?.isEx ? 'EX' : `Lv.${result.challenge?.rank ?? challenge?.count ?? 0}`)
+                                                    : stats.reduce((sum, stat) => sum + stat.count, 0).toLocaleString(language);
+                                                return <td key={config.type} className="border-b border-gray-100 px-2 py-2 whitespace-nowrap font-medium"
+                                                    style={capped ? { color: '#8b202b' } : undefined} title={capped ? t('rank.cap_note') : undefined}>
+                                                    {value}
+                                                </td>;
+                                            })}
                                         </tr>;
                                     })}</tbody>
                                 </table>
-                                <p className="mt-2 text-xs" style={{ color: '#8b202b' }}>{t('rank.cap_note')}</p>
-                                <details className="mt-4">
-                                    <summary className="cursor-pointer font-bold">{t('rank.etc_rank_data')}</summary>
-                                    <table className="w-full mt-2 text-xs"><tbody>
-                                        {result.stats.find(stat => stat.isEtc)?.rewards.map(reward => <tr key={reward.key}
-                                            className={reward.isPassed ? '' : 'text-gray-400 line-through'}>
-                                            <td className="py-1">{t(`rank.etc_items.${ETC_TRANSLATION_KEYS[reward.key]}`)}{!reward.isPassed && ` ${t('rank.before_birthday')}`}</td>
-                                            <td className="py-1 text-right">{reward.count}</td>
-                                        </tr>)}
-                                    </tbody></table>
-                                </details>
+                                <div className="p-3 text-left text-xs text-gray-500 space-y-1">
+                                    <div>{t('rank.theory_area_note')}</div>
+                                    <div style={{ color: '#8b202b' }}>{t('rank.cap_note')}</div>
+                                    {etcStat?.rewards && <details className="pt-2">
+                                        <summary className="cursor-pointer font-bold">{t('rank.etc_rank_data')}</summary>
+                                        <table className="w-full max-w-md mt-2"><tbody>
+                                            {etcStat.rewards.map(reward => <tr key={reward.key} className={reward.isPassed ? '' : 'text-gray-400 line-through'}>
+                                                <td className="py-1">{t(`rank.etc_items.${ETC_TRANSLATION_KEYS[reward.key]}`)}{!reward.isPassed && ` ${t('rank.before_birthday')}`}</td>
+                                                <td className="py-1 text-right">{reward.count}</td>
+                                            </tr>)}
+                                        </tbody></table>
+                                    </details>}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -860,9 +972,9 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                 const maxValue = etcRankItems.reduce((sum, item) => sum + (item.isPassed ? item.count : 0), 0);
 
                 return (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setEtcPopup(false)}>
-                        <div ref={etcDialogRef} role="dialog" aria-modal="true" aria-labelledby="character-rank-etc-title" tabIndex={-1} className="bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[calc(100vh-2rem)] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
-                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-amber-50/50">
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setEtcPopup(false)}>
+                        <div ref={etcDialogRef} role="dialog" aria-modal="true" aria-labelledby="character-rank-etc-title" tabIndex={-1} className="bg-white rounded-xl shadow-2xl w-full max-w-sm max-h-[calc(100vh-2rem)] supports-[height:100dvh]:max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-amber-50/50 shrink-0">
                                 <h3 id="character-rank-etc-title" className="font-bold text-gray-800 text-lg">{t('rank.etc_rank_data')}</h3>
                                 <button type="button" onClick={() => setEtcPopup(false)} aria-label={t('support.close')} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
@@ -871,7 +983,7 @@ const CharacterRankTab = ({ surveyData, setSurveyData }) => {
                                     </svg>
                                 </button>
                             </div>
-                            <div className="p-4">
+                            <div className="p-4 min-h-0 overflow-y-auto overscroll-contain">
                                 {/* Maximum value display */}
                                 <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
                                     <div className="text-center">

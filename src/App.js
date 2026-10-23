@@ -543,11 +543,22 @@ const AppContent = () => {
       entries: { ...remote.entries, ...local.entries },
     }),
     enabled: autoSaveEnabled,
-    saveDelayMs: 15_000,
+    saveDelayMs: 1_000,
     localPollMs: 1_000,
+    flushOnHide: true,
     onExternalStateApplied: reloadAfterAccountRestore,
     logLabel: '프로세카 계산기 자동 저장 설정',
   });
+  const setAutoSettingsValue = autoSettingsSync.setValue;
+  const handleAutoStorageChange = useCallback((changedEntries) => {
+    // Feed edits directly into the existing account snapshot, without waiting
+    // for a storage poll or creating a second rank-specific save namespace.
+    const snapshot = autoAccountStorage.read();
+    setAutoSettingsValue(normalizeAutoAccountSnapshot({
+      ...snapshot,
+      entries: { ...snapshot.entries, ...changedEntries },
+    }));
+  }, [setAutoSettingsValue]);
   const normalizeOwnedAutoSurveySnapshot = useCallback((value) => {
     const ownerUserId = user?.id || null;
     if (
@@ -591,12 +602,15 @@ const AppContent = () => {
   const [autoSurveyRestoredUserId, setAutoSurveyRestoredUserId] = useState(null);
 
   useEffect(() => {
-    if (!autoSaveEnabled) {
+    // A profile refresh temporarily changes sync status to loading. Keep the
+    // restoration marker until auto-save is actually disabled or the user changes.
+    if (!localAutoSaveEnabled) {
       setAutoSurveyRestoredUserId(null);
       return;
     }
     if (
-      !user
+      !autoSaveEnabled
+      || !user
       || autoSurveyStatus !== 'ready'
       || autoSurveyRestoredUserId === user.id
     ) return;
@@ -609,6 +623,7 @@ const AppContent = () => {
     setAutoSurveyRestoredUserId(user.id);
   }, [
     autoSaveEnabled,
+    localAutoSaveEnabled,
     autoSurveyRestoredUserId,
     autoSurveyStatus,
     autoSurveyValue,
@@ -714,7 +729,7 @@ const AppContent = () => {
       case 'gacha':
         return <GachaTab surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
       case 'rank':
-        return <CharacterRankTab surveyData={surveyData} setSurveyData={setSurveyData} />;
+        return <CharacterRankTab surveyData={surveyData} setSurveyData={setSurveyData} onAutoStorageChange={handleAutoStorageChange} />;
       case 'support':
         return <SupportDeckTab />;
       case 'talks':
@@ -723,7 +738,7 @@ const AppContent = () => {
       default:
         return <DeckTab surveyData={surveyData} setSurveyData={setSurveyData} subPath={subPath} />;
     }
-  }, [currentTab, surveyData, setSurveyData, subPath]);
+  }, [currentTab, surveyData, setSurveyData, subPath, handleAutoStorageChange]);
 
   const [toast, setToast] = useState({ show: false, message: '', fadingOut: false });
   const timerRef1 = React.useRef(null);

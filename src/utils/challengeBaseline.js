@@ -3,7 +3,7 @@ import { DEFAULT_CHALLENGE_BONUS } from './challengeTheory.js';
 
 // Bump when the shared deck/scoring algorithm changes. Live master corrections,
 // different cards, bonuses or music coefficients automatically invalidate a row.
-export const CHALLENGE_BASELINE_VERSION = 1;
+export const CHALLENGE_BASELINE_VERSION = 4;
 export async function challengeBaselineKey({ data, characterNames, autoMetas, commonAreaBonus, commonMultiUnitBonus, nuiStats }) {
     if (!globalThis.crypto?.subtle) return null;
     const value = JSON.stringify({

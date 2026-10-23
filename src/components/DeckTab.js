@@ -1208,11 +1208,11 @@ function DeckTab({ surveyData, setSurveyData, subPath }) {
                                             />
                                             <span className="text-xs font-bold text-gray-700">계정에 저장</span>
                                         </label>
-                                        <div className="text-[10px] text-gray-400 mt-1 pl-5">
-                                            체크를 풀 경우 서버에서 코드가 즉시 삭제됩니다
-                                        </div>
                                     </div>
                                 )}
+                                <div className="mb-3 text-left text-[10px] font-bold text-red-500">
+                                    스킬 레벨은 수동 입력해 주세요.
+                                </div>
                                 {eventOverride.detailOpen && (
                                     <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-2">
                                         <div className="mb-1 text-right text-[10px] font-bold text-gray-400">
