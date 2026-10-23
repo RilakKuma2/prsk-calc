@@ -57,7 +57,7 @@
     <h2>3. Information collected and its purpose</h2>
     <ul>
       <li><strong>Shared account</strong>: Username, optional email, a one-way hash of any password you set, and consent records support sign-in and account management.</li>
-      <li><strong>Google authentication</strong>: Your Google account identifier and verified email are used for sign-in and linking. We do not collect your Google password or access Gmail messages or Google Drive files. Google credentials are used for verification and are not stored in persistent browser storage.</li>
+      <li><strong>Google authentication</strong>: Google sign-in may temporarily deliver an authentication token containing a name, email and profile picture, and Google displays its information-sharing notice. After verification, we store only a one-way SHA-256 hash of the account identifier for sign-in and linking. We do not store the name, email, profile picture or original identifier received from Google, or automatically copy the Google email into the recovery address. Users may separately register an optional recovery email. We do not collect your Google password or access Gmail messages or Google Drive files. Google credentials are used for verification and are not stored in persistent browser storage.</li>
       <li><strong>Saving and synchronization</strong>: Saved calculations, site settings, friend codes you choose to save, and backups retained when linking an existing account.</li>
       <li><strong>Security</strong>: Session and verification records, IP addresses, browser information, referrers and request records help prevent abuse and diagnose errors.</li>
     </ul>
@@ -66,7 +66,7 @@
     <h2>5. External services</h2>
     <p>Google provides Google authentication. Cloudflare provides service delivery, server storage and security. Google’s privacy policy applies to information Google processes during authentication. Account and backup data are used for the service purposes described here and are not sold.</p>
     <h2>6. Retention, unlinking and deletion requests</h2>
-    <p>Account information and server data are retained while you use the service. Backups from a previous Google account remain associated with the linked existing account. Unlinking removes the Google identifier and linking email, while a separately registered recovery email and saved data remain.</p>
+    <p>Account information and server data are retained while you use the service. Backups from a previous Google account remain associated with the linked existing account. Unlinking removes the Google identifier hash, while a separately registered recovery email and saved data remain.</p>
     <p>Available account settings allow profile changes, unlinking and backup downloads. You may request account or backup deletion from the site operator; account deletion includes linked-account backups. Data cannot be recovered after deletion is processed. Security records may be retained as needed for abuse prevention and operation.</p>
   </div>
 </body>
