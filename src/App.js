@@ -6,7 +6,7 @@ import ScheduleCalendarHeader from './components/ScheduleCalendarHeader';
 import { LanguageProvider, useTranslation } from './contexts/LanguageContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import LanguageSwitcher from './components/common/LanguageSwitcher';
-import { AUTH_BASE_URL, STORAGE_BASE_URL, joinUrl } from './config/env';
+import { AUTH_BASE_URL, STORAGE_BASE_URL, GOOGLE_CLIENT_ID, joinUrl } from './config/env';
 import {
   AUTO_ACCOUNT_STORAGE_KEYS,
   isAutoAccountStorageKey,
@@ -272,7 +272,7 @@ const AppContent = () => {
   const { t, language, changeLanguage } = useTranslation();
   const { themePreference, setThemePreference } = useTheme();
   const { user } = useAuth();
-  const { getUserState } = useUserStateApi();
+  const { getUserState, needsLinkedAccountRestore, restoreLinkedAccountState } = useUserStateApi();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -439,7 +439,16 @@ const AppContent = () => {
     const restoreExistingAutoSettings = async () => {
       try {
         const remoteState = await getUserState('prsk-calc-auto-settings', user.id);
-        if (cancelled || !remoteState) return;
+        if (cancelled) return;
+        if (needsLinkedAccountRestore('prsk-calc-auto-settings', user.id)) {
+          restoreLinkedAccountState(
+            'prsk-calc-auto-settings', user.id, autoAccountStorage,
+            remoteState ? normalizeAutoAccountSnapshot(unwrapAccountStatePayload(remoteState.data)) : undefined,
+          );
+          reloadAfterAccountRestore();
+          return;
+        }
+        if (!remoteState) return;
 
         const remote = normalizeAutoAccountSnapshot(
           unwrapAccountStatePayload(remoteState.data),
@@ -475,6 +484,8 @@ const AppContent = () => {
     autoSaveEnabled,
     autoSavePreferenceStatus,
     getUserState,
+    needsLinkedAccountRestore,
+    restoreLinkedAccountState,
     user,
   ]);
 
@@ -1137,6 +1148,7 @@ function LoginScopedApp() {
     <LoginProvider
       authBaseUrl={AUTH_BASE_URL}
       storageBaseUrl={STORAGE_BASE_URL}
+      googleClientId={GOOGLE_CLIENT_ID}
       cacheKey="sekai-auth-cache-v2"
       locale={language}
       showInviteCode={language === 'ko'}

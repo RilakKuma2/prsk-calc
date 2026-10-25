@@ -17,6 +17,7 @@ const TALK_EXTRA_RESOURCES = {
 };
 
 const dataCache = new Map();
+export const MYSEKAI_TALK_DATA_MAX_AGE_MS = 5 * 60 * 1000;
 
 export const getTalkDataResourcePaths = (includeDialogueExtras = false) => [
   ...Object.values(TALK_INDEX_RESOURCES),
@@ -28,7 +29,7 @@ const fetchJson = async (path, signal, optional = false) => {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const response = await fetch(`${ASSET_BASE_URL}/${path}`, {
-        cache: 'force-cache',
+        cache: 'no-cache',
         signal,
       });
       if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
@@ -247,7 +248,10 @@ export const loadMysekaiTalkData = async ({
 }) => {
   const sourceLanguage = language === 'ko' ? 'ko' : 'ja';
   const cacheKey = `${sourceLanguage}:${includeDialogueExtras ? 'full' : 'index'}`;
-  if (dataCache.has(cacheKey)) return dataCache.get(cacheKey);
+  const cached = dataCache.get(cacheKey);
+  if (cached && Date.now() - cached.loadedAt < MYSEKAI_TALK_DATA_MAX_AGE_MS) {
+    return cached.value;
+  }
 
   const entries = await Promise.all(
     Object.entries({
@@ -296,7 +300,7 @@ export const loadMysekaiTalkData = async ({
     talkWithoutRelated: resources.talkWithoutRelated || [],
     tweets: resources.tweets || [],
   };
-  dataCache.set(cacheKey, result);
+  dataCache.set(cacheKey, { value: result, loadedAt: Date.now() });
   return result;
 };
 

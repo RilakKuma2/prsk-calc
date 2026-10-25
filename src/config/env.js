@@ -9,6 +9,7 @@ export function joinUrl(baseUrl, path = '') {
 
 export const AUTH_BASE_URL = trimTrailingSlash(process.env.REACT_APP_AUTH_BASE_URL);
 export const STORAGE_BASE_URL = trimTrailingSlash(process.env.REACT_APP_STORAGE_BASE_URL);
+export const GOOGLE_CLIENT_ID = String(process.env.REACT_APP_GOOGLE_CLIENT_ID || '').trim();
 export const API_BASE_URL = trimTrailingSlash(process.env.REACT_APP_API_BASE_URL);
 export const ASSET_BASE_URL = trimTrailingSlash(process.env.REACT_APP_ASSET_BASE_URL);
 export const SUITE_ASSET_BASE_URL = joinUrl(ASSET_BASE_URL, 'suite');

@@ -14,12 +14,15 @@ import React, {
 import { createPortal } from 'react-dom';
 import {
   readJsonStorage,
+  readStorageEntries,
   readStorageItem,
   removeStorageItem,
   writeJsonStorage,
   writeStorageItem,
 } from './safeStorage';
 import useModalAccessibility from './useModalAccessibility';
+import GoogleSignInButton from './GoogleSignInButton';
+import googleLogo from './google-logo.png';
 import './login.css';
 
 export type AuthUser = {
@@ -31,12 +34,29 @@ export type AuthUser = {
   canAccessModeling: boolean;
   friendCode?: string | null;
   saveFriendCode?: boolean;
+  googleLinked?: boolean;
+  hasPassword?: boolean;
+  googleCreated?: boolean;
+  canChangeUsername?: boolean;
+  googleSessionVerified?: boolean;
+  canLinkGoogle?: boolean;
+  hasGoogleBackup?: boolean;
 };
 
 export type AuthResult = {
   message: string;
   status?: 'active' | 'pending';
   user?: AuthUser;
+
+};
+
+type GoogleAction = 'login' | 'link' | 'set-password';
+type GoogleAuthInput = {
+  action: GoogleAction;
+  credential: string;
+  termsAccepted?: boolean;
+  currentPassword?: string;
+  newPassword?: string;
 };
 
 export type RegisterInput = {
@@ -73,6 +93,12 @@ type AuthContextValue = {
   deleteAccount: (password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  googleClientId: string;
+  prepareGoogle: (action: GoogleAction) => Promise<{ nonce: string }>;
+  authenticateGoogle: (input: GoogleAuthInput) => Promise<AuthResult>;
+  unlinkGoogle: (currentPassword: string) => Promise<AuthResult>;
+  googleAccountAction: (action: 'verify-password' | 'username' | 'password' | 'link-existing', input: Record<string, unknown>) => Promise<AuthResult>;
+  downloadGoogleBackup: () => Promise<void>;
 };
 
 type LoginLocale = 'ko' | 'ja' | 'en';
@@ -149,6 +175,27 @@ type LoginText = {
   deleteAccountConfirm: string;
   termsAgreement: string;
   termsLink: string;
+  googleTitle: string;
+  googleRegisterDescription: string;
+  googleConsent: string;
+  googleLinkButton: string;
+  googleVerifyPassword: string;
+  googleVerifiedSession: string;
+  googleSetup: string;
+  googleSetupHint: string;
+  googleUsernameHint: string;
+  googleRename: string;
+  googleExisting: string;
+  googleExistingHint: string;
+  googleExistingConfirm: string;
+  googleBackup: string;
+  googleLinkDescription: string;
+  googleLinked: string;
+  googleUnlink: string;
+  googleSetPassword: string;
+  googlePasswordHint: string;
+  googleRetry: string;
+  googleLoadError: string;
 };
 
 type LoginUiOptions = {
@@ -218,7 +265,16 @@ const LOGIN_TEXT: Record<LoginLocale, LoginText> = {
     conflictOverwriteWarningRemote: '정말로 기존 로컬 데이터를 클라우드 데이터로 덮어씌우시겠습니까?\n기존 로컬 데이터는 모두 삭제되며 되돌릴 수 없습니다.',
     conflictOverwriteWarningLocal: '정말로 기존 클라우드 데이터를 로컬 데이터로 덮어씌우시겠습니까?\n기존 클라우드 데이터는 모두 삭제되며 되돌릴 수 없습니다.',
     termsAgreement: '에 동의합니다.',
-    termsLink: '개인정보처리방침',
+    termsLink: '이용약관 및 개인정보처리방침',
+    googleTitle: '구글 계정',
+    googleRegisterDescription: 'Google로 처음 로그인하면 임시 아이디로 자동 가입됩니다.',
+    googleLinkDescription: 'Google 계정을 연결하려면 먼저 현재 비밀번호를 확인해 주세요.',
+    googleLinked: '연결된 구글 계정',
+    googleUnlink: '구글 연결 해제',
+    googleSetPassword: '비밀번호 설정',
+    googlePasswordHint: '비밀번호를 설정하면 아이디로도 로그인할 수 있습니다. 기존 계정 연동은 비밀번호를 설정하기 전에 해 주세요.',
+    googleRetry: '구글 인증 다시 시작',
+    googleLoadError: '구글 로그인 창을 불러오지 못했습니다. 다시 시도해 주세요.',
     passwordMismatchError: '비밀번호 확인이 일치하지 않습니다.',
     tempPasswordNotice: '임시 비밀번호로 로그인했습니다. 새 비밀번호를 설정해 주세요.',
     genericRequestError: '요청을 처리하지 못했습니다.',
@@ -230,6 +286,18 @@ const LOGIN_TEXT: Record<LoginLocale, LoginText> = {
     deleteAccountTitle: '계정 삭제',
     deleteAccountDescription: '계정을 삭제하려면 비밀번호를 입력해 주세요. 이 작업은 되돌릴 수 없습니다.',
     deleteAccountConfirm: '정말 삭제하시겠습니까?',
+    googleConsent: 'Google로 계속하면 이용약관 및 개인정보처리방침에 동의하며, 처음 이용하는 경우 자동 가입됩니다.',
+    googleLinkButton: 'Google 계정 연결',
+    googleVerifyPassword: '비밀번호 확인',
+    googleVerifiedSession: '비밀번호 확인 완료. 로그아웃 전까지 Google 계정을 연결할 수 있습니다.',
+    googleSetup: '새 아이디·비밀번호 설정',
+    googleSetupHint: '새 아이디와 비밀번호를 설정하거나, 이미 이용하던 계정에 Google을 연동할 수 있습니다.',
+    googleUsernameHint: '자동 생성된 아이디는 한 번만 변경할 수 있습니다.',
+    googleRename: '아이디 변경 (1회)',
+    googleExisting: '기존 계정 연동',
+    googleExistingHint: '기존 계정으로 로그인하고 Google을 연결합니다. 기존 저장 데이터는 유지되며, 현재 Google 계정의 데이터는 백업으로 보관됩니다. 비밀번호를 설정한 뒤에는 이 기능을 사용할 수 없습니다.',
+    googleExistingConfirm: '기존 계정으로 전환하고 현재 계정 데이터를 백업하는 데 동의합니다.',
+    googleBackup: '연결 전 Google 계정 데이터 내려받기',
   },
   ja: {
     localeBadge: 'JA',
@@ -291,7 +359,16 @@ const LOGIN_TEXT: Record<LoginLocale, LoginText> = {
     conflictOverwriteWarningRemote: '本当に既存のローカルデータをクラウドデータで上書きしますか？\n既存のローカルデータはすべて削除され、元に戻すことはできません。',
     conflictOverwriteWarningLocal: '本当に既存のクラウドデータをローカルデータで上書きしますか？\n既存のクラウドデータはすべて削除され、元に戻すことはできません。',
     termsAgreement: 'に同意します。',
-    termsLink: 'プライバシーポリシー',
+    termsLink: '利用規約とプライバシーポリシー',
+    googleTitle: 'Google アカウント',
+    googleRegisterDescription: '初めてGoogleでログインすると、ランダムなユーザー名で登録されます。',
+    googleLinkDescription: 'Googleを連携するには、まず現在のパスワードを確認してください。',
+    googleLinked: '連携済みの Google アカウント',
+    googleUnlink: 'Google の連携を解除',
+    googleSetPassword: 'パスワードを設定',
+    googlePasswordHint: 'パスワードを設定するとユーザー名でもログインできます。既存アカウントへの連携はパスワード設定前に行ってください。',
+    googleRetry: 'Google 認証をやり直す',
+    googleLoadError: 'Google ログインを読み込めませんでした。もう一度お試しください。',
     passwordMismatchError: 'パスワード確認が一致しません。',
     tempPasswordNotice: '仮パスワードでログインしました。新しいパスワードを設定してください。',
     genericRequestError: 'リクエストを処理できませんでした。',
@@ -303,6 +380,18 @@ const LOGIN_TEXT: Record<LoginLocale, LoginText> = {
     deleteAccountTitle: 'アカウント削除',
     deleteAccountDescription: 'アカウントを削除するにはパスワードを入力してください。この操作は取り消せません。',
     deleteAccountConfirm: '本当に削除しますか？',
+    googleConsent: 'Googleで続行すると利用規約とプライバシーポリシーに同意し、初回は自動登録されます。',
+    googleLinkButton: 'Googleアカウントを連携',
+    googleVerifyPassword: 'パスワードを確認',
+    googleVerifiedSession: '確認済みです。ログアウトするまでGoogleアカウントを連携できます。',
+    googleSetup: '新しいユーザー名・パスワードを設定',
+    googleSetupHint: '新しいユーザー名とパスワードを設定するか、既存アカウントにGoogleを連携できます。',
+    googleUsernameHint: '自動生成されたユーザー名は1回だけ変更できます。',
+    googleRename: 'ユーザー名を変更（1回）',
+    googleExisting: '既存アカウントに連携',
+    googleExistingHint: '既存アカウントでログインしてGoogleを連携します。既存の保存データは維持され、現在のGoogleアカウントのデータはバックアップされます。パスワード設定後は利用できません。',
+    googleExistingConfirm: '既存アカウントへの切り替えと現在のデータのバックアップに同意します。',
+    googleBackup: '連携前のGoogleアカウントデータをダウンロード',
   },
   en: {
     localeBadge: 'EN',
@@ -364,7 +453,16 @@ const LOGIN_TEXT: Record<LoginLocale, LoginText> = {
     conflictOverwriteWarningRemote: 'Are you sure you want to overwrite your local data with the cloud data?\nYour existing local data will be deleted and cannot be recovered.',
     conflictOverwriteWarningLocal: 'Are you sure you want to overwrite your cloud data with your local data?\nYour existing cloud data will be deleted and cannot be recovered.',
     termsAgreement: ' I agree to the ',
-    termsLink: 'Privacy Policy',
+    termsLink: 'Terms and Privacy Policy',
+    googleTitle: 'Google account',
+    googleRegisterDescription: 'Your first Google sign-in creates an account with a random username.',
+    googleLinkDescription: 'Verify your current password before linking Google.',
+    googleLinked: 'Linked Google account',
+    googleUnlink: 'Unlink Google',
+    googleSetPassword: 'Set a password',
+    googlePasswordHint: 'Set a password to sign in with your username too. Link an existing account before setting a password.',
+    googleRetry: 'Restart Google sign-in',
+    googleLoadError: 'Could not load Google sign-in. Please try again.',
     passwordMismatchError: 'The password confirmation does not match.',
     tempPasswordNotice: 'You signed in with a temporary password. Please set a new one.',
     genericRequestError: 'The request could not be completed.',
@@ -376,6 +474,18 @@ const LOGIN_TEXT: Record<LoginLocale, LoginText> = {
     deleteAccountTitle: 'Delete account',
     deleteAccountDescription: 'Enter your password to delete your account. This action cannot be undone.',
     deleteAccountConfirm: 'Are you sure you want to delete?',
+    googleConsent: 'Continuing with Google accepts the Terms and Privacy Policy and creates an account on your first sign-in.',
+    googleLinkButton: 'Link Google account',
+    googleVerifyPassword: 'Verify password',
+    googleVerifiedSession: 'Password verified. Google linking is enabled until you sign out.',
+    googleSetup: 'Set a new username and password',
+    googleSetupHint: 'Set a new username and password, or link Google to an account you already use.',
+    googleUsernameHint: 'You can change your generated username once.',
+    googleRename: 'Change username (once)',
+    googleExisting: 'Link an existing account',
+    googleExistingHint: 'Sign in to your existing account and link Google. Its saved data stays unchanged, and this Google account’s data is kept as a backup. Link before setting a password.',
+    googleExistingConfirm: 'I agree to switch to the existing account and back up this account’s data.',
+    googleBackup: 'Download data from the previous Google account',
   },
 };
 
@@ -456,10 +566,35 @@ function createStorageClient(
   authClient: AuthClient,
   storageBaseUrl: string,
   text: LoginText = LOGIN_TEXT.ko,
+  cacheKey = 'sekai-auth-cache-v1',
 ) {
   const baseUrl = storageBaseUrl.replace(/\/$/, '');
   let cachedToken: { accessToken: string; userId: string; refreshAt: number } | null = null;
   let tokenRequest: { userId: string; promise: Promise<string> } | null = null;
+  const adapters = new Map<string, LocalStateAdapter<any>>();
+  const restoreKey = (userId: string) => `${cacheKey}:google-restore:${userId}`;
+  const backupKey = (userId: string) => `${cacheKey}:google-backup:${userId}`;
+  type Restore = { sourceUserId: string; restored: string[] };
+  const restoreMemory = new Map<string, Restore>();
+  const backupMemory = new Map<string, Record<string, unknown>>();
+  const readRestore = (userId: string): Restore | null =>
+    readJsonStorage(restoreKey(userId), restoreMemory.get(userId) || null);
+  const readBackup = (userId: string): Record<string, unknown> =>
+    readJsonStorage(backupKey(userId), backupMemory.get(userId) || {});
+  const backupLocal = (namespace: string, userId: string, adapter: LocalStateAdapter<any>) => {
+    const backup = readBackup(userId);
+    const sourceUserId = readRestore(userId)?.sourceUserId;
+    const key = `${sourceUserId}:${namespace}`;
+    if (!(key in backup)) {
+      backup[key] = { sourceUserId, namespace, data: adapter.read(), backedUpAt: new Date().toISOString() };
+      backupMemory.set(userId, backup);
+    }
+    return writeJsonStorage(backupKey(userId), backup);
+  };
+  const needsLinkedAccountRestore = (namespace: string, userId: string) => {
+    const restore = readRestore(userId);
+    return Boolean(restore && !restore.restored.includes(namespace));
+  };
 
   const requestToken = async (userId: string, forceRefresh = false) => {
     if (
@@ -538,6 +673,42 @@ function createStorageClient(
 
   return {
     configured: Boolean(baseUrl),
+    registerLocalAdapter: (namespace: string, adapter: LocalStateAdapter<any>) => {
+      adapters.set(namespace, adapter);
+      return () => { if (adapters.get(namespace) === adapter) adapters.delete(namespace); };
+    },
+    beginLinkedAccountRestore: (sourceUserId: string, userId: string) => {
+      const restore = { sourceUserId, restored: [] };
+      restoreMemory.set(userId, restore);
+      writeJsonStorage(restoreKey(userId), restore);
+      // Capture even disabled namespaces before user-dependent adapters change.
+      adapters.forEach((adapter, namespace) => backupLocal(namespace, userId, adapter));
+    },
+    needsLinkedAccountRestore,
+    readLinkedAccountBackup: readBackup,
+    restoreLinkedAccountState: <T,>(namespace: string, userId: string, adapter: LocalStateAdapter<T>, remote: T | undefined): T => {
+      // Never discard unsynced local data if this browser cannot keep its backup.
+      if (!backupLocal(namespace, userId, adapter)) throw new Error(text.storageSyncError);
+      let next = remote;
+      if (next === undefined) {
+        const storedKeys = Object.keys(readStorageEntries());
+        for (const pattern of adapter.keys) {
+          const keys = pattern.endsWith('*')
+            ? storedKeys.filter((key) => key.startsWith(pattern.slice(0, -1))) : [pattern];
+          keys.forEach(removeStorageItem);
+        }
+        next = adapter.read();
+      }
+      adapter.write(next);
+      removeStorageItem(adapter.dirtyKey || `${adapter.keys[0] || namespace}:account-dirty`);
+      const restore = readRestore(userId);
+      if (restore) {
+        restore.restored = Array.from(new Set([...restore.restored, namespace]));
+        restoreMemory.set(userId, restore);
+        writeJsonStorage(restoreKey(userId), restore);
+      }
+      return next;
+    },
     getState: async <T,>(namespace: string, userId: string) => {
       const result = await request<{ state: RemoteUserState<T> | null }>(
         `/v1/states/${encodeURIComponent(namespace)}`,
@@ -600,6 +771,7 @@ type LoginProviderProps = {
   cacheTtlMs?: number;
   showInviteCode?: boolean;
   locale?: string;
+  googleClientId?: string;
 };
 
 export function LoginProvider({
@@ -610,13 +782,14 @@ export function LoginProvider({
   cacheTtlMs = DEFAULT_AUTH_CACHE_TTL_MS,
   showInviteCode = true,
   locale = 'ko',
+  googleClientId = '',
 }: LoginProviderProps) {
   const resolvedLocale = useMemo(() => normalizeLoginLocale(locale), [locale]);
   const text = useMemo(() => LOGIN_TEXT[resolvedLocale], [resolvedLocale]);
   const authClient = useMemo(() => createAuthClient(authBaseUrl, text), [authBaseUrl, text]);
   const storageClient = useMemo(
-    () => createStorageClient(authClient, storageBaseUrl, text),
-    [authClient, storageBaseUrl, text],
+    () => createStorageClient(authClient, storageBaseUrl, text, cacheKey),
+    [authClient, storageBaseUrl, text, cacheKey],
   );
   const cache = useMemo(() => createSessionCache(cacheKey, cacheTtlMs), [cacheKey, cacheTtlMs]);
   const uiOptions = useMemo<LoginUiOptions>(() => ({
@@ -695,6 +868,49 @@ export function LoginProvider({
     if (result.user) commitUser(result.user);
     return result;
   }, [authClient, commitUser]);
+  const googleChallengeRequests = useRef(new Map<string, Promise<{ nonce: string }>>());
+  const prepareGoogle = useCallback((action: GoogleAction) => {
+    const key = `${user?.id || ''}:${action}`;
+    const pending = googleChallengeRequests.current.get(key);
+    if (pending) return pending;
+    // StrictMode/remounts may start the same request twice. One response must
+    // establish both the HttpOnly cookie and the nonce used by the Google button.
+    const request = authClient.request<{ nonce: string }>('/api/auth/google/challenge', {
+      method: 'POST', body: JSON.stringify({ action }),
+    }).finally(() => { googleChallengeRequests.current.delete(key); });
+    googleChallengeRequests.current.set(key, request);
+    return request;
+  }, [authClient, user?.id]);
+  const authenticateGoogle = useCallback(async (input: GoogleAuthInput) => {
+    const result = await authClient.request<AuthResult>('/api/auth/google', {
+      method: 'POST', body: JSON.stringify(input),
+    });
+    if (result.user) commitUser(result.user);
+    return result;
+  }, [authClient, commitUser]);
+  const unlinkGoogle = useCallback(async (currentPassword: string) => {
+    const result = await authClient.request<AuthResult>('/api/account/google/unlink', {
+      method: 'POST', body: JSON.stringify({ currentPassword }),
+    });
+    if (result.user) commitUser(result.user);
+    return result;
+  }, [authClient, commitUser]);
+  const googleAccountAction = useCallback(async (action: 'verify-password' | 'username' | 'password' | 'link-existing', input: Record<string, unknown>) => {
+    const result = await authClient.request<AuthResult>(`/api/account/google/${action}`, { method: 'POST', body: JSON.stringify(input) });
+    if (action === 'link-existing' && user && result.user) {
+      storageClient.beginLinkedAccountRestore(user.id, result.user.id);
+    }
+    if (result.user) commitUser(result.user);
+    return result;
+  }, [authClient, commitUser, storageClient, user]);
+  const downloadGoogleBackup = useCallback(async () => {
+    const result = await authClient.request<Record<string, unknown>>('/api/account/google/backup', { method: 'POST', body: '{}' });
+    const backup = { ...result, localStates: user ? storageClient.readLinkedAccountBackup(user.id) : {} };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url; link.download = 'google-account-backup.json'; link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, [authClient, storageClient, user]);
   const deleteAccount = useCallback(async (password: string) => {
     await authClient.deleteAccount(password);
     cache.clear();
@@ -710,6 +926,12 @@ export function LoginProvider({
   }, [authClient, cache]);
 
   const value = useMemo<AuthContextValue>(() => ({
+    googleClientId,
+    prepareGoogle,
+    authenticateGoogle,
+    unlinkGoogle,
+    googleAccountAction,
+    downloadGoogleBackup,
     user,
     loading,
     login,
@@ -722,6 +944,12 @@ export function LoginProvider({
     logout,
     refreshSession,
   }), [
+    googleClientId,
+    prepareGoogle,
+    authenticateGoogle,
+    unlinkGoogle,
+    googleAccountAction,
+    downloadGoogleBackup,
     user,
     loading,
     login,
@@ -761,6 +989,8 @@ export function useUserStateApi() {
     isUserStateSyncConfigured: () => storageClient.configured,
     getUserState: storageClient.getState,
     putUserState: storageClient.putState,
+    needsLinkedAccountRestore: storageClient.needsLinkedAccountRestore,
+    restoreLinkedAccountState: storageClient.restoreLinkedAccountState,
   }), [storageClient]);
 }
 
@@ -857,6 +1087,9 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
   if (!storageClient) throw new Error('useAccountState must be used within LoginProvider');
   const optionsRef = useRef(options);
   optionsRef.current = options;
+  const activeUserIdRef = useRef(user?.id);
+  activeUserIdRef.current = user?.id;
+  useEffect(() => storageClient.registerLocalAdapter(options.namespace, options.storage), [storageClient, options.namespace, options.storage]);
   const normalizeInitial = options.normalize || identity<T>;
   const [value, setValueState] = useState<T>(() => normalizeInitial(options.storage.read()));
   const valueRef = useRef(value);
@@ -916,7 +1149,8 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
     if (!user) return;
     const normalized = normalize(next);
     const serialized = serialize(normalized);
-    const pendingUpload = pendingUploadsRef.current.get(serialized);
+    const pendingKey = `${user.id}:${serialized}`;
+    const pendingUpload = pendingUploadsRef.current.get(pendingKey);
     if (pendingUpload) {
       await pendingUpload;
       return;
@@ -925,6 +1159,7 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
     setStatus('saving');
 
     const operation = uploadChainRef.current.catch(() => undefined).then(async () => {
+      if (activeUserIdRef.current !== user.id) return;
       const payload = {
         __wrapped: true,
         instanceId: getLoginInstanceId(),
@@ -933,18 +1168,19 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
       };
 
       await storageClient.putState(optionsRef.current.namespace, payload as unknown as T, user.id);
+      if (activeUserIdRef.current !== user.id) return;
       lastSyncedRef.current = serialized;
       if (savingVersion === changeVersionRef.current) removeStorageItem(dirtyKey);
       finishBootstrap(normalized);
     });
 
     uploadChainRef.current = operation;
-    pendingUploadsRef.current.set(serialized, operation);
+    pendingUploadsRef.current.set(pendingKey, operation);
     try {
       await operation;
     } finally {
-      if (pendingUploadsRef.current.get(serialized) === operation) {
-        pendingUploadsRef.current.delete(serialized);
+      if (pendingUploadsRef.current.get(pendingKey) === operation) {
+        pendingUploadsRef.current.delete(pendingKey);
       }
     }
   }, [dirtyKey, finishBootstrap, normalize, serialize, storageClient, user]);
@@ -965,6 +1201,18 @@ export function useAccountState<T>(options: UseAccountStateOptions<T>) {
       try {
         const remoteState = await storageClient.getState<unknown>(current.namespace, user.id);
         if (cancelled) return;
+        if (storageClient.needsLinkedAccountRestore(current.namespace, user.id)) {
+          const data: any = remoteState?.data;
+          const payload = data?.__wrapped ? data.payload : data;
+          if (remoteState && current.validate && !current.validate(payload)) {
+            throw new Error(`${current.logLabel || current.namespace} 데이터 형식이 올바르지 않습니다.`);
+          }
+          const restored = storageClient.restoreLinkedAccountState(current.namespace, user.id, current.storage, remoteState ? payload as T : undefined);
+          const remote = writeLocal(restored, false);
+          finishBootstrap(remote);
+          current.onExternalStateApplied?.('remote');
+          return;
+        }
         const storedLocal = normalize(current.storage.read());
         const local = serialize(storedLocal) === serialize(valueRef.current)
           ? storedLocal
@@ -1262,9 +1510,9 @@ export function AuthModal({
 }: {
   initialMode?: AuthMode;
   onClose: () => void;
-  onAuthenticated?: () => void;
+  onAuthenticated?: (account?: AuthUser) => void;
 }) {
-  const { user, login, register, recoverPassword, changePassword } = useAuth();
+  const { user, login, register, recoverPassword, changePassword, googleClientId, prepareGoogle, authenticateGoogle } = useAuth();
   const { showInviteCode, locale, text } = useLoginUiOptions();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [identifier, setIdentifier] = useState('');
@@ -1277,6 +1525,8 @@ export function AuthModal({
   const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const isRegistration = mode === 'register';
   const authDialogRef = useModalAccessibility({
     isOpen: true,
     onClose: mode === 'change' ? undefined : onClose,
@@ -1292,6 +1542,15 @@ export function AuthModal({
     setNotice('');
     setPassword('');
     setPasswordConfirm('');
+    setTermsAccepted(false);
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    const result = await authenticateGoogle({ action: 'login', credential, termsAccepted: true });
+    if (result.user) {
+      onAuthenticated?.(result.user);
+      if (!onAuthenticated) onClose();
+    }
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -1344,7 +1603,7 @@ export function AuthModal({
     }
   };
 
-  const title = mode === 'register'
+  const title = isRegistration
     ? text.registerTitle
     : mode === 'recover'
       ? text.recoverTitle
@@ -1380,8 +1639,17 @@ export function AuthModal({
             <button type="button" className={mode === 'register' ? 'active' : ''} onClick={() => switchMode('register')}>{text.registerTitle}</button>
           </div>
         )}
+        {googleClientId && (mode === 'login' || mode === 'register') && (
+          <div className="login-google-entry">
+            <p className="login-modal-description">{text.googleRegisterDescription}</p>
+            <p className="login-modal-description">{text.googleConsent} <button type="button" className="login-text-button" onClick={() => setShowLegal(true)}>{text.termsLink}</button></p>
+            <GoogleSignInButton clientId={googleClientId} locale={locale}
+              prepare={() => prepareGoogle('login')} onCredential={handleGoogleCredential}
+              loadingText={text.processing} errorText={text.googleLoadError} retryText={text.googleRetry} />
+          </div>
+        )}
         <form className="login-form" onSubmit={handleSubmit}>
-          {mode === 'register' && (
+          {isRegistration && (
             <>
               <label>
                 <span>{text.usernameLabel}</span>
@@ -1407,7 +1675,7 @@ export function AuthModal({
               <input id="auth-new-password-confirmation" name="new-password-confirmation" type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" minLength={10} maxLength={128} required placeholder={text.passwordConfirmPlaceholder} />
             </label>
           )}
-          {mode === 'register' && showInviteCode && (
+          {isRegistration && showInviteCode && (
             <label>
               <span>{text.inviteCodeLabel} <small>{text.optionalShort}</small></span>
               <input id="auth-register-invite-code" name="invite-code" type="text" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="off" maxLength={80} placeholder={text.inviteCodePlaceholder} />
@@ -1419,9 +1687,9 @@ export function AuthModal({
               <input id="auth-register-email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} placeholder="name@example.com" />
             </label>
           )}
-          {mode === 'register' && (
+          {isRegistration && (
             <label className="login-checkbox-field">
-              <input type="checkbox" required />
+              <input type="checkbox" required checked={termsAccepted} onChange={event => setTermsAccepted(event.target.checked)} />
               <span>
                 {locale === 'en' && text.termsAgreement}
                 <button type="button" className="login-text-button" onClick={() => setShowLegal(true)} style={{ padding: 0, textDecoration: 'underline', color: 'inherit' }}>{text.termsLink}</button>
@@ -1432,7 +1700,7 @@ export function AuthModal({
           {error && <p className="login-message error" role="alert">{error}</p>}
           {notice && <p className="login-message notice" role="status">{notice}</p>}
           <button className="login-submit" type="submit" disabled={submitting}>
-            {submitting ? text.processing : mode === 'login' ? text.loginAction : mode === 'register' ? text.registerAction : mode === 'recover' ? text.recoverAction : text.changePasswordAction}
+            {submitting ? text.processing : mode === 'login' ? text.loginAction : isRegistration ? text.registerAction : mode === 'recover' ? text.recoverAction : text.changePasswordAction}
           </button>
           {mode === 'login' && <button className="login-text-button" type="button" onClick={() => switchMode('recover')}>{text.forgotPassword}</button>}
           {mode === 'recover' && <button className="login-text-button" type="button" onClick={() => switchMode('login')}>{text.backToLogin}</button>}
@@ -1454,6 +1722,120 @@ export function AuthModal({
   );
 }
 
+function GoogleAccountSettings() {
+  const { user, googleClientId, prepareGoogle, authenticateGoogle, unlinkGoogle, googleAccountAction, downloadGoogleBackup } = useAuth();
+  const { locale, text } = useLoginUiOptions();
+  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [existingPassword, setExistingPassword] = useState('');
+  const [confirmExisting, setConfirmExisting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [dialog, setDialog] = useState<'setup' | 'existing' | null>(null);
+  const [notice, setNotice] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const closeDialog = () => {
+    setDialog(null); setUsername(''); setIdentifier(''); setConfirmExisting(false);
+    setNewPassword(''); setConfirmation(''); setExistingPassword(''); setError(''); setNotice('');
+  };
+  const dialogRef = useModalAccessibility({ isOpen: Boolean(dialog), onClose: closeDialog });
+  if (!googleClientId || !user) return null;
+  const run = async (operation: () => Promise<AuthResult | void>, onSuccess?: () => void) => {
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const result = await operation();
+      onSuccess?.();
+      if (result) setNotice(result.message);
+      setPassword(''); setNewPassword(''); setConfirmation(''); setExistingPassword('');
+    } catch (caught) { setError(caught instanceof Error ? caught.message : text.genericRequestError); }
+    finally { setBusy(false); }
+  };
+  const handlePassword = async () => {
+    if (newPassword !== confirmation) throw new Error(text.passwordMismatchError);
+    return googleAccountAction('password', { newPassword });
+  };
+  const canSetPassword = user.hasPassword === false && user.googleLinked;
+  const setupTitle = canSetPassword ? text.googleSetup : text.googleRename;
+  const openDialog = (next: 'setup' | 'existing') => {
+    setNotice(''); setError(''); setDialog(next);
+  };
+  const messages = <>
+    {notice && <p className="login-message notice" role="status">{notice}</p>}
+    {error && <p className="login-message error" role="alert">{error}</p>}
+  </>;
+  return (
+    <section className="login-google-settings" aria-label={text.googleTitle}>
+      <h3>{text.googleTitle}</h3>
+      {user.googleLinked && <p className="login-message notice">{text.googleLinked}</p>}
+      {(user.canChangeUsername || canSetPassword) && <div className="login-google-actions">
+        <button type="button" className="login-submit" aria-haspopup="dialog" onClick={() => openDialog('setup')}>{setupTitle}</button>
+        {canSetPassword && user.googleCreated && <button type="button" className="login-submit" aria-haspopup="dialog" onClick={() => openDialog('existing')}>{text.googleExisting}</button>}
+      </div>}
+      {!user.googleLinked && !user.canLinkGoogle && <>
+        <button type="button" className="login-google-link" onClick={() => setShowPassword(true)} aria-expanded={showPassword} aria-controls="google-link-password"><img src={googleLogo} width="20" height="20" alt="" /><span>{text.googleLinkButton}</span></button>
+        {showPassword && <form id="google-link-password" className="login-form" onSubmit={event => { event.preventDefault(); void run(() => googleAccountAction('verify-password', { currentPassword: password })); }}>
+          <p className="login-modal-description" role="status">{text.googleLinkDescription}</p>
+          <label><span>{text.passwordLabel}</span><input type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} maxLength={128} required /></label>
+          <button type="submit" className="login-submit" disabled={busy || !password}>{text.googleVerifyPassword}</button>
+        </form>}
+      </>}
+      {!user.googleLinked && user.canLinkGoogle && <>
+        <p className="login-message notice">{text.googleVerifiedSession}</p>
+        <GoogleSignInButton clientId={googleClientId} locale={locale}
+          prepare={() => prepareGoogle('link')} onCredential={async credential => { const result = await authenticateGoogle({ action: 'link', credential }); setNotice(result.message); }}
+          loadingText={text.processing} errorText={text.googleLoadError} retryText={text.googleRetry} />
+      </>}
+      {user.googleLinked && user.hasPassword !== false && <form className="login-form" onSubmit={event => { event.preventDefault(); void run(() => unlinkGoogle(password)); }}>
+        <label><span>{text.passwordLabel}</span><input type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} maxLength={128} required /></label>
+        <button type="submit" className="login-text-button" disabled={busy || !password}>{text.googleUnlink}</button>
+      </form>}
+      {user.hasGoogleBackup && <button type="button" className="login-text-button" disabled={busy} onClick={() => void run(downloadGoogleBackup)}>{text.googleBackup}</button>}
+      {!dialog && messages}
+      {dialog && renderAuthOverlay(
+        <div className="login-conflict-backdrop" data-auth-overlay="true" role="presentation" onMouseDown={event => { event.stopPropagation(); closeDialog(); }}>
+          <section ref={dialogRef} className="login-modal login-google-dialog" role="dialog" aria-modal="true" aria-labelledby="google-settings-title" tabIndex={-1} onMouseDown={event => event.stopPropagation()}>
+            <button className="login-floating-close is-sticky" type="button" onClick={closeDialog} aria-label={text.close}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
+            <h2 id="google-settings-title">{dialog === 'setup' ? setupTitle : text.googleExisting}</h2>
+            {dialog === 'setup' ? <>
+              {user.canChangeUsername && <form className="login-form" onSubmit={event => { event.preventDefault(); void run(() => googleAccountAction('username', { username })); }}>
+                <p className="login-modal-description">{text.googleUsernameHint}</p>
+                <label><span>{text.usernameLabel}</span><input value={username} onChange={event => setUsername(event.target.value)} placeholder={user.username} autoComplete="username" minLength={3} maxLength={24} pattern="[A-Za-z0-9_]+" required /></label>
+                <button type="submit" className="login-submit" disabled={busy || !username}>{text.googleRename}</button>
+              </form>}
+              {!user.canChangeUsername && <label className="login-google-current-username"><span>{text.usernameLabel}</span><strong>{user.username}</strong></label>}
+              {canSetPassword && <>
+                <h3>{text.googleSetPassword}</h3>
+                <p className="login-modal-description">{text.googlePasswordHint}</p>
+                <form className="login-form" onSubmit={event => { event.preventDefault(); void run(handlePassword, closeDialog); }}>
+                  <label><span>{text.newPasswordLabel}</span><input type="password" autoComplete="new-password" value={newPassword} onChange={event => setNewPassword(event.target.value)} minLength={10} maxLength={128} required /></label>
+                  <label><span>{text.newPasswordConfirmLabel}</span><input type="password" autoComplete="new-password" value={confirmation} onChange={event => setConfirmation(event.target.value)} minLength={10} maxLength={128} required /></label>
+                  {user.googleSessionVerified && <button className="login-submit" type="submit" disabled={busy}>{text.googleSetPassword}</button>}
+                </form>
+                {!user.googleSessionVerified && newPassword.length >= 10 && newPassword === confirmation && <GoogleSignInButton clientId={googleClientId} locale={locale}
+                  prepare={() => prepareGoogle('set-password')} onCredential={async credential => { await run(() => authenticateGoogle({ action: 'set-password', credential, newPassword }), closeDialog); }}
+                  loadingText={text.processing} errorText={text.googleLoadError} retryText={text.googleRetry} />}
+              </>}
+            </> : <>
+              <form className="login-form" onSubmit={event => { event.preventDefault(); void run(() => googleAccountAction('link-existing', { identifier, password: existingPassword, confirm: confirmExisting })); }}>
+                <p className="login-modal-description">{text.googleExistingHint}</p>
+                <label><span>{text.loginIdentifierLabel}</span><input autoComplete="username" value={identifier} onChange={event => setIdentifier(event.target.value)} maxLength={254} required /></label>
+                <label><span>{text.passwordLabel}</span><input type="password" autoComplete="current-password" value={existingPassword} onChange={event => setExistingPassword(event.target.value)} maxLength={128} required /></label>
+                <label className="login-checkbox-field"><input type="checkbox" checked={confirmExisting} onChange={event => setConfirmExisting(event.target.checked)} required /><span>{text.googleExistingConfirm}</span></label>
+                <button className="login-submit" type="submit" disabled={busy || !confirmExisting || !user.googleSessionVerified}>{text.googleExisting}</button>
+                {!user.googleSessionVerified && <p className="login-message notice">{text.googleRetry}</p>}
+              </form>
+            </>}
+            {messages}
+          </section>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function ProfileModal({
   onClose,
   autoSavePreference,
@@ -1471,6 +1853,7 @@ export function ProfileModal({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  useEffect(() => { setEmail(user?.email || ''); setCurrentPassword(''); }, [user?.id, user?.email]);
   const profileDialogRef = useModalAccessibility({ isOpen: Boolean(user), onClose });
   if (!user) return null;
   const handleSubmit = async (event: FormEvent) => {
@@ -1502,10 +1885,11 @@ export function ProfileModal({
   };
   return renderAuthOverlay(
     <div className="login-modal-backdrop" data-auth-overlay="true" role="presentation" onMouseDown={onClose}>
-      <section ref={profileDialogRef} className="login-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
+      <section ref={profileDialogRef} className="login-modal login-profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
         <button className="login-floating-close is-sticky" type="button" onClick={onClose} aria-label={text.close}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
         <h2 id="profile-modal-title">{isDeleting ? text.deleteAccountTitle : text.profileTitle}</h2>
-        <p className="login-modal-description">{isDeleting ? text.deleteAccountDescription : (showInviteCode ? text.profileDescriptionWithInvite : text.profileDescriptionEmailOnly)}</p>
+        <p className="login-modal-description">{isDeleting ? text.deleteAccountDescription : (user.googleCreated && user.hasPassword === false ? text.googleSetupHint : showInviteCode ? text.profileDescriptionWithInvite : text.profileDescriptionEmailOnly)}</p>
+        {!isDeleting && <GoogleAccountSettings key={user.id} />}
         <form className="login-form" onSubmit={handleSubmit}>
           {isDeleting ? (
             <>
@@ -1530,7 +1914,7 @@ export function ProfileModal({
               ))}
               <label className="login-field-optional">
                 <span>{text.emailLabel} <small>{text.emailOptionalHint}</small></span>
-                <input id="profile-email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} placeholder="name@example.com" />
+                <input id="profile-email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} placeholder="name@example.com" disabled={user.hasPassword === false} />
               </label>
               {email.trim().toLowerCase() !== (user.email || '').toLowerCase() && (
                 <label>
@@ -1541,7 +1925,7 @@ export function ProfileModal({
               {error && <p className="login-message error" role="alert">{error}</p>}
               {notice && <p className="login-message notice" role="status">{notice}</p>}
               <button className="login-submit" type="submit" disabled={submitting}>{submitting ? text.saving : text.saveAction}</button>
-              <button className="login-text-button danger" type="button" disabled={submitting} onClick={() => { setIsDeleting(true); setError(''); setNotice(''); }}>{text.deleteAccountAction}</button>
+              <button className="login-text-button danger" type="button" disabled={submitting || user.hasPassword === false} onClick={() => { setIsDeleting(true); setError(''); setNotice(''); }}>{text.deleteAccountAction}</button>
             </>
           )}
         </form>
@@ -1606,7 +1990,10 @@ export function AccountPanel({
           onClose={() => {
             if (!user?.mustChangePassword) setAuthOpen(false);
           }}
-          onAuthenticated={() => setAuthOpen(false)}
+          onAuthenticated={(account) => {
+            setAuthOpen(false);
+            if (account?.googleCreated && account.canChangeUsername && account.hasPassword === false) setProfileOpen(true);
+          }}
         />
       )}
       {profileOpen && (

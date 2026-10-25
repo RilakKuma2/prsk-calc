@@ -589,3 +589,98 @@
         margin: 8px 8px -44px auto;
     }
 }
+.login-google-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  margin-block: var(--space-4, 16px);
+}
+
+.login-google-settings {
+  border-bottom: 1px solid var(--login-border, #ddd);
+  padding-bottom: var(--space-4, 16px);
+  margin-bottom: var(--space-4, 16px);
+}
+
+.login-google-settings h3 {
+  margin: 0 0 var(--space-2, 8px);
+  font-size: var(--text-sm, 14px);
+}
+
+.login-google-settings .login-form,
+.login-google-dialog .login-form {
+  margin-block: var(--space-3, 12px) var(--space-5, 20px);
+}
+
+.login-google-entry .login-modal-description {
+  font-size: var(--text-xs, 12px);
+}
+
+.login-google-actions {
+  display: grid;
+  gap: var(--space-2, 8px);
+}
+
+.login-google-actions .login-submit {
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+}
+
+.login-google-current-username {
+  display: grid;
+  gap: var(--space-2, 8px);
+  margin-block: var(--space-4, 16px);
+}
+
+.login-google-current-username strong {
+  overflow-wrap: anywhere;
+}
+
+.login-google-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 45px;
+  padding: 12px;
+  border: 1px solid #747775;
+  border-radius: 12px;
+  color: #1f1f1f;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.login-google-link:hover {
+  background: #f2f2f2;
+}
+
+.login-google-link img {
+  flex: 0 0 20px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.login-profile-modal > .login-floating-close.is-sticky,
+.login-google-dialog > .login-floating-close.is-sticky {
+  top: 0;
+  margin: 0 0 -38px auto;
+}
+
+.login-profile-modal > h2,
+.login-google-dialog > h2 {
+  min-height: 38px;
+  padding-right: 50px;
+}
+
+@media (max-width: 768px) {
+  .login-profile-modal > .login-floating-close.is-sticky,
+  .login-google-dialog > .login-floating-close.is-sticky {
+    margin-bottom: -36px;
+  }
+}

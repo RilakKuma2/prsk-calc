@@ -31,6 +31,7 @@ import {
   getTalkVoiceUrl,
   loadFixtureDialogue,
   loadMysekaiTalkData,
+  MYSEKAI_TALK_DATA_MAX_AGE_MS,
 } from './mysekaiTalkData';
 import './MysekaiTalksTab.css';
 import {
@@ -1236,22 +1237,51 @@ const MysekaiTalksTab = () => {
 
   useEffect(() => {
     const controller = new AbortController();
+    let fetching = false;
+    let hasData = false;
     setData(null);
     setDataError('');
-    loadMysekaiTalkData({
-      language,
-      includeDialogueExtras: canViewDialogues,
-      signal: controller.signal,
-    })
-      .then((nextData) => {
-        if (!controller.signal.aborted) setData(nextData);
+    const loadData = () => {
+      if (fetching || controller.signal.aborted) return;
+      fetching = true;
+      loadMysekaiTalkData({
+        language,
+        includeDialogueExtras: canViewDialogues,
+        signal: controller.signal,
       })
-      .catch((error) => {
-        if (!controller.signal.aborted) {
-          setDataError(error instanceof Error ? error.message : String(error));
-        }
-      });
-    return () => controller.abort();
+        .then((nextData) => {
+          if (controller.signal.aborted) return;
+          hasData = true;
+          setData(nextData);
+          setDataError('');
+        })
+        .catch((error) => {
+          // Keep the checklist usable if a background refresh fails.
+          if (!controller.signal.aborted && !hasData) {
+            setDataError(error instanceof Error ? error.message : String(error));
+          }
+        })
+        .finally(() => { fetching = false; });
+    };
+    const refresh = () => {
+      if (document.visibilityState !== 'hidden' && navigator.onLine !== false) {
+        loadData();
+      }
+    };
+    loadData();
+    const timer = window.setInterval(refresh, MYSEKAI_TALK_DATA_MAX_AGE_MS);
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('pageshow', refresh);
+    window.addEventListener('online', refresh);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('pageshow', refresh);
+      window.removeEventListener('online', refresh);
+    };
   }, [canViewDialogues, language]);
 
   const updateCurrentPreset = useCallback((updater) => {
