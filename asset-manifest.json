@@ -1,0 +1,37 @@
+{
+  "files": {
+    "main.css": "/static/css/main.5854042a.css",
+    "main.js": "/static/js/main.db4c10de.js",
+    "static/js/404.d14f8d7e.chunk.js": "/static/js/404.d14f8d7e.chunk.js",
+    "static/css/829.ab61016b.chunk.css": "/static/css/829.ab61016b.chunk.css",
+    "static/js/829.de493115.chunk.js": "/static/js/829.de493115.chunk.js",
+    "static/css/70.3a6bef9e.chunk.css": "/static/css/70.3a6bef9e.chunk.css",
+    "static/js/70.e2ae8156.chunk.js": "/static/js/70.e2ae8156.chunk.js",
+    "static/js/995.a6e5917a.chunk.js": "/static/js/995.a6e5917a.chunk.js",
+    "static/js/892.d87c71ac.chunk.js": "/static/js/892.d87c71ac.chunk.js",
+    "static/js/216.f8b67ac2.chunk.js": "/static/js/216.f8b67ac2.chunk.js",
+    "static/js/54.9bd7d0fc.chunk.js": "/static/js/54.9bd7d0fc.chunk.js",
+    "static/js/569.92b03920.chunk.js": "/static/js/569.92b03920.chunk.js",
+    "static/js/665.a570f248.chunk.js": "/static/js/665.a570f248.chunk.js",
+    "static/css/26.fc58d159.chunk.css": "/static/css/26.fc58d159.chunk.css",
+    "static/js/26.26dd2726.chunk.js": "/static/js/26.26dd2726.chunk.js",
+    "static/js/134.0e7a27d8.chunk.js": "/static/js/134.0e7a27d8.chunk.js",
+    "static/js/206.02e40808.chunk.js": "/static/js/206.02e40808.chunk.js",
+    "static/js/496.35fb68ea.chunk.js": "/static/js/496.35fb68ea.chunk.js",
+    "static/js/92.f25ba9ab.chunk.js": "/static/js/92.f25ba9ab.chunk.js",
+    "static/css/800.3a6bef9e.chunk.css": "/static/css/800.3a6bef9e.chunk.css",
+    "static/js/800.2fbe257f.chunk.js": "/static/js/800.2fbe257f.chunk.js",
+    "static/js/868.530eb28f.chunk.js": "/static/js/868.530eb28f.chunk.js",
+    "static/js/957.6d3834f0.chunk.js": "/static/js/957.6d3834f0.chunk.js",
+    "static/js/937.b445dc3d.chunk.js": "/static/js/937.b445dc3d.chunk.js",
+    "static/js/606.2d95d26d.chunk.js": "/static/js/606.2d95d26d.chunk.js",
+    "static/js/338.e6537178.chunk.js": "/static/js/338.e6537178.chunk.js",
+    "static/js/77.958ec902.chunk.js": "/static/js/77.958ec902.chunk.js",
+    "static/media/google-logo.png": "/static/media/google-logo.97f2d24ef2c1e1a008fc.png",
+    "index.html": "/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.5854042a.css",
+    "static/js/main.db4c10de.js"
+  ]
+}
