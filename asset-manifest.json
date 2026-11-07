@@ -1,0 +1,40 @@
+{
+  "files": {
+    "main.css": "/static/css/main.3f748ba8.css",
+    "main.js": "/static/js/main.7d3db7ef.js",
+    "static/js/404.d14f8d7e.chunk.js": "/static/js/404.d14f8d7e.chunk.js",
+    "static/css/829.ab61016b.chunk.css": "/static/css/829.ab61016b.chunk.css",
+    "static/js/829.98587f2b.chunk.js": "/static/js/829.98587f2b.chunk.js",
+    "static/css/70.3a6bef9e.chunk.css": "/static/css/70.3a6bef9e.chunk.css",
+    "static/js/70.cbaae65a.chunk.js": "/static/js/70.cbaae65a.chunk.js",
+    "static/js/995.c547d481.chunk.js": "/static/js/995.c547d481.chunk.js",
+    "static/js/892.ebf07bfb.chunk.js": "/static/js/892.ebf07bfb.chunk.js",
+    "static/js/216.f8b67ac2.chunk.js": "/static/js/216.f8b67ac2.chunk.js",
+    "static/js/54.fed4ef9a.chunk.js": "/static/js/54.fed4ef9a.chunk.js",
+    "static/js/108.3aa35387.chunk.js": "/static/js/108.3aa35387.chunk.js",
+    "static/js/665.b13e479f.chunk.js": "/static/js/665.b13e479f.chunk.js",
+    "static/css/26.fc58d159.chunk.css": "/static/css/26.fc58d159.chunk.css",
+    "static/js/26.89b8c262.chunk.js": "/static/js/26.89b8c262.chunk.js",
+    "static/js/307.0c8b1356.chunk.js": "/static/js/307.0c8b1356.chunk.js",
+    "static/js/134.815f1e0c.chunk.js": "/static/js/134.815f1e0c.chunk.js",
+    "static/js/73.1930e565.chunk.js": "/static/js/73.1930e565.chunk.js",
+    "static/js/206.02e40808.chunk.js": "/static/js/206.02e40808.chunk.js",
+    "static/js/496.35fb68ea.chunk.js": "/static/js/496.35fb68ea.chunk.js",
+    "static/js/92.3149ab58.chunk.js": "/static/js/92.3149ab58.chunk.js",
+    "static/css/800.3a6bef9e.chunk.css": "/static/css/800.3a6bef9e.chunk.css",
+    "static/js/800.4b9c5efe.chunk.js": "/static/js/800.4b9c5efe.chunk.js",
+    "static/js/868.880ba01a.chunk.js": "/static/js/868.880ba01a.chunk.js",
+    "static/js/204.1be1c37c.chunk.js": "/static/js/204.1be1c37c.chunk.js",
+    "static/js/957.6d3834f0.chunk.js": "/static/js/957.6d3834f0.chunk.js",
+    "static/js/937.b445dc3d.chunk.js": "/static/js/937.b445dc3d.chunk.js",
+    "static/js/606.2d95d26d.chunk.js": "/static/js/606.2d95d26d.chunk.js",
+    "static/js/338.6680d8a4.chunk.js": "/static/js/338.6680d8a4.chunk.js",
+    "static/js/77.a276e7c8.chunk.js": "/static/js/77.a276e7c8.chunk.js",
+    "static/media/google-logo.png": "/static/media/google-logo.97f2d24ef2c1e1a008fc.png",
+    "index.html": "/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.3f748ba8.css",
+    "static/js/main.7d3db7ef.js"
+  ]
+}
