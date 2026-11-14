@@ -1,0 +1,33 @@
+/*
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+/sw.js
+  Cache-Control: no-store, max-age=0, must-revalidate
+
+/index.html
+  Cache-Control: no-store, max-age=0, must-revalidate
+
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/recognition-wasm/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/recognition/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/card-recognition/*.bin
+  Cache-Control: public, max-age=31536000, immutable
+
+/nui-recognition/*.bin
+  Cache-Control: public, max-age=31536000, immutable
+
+/furniture-recognition/*.bin
+  Cache-Control: public, max-age=31536000, immutable
+
+/talks-recognition/*.bin
+  Cache-Control: public, max-age=31536000, immutable

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8" />
+  <script>
+    (function () {
+      try {
+        var preference = localStorage.getItem('sekai-theme');
+        if (preference !== 'light' && preference !== 'dark' && preference !== 'system') {
+          preference = 'system';
+        }
+        var resolved = preference === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : preference;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.dataset.themePreference = preference;
+        document.documentElement.style.colorScheme = resolved;
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+        document.documentElement.dataset.themePreference = 'system';
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      var savedLanguage = null;
+      try {
+        savedLanguage = localStorage.getItem('language');
+      } catch (_) {}
+      if (savedLanguage !== 'ko' && savedLanguage !== 'ja' && savedLanguage !== 'en') {
+        savedLanguage = null;
+      }
+      var browserLang = navigator.language || navigator.userLanguage;
+      var lang = savedLanguage || (browserLang && browserLang.startsWith('ja') ? 'ja' : 'ko');
+      document.documentElement.lang = lang;
+
+      // Dynamic Manifest Loading (Initial)
+      var manifestFile = 'manifest_ko.json';
+      if (lang === 'ja') manifestFile = 'manifest_ja.json';
+      else if (lang === 'en') manifestFile = 'manifest_en.json';
+
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = '/' + manifestFile;
+      document.head.appendChild(link);
+
+      // Initial Apple Title
+      var titleMap = { ko: '프로세카 계산기', ja: 'プロセカ計算機', en: 'Prsk Calc' };
+      var appTitle = titleMap[lang] || titleMap.ko;
+      document.title = appTitle;
+      var meta = document.createElement('meta');
+      meta.name = 'apple-mobile-web-app-title';
+      meta.content = appTitle;
+      document.head.appendChild(meta);
+    })();
+  </script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon192.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/icon.png" />
+  <link rel="shortcut icon" href="/icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="Project Sekai Calculator" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <link rel="apple-touch-icon" href="/icon2.png" />
+
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=block"
+    rel="stylesheet">
+  <script type="module" crossorigin src="/static/index-ChxyfaoF.js"></script>
+  <link rel="modulepreload" crossorigin href="/static/rolldown-runtime-XKyaHtl9.js">
+  <link rel="modulepreload" crossorigin href="/static/jsx-runtime-C3cWAN_r.js">
+  <link rel="modulepreload" crossorigin href="/static/safeStorage-U3aZNXx8.js">
+  <link rel="modulepreload" crossorigin href="/static/env-oEuwIDn6.js">
+  <link rel="stylesheet" crossorigin href="/static/index-BLrCds56.css">
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+</body>
+
+</html>
