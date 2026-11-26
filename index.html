@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8" />
+  <script>
+    // Boot-time recovery that does not depend on any /static/ file. If the main
+    // bundle or its CSS comes back as cached SPA-fallback HTML (left behind by a
+    // deploy rollout), overwrite those cache entries and reload. After the app
+    // boots (window.__prskBooted), src/utils/staleAssetRecovery.js takes over.
+    (function () {
+      var KEY = 'prsk-calc:boot-heal';
+      var healing = false;
+      function isStatic(value) {
+        try {
+          var url = new URL(value, location.href);
+          return url.origin === location.origin && url.pathname.indexOf('/static/') !== -1;
+        } catch (_) { return false; }
+      }
+      function heal(failedUrl) {
+        if (healing || window.__prskBooted || !window.fetch || !window.Promise) return;
+        var now = Date.now();
+        var state = null;
+        try { state = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (_) {}
+        if (!state || now - state.t > 120000) state = { t: now, c: 0 };
+        if (state.c >= 2) return;
+        state.c += 1;
+        try { sessionStorage.setItem(KEY, JSON.stringify(state)); } catch (_) { return; }
+        healing = true;
+        var urls = [failedUrl];
+        try {
+          performance.getEntriesByType('resource').forEach(function (entry) {
+            if (isStatic(entry.name) && urls.indexOf(entry.name) === -1) urls.push(entry.name);
+          });
+        } catch (_) {}
+        var jobs = urls.map(function (url) {
+          return fetch(url, { cache: 'only-if-cached', mode: 'same-origin' }).then(function (cached) {
+            var type = cached.headers.get('content-type') || '';
+            if (cached.ok && type.indexOf('text/html') === -1) return null;
+            return fetch(url, { cache: 'reload' });
+          }, function () { return null; }).catch(function () { return null; });
+        });
+        var reload = function () {
+          var next = new URL(location.href);
+          next.searchParams.set('__asset_retry', String(now));
+          location.replace(next.toString());
+        };
+        Promise.race([
+          Promise.all(jobs),
+          new Promise(function (resolve) { setTimeout(resolve, 4000); })
+        ]).then(reload, reload);
+      }
+      window.addEventListener('error', function (event) {
+        var target = event.target;
+        if (!target || target === window) return;
+        var tag = target.tagName;
+        var url = target.src || target.href;
+        if ((tag === 'SCRIPT' || tag === 'LINK') && url && isStatic(url)) heal(url);
+      }, true);
+    })();
+  </script>
+  <script>
+    (function () {
+      try {
+        var preference = localStorage.getItem('sekai-theme');
+        if (preference !== 'light' && preference !== 'dark' && preference !== 'system') {
+          preference = 'system';
+        }
+        var resolved = preference === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : preference;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.dataset.themePreference = preference;
+        document.documentElement.style.colorScheme = resolved;
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+        document.documentElement.dataset.themePreference = 'system';
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      var savedLanguage = null;
+      try {
+        savedLanguage = localStorage.getItem('language');
+      } catch (_) {}
+      if (savedLanguage !== 'ko' && savedLanguage !== 'ja' && savedLanguage !== 'en') {
+        savedLanguage = null;
+      }
+      var browserLang = navigator.language || navigator.userLanguage;
+      var lang = savedLanguage || (browserLang && browserLang.startsWith('ja') ? 'ja' : 'ko');
+      document.documentElement.lang = lang;
+
+      // Dynamic Manifest Loading (Initial)
+      var manifestFile = 'manifest_ko.json';
+      if (lang === 'ja') manifestFile = 'manifest_ja.json';
+      else if (lang === 'en') manifestFile = 'manifest_en.json';
+
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = '/' + manifestFile;
+      document.head.appendChild(link);
+
+      // Initial Apple Title
+      var titleMap = { ko: '프로세카 계산기', ja: 'プロセカ計算機', en: 'Prsk Calc' };
+      var appTitle = titleMap[lang] || titleMap.ko;
+      document.title = appTitle;
+      var meta = document.createElement('meta');
+      meta.name = 'apple-mobile-web-app-title';
+      meta.content = appTitle;
+      document.head.appendChild(meta);
+    })();
+  </script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon192.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/icon.png" />
+  <link rel="shortcut icon" href="/icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="Project Sekai Calculator" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <link rel="apple-touch-icon" href="/icon2.png" />
+
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=block"
+    rel="stylesheet">
+  <script type="module" crossorigin src="/static/index-DXbfNe_b.js"></script>
+  <link rel="modulepreload" crossorigin href="/static/rolldown-runtime-XKyaHtl9.js">
+  <link rel="modulepreload" crossorigin href="/static/uiText-Bwtvy_xM.js">
+  <link rel="modulepreload" crossorigin href="/static/env-oEuwIDn6.js">
+  <link rel="stylesheet" crossorigin href="/static/index-s9Y1Y4es.css">
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+</body>
+
+</html>
